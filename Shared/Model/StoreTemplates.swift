@@ -21,7 +21,7 @@ enum StoreTemplates {
     static let all: [StoreTemplate] = [
         // Supermarkt
         .init(id: "ah", name: "Albert Heijn", domain: "ah.nl", category: "Supermarkt", colorHex: "#00A0E2", format: .ean13, aliases: ["bonuskaart", "ah bonus"]),
-        .init(id: "jumbo", name: "Jumbo", domain: "jumbo.com", category: "Supermarkt", colorHex: "#FFC917", format: .ean13, aliases: ["jumbo extra"s"]),
+        .init(id: "jumbo", name: "Jumbo", domain: "jumbo.com", category: "Supermarkt", colorHex: "#FFC917", format: .ean13, aliases: ["jumbo extra's"]),
         .init(id: "plus", name: "PLUS", domain: "plus.nl", category: "Supermarkt", colorHex: "#E2001A", format: .ean13),
         .init(id: "lidl", name: "Lidl Plus", domain: "lidl.nl", category: "Supermarkt", colorHex: "#0050AA", format: .qr, aliases: ["lidl"]),
         .init(id: "aldi", name: "ALDI", domain: "aldi.nl", category: "Supermarkt", colorHex: "#00005F", format: .ean13),
