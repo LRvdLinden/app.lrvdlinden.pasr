@@ -29,6 +29,7 @@ struct RootView: View {
     @State private var locked = Biometrics.isAppLockEnabled
     @State private var covered = false
     @State private var openCardID: UUID?
+    @State private var incoming: IncomingShare?
 
     var body: some View {
         ZStack {
@@ -56,7 +57,14 @@ struct RootView: View {
         }
         .background(Brand.ink.ignoresSafeArea())
         .onOpenURL { url in
-            if let id = DeepLink.cardID(from: url) { openCardID = id }
+            if let id = DeepLink.cardID(from: url) {
+                openCardID = id
+            } else if let shared = CardShare.decode(url) {
+                incoming = IncomingShare(card: shared)
+            }
+        }
+        .sheet(item: $incoming) { share in
+            ReceiveCardSheet(shared: share.card)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {

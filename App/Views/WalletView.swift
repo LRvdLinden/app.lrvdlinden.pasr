@@ -24,13 +24,14 @@ struct WalletView: View {
     private let peek: CGFloat = 62
 
     enum Sheet: Identifiable {
-        case add, importScreenshots, settings, edit(Card)
+        case add, importScreenshots, settings, edit(Card), share(Card)
         var id: String {
             switch self {
             case .add: "add"
             case .importScreenshots: "import"
             case .settings: "settings"
             case .edit(let card): "edit-\(card.id)"
+            case .share(let card): "share-\(card.id)"
             }
         }
     }
@@ -76,6 +77,7 @@ struct WalletView: View {
             case .importScreenshots: ImportView()
             case .settings: SettingsView()
             case .edit(let card): NavigationStack { CardEditorView(card: card) }
+            case .share(let card): ShareCardSheet(card: card)
             }
         }
         .confirmationDialog(Text("\(deleting?.storeName ?? "") naar Recent verwijderd verplaatsen?"),
@@ -137,6 +139,7 @@ struct WalletView: View {
 
     @ViewBuilder private func cardMenu(_ card: Card) -> some View {
         Button { sheet = .edit(card) } label: { Label("Wijzig", systemImage: "pencil") }
+        Button { share(card) } label: { Label("Deel", systemImage: "square.and.arrow.up") }
         Button {
             card.isFavorite.toggle()
             card.updatedAt = .now
@@ -171,6 +174,7 @@ struct WalletView: View {
                         card.updatedAt = .now
                     }
                     actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
+                    actionButton("square.and.arrow.up", label: "Deel") { sheet = .share(card) }
                     actionButton("trash", label: "Verwijder", role: .destructive) { deleting = card }
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -196,6 +200,16 @@ struct WalletView: View {
         }
         .buttonStyle(.glass)
         .accessibilityLabel(Text(label))
+    }
+
+    /// Sharing a locked card asks for Face ID first; the link contains the code.
+    private func share(_ card: Card) {
+        guard card.isLocked else { sheet = .share(card); return }
+        Task {
+            if await Biometrics.authenticate(reason: String(localized: "Bevestig om deze kaart te delen.")) {
+                sheet = .share(card)
+            }
+        }
     }
 
     private func select(_ card: Card) {

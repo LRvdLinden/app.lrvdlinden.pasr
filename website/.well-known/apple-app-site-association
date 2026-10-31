@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["EU3UY476T6.nl.lrvdlinden.pasr"],
+        "components": [
+          { "/": "/kaart/*", "comment": "Gedeelde kaarten openen in Pasr" },
+          { "/": "/kaart", "comment": "Gedeelde kaarten openen in Pasr" }
+        ]
+      }
+    ]
+  }
+}

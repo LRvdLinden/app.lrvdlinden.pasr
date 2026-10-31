@@ -20,3 +20,8 @@ ErrorDocument 404 /404.html
     Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
 </IfModule>
+
+# Universal links: Apple fetches this file without an extension and expects JSON
+<Files "apple-app-site-association">
+  ForceType application/json
+</Files>
