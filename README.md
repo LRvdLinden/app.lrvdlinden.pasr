@@ -42,7 +42,7 @@ De site staat in `website/` en heeft schone adressen (`/privacy/`, `/support/`, 
 
 De share-afbeeldingen maak je opnieuw met `python3 tools/og/render.py` (vanuit `tools/og/og.html` en `og-share.html`). Universal links staan in `website/.well-known/apple-app-site-association`.
 
-Publiceren gaat via FTP met de workflow **Website** (`.github/workflows/website.yml`) bij elke push naar `main` die `website/` wijzigt. Zet hiervoor deze repository-secrets: `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` en eventueel `FTP_DIR`. Zolang `FTP_SERVER` ontbreekt, slaat de workflow het uploaden over.
+Publiceren gaat via FTP met de workflow **Website** (`.github/workflows/website.yml`) bij elke push naar `main` die `website/` wijzigt. Zet hiervoor deze repository-secrets: `FTP_SERVER`, `FTP_USER`, `FTP_PASSWORD` en eventueel `FTP_PORT` en `FTP_DIR`. Zolang `FTP_SERVER` ontbreekt, slaat de workflow het uploaden over.
 
 ## Logo's
 
