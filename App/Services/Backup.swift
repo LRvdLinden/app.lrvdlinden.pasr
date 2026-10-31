@@ -2,6 +2,9 @@ import Foundation
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
+import CryptoKit
+import CommonCrypto
+import Security
 
 /// A complete copy of all cards in one file, including logos and photos, to keep in iCloud Drive
 /// or anywhere else, and to restore later. iCloud already syncs your cards; this is the extra copy.
@@ -108,5 +111,143 @@ struct BackupDocument: FileDocument {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(PasrBackup.self, from: Data(contentsOf: url))
+    }
+}
+
+
+/// Password protection for backup files: AES-256-GCM with a key derived from the password
+/// (PBKDF2-SHA256, 310,000 rounds, random salt). Without the password the file can't be read,
+/// and Pasr can't recover a forgotten password.
+enum BackupCrypto {
+    struct Envelope: Codable {
+        var format = "pasr-encrypted-backup"
+        var version = 1
+        var kdf = "pbkdf2-sha256"
+        var iterations: Int
+        var salt: String
+        var data: String
+    }
+
+    enum Failure: Error { case wrongPassword, notABackup }
+
+    static let iterations = 310_000
+
+    static func isEncrypted(_ data: Data) -> Bool {
+        (try? JSONDecoder().decode(Envelope.self, from: data))?.format == "pasr-encrypted-backup"
+    }
+
+    static func encrypt(_ plain: Data, password: String) throws -> Data {
+        var salt = Data(count: 16)
+        _ = salt.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!) }
+        let key = try deriveKey(password: password, salt: salt, iterations: iterations)
+        let sealed = try AES.GCM.seal(plain, using: key)
+        guard let combined = sealed.combined else { throw Failure.notABackup }
+        let envelope = Envelope(iterations: iterations, salt: salt.base64EncodedString(),
+                                data: combined.base64EncodedString())
+        return try JSONEncoder().encode(envelope)
+    }
+
+    static func decrypt(_ data: Data, password: String) throws -> Data {
+        guard let envelope = try? JSONDecoder().decode(Envelope.self, from: data),
+              let salt = Data(base64Encoded: envelope.salt),
+              let combined = Data(base64Encoded: envelope.data) else { throw Failure.notABackup }
+        let key = try deriveKey(password: password, salt: salt, iterations: envelope.iterations)
+        do {
+            return try AES.GCM.open(AES.GCM.SealedBox(combined: combined), using: key)
+        } catch {
+            throw Failure.wrongPassword
+        }
+    }
+
+    private static func deriveKey(password: String, salt: Data, iterations: Int) throws -> SymmetricKey {
+        var derived = Data(count: 32)
+        let passwordData = Data(password.utf8)
+        let status = derived.withUnsafeMutableBytes { out in
+            salt.withUnsafeBytes { saltBytes in
+                passwordData.withUnsafeBytes { pw in
+                    CCKeyDerivationPBKDF(CCPBKDFAlgorithm(kCCPBKDF2),
+                                         pw.bindMemory(to: Int8.self).baseAddress, passwordData.count,
+                                         saltBytes.bindMemory(to: UInt8.self).baseAddress, salt.count,
+                                         CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), UInt32(iterations),
+                                         out.bindMemory(to: UInt8.self).baseAddress, 32)
+                }
+            }
+        }
+        guard status == kCCSuccess else { throw Failure.notABackup }
+        return SymmetricKey(data: derived)
+    }
+}
+
+extension BackupDocument {
+    /// The backup, encrypted with `password` when one is given.
+    init(backup: PasrBackup, password: String?) throws {
+        try self.init(backup: backup)
+        if let password, !password.isEmpty {
+            data = try BackupCrypto.encrypt(data, password: password)
+        }
+    }
+
+    static func readData(_ url: URL) throws -> Data {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        return try Data(contentsOf: url)
+    }
+
+    static func decode(_ data: Data, password: String?) throws -> PasrBackup {
+        let plain = BackupCrypto.isEncrypted(data) ? try BackupCrypto.decrypt(data, password: password ?? "") : data
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let backup = try? decoder.decode(PasrBackup.self, from: plain) else { throw BackupCrypto.Failure.notABackup }
+        return backup
+    }
+}
+
+/// Asks for a password before making a backup file. Encryption is on by default.
+struct BackupPasswordSheet: View {
+    var onDone: (String?) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var encrypt = true
+    @State private var password = ""
+    @State private var repeatPassword = ""
+
+    private var valid: Bool { !encrypt || (password.count >= 8 && password == repeatPassword) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("Versleutel met een wachtwoord", isOn: $encrypt.animation())
+                    if encrypt {
+                        SecureField("Wachtwoord (minstens 8 tekens)", text: $password)
+                            .textContentType(.newPassword)
+                        SecureField("Herhaal wachtwoord", text: $repeatPassword)
+                            .textContentType(.newPassword)
+                    }
+                } footer: {
+                    if encrypt {
+                        Text(!repeatPassword.isEmpty && password != repeatPassword
+                             ? String(localized: "De wachtwoorden zijn niet gelijk.")
+                             : String(localized: "Zonder dit wachtwoord kan niemand de back-up openen, ook Pasr niet. Bewaar het goed: een vergeten wachtwoord kan niet worden hersteld."))
+                    } else {
+                        Text("Zonder wachtwoord kan iedereen die het bestand heeft je kaarten lezen.")
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle("Back-up maken")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Verder") {
+                        onDone(encrypt ? password : nil)
+                        dismiss()
+                    }
+                    .disabled(!valid)
+                }
+            }
+        }
     }
 }

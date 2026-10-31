@@ -311,7 +311,7 @@ struct CardEditorView: View {
         }
     }
 
-    private var templateDomain: String? { StoreTemplates.template(id: draft.templateID)?.domain }
+    private var templateDomain: String? { StoreTemplates.normalizedDomain(StoreTemplates.template(id: draft.templateID)?.domain) }
 
     private var logoSection: some View {
         Section {

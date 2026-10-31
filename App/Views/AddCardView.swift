@@ -41,7 +41,8 @@ struct AddCardView: View {
                         Section {
                             ForEach(items) { template in
                                 Button { path.append(.template(template)) } label: {
-                                    tile(name: template.name, colorHex: template.colorHex, symbol: nil, domain: template.domain)
+                                    tile(name: template.name, colorHex: template.colorHex, symbol: nil,
+                                         domain: template.domain.isEmpty ? nil : template.domain)
                                 }
                                 .buttonStyle(.plain)
                             }

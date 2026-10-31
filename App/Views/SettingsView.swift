@@ -15,6 +15,9 @@ struct SettingsView: View {
     @State private var showExporter = false
     @State private var showImporter = false
     @State private var backupMessage: String?
+    @State private var askBackupPassword = false
+    @State private var pendingImport: Data?
+    @State private var importPassword = ""
 
     var body: some View {
         NavigationStack {
@@ -64,12 +67,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Button {
-                        if let doc = try? BackupDocument(backup: PasrBackup(cards: active)) {
-                            exportDoc = doc
-                            showExporter = true
-                        }
-                    } label: {
+                    Button { askBackupPassword = true } label: {
                         Label("Maak een back-upbestand", systemImage: "arrow.down.doc")
                     }
                     Button { showImporter = true } label: {
@@ -78,7 +76,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Back-up")
                 } footer: {
-                    Text(backupMessage ?? String(localized: "iCloud bewaart je kaarten al. Met een back-upbestand heb je een extra kopie met logo's en foto's, bijvoorbeeld in iCloud Drive. Terugzetten voegt alleen kaarten toe die er nog niet zijn."))
+                    Text(backupMessage ?? String(localized: "iCloud bewaart je kaarten al. Met een back-upbestand heb je een extra kopie met logo's en foto's, bijvoorbeeld in iCloud Drive, versleuteld met je eigen wachtwoord. Terugzetten voegt alleen kaarten toe die er nog niet zijn."))
                 }
 
                 Section("Recent verwijderd") {
@@ -118,17 +116,52 @@ struct SettingsView: View {
                 }
             }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json]) { result in
-                guard case .success(let url) = result else { return }
-                do {
-                    let added = try BackupDocument.read(url).restore(into: context)
-                    backupMessage = String(localized: "\(added) kaarten teruggezet.")
-                } catch {
-                    backupMessage = String(localized: "Dit bestand is geen Pasr-back-up.")
+                guard case .success(let url) = result, let data = try? BackupDocument.readData(url) else { return }
+                if BackupCrypto.isEncrypted(data) {
+                    importPassword = ""
+                    pendingImport = data
+                } else {
+                    restore(data, password: nil)
                 }
+            }
+            .sheet(isPresented: $askBackupPassword) {
+                BackupPasswordSheet { password in
+                    if let doc = try? BackupDocument(backup: PasrBackup(cards: active), password: password) {
+                        exportDoc = doc
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(400))
+                            showExporter = true
+                        }
+                    }
+                }
+            }
+            .alert("Wachtwoord van de back-up", isPresented: Binding(get: { pendingImport != nil },
+                                                                   set: { if !$0 { pendingImport = nil } })) {
+                SecureField("Wachtwoord", text: $importPassword)
+                Button("Annuleer", role: .cancel) { pendingImport = nil }
+                Button("Zet terug") {
+                    if let data = pendingImport { restore(data, password: importPassword) }
+                    pendingImport = nil
+                }
+            } message: {
+                Text("Deze back-up is versleuteld. Vul het wachtwoord in dat je bij het maken hebt gekozen.")
             }
             .task {
                 iCloudStatus = try? await CKContainer(identifier: PasrStore.cloudContainer).accountStatus()
             }
+        }
+    }
+}
+
+extension SettingsView {
+    fileprivate func restore(_ data: Data, password: String?) {
+        do {
+            let added = try BackupDocument.decode(data, password: password).restore(into: context)
+            backupMessage = String(localized: "\(added) kaarten teruggezet.")
+        } catch BackupCrypto.Failure.wrongPassword {
+            backupMessage = String(localized: "Het wachtwoord klopt niet. Probeer het opnieuw.")
+        } catch {
+            backupMessage = String(localized: "Dit bestand is geen Pasr-back-up.")
         }
     }
 }

@@ -9,10 +9,11 @@ final class Card {
     var kindRaw: String = CardKind.loyalty.rawValue
     var storeName: String = ""
     var templateID: String?
-    var number: String = ""
+    /// Encrypted end to end in iCloud: only your own devices hold the key.
+    @Attribute(.allowsCloudEncryption) var number: String = ""
     var formatRaw: String = BarcodeFormat.code128.rawValue
     var colorHex: String = "#2B2F3A"
-    var note: String = ""
+    @Attribute(.allowsCloudEncryption) var note: String = ""
     var isFavorite: Bool = false
     var useCount: Int = 0
     var lastUsed: Date?
@@ -22,7 +23,7 @@ final class Card {
     // Voucher
     var balance: Double?
     var currencyCode: String?
-    var pin: String?
+    @Attribute(.allowsCloudEncryption) var pin: String?
     var expiresAt: Date?
 
     /// Set when the card is moved to Recently Deleted; purged after 30 days.

@@ -69,11 +69,11 @@ FEATURES = [
     ("scan", "#FF6B57", "Toevoegen in seconden", "Kies je winkel en scan de barcode met de camera. Een foto of screenshot van je pas werkt ook."),
     ("gift", "#E2683C", "Cadeaukaarten met saldo", "Bewaar het saldo, de pincode en de vervaldatum, zodat je een cadeaukaart nooit meer vergeet."),
     ("logo", "#1F9E6A", "Met het logo van je winkel", "Pasr haalt het icoon op van de website van de winkel. Of knip zelf een logo uit een foto van je pas."),
-    ("lock", "#17162A", "Beveiligd met Face ID", "Vergrendel heel Pasr, of scherm alleen de code van een cadeaukaart af tot jij het bent."),
+    ("lock", "#17162A", "Versleuteld en met Face ID", "Je kaartnummers staan versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID, of scherm alleen de code van een cadeaukaart af."),
     ("watch", "#2ED3A6", "Op je pols en je beginscherm", "Je kaarten staan als pasjes op je Apple Watch. Met de widgets heb je je favorieten, of één kaart met barcode, direct op je beginscherm."),
     ("cloud", "#0A84FF", "Via je eigen iCloud", "Je kaarten staan op je iPhone, iPad, Mac en Watch tegelijk. Geen account, geen server van ons."),
     ("share", "#FF375F", "Kaarten delen", "Stuur een kaart naar je partner of huisgenoot. Die opent hem met één tik in zijn eigen Pasr, of scant de QR-code."),
-    ("store", "#AF52DE", "Meer dan 100 Nederlandse winkels", "Van supermarkt tot tankstation en van drogist tot bioscoop: kies je winkel en de kleur en het soort barcode staan goed."),
+    ("store", "#AF52DE", "Ruim 300 Nederlandse kaarten", "Van supermarkt tot tankstation, van sportschool tot dierentuin en van drogist tot cadeaukaart: kies je kaart en de kleur en het soort barcode staan goed."),
 ]
 
 FAQ = [
@@ -84,6 +84,7 @@ FAQ = [
     ("Op welke apparaten werkt Pasr?", "Op iPhone en iPad met iOS en iPadOS 26 of nieuwer, op de Mac met macOS 26 of nieuwer en op de Apple Watch met watchOS 26 of nieuwer."),
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Een logo kun je uitknippen uit een foto van je pas."),
     ("Waar komen de logo's vandaan?", "Pasr levert zelf geen logo's mee. Je iPhone haalt het icoon op dat de winkel zelf op zijn website zet. Dat kun je uitzetten in de instellingen."),
+    ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
     ("Wat gebeurt er als ik mijn telefoon kwijtraak?", "Je kaarten staan in je iCloud. Log op je nieuwe iPhone in met hetzelfde Apple-account en open Pasr: je kaarten komen vanzelf terug."),
     ("Kan ik een kaart delen met mijn partner?", "Ja. Tik op Deel bij een kaart en stuur de link, of laat de ander de QR-code scannen. Wie Pasr heeft, voegt de kaart met één tik toe. Wie Pasr nog niet heeft, ziet de kaart met barcode gewoon in de browser."),
     ("Is Pasr ook in België te gebruiken?", "Pasr is gemaakt voor Nederland. De app is Nederlandstalig en de winkellijst bestaat uit Nederlandse winkels."),
