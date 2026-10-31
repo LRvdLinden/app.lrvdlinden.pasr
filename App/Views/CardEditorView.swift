@@ -37,6 +37,7 @@ struct CardEditorView: View {
         var colorHex = "#6A5CFF"
         var kind: CardKind = .loyalty
         var isFavorite = false
+        var isLocked = false
         var note = ""
         var balanceText = ""
         var currencyCode = Locale.current.currency?.identifier ?? "EUR"
@@ -76,6 +77,7 @@ struct CardEditorView: View {
         d.colorHex = card.colorHex
         d.kind = card.kind
         d.isFavorite = card.isFavorite
+        d.isLocked = card.isLocked
         d.note = card.note
         if let balance = card.balance { d.balanceText = balance.formatted(.number.precision(.fractionLength(2))) }
         d.currencyCode = card.currencyCode ?? d.currencyCode
@@ -355,6 +357,9 @@ struct CardEditorView: View {
     private var extrasSection: some View {
         Section("Meer") {
             Toggle("Favoriet", isOn: $draft.isFavorite)
+            Toggle(isOn: $draft.isLocked) {
+                Label("Code afschermen met \(Biometrics.methodName)", systemImage: Biometrics.symbolName)
+            }
             TextField("Notitie", text: $draft.note, axis: .vertical).lineLimit(1...4)
             PhotosPicker(selection: $frontItem, matching: .images) {
                 Label(draft.frontPhoto == nil ? "Foto van de voorkant" : "Foto voorkant toegevoegd", systemImage: "rectangle.portrait")
@@ -412,6 +417,7 @@ struct CardEditorView: View {
         card.colorHex = draft.colorHex
         card.kind = draft.kind
         card.isFavorite = draft.isFavorite
+        card.isLocked = draft.isLocked
         card.note = draft.note
         card.balance = draft.kind == .voucher ? draft.balance : nil
         card.currencyCode = draft.kind == .voucher ? draft.currencyCode : nil

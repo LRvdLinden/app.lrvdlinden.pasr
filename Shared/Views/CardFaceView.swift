@@ -13,10 +13,11 @@ struct CardAppearance: Equatable {
     var balance: Double?
     var currencyCode: String?
     var expiresAt: Date?
+    var isLocked = false
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
-         balance: Double? = nil, currencyCode: String? = nil, expiresAt: Date? = nil) {
+         balance: Double? = nil, currencyCode: String? = nil, expiresAt: Date? = nil, isLocked: Bool = false) {
         self.storeName = storeName
         self.number = number
         self.format = format
@@ -28,12 +29,14 @@ struct CardAppearance: Equatable {
         self.balance = balance
         self.currencyCode = currencyCode
         self.expiresAt = expiresAt
+        self.isLocked = isLocked
     }
 
     init(_ card: Card) {
         self.init(storeName: card.storeName, number: card.number, format: card.format, colorHex: card.colorHex,
                   kind: card.kind, isFavorite: card.isFavorite, logoData: card.logoData, codeImage: card.codeImage,
-                  balance: card.balance, currencyCode: card.currencyCode, expiresAt: card.expiresAt)
+                  balance: card.balance, currencyCode: card.currencyCode, expiresAt: card.expiresAt,
+                  isLocked: card.isLocked)
     }
 
     var displayName: String { storeName.isEmpty ? String(localized: "Nieuwe kaart") : storeName }
@@ -65,6 +68,8 @@ struct CardFaceView: View {
     let appearance: CardAppearance
     /// Off for tiny previews where a code would be unreadable anyway.
     var showsCode = true
+    /// For a locked card: true once Face ID has confirmed it's you.
+    var revealed = false
     var cornerRadius: CGFloat = 20
 
     private var ink: Color { Color.onCard(appearance.colorHex) }
@@ -80,7 +85,9 @@ struct CardFaceView: View {
                         .opacity(0.85)
                         .lineLimit(1)
                 }
-                if showsCode {
+                if showsCode && appearance.isLocked && !revealed {
+                    lockedPanel
+                } else if showsCode {
                     codePanel
                 } else {
                     Spacer(minLength: 0)
@@ -107,6 +114,16 @@ struct CardFaceView: View {
             parts.append(String(localized: "geldig tot \(expires.formatted(date: .abbreviated, time: .omitted))"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    private var lockedPanel: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "lock.fill").font(.title3)
+            Text("Afgeschermd").font(.system(.caption, design: .rounded).weight(.semibold))
+        }
+        .opacity(0.8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     /// White panel with the code, filling the lower part of the card.

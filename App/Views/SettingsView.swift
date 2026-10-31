@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var active: [Card]
     @State private var iCloudStatus: CKAccountStatus?
     @AppStorage(LogoService.settingKey) private var fetchLogos = true
+    @AppStorage(Biometrics.appLockKey) private var appLock = false
 
     var body: some View {
         NavigationStack {
@@ -26,6 +27,23 @@ struct SettingsView: View {
                     LabeledContent("Kaarten", value: "\(active.count)")
                 } footer: {
                     Text("Je kaarten staan op je apparaten en in je eigen iCloud. Pasr heeft geen account en geen server, en verzamelt geen gegevens.")
+                }
+
+                Section {
+                    Toggle(isOn: Binding(get: { appLock }, set: { newValue in
+                        // Confirm with Face ID before switching the lock on or off.
+                        Task {
+                            if await Biometrics.authenticate(reason: String(localized: "Bevestig om de vergrendeling te wijzigen.")) {
+                                appLock = newValue
+                            }
+                        }
+                    })) {
+                        Label("Pasr vergrendelen met \(Biometrics.methodName)", systemImage: Biometrics.symbolName)
+                    }
+                } header: {
+                    Text("Beveiliging")
+                } footer: {
+                    Text("Pasr vraagt \(Biometrics.methodName) bij het openen en als je terugkomt in de app. Losse kaarten kun je ook afschermen: zet dan in de kaart \"Code afschermen\" aan.")
                 }
 
                 Section {

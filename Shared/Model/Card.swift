@@ -32,6 +32,8 @@ final class Card {
     var website: String?
     /// True when `logoData` was fetched from the store's website rather than chosen by the user.
     var logoFromWebsite: Bool = false
+    /// The code stays hidden until Face ID confirms it's you (handy for vouchers with a balance).
+    var isLocked: Bool = false
 
     @Attribute(.externalStorage) var logoData: Data?
     @Attribute(.externalStorage) var frontPhoto: Data?

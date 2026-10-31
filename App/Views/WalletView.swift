@@ -140,7 +140,7 @@ struct WalletView: View {
                 .transition(.opacity)
 
             VStack(spacing: 22) {
-                CardFaceView(appearance: CardAppearance(card), cornerRadius: 22)
+                CardFaceView(appearance: CardAppearance(card), revealed: true, cornerRadius: 22)
                     .frame(width: width, height: width / Brand.cardAspect)
                     .matchedGeometryEffect(id: card.id, in: namespace)
                     .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
@@ -181,6 +181,17 @@ struct WalletView: View {
     }
 
     private func select(_ card: Card) {
+        if card.isLocked {
+            Task {
+                guard await Biometrics.authenticate(reason: String(localized: "Bevestig dat jij het bent om de code te tonen.")) else { return }
+                bringForward(card)
+            }
+        } else {
+            bringForward(card)
+        }
+    }
+
+    private func bringForward(_ card: Card) {
         card.markUsed()
         withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) { selectedID = card.id }
     }
