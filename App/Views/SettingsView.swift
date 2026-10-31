@@ -11,6 +11,10 @@ struct SettingsView: View {
     @State private var iCloudStatus: CKAccountStatus?
     @AppStorage(LogoService.settingKey) private var fetchLogos = true
     @AppStorage(Biometrics.appLockKey) private var appLock = false
+    @State private var exportDoc: BackupDocument?
+    @State private var showExporter = false
+    @State private var showImporter = false
+    @State private var backupMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -59,6 +63,24 @@ struct SettingsView: View {
                     Text("Je iPhone haalt het icoon op dat een winkel zelf op zijn website zet. Pasr levert geen logo's mee. Logo's die je zelf hebt uitgeknipt blijven altijd staan.")
                 }
 
+                Section {
+                    Button {
+                        if let doc = try? BackupDocument(backup: PasrBackup(cards: active)) {
+                            exportDoc = doc
+                            showExporter = true
+                        }
+                    } label: {
+                        Label("Maak een back-upbestand", systemImage: "arrow.down.doc")
+                    }
+                    Button { showImporter = true } label: {
+                        Label("Zet een back-up terug", systemImage: "arrow.up.doc")
+                    }
+                } header: {
+                    Text("Back-up")
+                } footer: {
+                    Text(backupMessage ?? String(localized: "iCloud bewaart je kaarten al. Met een back-upbestand heb je een extra kopie met logo's en foto's, bijvoorbeeld in iCloud Drive. Terugzetten voegt alleen kaarten toe die er nog niet zijn."))
+                }
+
                 Section("Recent verwijderd") {
                     if deleted.isEmpty {
                         Text("Niets hier. Verwijderde kaarten blijven 30 dagen bewaard.").foregroundStyle(.secondary)
@@ -88,6 +110,21 @@ struct SettingsView: View {
             .navigationTitle("Instellingen")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
+            }
+            .fileExporter(isPresented: $showExporter, document: exportDoc, contentType: .json,
+                          defaultFilename: "Pasr-back-up \(Date.now.formatted(.iso8601.year().month().day()))") { result in
+                if case .success = result {
+                    backupMessage = String(localized: "Back-up opgeslagen met \(active.count) kaarten.")
+                }
+            }
+            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json]) { result in
+                guard case .success(let url) = result else { return }
+                do {
+                    let added = try BackupDocument.read(url).restore(into: context)
+                    backupMessage = String(localized: "\(added) kaarten teruggezet.")
+                } catch {
+                    backupMessage = String(localized: "Dit bestand is geen Pasr-back-up.")
+                }
             }
             .task {
                 iCloudStatus = try? await CKContainer(identifier: PasrStore.cloudContainer).accountStatus()

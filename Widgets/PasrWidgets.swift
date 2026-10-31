@@ -6,6 +6,7 @@ import AppIntents
 struct PasrWidgets: WidgetBundle {
     var body: some Widget {
         FavoritesWidget()
+        MostUsedWidget()
         CardWidget()
     }
 }
@@ -121,6 +122,38 @@ struct CardTile: View {
                 .strokeBorder(.white.opacity(0.16), lineWidth: 0.5)
         }
         .accessibilityLabel(Text(card.name))
+    }
+}
+
+// MARK: - Most used ("top cards")
+
+struct MostUsedProvider: TimelineProvider {
+    func placeholder(in context: Context) -> CardsEntry { CardsEntry(date: .now, cards: WidgetCard.preview) }
+
+    func getSnapshot(in context: Context, completion: @escaping (CardsEntry) -> Void) {
+        let cards = mostUsed()
+        completion(CardsEntry(date: .now, cards: cards.isEmpty && context.isPreview ? WidgetCard.preview : cards))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<CardsEntry>) -> Void) {
+        completion(Timeline(entries: [CardsEntry(date: .now, cards: mostUsed())],
+                            policy: .after(.now.addingTimeInterval(6 * 3600))))
+    }
+
+    private func mostUsed() -> [WidgetCard] {
+        WidgetStore.load().sorted { $0.score > $1.score }
+    }
+}
+
+struct MostUsedWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "nl.lrvdlinden.pasr.mostused", provider: MostUsedProvider()) { entry in
+            FavoritesView(entry: entry)
+                .containerBackground(Brand.ink, for: .widget)
+        }
+        .configurationDisplayName("Meest gebruikt")
+        .description("De kaarten die je het vaakst gebruikt, vanzelf bijgewerkt.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
