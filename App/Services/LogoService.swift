@@ -39,18 +39,47 @@ enum LogoService {
     // MARK: Fetching
 
     @MainActor private static var cache: [String: Data] = [:]
+    @MainActor private static var inFlight: [String: Task<Data?, Never>] = [:]
     private static let failuresKey = "logoFailures"
+
+    /// Logos are kept on disk for 30 days, so the store list and cards show them straight away.
+    private static var cacheFolder: URL {
+        let folder = URL.cachesDirectory.appending(path: "StoreLogos", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder
+    }
+
+    private static func diskURL(_ domain: String) -> URL { cacheFolder.appending(path: domain + ".png") }
+
+    /// A logo that is already cached, without going to the network.
+    @MainActor
+    static func cachedLogo(for domain: String) -> Data? {
+        if let cached = cache[domain] { return cached }
+        let url = diskURL(domain)
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let modified = attrs[.modificationDate] as? Date,
+              Date.now.timeIntervalSince(modified) < 30 * 86_400,
+              let data = try? Data(contentsOf: url) else { return nil }
+        cache[domain] = data
+        return data
+    }
 
     /// PNG logo of at most 256 px for a domain such as "ah.nl", or nil.
     @MainActor
     static func logo(for domain: String, force: Bool = false) async -> Data? {
-        if let cached = cache[domain] { return cached }
+        if !force, let cached = cachedLogo(for: domain) { return cached }
+        if let running = inFlight[domain] { return await running.value }
         var failures = UserDefaults.standard.dictionary(forKey: failuresKey) as? [String: Double] ?? [:]
         if !force, let failed = failures[domain], Date.now.timeIntervalSince1970 - failed < 7 * 86_400 { return nil }
 
-        let found = await Task.detached(priority: .utility) { await download(domain: domain) }.value
+        let task = Task.detached(priority: .utility) { await download(domain: domain) }
+        inFlight[domain] = task
+        let found = await task.value
+        inFlight[domain] = nil
+        failures = UserDefaults.standard.dictionary(forKey: failuresKey) as? [String: Double] ?? [:]
         if let found {
             cache[domain] = found
+            try? found.write(to: diskURL(domain), options: .atomic)
             failures[domain] = nil
         } else {
             failures[domain] = Date.now.timeIntervalSince1970

@@ -295,7 +295,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/Pasr.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/Pasr-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "1";
+				CURRENT_PROJECT_VERSION = "2";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -314,7 +314,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = "1.0";
+				MARKETING_VERSION = "1.0.0";
 				PRODUCT_BUNDLE_IDENTIFIER = nl.lrvdlinden.pasr;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -335,7 +335,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/Pasr.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/Pasr-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "1";
+				CURRENT_PROJECT_VERSION = "2";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -354,7 +354,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = "1.0";
+				MARKETING_VERSION = "1.0.0";
 				PRODUCT_BUNDLE_IDENTIFIER = nl.lrvdlinden.pasr;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -374,7 +374,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "1";
+				CURRENT_PROJECT_VERSION = "2";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pasr;
@@ -385,7 +385,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = "1.0";
+				MARKETING_VERSION = "1.0.0";
 				PRODUCT_BUNDLE_IDENTIFIER = nl.lrvdlinden.pasr.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -402,7 +402,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "1";
+				CURRENT_PROJECT_VERSION = "2";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pasr;
@@ -413,7 +413,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = "1.0";
+				MARKETING_VERSION = "1.0.0";
 				PRODUCT_BUNDLE_IDENTIFIER = nl.lrvdlinden.pasr.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;

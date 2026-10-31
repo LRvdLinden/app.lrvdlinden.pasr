@@ -60,10 +60,11 @@ struct CardAppearance: Equatable {
     }
 }
 
-/// A card drawn like a pass in Apple Wallet. `expanded` adds the code panel.
+/// A card drawn like a pass in Apple Wallet, with its barcode or QR code on the front.
 struct CardFaceView: View {
     let appearance: CardAppearance
-    var expanded = false
+    /// Off for tiny previews where a code would be unreadable anyway.
+    var showsCode = true
     var cornerRadius: CGFloat = 20
 
     private var ink: Color { Color.onCard(appearance.colorHex) }
@@ -71,13 +72,21 @@ struct CardFaceView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             background
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
                 header
-                Spacer(minLength: 12)
-                if expanded { codePanel.transition(.opacity.combined(with: .scale(scale: 0.96))) }
-                footer
+                if let info = voucherInfo {
+                    Text(info)
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .opacity(0.85)
+                        .lineLimit(1)
+                }
+                if showsCode {
+                    codePanel
+                } else {
+                    Spacer(minLength: 0)
+                }
             }
-            .padding(16)
+            .padding(14)
         }
         .foregroundStyle(ink)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -87,6 +96,34 @@ struct CardFaceView: View {
         }
         .shadow(color: .black.opacity(0.28), radius: 14, y: 8)
         .accessibilityElement(children: .combine)
+    }
+
+    /// "€ 25,00 · geldig tot 10 dec 2026"
+    private var voucherInfo: String? {
+        guard appearance.kind == .voucher else { return nil }
+        var parts: [String] = []
+        if let balance = appearance.balanceText { parts.append(balance) }
+        if let expires = appearance.expiresAt {
+            parts.append(String(localized: "geldig tot \(expires.formatted(date: .abbreviated, time: .omitted))"))
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// White panel with the code, filling the lower part of the card.
+    private var codePanel: some View {
+        VStack(spacing: 4) {
+            BarcodeView(value: appearance.number, format: appearance.format, codeImage: appearance.codeImage)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(appearance.groupedNumber)
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundStyle(.black.opacity(0.75))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var background: some View {
@@ -143,54 +180,6 @@ struct CardFaceView: View {
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .frame(width: 32, height: 32)
                 .background(ink.opacity(0.16), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-        }
-    }
-
-    private var codePanel: some View {
-        VStack(spacing: 8) {
-            BarcodeView(value: appearance.number, format: appearance.format, codeImage: appearance.codeImage)
-                .frame(height: appearance.format.isLinear ? 96 : 168)
-                .frame(maxWidth: appearance.format.isLinear ? .infinity : 168)
-            Text(appearance.groupedNumber)
-                .font(.system(.callout, design: .monospaced).weight(.medium))
-                .foregroundStyle(.black.opacity(0.8))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-        }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 12)
-        .frame(maxWidth: .infinity)
-        .background(.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .padding(.bottom, 14)
-    }
-
-    private var footer: some View {
-        HStack(alignment: .bottom) {
-            if appearance.kind == .voucher, let balance = appearance.balanceText {
-                field(label: String(localized: "Saldo"), value: balance)
-            } else if !expanded {
-                field(label: String(localized: "Nummer"), value: appearance.groupedNumber, mono: true)
-            }
-            Spacer()
-            if let expires = appearance.expiresAt {
-                field(label: String(localized: "Geldig tot"),
-                      value: expires.formatted(date: .abbreviated, time: .omitted), trailing: true)
-            }
-        }
-    }
-
-    private func field(label: String, value: String, mono: Bool = false, trailing: Bool = false) -> some View {
-        VStack(alignment: trailing ? .trailing : .leading, spacing: 2) {
-            Text(label)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .textCase(.uppercase)
-                .tracking(0.6)
-                .opacity(0.7)
-            Text(value)
-                .font(mono ? .system(.subheadline, design: .monospaced).weight(.medium)
-                           : .system(.title3, design: .rounded).weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
         }
     }
 }

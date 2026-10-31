@@ -125,7 +125,8 @@ struct CardEditorView: View {
     var body: some View {
         Form {
             Section {
-                CardFaceView(appearance: draft.appearance, expanded: true)
+                CardFaceView(appearance: draft.appearance)
+                    .aspectRatio(Brand.cardAspect, contentMode: .fit)
                     .frame(maxWidth: 380)
                     .frame(maxWidth: .infinity)
                     .animation(.snappy, value: draft.appearance)
@@ -172,6 +173,14 @@ struct CardEditorView: View {
             if existing == nil && draft.number.isEmpty && ScannerView.isAvailable { showScanner = true }
         }
         #endif
+        .task {
+            // New card from a store: show its website logo in the preview right away.
+            guard existing == nil, draft.logoData == nil, LogoService.isEnabled, let domain = templateDomain else { return }
+            if let logo = await LogoService.logo(for: domain), draft.logoData == nil {
+                draft.logoData = logo
+                draft.logoFromWebsite = true
+            }
+        }
         .onChange(of: codePhoto) { _, item in Task { await readCode(from: item) } }
         .onChange(of: logoItem) { _, item in
             Task {

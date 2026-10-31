@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// The home screen: cards stacked like Apple Wallet. Tapping a card lifts it to the top
-/// with its code; the rest drop into a pile at the bottom.
+/// The home screen: cards stacked like Apple Wallet. Every card carries its code on the front;
+/// tapping one brings it forward to the middle of the screen, larger and fully bright.
 struct WalletView: View {
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
@@ -10,7 +10,7 @@ struct WalletView: View {
     @State private var selectedID: UUID?
     @State private var search = ""
     @State private var sheet: Sheet?
-    @State private var confirmDelete = false
+    @State private var deleting: Card?
     @Namespace private var namespace
 
     private let peek: CGFloat = 62
@@ -43,19 +43,19 @@ struct WalletView: View {
         NavigationStack {
             GeometryReader { geo in
                 let width = min(geo.size.width - 32, 440)
-                ZStack(alignment: .top) {
+                ZStack {
                     if cards.isEmpty {
                         emptyState
                     } else {
                         stack(width: width)
-                            .opacity(selectedID == nil ? 1 : 0)
+                            .blur(radius: selectedID == nil ? 0 : 14)
                             .allowsHitTesting(selectedID == nil)
-                        if let card = selectedCard {
-                            detail(card, width: width, height: geo.size.height)
-                        }
+                    }
+                    if let card = selectedCard {
+                        forward(card, width: min(geo.size.width - 24, 470))
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Brand.ink.ignoresSafeArea())
             .navigationTitle(selectedID == nil ? String(localized: "Kaarten") : "")
@@ -68,6 +68,15 @@ struct WalletView: View {
             case .importScreenshots: ImportView()
             case .settings: SettingsView()
             case .edit(let card): NavigationStack { CardEditorView(card: card) }
+            }
+        }
+        .confirmationDialog(Text("\(deleting?.storeName ?? "") naar Recent verwijderd verplaatsen?"),
+                            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                            titleVisibility: .visible) {
+            Button("Verwijder", role: .destructive) {
+                deleting?.deletedAt = .now
+                deleting = nil
+                deselect()
             }
         }
         .onChange(of: selectedID) { _, newValue in
@@ -92,12 +101,13 @@ struct WalletView: View {
                                 .matchedGeometryEffect(id: card.id, in: namespace)
                         }
                     }
-                        .frame(width: width, height: height)
-                        .offset(y: CGFloat(index) * peek)
-                        .zIndex(Double(index))
-                        .onTapGesture { select(card) }
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityHint(Text("Toont de code"))
+                    .frame(width: width, height: height)
+                    .offset(y: CGFloat(index) * peek)
+                    .zIndex(Double(index))
+                    .onTapGesture { select(card) }
+                    .contextMenu { cardMenu(card) }
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityHint(Text("Haalt de kaart naar voren"))
                 }
             }
             .frame(height: CGFloat(max(list.count - 1, 0)) * peek + height + 24, alignment: .top)
@@ -107,29 +117,46 @@ struct WalletView: View {
         .scrollIndicators(.hidden)
     }
 
-    // MARK: Detail
+    @ViewBuilder private func cardMenu(_ card: Card) -> some View {
+        Button { sheet = .edit(card) } label: { Label("Wijzig", systemImage: "pencil") }
+        Button {
+            card.isFavorite.toggle()
+            card.updatedAt = .now
+        } label: {
+            Label(card.isFavorite ? "Geen favoriet" : "Favoriet", systemImage: card.isFavorite ? "star.slash" : "star")
+        }
+        Button(role: .destructive) { deleting = card } label: { Label("Verwijder", systemImage: "trash") }
+    }
 
-    private func detail(_ card: Card, width: CGFloat, height: CGFloat) -> some View {
-        let others = visibleCards.filter { $0.id != card.id }.prefix(4)
-        return ZStack(alignment: .top) {
-            Color.clear.contentShape(Rectangle()).onTapGesture { deselect() }
+    // MARK: Card brought forward
 
-            VStack(spacing: 18) {
-                CardFaceView(appearance: CardAppearance(card), expanded: true)
-                    .frame(width: width)
+    private func forward(_ card: Card, width: CGFloat) -> some View {
+        ZStack {
+            Rectangle()
+                .fill(.black.opacity(0.45))
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture { deselect() }
+                .transition(.opacity)
+
+            VStack(spacing: 22) {
+                CardFaceView(appearance: CardAppearance(card), cornerRadius: 22)
+                    .frame(width: width, height: width / Brand.cardAspect)
                     .matchedGeometryEffect(id: card.id, in: namespace)
+                    .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
                     .onTapGesture { deselect() }
-                    .padding(.top, 8)
 
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
                     actionButton(card.isFavorite ? "star.fill" : "star",
                                  label: card.isFavorite ? "Geen favoriet" : "Favoriet") {
                         card.isFavorite.toggle()
                         card.updatedAt = .now
                     }
                     actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
-                    actionButton("trash", label: "Verwijder", role: .destructive) { confirmDelete = true }
+                    actionButton("trash", label: "Verwijder", role: .destructive) { deleting = card }
                 }
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+
                 if !card.note.isEmpty {
                     Text(card.note)
                         .font(.footnote)
@@ -137,28 +164,7 @@ struct WalletView: View {
                         .frame(width: width, alignment: .leading)
                 }
             }
-
-            // The other cards wait in a pile at the bottom, like Wallet.
-            ZStack(alignment: .top) {
-                ForEach(Array(others.enumerated()), id: \.element.id) { index, other in
-                    CardFaceView(appearance: CardAppearance(other))
-                        .frame(width: width, height: width / Brand.cardAspect)
-                        .scaleEffect(1 - CGFloat(others.count - 1 - index) * 0.03, anchor: .top)
-                        .offset(y: CGFloat(index) * 9)
-                        .onTapGesture { select(other) }
-                }
-            }
-            .offset(y: height - 72)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-        .frame(height: height, alignment: .top)
-        .clipped()
-        .confirmationDialog(Text("\(card.storeName) naar Recent verwijderd verplaatsen?"), isPresented: $confirmDelete,
-                            titleVisibility: .visible) {
-            Button("Verwijder", role: .destructive) {
-                card.deletedAt = .now
-                deselect()
-            }
+            .offset(y: -30)
         }
     }
 
@@ -176,11 +182,11 @@ struct WalletView: View {
 
     private func select(_ card: Card) {
         card.markUsed()
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) { selectedID = card.id }
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) { selectedID = card.id }
     }
 
     private func deselect() {
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { selectedID = nil }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
     }
 
     // MARK: Empty state and toolbar

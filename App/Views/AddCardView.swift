@@ -18,23 +18,43 @@ struct AddCardView: View {
         return list.filter { t in t.matchTerms.contains { $0.localizedCaseInsensitiveContains(query) } }
     }
 
+    /// By category; while searching, one list without headers.
+    private var groups: [(String, [StoreTemplate])] {
+        let list = templates
+        guard search.trimmingCharacters(in: .whitespaces).isEmpty else { return [("", list)] }
+        return StoreTemplates.categories.map { category in (category, list.filter { $0.category == category }) }
+    }
+
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
 
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: 12, pinnedViews: [.sectionHeaders]) {
                     Button { path.append(.custom(search)) } label: {
                         tile(name: search.isEmpty ? String(localized: "Andere winkel") : search,
                              colorHex: "#2B2F3A", symbol: "plus")
                     }
                     .buttonStyle(.plain)
 
-                    ForEach(templates) { template in
-                        Button { path.append(.template(template)) } label: {
-                            tile(name: template.name, colorHex: template.colorHex, symbol: nil)
+                    ForEach(groups, id: \.0) { category, items in
+                        Section {
+                            ForEach(items) { template in
+                                Button { path.append(.template(template)) } label: {
+                                    tile(name: template.name, colorHex: template.colorHex, symbol: nil, domain: template.domain)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        } header: {
+                            if !category.isEmpty {
+                                Text(category)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 6)
+                                    .background(Brand.ink)
+                            }
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(16)
@@ -59,12 +79,17 @@ struct AddCardView: View {
         }
     }
 
-    private func tile(name: String, colorHex: String, symbol: String?) -> some View {
+    private func tile(name: String, colorHex: String, symbol: String?, domain: String? = nil) -> some View {
         let ink = Color.onCard(colorHex)
         return ZStack(alignment: .bottomLeading) {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(LinearGradient(colors: [Color.shade(colorHex, by: 0.12), Color(hex: colorHex), Color.shade(colorHex, by: -0.2)],
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
+            if let domain {
+                StoreLogoView(domain: domain, height: 34)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(12)
+            }
             if let symbol {
                 Image(systemName: symbol)
                     .font(.title2.weight(.semibold))
