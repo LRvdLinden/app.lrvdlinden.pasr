@@ -43,7 +43,7 @@ struct BarcodeView: View {
                 .interpolation(.none)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .accessibilityLabel(Text("\(format.displayName) code"))
+                .accessibilityLabel(Text("\(format.displayName)-code"))
         } else {
             invalid
         }
@@ -53,7 +53,7 @@ struct BarcodeView: View {
     private var invalid: some View {
         VStack(spacing: 4) {
             Image(systemName: "barcode.viewfinder").font(.title2)
-            Text("Can't draw this code").font(.footnote.weight(.medium))
+            Text("Deze code kan niet worden getekend").font(.footnote.weight(.medium))
         }
         .foregroundStyle(.secondary)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

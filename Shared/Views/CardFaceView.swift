@@ -36,7 +36,7 @@ struct CardAppearance: Equatable {
                   balance: card.balance, currencyCode: card.currencyCode, expiresAt: card.expiresAt)
     }
 
-    var displayName: String { storeName.isEmpty ? String(localized: "New card") : storeName }
+    var displayName: String { storeName.isEmpty ? String(localized: "Nieuwe kaart") : storeName }
 
     /// The number in groups of four, as printed on most cards.
     var groupedNumber: String {
@@ -132,9 +132,12 @@ struct CardFaceView: View {
 
     @ViewBuilder private var logo: some View {
         if let data = appearance.logoData, let image = Image(data: data) {
-            image.resizable().scaledToFill()
-                .frame(width: 32, height: 32)
-                .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            image.resizable().scaledToFit()
+                .frame(maxWidth: 76, maxHeight: 32)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
+                }
         } else {
             Text(appearance.monogram)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -164,13 +167,13 @@ struct CardFaceView: View {
     private var footer: some View {
         HStack(alignment: .bottom) {
             if appearance.kind == .voucher, let balance = appearance.balanceText {
-                field(label: String(localized: "Balance"), value: balance)
+                field(label: String(localized: "Saldo"), value: balance)
             } else if !expanded {
-                field(label: String(localized: "Number"), value: appearance.groupedNumber, mono: true)
+                field(label: String(localized: "Nummer"), value: appearance.groupedNumber, mono: true)
             }
             Spacer()
             if let expires = appearance.expiresAt {
-                field(label: String(localized: "Valid until"),
+                field(label: String(localized: "Geldig tot"),
                       value: expires.formatted(date: .abbreviated, time: .omitted), trailing: true)
             }
         }

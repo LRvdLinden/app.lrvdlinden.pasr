@@ -2,6 +2,8 @@
 
 Al je klantenkaarten en vouchers in één app, in de stijl van Apple Wallet. Voor iPhone, iPad, Mac en Apple Watch, zonder account of server: alles staat op je eigen apparaten en in je eigen iCloud.
 
+Pasr is alleen voor Nederland: de app is volledig Nederlandstalig en de winkelsjablonen zijn Nederlandse winkels. Zet in App Store Connect bij *Prijzen en beschikbaarheid* alleen Nederland aan.
+
 ## Openen in Xcode
 
 1. Open `Pasr.xcodeproj` (Xcode 26 of nieuwer).
@@ -23,6 +25,13 @@ Al je klantenkaarten en vouchers in één app, in de stijl van Apple Wallet. Voo
 | `tools/` | Scripts voor het projectbestand, het app-icoon en de barcodetest |
 
 De mappen `App/`, `Shared/` en `Watch/` zijn gesynchroniseerde mappen: nieuwe bestanden horen automatisch bij de juiste target.
+
+## Logo's
+
+Pasr levert geen logo's van winkels mee. Er zijn twee manieren om er een op een kaart te krijgen:
+
+- **Van de website van de winkel.** Elke winkelsjabloon heeft een webadres (bijv. `ah.nl`); bij eigen kaarten kun je er zelf een invullen. Het apparaat haalt het icoon op dat de winkel daar publiceert (`apple-touch-icon`, anders het site-icoon). Dit staat standaard aan en kan uit in Instellingen; logo's van websites verdwijnen dan weer.
+- **Zelf uitknippen.** Uit een foto, een screenshot of de foto van de voorkant van de kaart, ook bij het importeren van Klarna-screenshots. Een eigen logo wordt nooit overschreven.
 
 ## Barcodes
 

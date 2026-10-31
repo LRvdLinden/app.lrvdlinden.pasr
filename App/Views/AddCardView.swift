@@ -25,7 +25,7 @@ struct AddCardView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 12) {
                     Button { path.append(.custom(search)) } label: {
-                        tile(name: search.isEmpty ? String(localized: "Other store") : search,
+                        tile(name: search.isEmpty ? String(localized: "Andere winkel") : search,
                              colorHex: "#2B2F3A", symbol: "plus")
                     }
                     .buttonStyle(.plain)
@@ -40,13 +40,13 @@ struct AddCardView: View {
                 .padding(16)
             }
             .background(Brand.ink.ignoresSafeArea())
-            .navigationTitle("Add a card")
+            .navigationTitle("Kaart toevoegen")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .searchable(text: $search, prompt: Text("Store name"))
+            .searchable(text: $search, prompt: Text("Naam van de winkel"))
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
             }
             .navigationDestination(for: Choice.self) { choice in
                 switch choice {

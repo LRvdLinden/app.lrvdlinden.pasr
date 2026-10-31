@@ -69,20 +69,20 @@ struct ScannerSheet: View {
                     }
                     .ignoresSafeArea()
                     .overlay(alignment: .bottom) {
-                        Text("Point the camera at the barcode")
+                        Text("Richt de camera op de barcode")
                             .font(.subheadline.weight(.medium))
                             .padding(.horizontal, 16).padding(.vertical, 10)
                             .glassEffect()
                             .padding(.bottom, 40)
                     }
                 } else {
-                    ContentUnavailableView("Camera not available",
+                    ContentUnavailableView("Camera niet beschikbaar",
                                            systemImage: "camera.metering.unknown",
-                                           description: Text("Allow camera access in Settings, or choose a photo of the card instead."))
+                                           description: Text("Geef toegang tot de camera in Instellingen, of kies een foto van de kaart."))
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
             }
         }
     }

@@ -20,8 +20,8 @@ struct WatchWalletView: View {
     var body: some View {
         NavigationStack {
             if cards.isEmpty {
-                ContentUnavailableView("No cards yet", systemImage: "wallet.pass",
-                                       description: Text("Add cards in Pasr on your iPhone. They appear here through iCloud."))
+                ContentUnavailableView("Nog geen kaarten", systemImage: "wallet.pass",
+                                       description: Text("Voeg kaarten toe in Pasr op je iPhone. Ze verschijnen hier via iCloud."))
             } else {
                 ScrollView {
                     LazyVStack(spacing: -18) {
@@ -59,6 +59,11 @@ struct WatchCardRow: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.16), lineWidth: 0.5)
                 }
             HStack(spacing: 6) {
+                if let data = card.logoData, let image = Image(data: data) {
+                    image.resizable().scaledToFit()
+                        .frame(maxWidth: 40, maxHeight: 20)
+                        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                }
                 Text(card.storeName)
                     .font(.system(.headline, design: .rounded))
                     .lineLimit(1)

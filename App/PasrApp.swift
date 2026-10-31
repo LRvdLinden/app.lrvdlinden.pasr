@@ -9,7 +9,10 @@ struct PasrApp: App {
         WindowGroup {
             RootView()
                 .preferredColorScheme(.dark)
-                .task { PasrStore.purgeOldDeletions(in: container.mainContext) }
+                .task {
+                    PasrStore.purgeOldDeletions(in: container.mainContext)
+                    await LogoService.fillMissing(in: container.mainContext)
+                }
         }
         .modelContainer(container)
         #if os(macOS)

@@ -47,7 +47,7 @@ enum CardKind: String, CaseIterable, Identifiable, Codable {
 
     var displayName: String {
         switch self {
-        case .loyalty: String(localized: "Loyalty card")
+        case .loyalty: String(localized: "Klantenkaart")
         case .voucher: String(localized: "Voucher")
         }
     }

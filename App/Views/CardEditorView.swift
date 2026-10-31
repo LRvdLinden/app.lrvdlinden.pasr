@@ -19,6 +19,9 @@ struct CardEditorView: View {
     @State private var showScanner = false
     @State private var codePhoto: PhotosPickerItem?
     @State private var logoItem: PhotosPickerItem?
+    @State private var cropRequest: CropRequest?
+    @State private var fetchingLogo = false
+    @State private var logoMessage: String?
     @State private var frontItem: PhotosPickerItem?
     @State private var backItem: PhotosPickerItem?
     @State private var readingPhoto = false
@@ -41,6 +44,8 @@ struct CardEditorView: View {
         var expiresAt = Calendar.current.date(byAdding: .month, value: 6, to: .now) ?? .now
         var pin = ""
         var logoData: Data?
+        var logoFromWebsite = false
+        var website = ""
         var frontPhoto: Data?
         var backPhoto: Data?
 
@@ -78,6 +83,8 @@ struct CardEditorView: View {
         d.expiresAt = card.expiresAt ?? d.expiresAt
         d.pin = card.pin ?? ""
         d.logoData = card.logoData
+        d.logoFromWebsite = card.logoFromWebsite
+        d.website = card.website ?? ""
         d.frontPhoto = card.frontPhoto
         d.backPhoto = card.backPhoto
         _draft = State(initialValue: d)
@@ -129,27 +136,28 @@ struct CardEditorView: View {
             codeSection
             cardSection
             if draft.kind == .voucher { voucherSection }
+            logoSection
             extrasSection
 
             if existing != nil {
                 Section {
-                    Button("Delete card", role: .destructive) { confirmDelete = true }
+                    Button("Verwijder kaart", role: .destructive) { confirmDelete = true }
                 }
             }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Brand.ink.ignoresSafeArea())
-        .navigationTitle(existing == nil ? String(localized: "New card") : String(localized: "Edit card"))
+        .navigationTitle(existing == nil ? String(localized: "Nieuwe kaart") : String(localized: "Wijzig kaart"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
             if existing != nil {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") { save() }.disabled(!canSave)
+                Button("Bewaar") { save() }.disabled(!canSave)
             }
         }
         #if os(iOS)
@@ -165,11 +173,27 @@ struct CardEditorView: View {
         }
         #endif
         .onChange(of: codePhoto) { _, item in Task { await readCode(from: item) } }
-        .onChange(of: logoItem) { _, item in Task { draft.logoData = await loadImage(item, maxSide: 256) } }
+        .onChange(of: logoItem) { _, item in
+            Task {
+                guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
+                cropRequest = CropRequest(data: data)
+                logoItem = nil
+            }
+        }
+        .sheet(item: $cropRequest) { request in
+            if let cropper = LogoCropperView(imageData: request.data, onCrop: { png in
+                draft.logoData = png
+                draft.logoFromWebsite = false
+            }) {
+                cropper
+            } else {
+                Text("Deze afbeelding kan niet worden geopend.").padding()
+            }
+        }
         .onChange(of: frontItem) { _, item in Task { draft.frontPhoto = await loadImage(item, maxSide: 1600) } }
         .onChange(of: backItem) { _, item in Task { draft.backPhoto = await loadImage(item, maxSide: 1600) } }
-        .confirmationDialog("Move this card to Recently Deleted?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
+        .confirmationDialog("Deze kaart naar Recent verwijderd verplaatsen?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Verwijder", role: .destructive) {
                 existing?.deletedAt = .now
                 dismiss()
             }
@@ -180,7 +204,7 @@ struct CardEditorView: View {
 
     private var codeSection: some View {
         Section {
-            TextField("Card number", text: $draft.number)
+            TextField("Kaartnummer", text: $draft.number)
                 .font(.system(.body, design: .monospaced))
                 .autocorrectionDisabled()
                 .focused($numberFocused)
@@ -194,7 +218,7 @@ struct CardEditorView: View {
                     }
                 }
 
-            Picker("Code type", selection: $draft.format) {
+            Picker("Soort code", selection: $draft.format) {
                 ForEach(BarcodeFormat.allCases) { Text($0.displayName).tag($0) }
             }
 
@@ -206,7 +230,7 @@ struct CardEditorView: View {
                 .buttonStyle(.glass)
                 #endif
                 PhotosPicker(selection: $codePhoto, matching: .images) {
-                    Label(readingPhoto ? "Reading…" : "From photo", systemImage: "photo").frame(maxWidth: .infinity)
+                    Label(readingPhoto ? "Lezen…" : "Uit foto", systemImage: "photo").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.glass)
             }
@@ -218,16 +242,16 @@ struct CardEditorView: View {
             if let photoMessage {
                 Text(photoMessage)
             } else if !draft.number.isEmpty && !codeIsValid {
-                Text("This number doesn't fit \(draft.format.displayName). Choose another code type.")
+                Text("Dit nummer past niet bij \(draft.format.displayName). Kies een andere soort code.")
                     .foregroundStyle(Brand.coral)
             }
         }
     }
 
     private var cardSection: some View {
-        Section("Card") {
-            TextField("Store", text: $draft.storeName)
-            Picker("Type", selection: $draft.kind) {
+        Section("Kaart") {
+            TextField("Winkel", text: $draft.storeName)
+            Picker("Soort", selection: $draft.kind) {
                 ForEach(CardKind.allCases) { Text($0.displayName).tag($0) }
             }
             .pickerStyle(.segmented)
@@ -244,7 +268,7 @@ struct CardEditorView: View {
                             .onTapGesture { draft.colorHex = hex }
                             .accessibilityAddTraits(.isButton)
                     }
-                    ColorPicker("Own colour", selection: Binding(
+                    ColorPicker("Eigen kleur", selection: Binding(
                         get: { Color(hex: draft.colorHex) },
                         set: { draft.colorHex = $0.hexString() }
                     ), supportsOpacity: false)
@@ -259,36 +283,89 @@ struct CardEditorView: View {
     private var voucherSection: some View {
         Section("Voucher") {
             HStack {
-                Text("Balance")
-                TextField("0.00", text: $draft.balanceText)
+                Text("Saldo")
+                TextField("0,00", text: $draft.balanceText)
                     .multilineTextAlignment(.trailing)
                     #if os(iOS)
                     .keyboardType(.decimalPad)
                     #endif
                 Text(draft.currencyCode).foregroundStyle(.secondary)
             }
-            TextField("PIN (optional)", text: $draft.pin)
+            TextField("Pincode (optioneel)", text: $draft.pin)
                 .font(.system(.body, design: .monospaced))
-            Toggle("Expiry date", isOn: $draft.hasExpiry.animation())
+            Toggle("Vervaldatum", isOn: $draft.hasExpiry.animation())
             if draft.hasExpiry {
-                DatePicker("Valid until", selection: $draft.expiresAt, displayedComponents: .date)
+                DatePicker("Geldig tot", selection: $draft.expiresAt, displayedComponents: .date)
             }
         }
     }
 
-    private var extrasSection: some View {
-        Section("More") {
-            Toggle("Favourite", isOn: $draft.isFavorite)
-            TextField("Note", text: $draft.note, axis: .vertical).lineLimit(1...4)
-            PhotosPicker(selection: $logoItem, matching: .images) {
-                Label(draft.logoData == nil ? "Choose logo" : "Change logo", systemImage: "app.badge")
+    private var templateDomain: String? { StoreTemplates.template(id: draft.templateID)?.domain }
+
+    private var logoSection: some View {
+        Section {
+            if let data = draft.logoData, let image = Image(data: data) {
+                HStack(spacing: 12) {
+                    image.resizable().scaledToFit()
+                        .frame(maxWidth: 76, maxHeight: 32)
+                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    Text(draft.logoFromWebsite ? "Van de website" : "Eigen logo").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Verwijder", role: .destructive) {
+                        draft.logoData = nil
+                        draft.logoFromWebsite = false
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
+            PhotosPicker(selection: $logoItem, matching: .images) {
+                Label("Uitknippen uit foto of screenshot", systemImage: "scissors")
+            }
+            if let front = draft.frontPhoto {
+                Button { cropRequest = CropRequest(data: front) } label: {
+                    Label("Uitknippen uit foto van de voorkant", systemImage: "rectangle.dashed")
+                }
+            }
+            TextField("Website, bijv. \(templateDomain ?? "winkel.nl")", text: $draft.website)
+                .autocorrectionDisabled()
+                #if os(iOS)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                #endif
+            Button { Task { await fetchWebsiteLogo() } } label: {
+                Label(fetchingLogo ? "Logo ophalen…" : "Logo van de website ophalen", systemImage: "globe")
+            }
+            .disabled(fetchingLogo || (StoreTemplates.normalizedDomain(draft.website) ?? templateDomain) == nil)
+        } header: {
+            Text("Logo")
+        } footer: {
+            Text(logoMessage ?? String(localized: "Pasr haalt het icoon op dat de winkel zelf op zijn website zet. Je kunt ook zelf een logo uitknippen."))
+        }
+    }
+
+    private var extrasSection: some View {
+        Section("Meer") {
+            Toggle("Favoriet", isOn: $draft.isFavorite)
+            TextField("Notitie", text: $draft.note, axis: .vertical).lineLimit(1...4)
             PhotosPicker(selection: $frontItem, matching: .images) {
-                Label(draft.frontPhoto == nil ? "Photo of the front" : "Front photo added", systemImage: "rectangle.portrait")
+                Label(draft.frontPhoto == nil ? "Foto van de voorkant" : "Foto voorkant toegevoegd", systemImage: "rectangle.portrait")
             }
             PhotosPicker(selection: $backItem, matching: .images) {
-                Label(draft.backPhoto == nil ? "Photo of the back" : "Back photo added", systemImage: "rectangle.portrait.fill")
+                Label(draft.backPhoto == nil ? "Foto van de achterkant" : "Foto achterkant toegevoegd", systemImage: "rectangle.portrait.fill")
             }
+        }
+    }
+
+    private func fetchWebsiteLogo() async {
+        guard let domain = StoreTemplates.normalizedDomain(draft.website) ?? templateDomain else { return }
+        fetchingLogo = true
+        defer { fetchingLogo = false }
+        if let logo = await LogoService.logo(for: domain, force: true) {
+            draft.logoData = logo
+            draft.logoFromWebsite = true
+            logoMessage = nil
+        } else {
+            logoMessage = String(localized: "Op \(domain) is geen bruikbaar logo gevonden. Knip er zelf een uit.")
         }
     }
 
@@ -308,7 +385,7 @@ struct CardEditorView: View {
                 draft.templateID = template.id
             }
         } else {
-            photoMessage = String(localized: "No barcode found in this photo.")
+            photoMessage = String(localized: "Geen barcode gevonden in deze foto.")
         }
     }
 
@@ -332,12 +409,18 @@ struct CardEditorView: View {
         card.expiresAt = draft.kind == .voucher && draft.hasExpiry ? draft.expiresAt : nil
         card.pin = draft.pin.isEmpty ? nil : draft.pin
         card.logoData = draft.logoData
+        card.logoFromWebsite = draft.logoData != nil && draft.logoFromWebsite
+        card.website = StoreTemplates.normalizedDomain(draft.website)
         card.frontPhoto = draft.frontPhoto
         card.backPhoto = draft.backPhoto
         card.updatedAt = .now
         card.refreshCodeImage()
         if existing == nil { context.insert(card) }
         try? context.save()
+        if card.logoData == nil {
+            let context = context
+            Task { await LogoService.fillMissing(in: context) }
+        }
         if let onSaved { onSaved() } else { dismiss() }
     }
 }

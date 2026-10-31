@@ -58,9 +58,9 @@ struct WalletView: View {
                 .frame(maxWidth: .infinity)
             }
             .background(Brand.ink.ignoresSafeArea())
-            .navigationTitle(selectedID == nil ? String(localized: "Cards") : "")
+            .navigationTitle(selectedID == nil ? String(localized: "Kaarten") : "")
             .toolbar { toolbar }
-            .searchable(text: $search, prompt: Text("Search cards"))
+            .searchable(text: $search, prompt: Text("Zoek kaarten"))
         }
         .sheet(item: $sheet) { sheet in
             switch sheet {
@@ -97,7 +97,7 @@ struct WalletView: View {
                         .zIndex(Double(index))
                         .onTapGesture { select(card) }
                         .accessibilityAddTraits(.isButton)
-                        .accessibilityHint(Text("Shows the code"))
+                        .accessibilityHint(Text("Toont de code"))
                 }
             }
             .frame(height: CGFloat(max(list.count - 1, 0)) * peek + height + 24, alignment: .top)
@@ -123,12 +123,12 @@ struct WalletView: View {
 
                 HStack(spacing: 12) {
                     actionButton(card.isFavorite ? "star.fill" : "star",
-                                 label: card.isFavorite ? "Unfavourite" : "Favourite") {
+                                 label: card.isFavorite ? "Geen favoriet" : "Favoriet") {
                         card.isFavorite.toggle()
                         card.updatedAt = .now
                     }
-                    actionButton("pencil", label: "Edit") { sheet = .edit(card) }
-                    actionButton("trash", label: "Delete", role: .destructive) { confirmDelete = true }
+                    actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
+                    actionButton("trash", label: "Verwijder", role: .destructive) { confirmDelete = true }
                 }
                 if !card.note.isEmpty {
                     Text(card.note)
@@ -153,9 +153,9 @@ struct WalletView: View {
         }
         .frame(height: height, alignment: .top)
         .clipped()
-        .confirmationDialog(Text("Move \(card.storeName) to Recently Deleted?"), isPresented: $confirmDelete,
+        .confirmationDialog(Text("\(card.storeName) naar Recent verwijderd verplaatsen?"), isPresented: $confirmDelete,
                             titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
+            Button("Verwijder", role: .destructive) {
                 card.deletedAt = .now
                 deselect()
             }
@@ -200,24 +200,24 @@ struct WalletView: View {
             }
             .frame(height: 120)
             VStack(spacing: 8) {
-                Text("All your cards, one tap away").font(.title2.bold())
-                Text("Add loyalty cards and vouchers. They sync through your own iCloud and also appear on your Apple Watch.")
+                Text("Al je kaarten, één tik verderop").font(.title2.bold())
+                Text("Voeg klantenkaarten en vouchers toe. Ze synchroniseren via je eigen iCloud en staan ook op je Apple Watch.")
                     .font(.subheadline).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 32)
             VStack(spacing: 10) {
                 Button { sheet = .add } label: {
-                    Label("Add a card", systemImage: "plus").frame(maxWidth: 260).padding(.vertical, 6)
+                    Label("Kaart toevoegen", systemImage: "plus").frame(maxWidth: 260).padding(.vertical, 6)
                 }
                 .buttonStyle(.glassProminent)
                 .tint(Brand.iris)
                 Button { sheet = .importScreenshots } label: {
-                    Label("Import screenshots", systemImage: "photo.stack").frame(maxWidth: 260).padding(.vertical, 6)
+                    Label("Screenshots importeren", systemImage: "photo.stack").frame(maxWidth: 260).padding(.vertical, 6)
                 }
                 .buttonStyle(.glass)
                 #if DEBUG
-                Button("Load sample cards") { PasrStore.insertSamples(into: context) }
+                Button("Voorbeeldkaarten laden") { PasrStore.insertSamples(into: context) }
                     .font(.footnote).padding(.top, 4)
                 #endif
             }
@@ -230,17 +230,17 @@ struct WalletView: View {
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             if selectedID != nil {
-                Button("Done") { deselect() }
+                Button("Klaar") { deselect() }
             } else {
-                Button { sheet = .settings } label: { Label("Settings", systemImage: "gearshape") }
+                Button { sheet = .settings } label: { Label("Instellingen", systemImage: "gearshape") }
             }
         }
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button { sheet = .add } label: { Label("Add a card", systemImage: "plus.rectangle.on.rectangle") }
-                Button { sheet = .importScreenshots } label: { Label("Import screenshots", systemImage: "photo.stack") }
+                Button { sheet = .add } label: { Label("Kaart toevoegen", systemImage: "plus.rectangle.on.rectangle") }
+                Button { sheet = .importScreenshots } label: { Label("Screenshots importeren", systemImage: "photo.stack") }
             } label: {
-                Label("Add", systemImage: "plus")
+                Label("Toevoegen", systemImage: "plus")
             }
         }
     }

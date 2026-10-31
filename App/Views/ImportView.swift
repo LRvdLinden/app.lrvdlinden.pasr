@@ -22,7 +22,11 @@ struct ImportView: View {
         var colorHex: String
         var templateID: String?
         var kind: CardKind
+        var imageData: Data?
+        var logoData: Data?
     }
+
+    @State private var cropRequest: CropRequest?
 
     var body: some View {
         NavigationStack {
@@ -34,20 +38,27 @@ struct ImportView: View {
                 }
             }
             .background(Brand.ink.ignoresSafeArea())
-            .navigationTitle("Import screenshots")
+            .navigationTitle("Screenshots importeren")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
                 if !found.isEmpty {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Import \(found.filter(\.include).count)") { importCards() }
+                        Button("Importeer \(found.filter(\.include).count)") { importCards() }
                             .disabled(found.allSatisfy { !$0.include } || progress != nil)
                     }
                 }
             }
             .onChange(of: items) { _, newItems in Task { await read(newItems) } }
+            .sheet(item: $cropRequest) { request in
+                if let cropper = LogoCropperView(imageData: request.data, onCrop: { png in
+                    if let index = found.firstIndex(where: { $0.id == request.target }) { found[index].logoData = png }
+                }) {
+                    cropper
+                }
+            }
         }
     }
 
@@ -57,23 +68,23 @@ struct ImportView: View {
             Image(systemName: "photo.stack")
                 .font(.system(size: 54, weight: .semibold))
                 .foregroundStyle(Brand.gradient)
-            Text("Bring your cards along").font(.title2.bold())
+            Text("Neem je kaarten mee").font(.title2.bold())
             VStack(alignment: .leading, spacing: 10) {
-                step(1, "Open Klarna (or another card app) and take a screenshot of each card with its barcode.")
-                step(2, "Choose those screenshots here, up to 50 at a time.")
-                step(3, "Pasr finds the barcode and the store. Check the list and import.")
+                step(1, "Open Klarna (of een andere kaarten-app) en maak van elke kaart een screenshot met de barcode.")
+                step(2, "Kies die screenshots hier, tot 50 tegelijk.")
+                step(3, "Pasr vindt de barcode en de winkel. Controleer de lijst en importeer.")
             }
             .padding(.horizontal, 28)
             PhotosPicker(selection: $items, maxSelectionCount: 50, matching: .screenshots) {
-                Label("Choose screenshots", systemImage: "photo.on.rectangle").frame(maxWidth: 260).padding(.vertical, 6)
+                Label("Kies screenshots", systemImage: "photo.on.rectangle").frame(maxWidth: 260).padding(.vertical, 6)
             }
             .buttonStyle(.glassProminent)
             .tint(Brand.iris)
             PhotosPicker(selection: $items, maxSelectionCount: 50, matching: .images) {
-                Text("Choose from all photos")
+                Text("Kies uit alle foto's")
             }
             .font(.footnote)
-            Text("Everything is read on your device. Nothing is uploaded.")
+            Text("Alles wordt op je apparaat gelezen. Er wordt niets geüpload.")
                 .font(.footnote).foregroundStyle(.secondary)
             Spacer()
             Spacer()
@@ -95,32 +106,45 @@ struct ImportView: View {
             if let progress {
                 Section {
                     ProgressView(value: Double(progress.done), total: Double(max(progress.total, 1))) {
-                        Text("Reading screenshots… \(progress.done) of \(progress.total)")
+                        Text("Screenshots lezen… \(progress.done) van \(progress.total)")
                     }
                 }
             }
             if failed > 0 {
                 Section {
-                    Label("No barcode found in \(failed) screenshot(s).", systemImage: "exclamationmark.triangle")
+                    Label("Geen barcode gevonden in \(failed) screenshot(s).", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.secondary)
                 }
             }
-            Section("Found") {
+            Section("Gevonden") {
                 ForEach($found) { $item in
                     HStack(spacing: 12) {
                         Toggle("", isOn: $item.include).labelsHidden()
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color(hex: item.colorHex).gradient)
-                            .frame(width: 56, height: 56 / Brand.cardAspect)
-                            .overlay {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(Color(hex: item.colorHex).gradient)
+                            if let logo = item.logoData, let image = Image(data: logo) {
+                                image.resizable().scaledToFit().padding(4)
+                            } else {
                                 Text(String(item.storeName.prefix(2)).uppercased())
                                     .font(.system(size: 13, weight: .bold, design: .rounded))
                                     .foregroundStyle(Color.onCard(item.colorHex))
                             }
+                        }
+                        .frame(width: 56, height: 56 / Brand.cardAspect)
                         VStack(alignment: .leading, spacing: 2) {
-                            TextField("Store", text: $item.storeName).font(.headline)
+                            TextField("Winkel", text: $item.storeName).font(.headline)
                             Text("\(item.format.displayName) · \(item.number)")
                                 .font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        Spacer(minLength: 0)
+                        if let data = item.imageData {
+                            Button {
+                                cropRequest = CropRequest(data: data, target: item.id)
+                            } label: {
+                                Label("Logo uitknippen", systemImage: "scissors").labelStyle(.iconOnly)
+                            }
+                            .buttonStyle(.borderless)
                         }
                     }
                 }
@@ -143,7 +167,8 @@ struct ImportView: View {
                     found.append(Found(storeName: template?.name ?? guessName(from: result.recognizedText),
                                        number: result.payload, format: result.format,
                                        colorHex: template?.colorHex ?? (Brand.palette.randomElement() ?? "#6A5CFF"),
-                                       templateID: template?.id, kind: template?.kind ?? .loyalty))
+                                       templateID: template?.id, kind: template?.kind ?? .loyalty,
+                                       imageData: data))
                 }
             } else {
                 failed += 1
@@ -160,7 +185,7 @@ struct ImportView: View {
         return lines.first { line in
             line.count >= 3 && line.count <= 28 && line.rangeOfCharacter(from: .letters) != nil
                 && !line.contains(":") && line.filter(\.isNumber).count < 4
-        } ?? String(localized: "Card")
+        } ?? String(localized: "Kaart")
     }
 
     private func importCards() {
@@ -168,10 +193,13 @@ struct ImportView: View {
             let card = Card(storeName: item.storeName, number: item.number, format: item.format,
                             kind: item.kind, colorHex: item.colorHex)
             card.templateID = item.templateID
+            card.logoData = item.logoData
             card.refreshCodeImage()
             context.insert(card)
         }
         try? context.save()
+        let context = context
+        Task { await LogoService.fillMissing(in: context) }
         dismiss()
     }
 }

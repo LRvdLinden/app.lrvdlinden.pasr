@@ -46,6 +46,7 @@ PROJECT_BASE = {
     "GCC_C_LANGUAGE_STANDARD": "gnu17",
     "IPHONEOS_DEPLOYMENT_TARGET": "26.0",
     "LOCALIZATION_PREFERS_STRING_CATALOGS": "YES",
+    "DEVELOPMENT_LANGUAGE": "nl",
     "MACOSX_DEPLOYMENT_TARGET": "26.0",
     "MTL_FAST_MATH": "YES",
     "STRING_CATALOG_GENERATE_SYMBOLS": "YES",
@@ -72,7 +73,7 @@ APP = {
     "INFOPLIST_FILE": "Config/Pasr-Info.plist",
     "INFOPLIST_KEY_CFBundleDisplayName": "Pasr",
     "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.lifestyle",
-    "INFOPLIST_KEY_NSCameraUsageDescription": "Pasr uses the camera to scan the barcode on your card.",
+    "INFOPLIST_KEY_NSCameraUsageDescription": "Pasr gebruikt de camera om de barcode op je kaart te scannen.",
     "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents": "YES",
     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": "UIInterfaceOrientationPortrait",
@@ -86,7 +87,7 @@ APP = {
     "SUPPORTS_MACCATALYST": "NO",
     "SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD": "NO",
     "SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD": "NO",
-    "SWIFT_EMIT_LOC_STRINGS": "YES",
+    "SWIFT_EMIT_LOC_STRINGS": "NO",
     "TARGETED_DEVICE_FAMILY": "1,2",
 }
 WATCH = {
@@ -107,7 +108,7 @@ WATCH = {
     "PRODUCT_NAME": "$(TARGET_NAME)",
     "SDKROOT": "watchos",
     "SKIP_INSTALL": "YES",
-    "SWIFT_EMIT_LOC_STRINGS": "YES",
+    "SWIFT_EMIT_LOC_STRINGS": "NO",
     "TARGETED_DEVICE_FAMILY": "4",
 }
 
@@ -297,10 +298,9 @@ def build():
 \t\t\t\t}};
 \t\t\t}};
 \t\t\tbuildConfigurationList = {I['cl.project']} /* Build configuration list for PBXProject "Pasr" */;
-\t\t\tdevelopmentRegion = en;
+\t\t\tdevelopmentRegion = nl;
 \t\t\thasScannedForEncodings = 0;
 \t\t\tknownRegions = (
-\t\t\t\ten,
 \t\t\t\tnl,
 \t\t\t\tBase,
 \t\t\t);

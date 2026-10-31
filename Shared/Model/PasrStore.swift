@@ -48,6 +48,7 @@ enum PasrStore {
         ]
         for (name, number, format, color, kind) in samples {
             let card = Card(storeName: name, number: number, format: format, kind: kind, colorHex: color)
+            card.templateID = StoreTemplates.all.first { name.lowercased().hasPrefix($0.name.lowercased().prefix(4)) }?.id
             if kind == .voucher {
                 card.balance = 25
                 card.currencyCode = "EUR"

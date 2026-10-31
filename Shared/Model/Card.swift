@@ -28,6 +28,11 @@ final class Card {
     /// Set when the card is moved to Recently Deleted; purged after 30 days.
     var deletedAt: Date?
 
+    /// The store's website, used to fetch its logo (e.g. "ah.nl"). Falls back to the template's.
+    var website: String?
+    /// True when `logoData` was fetched from the store's website rather than chosen by the user.
+    var logoFromWebsite: Bool = false
+
     @Attribute(.externalStorage) var logoData: Data?
     @Attribute(.externalStorage) var frontPhoto: Data?
     @Attribute(.externalStorage) var backPhoto: Data?

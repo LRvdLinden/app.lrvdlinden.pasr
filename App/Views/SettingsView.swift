@@ -9,6 +9,7 @@ struct SettingsView: View {
     private var deleted: [Card]
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var active: [Card]
     @State private var iCloudStatus: CKAccountStatus?
+    @AppStorage(LogoService.settingKey) private var fetchLogos = true
 
     var body: some View {
         NavigationStack {
@@ -16,46 +17,59 @@ struct SettingsView: View {
                 Section {
                     LabeledContent("iCloud") {
                         switch iCloudStatus {
-                        case .available: Label("Syncing", systemImage: "checkmark.icloud").foregroundStyle(Brand.mint)
-                        case .noAccount: Text("Not signed in").foregroundStyle(Brand.coral)
+                        case .available: Label("Synchroniseert", systemImage: "checkmark.icloud").foregroundStyle(Brand.mint)
+                        case .noAccount: Text("Niet ingelogd").foregroundStyle(Brand.coral)
                         case nil: ProgressView()
-                        default: Text("Unavailable").foregroundStyle(.secondary)
+                        default: Text("Niet beschikbaar").foregroundStyle(.secondary)
                         }
                     }
-                    LabeledContent("Cards", value: "\(active.count)")
+                    LabeledContent("Kaarten", value: "\(active.count)")
                 } footer: {
-                    Text("Your cards are stored on your devices and in your own iCloud. Pasr has no account and no server, and collects no data.")
+                    Text("Je kaarten staan op je apparaten en in je eigen iCloud. Pasr heeft geen account en geen server, en verzamelt geen gegevens.")
                 }
 
-                Section("Recently deleted") {
+                Section {
+                    Toggle("Logo's van winkelwebsites", isOn: $fetchLogos)
+                        .onChange(of: fetchLogos) { _, on in
+                            if on {
+                                Task { await LogoService.fillMissing(in: context) }
+                            } else {
+                                LogoService.removeWebsiteLogos(in: context)
+                            }
+                        }
+                } footer: {
+                    Text("Je iPhone haalt het icoon op dat een winkel zelf op zijn website zet. Pasr levert geen logo's mee. Logo's die je zelf hebt uitgeknipt blijven altijd staan.")
+                }
+
+                Section("Recent verwijderd") {
                     if deleted.isEmpty {
-                        Text("Nothing here. Deleted cards stay for 30 days.").foregroundStyle(.secondary)
+                        Text("Niets hier. Verwijderde kaarten blijven 30 dagen bewaard.").foregroundStyle(.secondary)
                     }
                     ForEach(deleted) { card in
                         HStack {
                             Circle().fill(Color(hex: card.colorHex)).frame(width: 12, height: 12)
                             Text(card.storeName)
                             Spacer()
-                            Button("Restore") { card.deletedAt = nil }
+                            Button("Zet terug") { card.deletedAt = nil }
                                 .buttonStyle(.borderless)
                         }
                         .swipeActions {
-                            Button("Delete now", role: .destructive) { context.delete(card) }
+                            Button("Nu verwijderen", role: .destructive) { context.delete(card) }
                         }
                     }
                 }
 
                 Section {
-                    LabeledContent("Version", value: Bundle.main.versionString)
+                    LabeledContent("Versie", value: Bundle.main.versionString)
                     Link("lrvdlinden.app", destination: URL(string: "https://lrvdlinden.app")!)
                 }
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
             .background(Brand.ink.ignoresSafeArea())
-            .navigationTitle("Settings")
+            .navigationTitle("Instellingen")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
             }
             .task {
                 iCloudStatus = try? await CKContainer(identifier: PasrStore.cloudContainer).accountStatus()
