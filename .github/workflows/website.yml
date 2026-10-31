@@ -48,11 +48,14 @@ jobs:
             exit 1
           fi
           if timeout 10 bash -c "</dev/tcp/$host/$port" 2>/dev/null; then
-            echo "::notice::FTP server is reachable on port $port."
+            echo "::notice::FTP server is reachable on the configured port."
           else
-            hint=""
-            if [ "$port" != "990" ] && timeout 10 bash -c "</dev/tcp/$host/990" 2>/dev/null; then hint=" Port 990 is open: the host may need implicit FTPS (set FTP_PORT to 990)."; fi
-            echo "::error::Cannot connect to the FTP server on port $port. It may block connections from GitHub, or the port is wrong.$hint"
+            open=""
+            timeout 8 bash -c "</dev/tcp/$host/21" 2>/dev/null && open="$open standard-FTP(twenty-one)"
+            timeout 8 bash -c "</dev/tcp/$host/22" 2>/dev/null && open="$open SFTP(twenty-two)"
+            timeout 8 bash -c "</dev/tcp/$host/990" 2>/dev/null && open="$open implicit-FTPS(nine-ninety)"
+            [ -z "$open" ] && open=" none (the server probably blocks connections from GitHub)"
+            echo "::error::Cannot connect on the configured FTP_PORT. Ports that are open on this host:$open"
             exit 1
           fi
           echo "ready=true" >> "$GITHUB_OUTPUT"
