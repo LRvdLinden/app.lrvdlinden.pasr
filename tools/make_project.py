@@ -91,6 +91,25 @@ APP = {
     "SWIFT_EMIT_LOC_STRINGS": "NO",
     "TARGETED_DEVICE_FAMILY": "1,2",
 }
+WIDGETS = {
+    "APPLICATION_EXTENSION_API_ONLY": "YES",
+    "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+    "CODE_SIGN_ENTITLEMENTS": "Config/PasrWidgets.entitlements",
+    "CODE_SIGN_STYLE": "Automatic",
+    "CURRENT_PROJECT_VERSION": "2",
+    "GENERATE_INFOPLIST_FILE": "YES",
+    "INFOPLIST_FILE": "Config/PasrWidgets-Info.plist",
+    "INFOPLIST_KEY_CFBundleDisplayName": "Pasr",
+    "LD_RUNPATH_SEARCH_PATHS": ["$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks"],
+    "MARKETING_VERSION": "1.0.0",
+    "PRODUCT_BUNDLE_IDENTIFIER": "nl.lrvdlinden.pasr.widgets",
+    "PRODUCT_NAME": "$(TARGET_NAME)",
+    "SDKROOT": "iphoneos",
+    "SKIP_INSTALL": "YES",
+    "SWIFT_EMIT_LOC_STRINGS": "NO",
+    "TARGETED_DEVICE_FAMILY": "1,2",
+}
+
 WATCH = {
     "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
     "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
@@ -120,7 +139,10 @@ def build():
         "t.app", "t.watch", "app.sources", "app.frameworks", "app.resources", "app.embed",
         "watch.sources", "watch.frameworks", "watch.resources", "bf.embedwatch", "dep.watch", "proxy.watch",
         "cl.project", "cl.app", "cl.watch", "c.project.debug", "c.project.release",
-        "c.app.debug", "c.app.release", "c.watch.debug", "c.watch.release"]}
+        "c.app.debug", "c.app.release", "c.watch.debug", "c.watch.release",
+        "g.widgets", "p.widgets", "t.widgets", "widgets.sources", "widgets.frameworks", "widgets.resources",
+        "app.embedext", "bf.embedwidgets", "dep.widgets", "proxy.widgets", "cl.widgets",
+        "c.widgets.debug", "c.widgets.release"]}
 
     def phase(isa, key):
         return f"""\t\t{I[key]} = {{
@@ -172,6 +194,7 @@ def build():
 
 /* Begin PBXBuildFile section */
 \t\t{I['bf.embedwatch']} /* PasrWatch.app in Embed Watch Content */ = {{isa = PBXBuildFile; fileRef = {I['p.watch']} /* PasrWatch.app */; platformFilter = ios; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
+\t\t{I['bf.embedwidgets']} /* PasrWidgets.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {I['p.widgets']} /* PasrWidgets.appex */; platformFilter = ios; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -181,6 +204,13 @@ def build():
 \t\t\tproxyType = 1;
 \t\t\tremoteGlobalIDString = {I['t.watch']};
 \t\t\tremoteInfo = PasrWatch;
+\t\t}};
+\t\t{I['proxy.widgets']} /* PBXContainerItemProxy */ = {{
+\t\t\tisa = PBXContainerItemProxy;
+\t\t\tcontainerPortal = {I['project']} /* Project object */;
+\t\t\tproxyType = 1;
+\t\t\tremoteGlobalIDString = {I['t.widgets']};
+\t\t\tremoteInfo = PasrWidgets;
 \t\t}};
 /* End PBXContainerItemProxy section */
 
@@ -196,18 +226,30 @@ def build():
 \t\t\tname = "Embed Watch Content";
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};
+\t\t{I['app.embedext']} /* Embed Foundation Extensions */ = {{
+\t\t\tisa = PBXCopyFilesBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tdstPath = "";
+\t\t\tdstSubfolderSpec = 13;
+\t\t\tfiles = (
+\t\t\t\t{I['bf.embedwidgets']} /* PasrWidgets.appex in Embed Foundation Extensions */,
+\t\t\t);
+\t\t\tname = "Embed Foundation Extensions";
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t}};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 \t\t{I['p.app']} /* Pasr.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pasr.app; sourceTree = BUILT_PRODUCTS_DIR; }};
 \t\t{I['p.watch']} /* PasrWatch.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PasrWatch.app; sourceTree = BUILT_PRODUCTS_DIR; }};
+\t\t{I['p.widgets']} /* PasrWidgets.appex */ = {{isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PasrWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; }};
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-{sync('g.app', 'App')}{sync('g.shared', 'Shared')}{sync('g.watch', 'Watch')}/* End PBXFileSystemSynchronizedRootGroup section */
+{sync('g.app', 'App')}{sync('g.shared', 'Shared')}{sync('g.watch', 'Watch')}{sync('g.widgets', 'Widgets')}/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-{phase('PBXFrameworksBuildPhase', 'app.frameworks')}{phase('PBXFrameworksBuildPhase', 'watch.frameworks')}/* End PBXFrameworksBuildPhase section */
+{phase('PBXFrameworksBuildPhase', 'app.frameworks')}{phase('PBXFrameworksBuildPhase', 'watch.frameworks')}{phase('PBXFrameworksBuildPhase', 'widgets.frameworks')}/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 \t\t{I['main']} = {{
@@ -216,6 +258,7 @@ def build():
 \t\t\t\t{I['g.app']} /* App */,
 \t\t\t\t{I['g.shared']} /* Shared */,
 \t\t\t\t{I['g.watch']} /* Watch */,
+\t\t\t\t{I['g.widgets']} /* Widgets */,
 \t\t\t\t{I['products']} /* Products */,
 \t\t\t);
 \t\t\tsourceTree = "<group>";
@@ -225,6 +268,7 @@ def build():
 \t\t\tchildren = (
 \t\t\t\t{I['p.app']} /* Pasr.app */,
 \t\t\t\t{I['p.watch']} /* PasrWatch.app */,
+\t\t\t\t{I['p.widgets']} /* PasrWidgets.appex */,
 \t\t\t);
 \t\t\tname = Products;
 \t\t\tsourceTree = "<group>";
@@ -240,11 +284,13 @@ def build():
 \t\t\t\t{I['app.frameworks']} /* Frameworks */,
 \t\t\t\t{I['app.resources']} /* Resources */,
 \t\t\t\t{I['app.embed']} /* Embed Watch Content */,
+\t\t\t\t{I['app.embedext']} /* Embed Foundation Extensions */,
 \t\t\t);
 \t\t\tbuildRules = (
 \t\t\t);
 \t\t\tdependencies = (
 \t\t\t\t{I['dep.watch']} /* PBXTargetDependency */,
+\t\t\t\t{I['dep.widgets']} /* PBXTargetDependency */,
 \t\t\t);
 \t\t\tfileSystemSynchronizedGroups = (
 \t\t\t\t{I['g.app']} /* App */,
@@ -280,6 +326,29 @@ def build():
 \t\t\tproductReference = {I['p.watch']} /* PasrWatch.app */;
 \t\t\tproductType = "com.apple.product-type.application";
 \t\t}};
+\t\t{I['t.widgets']} /* PasrWidgets */ = {{
+\t\t\tisa = PBXNativeTarget;
+\t\t\tbuildConfigurationList = {I['cl.widgets']} /* Build configuration list for PBXNativeTarget "PasrWidgets" */;
+\t\t\tbuildPhases = (
+\t\t\t\t{I['widgets.sources']} /* Sources */,
+\t\t\t\t{I['widgets.frameworks']} /* Frameworks */,
+\t\t\t\t{I['widgets.resources']} /* Resources */,
+\t\t\t);
+\t\t\tbuildRules = (
+\t\t\t);
+\t\t\tdependencies = (
+\t\t\t);
+\t\t\tfileSystemSynchronizedGroups = (
+\t\t\t\t{I['g.shared']} /* Shared */,
+\t\t\t\t{I['g.widgets']} /* Widgets */,
+\t\t\t);
+\t\t\tname = PasrWidgets;
+\t\t\tpackageProductDependencies = (
+\t\t\t);
+\t\t\tproductName = PasrWidgets;
+\t\t\tproductReference = {I['p.widgets']} /* PasrWidgets.appex */;
+\t\t\tproductType = "com.apple.product-type.app-extension";
+\t\t}};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -294,6 +363,9 @@ def build():
 \t\t\t\t\t\tCreatedOnToolsVersion = 26.0;
 \t\t\t\t\t}};
 \t\t\t\t\t{I['t.watch']} = {{
+\t\t\t\t\t\tCreatedOnToolsVersion = 26.0;
+\t\t\t\t\t}};
+\t\t\t\t\t{I['t.widgets']} = {{
 \t\t\t\t\t\tCreatedOnToolsVersion = 26.0;
 \t\t\t\t\t}};
 \t\t\t\t}};
@@ -314,15 +386,16 @@ def build():
 \t\t\ttargets = (
 \t\t\t\t{I['t.app']} /* Pasr */,
 \t\t\t\t{I['t.watch']} /* PasrWatch */,
+\t\t\t\t{I['t.widgets']} /* PasrWidgets */,
 \t\t\t);
 \t\t}};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-{phase('PBXResourcesBuildPhase', 'app.resources')}{phase('PBXResourcesBuildPhase', 'watch.resources')}/* End PBXResourcesBuildPhase section */
+{phase('PBXResourcesBuildPhase', 'app.resources')}{phase('PBXResourcesBuildPhase', 'watch.resources')}{phase('PBXResourcesBuildPhase', 'widgets.resources')}/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-{phase('PBXSourcesBuildPhase', 'app.sources')}{phase('PBXSourcesBuildPhase', 'watch.sources')}/* End PBXSourcesBuildPhase section */
+{phase('PBXSourcesBuildPhase', 'app.sources')}{phase('PBXSourcesBuildPhase', 'watch.sources')}{phase('PBXSourcesBuildPhase', 'widgets.sources')}/* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 \t\t{I['dep.watch']} /* PBXTargetDependency */ = {{
@@ -331,13 +404,19 @@ def build():
 \t\t\ttarget = {I['t.watch']} /* PasrWatch */;
 \t\t\ttargetProxy = {I['proxy.watch']} /* PBXContainerItemProxy */;
 \t\t}};
+\t\t{I['dep.widgets']} /* PBXTargetDependency */ = {{
+\t\t\tisa = PBXTargetDependency;
+\t\t\tplatformFilter = ios;
+\t\t\ttarget = {I['t.widgets']} /* PasrWidgets */;
+\t\t\ttargetProxy = {I['proxy.widgets']} /* PBXContainerItemProxy */;
+\t\t}};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-{config('c.project.debug', 'Debug', PROJECT_DEBUG)}{config('c.project.release', 'Release', PROJECT_RELEASE)}{config('c.app.debug', 'Debug', APP)}{config('c.app.release', 'Release', APP)}{config('c.watch.debug', 'Debug', WATCH)}{config('c.watch.release', 'Release', WATCH)}/* End XCBuildConfiguration section */
+{config('c.project.debug', 'Debug', PROJECT_DEBUG)}{config('c.project.release', 'Release', PROJECT_RELEASE)}{config('c.app.debug', 'Debug', APP)}{config('c.app.release', 'Release', APP)}{config('c.watch.debug', 'Debug', WATCH)}{config('c.watch.release', 'Release', WATCH)}{config('c.widgets.debug', 'Debug', WIDGETS)}{config('c.widgets.release', 'Release', WIDGETS)}/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-{config_list('cl.project', 'c.project.debug', 'c.project.release', 'Build configuration list for PBXProject "Pasr"')}{config_list('cl.app', 'c.app.debug', 'c.app.release', 'Build configuration list for PBXNativeTarget "Pasr"')}{config_list('cl.watch', 'c.watch.debug', 'c.watch.release', 'Build configuration list for PBXNativeTarget "PasrWatch"')}/* End XCConfigurationList section */
+{config_list('cl.project', 'c.project.debug', 'c.project.release', 'Build configuration list for PBXProject "Pasr"')}{config_list('cl.app', 'c.app.debug', 'c.app.release', 'Build configuration list for PBXNativeTarget "Pasr"')}{config_list('cl.watch', 'c.watch.debug', 'c.watch.release', 'Build configuration list for PBXNativeTarget "PasrWatch"')}{config_list('cl.widgets', 'c.widgets.debug', 'c.widgets.release', 'Build configuration list for PBXNativeTarget "PasrWidgets"')}/* End XCConfigurationList section */
 \t}};
 \trootObject = {I['project']} /* Project object */;
 }}

@@ -20,11 +20,23 @@ Pasr is alleen voor Nederland: de app is volledig Nederlandstalig en de winkelsj
 | --- | --- |
 | `App/` | App voor iPhone, iPad en Mac: splash, Wallet-stapel, editor, scanner, import van screenshots, instellingen |
 | `Watch/` | Watch-app: kaarten in Wallet-stijl en de code op het hele scherm |
+| `Widgets/` | Widgets: Favorieten (raster met je favoriete kaarten) en Kaart (één gekozen kaart met barcode, ook op het toegangsscherm) |
+| `website/` | De website pasr.nl (statisch, Nederlands) |
 | `Shared/` | Datamodel (SwiftData + CloudKit), barcode-encoders, kaartweergave, winkelsjablonen, vertalingen |
 | `Config/` | Info.plist en entitlements |
 | `tools/` | Scripts voor het projectbestand, het app-icoon en de barcodetest |
 
 De mappen `App/`, `Shared/` en `Watch/` zijn gesynchroniseerde mappen: nieuwe bestanden horen automatisch bij de juiste target.
+
+## Widgets
+
+De app schrijft na elke wijziging een overzicht van je kaarten naar de App Group `group.nl.lrvdlinden.pasr`; de widgets lezen dat. Een tik op een kaart opent Pasr via `pasr://card/<id>` en haalt die kaart naar voren.
+
+## Website
+
+De site staat in `website/` en heeft schone adressen (`/privacy/`, `/support/`, geen `.html`). De homepage wordt gemaakt met `python3 tools/make_website.py` (met echte barcodes voor de voorbeeldkaarten).
+
+Publiceren gaat via FTP met de workflow **Website** (`.github/workflows/website.yml`) bij elke push naar `main` die `website/` wijzigt. Zet hiervoor deze repository-secrets: `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` en eventueel `FTP_DIR`. Zolang `FTP_SERVER` ontbreekt, slaat de workflow het uploaden over.
 
 ## Logo's
 

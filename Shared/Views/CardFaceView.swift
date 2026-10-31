@@ -63,7 +63,8 @@ struct CardAppearance: Equatable {
     }
 }
 
-/// A card drawn like a pass in Apple Wallet, with its barcode or QR code on the front.
+/// A card drawn like a pass in Apple Wallet. With `showsCode` it is the back, with the barcode or QR code;
+/// without it, the front with logo, name and number.
 struct CardFaceView: View {
     let appearance: CardAppearance
     /// Off for tiny previews where a code would be unreadable anyway.
@@ -91,6 +92,7 @@ struct CardFaceView: View {
                     codePanel
                 } else {
                     Spacer(minLength: 0)
+                    frontFooter
                 }
             }
             .padding(14)
@@ -114,6 +116,27 @@ struct CardFaceView: View {
             parts.append(String(localized: "geldig tot \(expires.formatted(date: .abbreviated, time: .omitted))"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// Front side: the number in print, like on the real card.
+    private var frontFooter: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(appearance.kind == .voucher ? String(localized: "Kaartnummer") : String(localized: "Nummer"))
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                    .opacity(0.7)
+                Text(appearance.isLocked ? "•••• ••••" : appearance.groupedNumber)
+                    .font(.system(.subheadline, design: .monospaced).weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            Spacer()
+            Image(systemName: appearance.isLocked ? "lock.fill" : "arrow.triangle.2.circlepath")
+                .font(.footnote.weight(.semibold))
+                .opacity(0.6)
+        }
     }
 
     private var lockedPanel: some View {

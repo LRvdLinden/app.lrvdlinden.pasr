@@ -1,0 +1,22 @@
+# Always HTTPS and without www
+RewriteEngine On
+RewriteCond %{HTTPS} off [OR]
+RewriteCond %{HTTP_HOST} ^www\. [NC]
+RewriteRule ^ https://pasr.nl%{REQUEST_URI} [L,R=301]
+
+# No .html in addresses: /support.html and /support/index.html go to /support/
+RewriteCond %{THE_REQUEST} \s/+(.+?)(?:/index)?\.html[\s?] [NC]
+RewriteRule ^ /%1/ [L,R=301]
+RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+RewriteRule ^ / [L,R=301]
+
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  <FilesMatch "\.(png|jpg|svg|css|js)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>

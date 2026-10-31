@@ -28,10 +28,11 @@ struct RootView: View {
     @State private var showSplash = true
     @State private var locked = Biometrics.isAppLockEnabled
     @State private var covered = false
+    @State private var openCardID: UUID?
 
     var body: some View {
         ZStack {
-            WalletView()
+            WalletView(openCardID: $openCardID)
                 .opacity(showSplash || locked ? 0 : 1)
             if locked && !showSplash {
                 LockView { withAnimation(.easeOut(duration: 0.25)) { locked = false } }
@@ -54,6 +55,9 @@ struct RootView: View {
             }
         }
         .background(Brand.ink.ignoresSafeArea())
+        .onOpenURL { url in
+            if let id = DeepLink.cardID(from: url) { openCardID = id }
+        }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:

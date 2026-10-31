@@ -1,16 +1,24 @@
 import SwiftUI
 import SwiftData
 
-/// The home screen: cards stacked like Apple Wallet. Every card carries its code on the front;
-/// tapping one brings it forward to the middle of the screen, larger and fully bright.
+/// The home screen: cards stacked like Apple Wallet. Tapping one brings it forward, larger and
+/// fully bright, and turns it over to show the barcode or QR code on the back.
 struct WalletView: View {
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
+    /// Set by a widget tap; the card is brought forward and the value cleared.
+    @Binding var openCardID: UUID?
+
+    init(openCardID: Binding<UUID?>) {
+        _openCardID = openCardID
+    }
 
     @State private var selectedID: UUID?
     @State private var search = ""
     @State private var sheet: Sheet?
     @State private var deleting: Card?
+    /// 0 = front, 180 = back with the code.
+    @State private var flipAngle: Double = 0
     @Namespace private var namespace
 
     private let peek: CGFloat = 62
@@ -83,6 +91,16 @@ struct WalletView: View {
             if newValue != nil { ScreenBrightness.boost() } else { ScreenBrightness.restore() }
         }
         .onDisappear { ScreenBrightness.restore() }
+        .task(id: WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
+        .onChange(of: openCardID, initial: true) { _, id in openRequestedCard(id) }
+        .onChange(of: cards.count) { _, _ in openRequestedCard(openCardID) }
+    }
+
+    private func openRequestedCard(_ id: UUID?) {
+        guard let id, let card = cards.first(where: { $0.id == id }) else { return }
+        openCardID = nil
+        sheet = nil
+        if selectedID != id { select(card) }
     }
 
     // MARK: Stack
@@ -97,7 +115,7 @@ struct WalletView: View {
                         if selectedID == card.id {
                             Color.clear
                         } else {
-                            CardFaceView(appearance: CardAppearance(card))
+                            CardFaceView(appearance: CardAppearance(card), showsCode: false)
                                 .matchedGeometryEffect(id: card.id, in: namespace)
                         }
                     }
@@ -140,7 +158,7 @@ struct WalletView: View {
                 .transition(.opacity)
 
             VStack(spacing: 22) {
-                CardFaceView(appearance: CardAppearance(card), revealed: true, cornerRadius: 22)
+                FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
                     .frame(width: width, height: width / Brand.cardAspect)
                     .matchedGeometryEffect(id: card.id, in: namespace)
                     .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
@@ -193,11 +211,19 @@ struct WalletView: View {
 
     private func bringForward(_ card: Card) {
         card.markUsed()
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) { selectedID = card.id }
+        flipAngle = 0
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
+        // Once it's in front, turn it over to show the code.
+        withAnimation(.spring(response: 0.62, dampingFraction: 0.78).delay(0.28)) { flipAngle = 180 }
     }
 
     private func deselect() {
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
+        guard selectedID != nil else { return }
+        withAnimation(.easeInOut(duration: 0.32)) { flipAngle = 0 }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
+        }
     }
 
     // MARK: Empty state and toolbar
