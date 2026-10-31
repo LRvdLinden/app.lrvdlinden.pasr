@@ -1,3 +1,4 @@
+# BEGIN pasr
 # Always HTTPS and without www
 RewriteEngine On
 RewriteCond %{HTTPS} off [OR]
@@ -25,3 +26,4 @@ ErrorDocument 404 /404.html
 <Files "apple-app-site-association">
   ForceType application/json
 </Files>
+# END pasr
