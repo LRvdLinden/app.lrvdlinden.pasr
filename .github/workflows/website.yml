@@ -80,7 +80,7 @@ jobs:
                 if cert_ok "$n"; then HOST="$n"; break; fi
               done
             fi
-            [ -n "$HOST" ] || { note "No valid FTPS certificate found for FTP_SERVER on port $PORT. Set FTP_SERVER to the host name on the hosting certificate."; exit 1; }
+            [ -n "$HOST" ] || { note "No valid FTPS certificate found for FTP_SERVER on port $PORT. The server's certificate is for: $(echo $names | tr '\n' ' ')${ptr:+ (reverse DNS: $ptr)}. Set the secret FTP_SERVER to one of those names (the one your hosting gives for FTP)."; exit 1; }
             [ "$PORT" = "990" ] && HOST="ftps://$HOST"
           fi
           run(){ lftp -e "$common; open -p $PORT --env-password -u \"$FTP_USERNAME\" \"$HOST\"; $1; bye"; }
