@@ -161,6 +161,8 @@ jobs:
         if: steps.check.outputs.skip != '1'
         env:
           PK: ${{ secrets.PASR_SUPABASE_KEY }}
+          A_USER: ${{ secrets.PASR_ADMIN_USER }}
+          A_PASS: ${{ secrets.PASR_ADMIN_PASSWORD }}
         run: |
           U="https://$REF.supabase.co/functions/v1"
           sleep 5
@@ -178,3 +180,14 @@ jobs:
             503) echo "::warning::Admin: function is up but PASR_ADMIN_USER / PASR_ADMIN_PASSWORD are not set." ;;
             *) echo "::warning::Admin: unexpected HTTP $code" ;;
           esac
+          # Inloggen met de secrets zelf (niets ervan in het log): klopt de login die in GitHub staat?
+          if [ -n "$A_USER" ] && [ -n "$A_PASS" ]; then
+            python3 -c 'import json,os;print(json.dumps({"action":"login","user":os.environ["A_USER"].strip(),"password":os.environ["A_PASS"]}))' > /tmp/l.json
+            code=$(curl -s -o /tmp/l.out -w '%{http_code}' -X POST "$U/admin" -H "Content-Type: application/json" --data @/tmp/l.json)
+            rm -f /tmp/l.json
+            case "$code" in
+              200) echo "::notice::Admin: login with PASR_ADMIN_USER / PASR_ADMIN_PASSWORD works (user has ${#A_USER} characters, password ${#A_PASS})." ;;
+              429) echo "::warning::Admin: login is locked for 15 minutes after too many wrong attempts." ;;
+              *) echo "::warning::Admin: login with the GitHub secrets failed (HTTP $code, $(python3 -c 'import json;print(json.load(open("/tmp/l.out")).get("error",""))' 2>/dev/null))." ;;
+            esac
+          fi
