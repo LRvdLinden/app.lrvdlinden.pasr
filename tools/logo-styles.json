@@ -90,6 +90,9 @@
  "burgerking.nl": {},
  "burgerszoo.nl": {},
  "c-and-a.com": {},
+ "carwashkleiboer.nl": {
+  "src": "https://www.carwashkleiboer.nl/here/wp-content/uploads/2024/08/carwash-kleiboer-logo-wit.svg"
+ },
  "casashops.com": {
   "bg": "#97C000"
  },
@@ -149,9 +152,11 @@
   "opaque": true
  },
  "discus.nl": {
-  "bg": "#09A13B"
+  "src": "https://www.discus.nl/image/logo/6ab9ff80-de7a-11e7-8c26-88a08bd89a7b?rev=1793442265&extension=png"
  },
- "dominos.nl": {},
+ "dominos.nl": {
+  "src": "File:Domino's pizza logo.svg"
+ },
  "donner.nl": {},
  "douglas.nl": {
   "src": "File:Douglas Logo 06.2018.svg"
@@ -384,7 +389,8 @@
  },
  "nettorama.nl": {},
  "newyorkpizza.nl": {
-  "bg": "#FFFFFF"
+  "bg": "#FFFFFF",
+  "src": "site"
  },
  "nintendo.com": {
   "bg": "#E60012"
@@ -408,7 +414,8 @@
  },
  "pearle.nl": {},
  "petsplace.nl": {
-  "bg": "#FFFFFF"
+  "bg": "#DD0611",
+  "src": "https://www.petsplace.nl/static/version1792483315/frontend/ISM/ijsvogel/nl_NL/images/logo.svg"
  },
  "picnic.app": {
   "bg": "#E40613",
@@ -449,6 +456,9 @@
  },
  "ranzijn.nl": {},
  "readshop.nl": {},
+ "restaurantorange.nl": {
+  "src": "https://www.restaurantorange.nl/wp-content/uploads/2018/12/orange-logo.svg"
+ },
  "rijksmuseum.nl": {
   "bg": "#000000"
  },
@@ -483,6 +493,9 @@
  },
  "sephora.nl": {
   "src": "File:Sephora logo.svg"
+ },
+ "shabushabu.nl": {
+  "src": "File:Shabu Shabu Logo.png"
  },
  "shell.nl": {
   "src": "File:Logo Shell 1973.jpg"
