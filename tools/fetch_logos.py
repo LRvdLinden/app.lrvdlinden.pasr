@@ -170,6 +170,23 @@ def square(img):
 SKIP_SITE = {"aktiesport.nl", "perrysport.nl", "sportsdirect.com"}
 
 
+def flatten(img):
+    """Give see-through logos a backing, so they stay visible on any card colour:
+    white behind dark logos, near-black behind light ones."""
+    img = img.convert("RGBA")
+    alpha = img.getchannel("A")
+    clear = sum(1 for a in alpha.tobytes() if a < 250)
+    if clear < img.width * img.height * 0.05:
+        return img
+    px = [p for p in img.getdata() if p[3] > 128]
+    lum = sum(0.2126 * r + 0.7152 * g + 0.0722 * b for r, g, b, _ in px) / max(len(px), 1) / 255
+    bg = Image.new("RGBA", img.size, (255, 255, 255, 255) if lum < 0.62 else (28, 28, 30, 255))
+    # A little margin so the logo doesn't touch the rounded corners.
+    inner = img.resize((int(img.width * 0.84), int(img.height * 0.84)), Image.LANCZOS)
+    bg.paste(inner, ((img.width - inner.width) // 2, (img.height - inner.height) // 2), inner)
+    return bg
+
+
 def fetch(domain):
     candidates = []
     for home in () if domain in SKIP_SITE else (f"https://www.{domain}/", f"https://{domain}/"):
@@ -195,13 +212,13 @@ def fetch(domain):
     img = wikidata_logo(domain)
     if img:
         return img
+    if domain in SKIP_SITE:
+        return None
     for url in (f"https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL"
                 f"&url=https://www.{domain}&size=256",
                 f"https://www.google.com/s2/favicons?domain={domain}&sz=256",
                 f"https://icons.duckduckgo.com/ip3/{domain}.ico",
                 f"https://www.{domain}/favicon.ico"):
-        if domain in SKIP_SITE and domain in url and "gstatic" not in url and "google" not in url:
-            continue
         img = load(url, 48)
         if img:
             return square(img)
@@ -213,6 +230,10 @@ def main():
     redo = "--all" in sys.argv
     only = [a for a in sys.argv[1:] if not a.startswith("--")]
     todo = only or [d for d in domains() if redo or not (OUT / f"{d}.png").exists()]
+    if "--flatten" in sys.argv:  # re-process the files that are already there
+        for f in OUT.glob("*.png"):
+            flatten(Image.open(f)).save(f, optimize=True)
+        return
     if DEBUG:
         for d in todo:
             print(d); fetch(d)
@@ -222,7 +243,7 @@ def main():
     def work(d):
         img = fetch(d)
         if img:
-            img.save(OUT / f"{d}.png", optimize=True)
+            flatten(img).save(OUT / f"{d}.png", optimize=True)
             return d, True
         return d, False
 
