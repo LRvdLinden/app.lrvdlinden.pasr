@@ -34,7 +34,8 @@ def main():
     result, rows = {}, []
     for domain, name in brands:
         cands = search(name)
-        result[domain] = [c["title"] for c in cands]
+        if cands or domain not in result:
+            result[domain] = [c["title"] for c in cands]
         imgs = []
         for c in cands:
             try:
