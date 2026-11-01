@@ -54,6 +54,10 @@ Instellen:
 3. Repository-secrets: `PASS_CERT_P12` (`base64 -i Pasr.p12 | pbcopy`), `PASS_CERT_PASSWORD`, optioneel `PASS_TYPE_ID`.
 4. Draai Actions › Backend. De knop verschijnt in de app zodra `AccountConfig` is ingevuld.
 
+## Pasr Beheer
+
+Dashboard op beheer.pasr.nl en de app Pasr Beheer (iPhone, iPad, Mac): zie [`beheer/README.md`](beheer/README.md).
+
 ## Logo's
 
 Pasr levert geen logo's van winkels mee. Er zijn twee manieren om er een op een kaart te krijgen:

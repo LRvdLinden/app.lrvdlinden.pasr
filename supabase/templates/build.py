@@ -62,7 +62,8 @@ TEMPLATES = {
 def mail(t):
     link = f"{SITE}/bevestigen/?token_hash={{{{ .TokenHash }}}}&amp;type={t['type']}"
     logo = (f'<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>'
-            f'<td style="width:34px;height:22px;background:{IRIS};border-radius:6px;font-size:0;line-height:0">&nbsp;</td>'
+            f'<td style="width:40px;vertical-align:middle"><img src="{SITE}/assets/mail-icon.png" width="40" height="40" alt="Pasr" '
+            f'style="display:block;width:40px;height:40px;border:0;border-radius:9px;color:#ffffff;font-size:12px"></td>'
             f'<td style="padding-left:10px;font-size:26px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;font-family:{FONT}">pasr</td>'
             f'</tr></table>')
     return f"""<!doctype html>

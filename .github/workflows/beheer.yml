@@ -130,7 +130,6 @@ jobs:
           run "put beheer/web/.htaccess -o \"$TARGET/.htaccess\""
           code=$(curl -s -o /dev/null -w '%{http_code}' https://beheer.pasr.nl/ || true)
           note "Dashboard uploaded (port $PORT, certificate checked). https://beheer.pasr.nl answers HTTP ${code:-?}."
-          note "Website uploaded (port $PORT) to ${FTP_DIR:+the FTP_DIR folder}${FTP_DIR:-$TARGET} on the server (certificate checked)."
       - name: Report on the commit
         if: always()
         env:
