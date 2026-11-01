@@ -217,7 +217,8 @@ Deno.serve(async (req) => {
       }
       const key = tokenSecret();
       const [u, p] = await Promise.all([
-        sameSecret(typeof body.user === "string" ? body.user.trim() : body.user, env("PASR_ADMIN_USER"), key),
+        // gebruikersnaam zonder verschil tussen hoofdletters en kleine letters
+        sameSecret(typeof body.user === "string" ? body.user.trim().toLowerCase() : body.user, env("PASR_ADMIN_USER").toLowerCase(), key),
         // regeleinden aan het eind van een geplakt secret tellen niet mee
         sameSecret(typeof body.password === "string" ? body.password.replace(/[\r\n]+$/, "") : body.password,
           (Deno.env.get("PASR_ADMIN_PASSWORD") ?? "").replace(/[\r\n]+$/, ""), key),
