@@ -90,8 +90,11 @@ struct AddCardView: View {
             ZStack(alignment: .bottomLeading) {
                 shape.fill(Color(hex: colorHex))
                 if let domain {
-                    StoreLogoView(domain: domain, height: 40, maxWidth: 110)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // Like SuperCards: the logo big in the middle of the brand colour.
+                    GeometryReader { geo in
+                        StoreLogoView(domain: domain, height: geo.size.height * 0.46, maxWidth: geo.size.width * 0.66)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 }
                 if let symbol {
                     Image(systemName: symbol)

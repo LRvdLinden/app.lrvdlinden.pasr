@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><title>Pasr · Je inloglink</title></head>
+<body style="margin:0;padding:0;background:#0A0B10">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0A0B10">Inloggen bij Pasr</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0A0B10" style="background:#0A0B10"><tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<tr><td style="padding:0 4px 22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="vertical-align:middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:34px;height:22px;background:#6A5CFF;border-radius:6px;font-size:0;line-height:0">&nbsp;</td><td style="padding-left:10px;font-size:26px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">pasr</td></tr></table></td>
+<td align="right" style="vertical-align:middle;font-size:13px;font-weight:700;color:#9A9DAB;letter-spacing:.3px">Inloggen</td>
+</tr></table></td></tr>
+<tr><td bgcolor="#15171F" style="background:#15171F;border-radius:18px;padding:32px 30px 30px">
+<div style="height:6px;width:64px;border-radius:3px;background:#6A5CFF;font-size:0;line-height:0;margin:0 0 22px">&nbsp;</div>
+<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;font-weight:800;color:#ffffff">Inloggen bij Pasr</h1>
+{{ if .Data.first_name }}<p style="margin:0 0 12px;font-size:15px;line-height:23px;font-weight:600;color:#ffffff">Hoi {{ .Data.first_name }},</p>{{ end }}
+<p style="margin:0;font-size:15px;line-height:23px;color:#E9EAF0">Tik op de knop om in te loggen bij je Pasr-account. De link werkt één keer en is een uur geldig.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0"><tr><td align="center" bgcolor="#6A5CFF" style="border-radius:12px;background:#6A5CFF">
+<a href="https://pasr.nl/bevestigen/?token_hash={{ .TokenHash }}&amp;type=magiclink" style="display:inline-block;padding:14px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:20px;color:#ffffff;text-decoration:none;border-radius:12px">Inloggen</a></td></tr></table>
+<p style="margin:22px 0 0;font-size:13px;line-height:20px;color:#9A9DAB">Werkt de knop niet? Kopieer dan deze link in je browser:<br>
+<a href="https://pasr.nl/bevestigen/?token_hash={{ .TokenHash }}&amp;type=magiclink" style="color:#6A5CFF;word-break:break-all">https://pasr.nl/bevestigen/?token_hash={{ .TokenHash }}&amp;type=magiclink</a></p>
+<div style="height:1px;background:#262935;margin:24px 0 18px;font-size:0;line-height:0">&nbsp;</div>
+<p style="margin:0;font-size:13px;line-height:20px;color:#9A9DAB">Heb jij niet gevraagd om in te loggen? Dan kun je deze mail negeren.</p>
+</td></tr>
+<tr><td style="padding:22px 6px 0;font-size:12px;line-height:18px;color:#9A9DAB">
+Je krijgt deze mail omdat dit e-mailadres is gebruikt voor een Pasr-account. Pasr is de gratis app voor je klantenkaarten en vouchers.<br>
+<a href="https://pasr.nl" style="color:#9A9DAB">pasr.nl</a> · <a href="https://pasr.nl/privacy/" style="color:#9A9DAB">Privacy</a> · <a href="https://pasr.nl/support/" style="color:#9A9DAB">Hulp</a>
+</td></tr>
+</table></td></tr></table>
+</body></html>

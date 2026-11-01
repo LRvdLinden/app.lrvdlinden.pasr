@@ -3,9 +3,9 @@
 Shared/StoreLogos/<domain>.png. Runs in GitHub Actions (Actions › Logos),
 because that machine can reach the store websites.
 
-Order per store: the icon the home page or its web manifest declares (apple-touch-icon first,
-largest first), the usual /apple-touch-icon.png, the store's logo on Wikidata/Wikimedia Commons
-(on a white tile), and finally a small site icon via Google's favicon service.
+Order per store: the store's full logo on Wikidata/Wikimedia Commons (the wordmark, like SuperCards
+shows it), then the icon the home page or its web manifest declares (apple-touch-icon first, largest
+first), the usual /apple-touch-icon.png, and finally a small site icon via Google's favicon service.
 Then each logo is cleaned up like the cards in SuperCards: the icon's background colour is made
 transparent and cropped away, leaving the logo itself as a PNG. That background colour (when it is a
 real brand colour) becomes the card colour. Shared/Model/StoreLogoStyles.swift gets, per store, the
@@ -322,6 +322,11 @@ def save_logo(domain, img, metas):
 
 
 def fetch(domain):
+    # 1. The full logo (wordmark) on Wikidata/Wikimedia Commons: sharp and complete, like SuperCards shows it.
+    img = wikidata_logo(domain)
+    if img:
+        return img
+    # 2. Otherwise the icon the store publishes on its website.
     candidates = []
     for home in () if domain in SKIP_SITE else (f"https://www.{domain}/", f"https://{domain}/"):
         try:
@@ -342,10 +347,7 @@ def fetch(domain):
         img = load(url, 96)
         if img:
             return square(img)
-    # The logo on Wikidata (sharp, any size), then small site icons as a last resort.
-    img = wikidata_logo(domain)
-    if img:
-        return img
+    # 3. Small site icons as a last resort.
     if domain in SKIP_SITE:
         return None
     for url in (f"https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL"

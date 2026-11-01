@@ -104,11 +104,7 @@ struct CardFaceView: View {
         }
         .foregroundStyle(ink)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(.white.opacity(0.16), lineWidth: 0.75)
-        }
-        .shadow(color: .black.opacity(0.28), radius: 14, y: 8)
+        .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
         .accessibilityElement(children: .combine)
     }
 
@@ -171,34 +167,20 @@ struct CardFaceView: View {
         .background(.white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
+    /// One flat brand colour, like a real card (and like SuperCards): no gradient, no decoration.
     private var background: some View {
-        let hex = appearance.colorHex
-        return ZStack {
-            LinearGradient(colors: [Color.shade(hex, by: 0.14), Color(hex: hex), Color.shade(hex, by: -0.22)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-            // Soft rings, a quiet nod to the Pasr mark.
-            GeometryReader { geo in
-                let size = geo.size
-                Circle()
-                    .stroke(.white.opacity(0.07), lineWidth: size.width * 0.09)
-                    .frame(width: size.width * 0.9)
-                    .position(x: size.width * 0.98, y: size.height * 0.1)
-                Circle()
-                    .fill(.white.opacity(0.05))
-                    .frame(width: size.width * 0.55)
-                    .position(x: size.width * 0.05, y: size.height * 1.05)
-            }
-            LinearGradient(colors: [.white.opacity(0.16), .clear, .clear],
-                           startPoint: .topLeading, endPoint: .center)
-        }
+        Color(hex: appearance.colorHex)
     }
 
     private var header: some View {
         HStack(spacing: 10) {
             logo
-            Text(appearance.displayName)
-                .font(.system(.headline, design: .rounded).weight(.semibold))
-                .lineLimit(1)
+            // The logo says which store it is; the name only when there is no logo.
+            if appearance.logoData == nil {
+                Text(appearance.displayName)
+                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                    .lineLimit(1)
+            }
             Spacer(minLength: 4)
             if appearance.isFavorite {
                 Image(systemName: "star.fill").font(.caption).opacity(0.85)
@@ -209,12 +191,12 @@ struct CardFaceView: View {
                 .tracking(0.6)
                 .opacity(0.72)
         }
-        .frame(height: 32)
+        .frame(height: 36)
     }
 
     @ViewBuilder private var logo: some View {
         if let data = appearance.logoData {
-            StoreLogoMark(data: data, style: appearance.logoStyle, height: 32, maxWidth: 104)
+            StoreLogoMark(data: data, style: appearance.logoStyle, height: 34, maxWidth: 150)
         } else {
             Text(appearance.monogram)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
