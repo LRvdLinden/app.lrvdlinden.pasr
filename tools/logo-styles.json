@@ -12,7 +12,8 @@
   "src": "File:Air Miles.svg"
  },
  "aldi.nl": {
-  "bg": "#C80000"
+  "bg": "#FFFFFF",
+  "src": "File:Aldi Nord 201x logo.svg"
  },
  "amazon.nl": {},
  "americatoday.com": {
@@ -393,6 +394,9 @@
  },
  "playstation.com": {
   "bg": "#FFFFFF"
+ },
+ "plus.nl": {
+  "bg": "#FEFEFE"
  },
  "podiumcadeaukaart.nl": {
   "opaque": true

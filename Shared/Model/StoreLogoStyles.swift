@@ -20,7 +20,7 @@ enum StoreLogoStyles {
         "action.com": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "ah.nl": .init(card: "#00A0E2", tint: nil, plate: nil, opaque: false),
         "airmiles.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
-        "aldi.nl": .init(card: "#C80000", tint: nil, plate: nil, opaque: false),
+        "aldi.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "amazon.nl": .init(card: "#FF9900", tint: nil, plate: nil, opaque: false),
         "americatoday.com": .init(card: "#003B7E", tint: nil, plate: nil, opaque: true),
         "anwb.nl": .init(card: "#FFCC00", tint: nil, plate: nil, opaque: false),
