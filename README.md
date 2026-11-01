@@ -54,6 +54,14 @@ Instellen:
 3. Repository-secrets: `PASS_CERT_P12` (`base64 -i Pasr.p12 | pbcopy`), `PASS_CERT_PASSWORD`, optioneel `PASS_TYPE_ID`.
 4. Draai Actions › Backend. De knop verschijnt in de app zodra `AccountConfig` is ingevuld.
 
+## Beoordelingsvraag (build 21)
+
+De App Store-beoordelingsvraag (`App/Services/ReviewPrompt.swift`, via `requestReview`):
+
+- Eerste keer: 4 uur na het eerste gebruik op dat apparaat.
+- Daarna: hoogstens één keer per week opnieuw. iOS toont het venster zelf maximaal 3 keer per jaar en niet meer aan wie al heeft beoordeeld; in TestFlight verschijnt het nooit.
+- Alleen op een rustig moment: 3 seconden na het openen, niet tijdens de splash of het welkomstscherm, niet als de app vergrendeld of afgedekt is, niet tijdens het toevoegen van een gedeelde kaart, en alleen als er minstens één kaart in Pasr staat.
+
 ## Pasr Beheer
 
 Dashboard op beheer.pasr.nl en de app Pasr Beheer (iPhone, iPad, Mac): zie [`beheer/README.md`](beheer/README.md).
