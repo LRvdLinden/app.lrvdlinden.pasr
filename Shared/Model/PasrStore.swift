@@ -30,7 +30,6 @@ enum PasrStore {
     /// Pasr's files sit under iOS Data Protection: encrypted with a key tied to your passcode and the
     /// device's hardware. "Until first unlock" keeps widgets and iCloud sync working on the lock screen.
     static func protectSharedFolder() {
-        #if !os(macOS)
         let fm = FileManager.default
         var folders: [URL] = [URL.applicationSupportDirectory]
         if let group = fm.containerURL(forSecurityApplicationGroupIdentifier: appGroup) { folders.append(group) }
@@ -39,7 +38,6 @@ enum PasrStore {
             try? fm.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
                                   ofItemAtPath: folder.path)
         }
-        #endif
     }
 
     /// Permanently removes cards that have been in Recently Deleted for more than 30 days.

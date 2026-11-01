@@ -3,7 +3,7 @@ import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
 
-/// Image helpers built on ImageIO, so they behave the same on iPhone, iPad and Mac.
+/// Image helpers built on ImageIO, so they behave the same on iPhone, iPad and Apple Watch.
 enum ImageTools {
     /// Decodes image data upright (camera photos carry their rotation in EXIF), at most `maxSide` pixels.
     /// For multi-image files such as .ico it picks the largest image.

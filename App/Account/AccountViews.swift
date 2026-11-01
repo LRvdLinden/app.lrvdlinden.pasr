@@ -244,7 +244,7 @@ struct AccountSheet: View {
     }
 }
 
-/// Text content types, without importing UIKit on macOS.
+/// Text content types for the account fields.
 enum UITextContentTypeCompat { case givenName, emailAddress }
 
 private struct ContentTypeModifier: ViewModifier {

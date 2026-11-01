@@ -21,10 +21,6 @@ struct PasrApp: App {
                 }
         }
         .modelContainer(container)
-        #if os(macOS)
-        .defaultSize(width: 460, height: 820)
-        .windowResizability(.contentMinSize)
-        #endif
     }
 }
 

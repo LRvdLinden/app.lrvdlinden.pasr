@@ -1,6 +1,6 @@
 # Pasr
 
-Al je klantenkaarten en vouchers in één app, in de stijl van Apple Wallet. Voor iPhone, iPad, Mac en Apple Watch, zonder account of server: alles staat op je eigen apparaten en in je eigen iCloud.
+Al je klantenkaarten en vouchers in één app, in de stijl van Apple Wallet. Voor iPhone, iPad en Apple Watch. Alles staat op je eigen apparaten en in je eigen iCloud; een gratis Pasr-account is optioneel.
 
 Pasr is alleen voor Nederland: de app is volledig Nederlandstalig en de winkelsjablonen zijn Nederlandse winkels. Zet in App Store Connect bij *Prijzen en beschikbaarheid* alleen Nederland aan.
 
@@ -12,13 +12,13 @@ Pasr is alleen voor Nederland: de app is volledig Nederlandstalig en de winkelsj
    - App ID `nl.lrvdlinden.pasr` met iCloud (CloudKit), Push Notifications en App Groups;
    - App ID `nl.lrvdlinden.pasr.watchkitapp` met iCloud (CloudKit) en Push Notifications;
    - iCloud-container `iCloud.nl.lrvdlinden.pasr` en App Group `group.nl.lrvdlinden.pasr`.
-4. Kies het schema **Pasr** voor iPhone, iPad of *My Mac*, en **PasrWatch** voor de Watch.
+4. Kies het schema **Pasr** voor iPhone of iPad, en **PasrWatch** voor de Watch.
 
 ## Opbouw
 
 | Map | Inhoud |
 | --- | --- |
-| `App/` | App voor iPhone, iPad en Mac: splash, Wallet-stapel, editor, scanner, import van screenshots, instellingen |
+| `App/` | App voor iPhone en iPad: splash, Wallet-stapel, editor, scanner, import van screenshots, instellingen |
 | `Watch/` | Watch-app: kaarten in Wallet-stijl en de code op het hele scherm |
 | `Widgets/` | Widgets: Favorieten (raster met je favoriete kaarten) en Kaart (één gekozen kaart met barcode, ook op het toegangsscherm) |
 | `website/` | De website pasr.nl (statisch, Nederlands) |

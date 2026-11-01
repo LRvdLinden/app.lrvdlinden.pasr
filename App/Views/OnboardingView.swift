@@ -22,7 +22,7 @@ struct OnboardingView: View {
         Page(id: 1, symbol: "barcode.viewfinder", title: "Scannen en klaar",
              text: "Kies de winkel en scan de barcode. Of zet je kaarten uit Klarna of Stocard over met een paar screenshots."),
         Page(id: 2, symbol: "applewatch", title: "Altijd bij de hand",
-             text: "Bij de kassa tik je de kaart aan en draait hij om naar de barcode. Ook op je Apple Watch, in widgets en op je Mac."),
+             text: "Bij de kassa tik je de kaart aan en draait hij om naar de barcode. Ook op je Apple Watch en in widgets."),
         Page(id: 3, symbol: "lock.shield", title: "Veilig en privé",
              text: "Kaartnummers staan versleuteld. Vergrendel Pasr of losse kaarten met Face ID. Geen reclame, geen tracking."),
     ]

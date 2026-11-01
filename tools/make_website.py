@@ -71,19 +71,19 @@ FEATURES = [
     ("logo", "#1F9E6A", "Met het logo van je winkel", "Pasr haalt het icoon op van de website van de winkel. Of knip zelf een logo uit een foto van je pas."),
     ("lock", "#17162A", "Versleuteld en met Face ID", "Je kaartnummers staan versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID, of scherm alleen de code van een cadeaukaart af."),
     ("watch", "#2ED3A6", "Op je pols en je beginscherm", "Je kaarten staan als pasjes op je Apple Watch. Met de widgets heb je je favorieten, of één kaart met barcode, direct op je beginscherm."),
-    ("cloud", "#0A84FF", "Via je eigen iCloud", "Je kaarten staan op je iPhone, iPad, Mac en Watch tegelijk. Geen account, geen server van ons."),
+    ("cloud", "#0A84FF", "Via je eigen iCloud", "Je kaarten staan op je iPhone, iPad en Watch tegelijk, via je eigen iCloud of je gratis Pasr-account."),
     ("share", "#FF375F", "Kaarten delen", "Stuur een kaart naar je partner of huisgenoot. Die opent hem met één tik in zijn eigen Pasr, of scant de QR-code."),
     ("store", "#AF52DE", "Ruim 300 Nederlandse kaarten", "Van supermarkt tot tankstation, van sportschool tot dierentuin en van drogist tot cadeaukaart: kies je kaart en de kleur en het soort barcode staan goed."),
 ]
 
 FAQ = [
     ("Kost Pasr geld?", "Nee. Pasr is gratis, zonder reclame en zonder abonnement."),
-    ("Moet ik een account aanmaken?", "Nee. Je kaarten staan op je eigen apparaten en in je eigen iCloud. Wij hebben geen server waar je kaarten op staan en we kunnen ze niet zien."),
+    ("Moet ik een account aanmaken?", "Nee, dat is optioneel. Zonder account staan je kaarten op je eigen apparaten en in je eigen iCloud. Met een gratis Pasr-account staan ze versleuteld op één plek en heb je ze meteen terug op een nieuwe telefoon."),
     ("Kan ik mijn kaarten uit Klarna of Stocard overzetten?", "Ja. Maak in Klarna van elke kaart een screenshot met de barcode en kies die screenshots in Pasr, tot 50 tegelijk. Pasr leest de barcode en herkent de winkel, op je eigen telefoon."),
     ("Werkt een gescande kaart echt aan de kassa?", "Ja. Pasr tekent de barcode opnieuw in hetzelfde formaat als op je pas, zoals EAN-13, Code 128 of een QR-code, en zet je scherm op volle helderheid."),
-    ("Op welke apparaten werkt Pasr?", "Op iPhone en iPad met iOS en iPadOS 26 of nieuwer, op de Mac met macOS 26 of nieuwer en op de Apple Watch met watchOS 26 of nieuwer."),
+    ("Op welke apparaten werkt Pasr?", "Op iPhone en iPad met iOS en iPadOS 26 of nieuwer en op de Apple Watch met watchOS 26 of nieuwer."),
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Een logo kun je uitknippen uit een foto van je pas."),
-    ("Waar komen de logo's vandaan?", "Pasr levert zelf geen logo's mee. Je iPhone haalt het icoon op dat de winkel zelf op zijn website zet. Dat kun je uitzetten in de instellingen."),
+    ("Waar komen de logo's vandaan?", "De logo's van ruim 230 bekende winkels zitten in de app, in de juiste merkkleur. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
     ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
     ("Wat gebeurt er als ik mijn telefoon kwijtraak?", "Je kaarten staan in je iCloud. Log op je nieuwe iPhone in met hetzelfde Apple-account en open Pasr: je kaarten komen vanzelf terug."),
     ("Kan ik een kaart delen met mijn partner?", "Ja. Tik op Deel bij een kaart en stuur de link, of laat de ander de QR-code scannen. Wie Pasr heeft, voegt de kaart met één tik toe. Wie Pasr nog niet heeft, ziet de kaart met barcode gewoon in de browser."),
@@ -112,7 +112,7 @@ def page():
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pasr: klantenkaarten app voor iPhone en Apple Watch | Gratis Stocard-alternatief</title>
-  <meta name="description" content="Pasr bewaart al je klantenkaarten en cadeaukaarten op iPhone, iPad, Mac en Apple Watch. Gratis, zonder account en zonder reclame. Zet je kaarten in een paar minuten over uit Klarna of Stocard.">
+  <meta name="description" content="Pasr bewaart al je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Zet je kaarten in een paar minuten over uit Klarna of Stocard.">
   <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, Stocard alternatief, Klarna klantenkaarten overzetten, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="author" content="Pasr">
@@ -128,7 +128,7 @@ def page():
   <meta property="og:site_name" content="Pasr">
   <meta property="og:url" content="https://pasr.nl/">
   <meta property="og:title" content="Pasr: al je pasjes. Zonder gedoe.">
-  <meta property="og:description" content="Klantenkaarten en cadeaukaarten op iPhone, iPad, Mac en Apple Watch. Gratis en zonder account.">
+  <meta property="og:description" content="Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.">
   <meta property="og:image" content="https://pasr.nl/assets/og.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
@@ -137,7 +137,7 @@ def page():
   <meta property="og:locale" content="nl_NL">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Pasr: al je pasjes. Zonder gedoe.">
-  <meta name="twitter:description" content="Klantenkaarten en cadeaukaarten op iPhone, iPad, Mac en Apple Watch. Gratis en zonder account.">
+  <meta name="twitter:description" content="Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.">
   <meta name="twitter:image" content="https://pasr.nl/assets/og.png">
   <meta name="twitter:image:alt" content="Drie klantenkaarten in Pasr, met een barcode op de voorste kaart">
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon.png">
@@ -149,7 +149,7 @@ def page():
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl"}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
-    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 26, iPadOS 26, macOS 26, watchOS 26","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad, Mac en Apple Watch. Gratis, zonder account en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna of Stocard via screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen"],"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
+    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 26, iPadOS 26, watchOS 26","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna of Stocard via screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen"],"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
   ]}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
 </head>
@@ -170,7 +170,7 @@ def page():
     <div class="wrap hero">
       <div>
         <h1>Al je pasjes. Zonder gedoe.</h1>
-        <p class="lead">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad, Mac en Apple Watch. Geen account, geen reclame, geen betaalapp eromheen.</p>
+        <p class="lead">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
         <div class="actions">
           <a class="btn btn-primary" aria-disabled="true" role="link">{APPLE}Binnenkort in de App Store</a>
           <a class="btn btn-ghost" href="#functies">Bekijk wat Pasr kan</a>
@@ -178,7 +178,6 @@ def page():
         <ul class="platforms" aria-label="Geschikt voor">
           <li><b>iPhone</b> iOS 26+</li>
           <li><b>iPad</b> iPadOS 26+</li>
-          <li><b>Mac</b> macOS 26+</li>
           <li><b>Apple Watch</b> watchOS 26+</li>
         </ul>
       </div>
