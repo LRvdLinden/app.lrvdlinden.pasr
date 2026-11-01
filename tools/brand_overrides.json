@@ -295,14 +295,14 @@
  },
  "shabushabu.nl": {
   "file": "File:Shabu Shabu Logo.png",
-  "card": "bg"
+  "card": "#FFFFFF"
  },
  "dominos.nl": {
   "file": "File:Domino's pizza logo.svg",
   "card": "#FFFFFF"
  },
  "newyorkpizza.nl": {
-  "site": true,
+  "manual": true,
   "card": "#00843D"
  },
  "nelson.nl": {
@@ -315,7 +315,7 @@
  },
  "discus.nl": {
   "logo_url": "https://www.discus.nl/image/logo/6ab9ff80-de7a-11e7-8c26-88a08bd89a7b?rev=1793442265&extension=png",
-  "card": "bg"
+  "card": "#00A13A"
  },
  "flyingblue.com": {
   "manual": true,
