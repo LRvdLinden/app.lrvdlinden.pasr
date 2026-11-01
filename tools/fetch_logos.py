@@ -196,7 +196,7 @@ def border_colour(img):
         return None  # mostly transparent border: already a cut-out logo
     med = tuple(int(statistics.median(p[i] for p in opaque)) for i in range(3))
     near = sum(1 for p in opaque if sum(abs(p[i] - med[i]) for i in range(3)) < 45)
-    return med if near >= len(px) * 0.82 else False   # False = full-bleed artwork
+    return med if near >= len(opaque) * 0.82 else False   # False = full-bleed artwork
 
 def colour_to_alpha(img, c, lo=28, hi=90):
     out = img.copy()
@@ -360,6 +360,19 @@ def save_logo(domain, img, metas):
             clean = clean.crop(bbox)
         bg = border_colour(clean)
         meta = {"bg": hexc(bg)} if bg else {}
+        if bg and o.get("card") == "bg":
+            # The card takes the box colour, so the box itself can go: crop to what's drawn inside it.
+            w, h = clean.size
+            px = clean.load()
+            xs, ys = [], []
+            for y in range(h):
+                for x in range(w):
+                    r, g, b, a = px[x, y]
+                    if a > 128 and max(abs(r - bg[0]), abs(g - bg[1]), abs(b - bg[2])) > 60:
+                        xs.append(x); ys.append(y)
+            if xs:
+                m = int(max(w, h) * 0.03)
+                clean = clean.crop((max(min(xs) - m, 0), max(min(ys) - m, 0), min(max(xs) + m + 1, w), min(max(ys) + m + 1, h)))
         if o.get("recolour"):
             card = o.get("card") if o.get("card") not in (None, "bg") else meta.get("bg", "#000000")
             clean = recolour(clean, card, o["recolour"])
