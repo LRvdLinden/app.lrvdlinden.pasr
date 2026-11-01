@@ -157,3 +157,24 @@ jobs:
           fi
           if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$REF" "${args[@]}" >/dev/null; fi
           echo "::notice::Admin function deployed."
+      - name: Smoke test (Wallet pass and admin)
+        if: steps.check.outputs.skip != '1'
+        env:
+          PK: ${{ secrets.PASR_SUPABASE_KEY }}
+        run: |
+          U="https://$REF.supabase.co/functions/v1"
+          sleep 5
+          code=$(curl -s -o /tmp/t.pkpass -w '%{http_code}' -X POST "$U/wallet-pass" -H "apikey: $PK" -H "Content-Type: application/json" \
+            -d '{"id":"00000000-0000-4000-8000-000000000001","name":"Test","number":"2620000000000","format":"ean13","colorHex":"#00A0E2","kind":"loyalty"}')
+          if [ "$code" = 200 ] && mkdir -p /tmp/pk && unzip -oq /tmp/t.pkpass -d /tmp/pk \
+             && openssl smime -verify -binary -inform DER -in /tmp/pk/signature -content /tmp/pk/manifest.json -noverify -out /dev/null 2>/dev/null; then
+            echo "::notice::Wallet: test pass made and signed ($(openssl pkcs7 -inform DER -in /tmp/pk/signature -print_certs -noout | grep -o 'CN *= *Pass Type ID[^,]*' | head -1))."
+          else
+            echo "::warning::Wallet: test pass failed (HTTP $code). Check PASS_CERT_P12 / PASS_CERT_PASSWORD."
+          fi
+          code=$(curl -s -o /tmp/a.json -w '%{http_code}' -X POST "$U/admin" -H "Content-Type: application/json" -d '{"action":"stats"}')
+          case "$code" in
+            401) echo "::notice::Admin: function is up and asks for a login." ;;
+            503) echo "::warning::Admin: function is up but PASR_ADMIN_USER / PASR_ADMIN_PASSWORD are not set." ;;
+            *) echo "::warning::Admin: unexpected HTTP $code" ;;
+          esac
