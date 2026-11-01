@@ -192,6 +192,9 @@
 "#007F00",
 "#00843D"
 ],
+"bpfreebees": [
+"#00843D"
+],
 "brico": [
 "#E30613"
 ],
@@ -202,6 +205,9 @@
 "bristol2": [
 "#E30613",
 "#EC6707"
+],
+"britishairways": [
+"#FFFFFF"
 ],
 "broekhuis": [
 "#1A1A1A"
@@ -225,6 +231,10 @@
 ],
 "center": [
 "#00843D"
+],
+"chasin": [
+"#1A1A1A",
+"#FFFFFF"
 ],
 "cineville": [
 "#1A1A1A"
@@ -382,6 +392,9 @@
 "fun": [
 "#E6007E"
 ],
+"funzone": [
+"#E6007E"
+],
 "gall": [
 "#312F2F",
 "#7F1734"
@@ -408,6 +421,9 @@
 ],
 "groenrijk": [
 "#5A9E2F"
+],
+"gstaroutlet": [
+"#000000"
 ],
 "gulf": [
 "#F68B1F"
@@ -570,6 +586,9 @@
 ],
 "kiosk": [
 "#FFC917"
+],
+"klm": [
+"#00A1DE"
 ],
 "kruidvat": [
 "#E2001A",
@@ -828,6 +847,9 @@
 "schoonenberg": [
 "#003B7E"
 ],
+"schuurman": [
+"#1A1A1A"
+],
 "score": [
 "#1A1A1A"
 ],
@@ -839,7 +861,8 @@
 "#FFD500"
 ],
 "shoeby": [
-"#1A1A1A"
+"#1A1A1A",
+"#FFFFFF"
 ],
 "sissyboy": [
 "#1A1A1A"

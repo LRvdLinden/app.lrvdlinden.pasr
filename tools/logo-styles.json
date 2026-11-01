@@ -80,6 +80,9 @@
  "bristol.nl": {
   "src": "File:Bristol logo 02.png"
  },
+ "britishairways.com": {
+  "src": "File:BRITISH AIRWAYS logo.svg"
+ },
  "broekhuis.nl": {},
  "bruna.nl": {
   "src": "File:Bruna logo.png"
@@ -91,6 +94,10 @@
   "bg": "#97C000"
  },
  "centerparcs.nl": {},
+ "chasin.nl": {
+  "bg": "#FFFFFF",
+  "src": "site"
+ },
  "cineville.nl": {},
  "cjp.nl": {},
  "coffeecompany.nl": {
@@ -198,6 +205,12 @@
  "formido.nl": {
   "bg": "#FDDB02"
  },
+ "funzone.nl": {
+  "src": "site"
+ },
+ "g-star.com": {
+  "src": "File:G-Star Raw logo.svg"
+ },
  "gall.nl": {
   "src": "File:Logo Gall & Gall.png"
  },
@@ -281,6 +294,9 @@
   "opaque": true
  },
  "kinepolis.nl": {},
+ "klm.com": {
+  "src": "File:KLM logo.svg"
+ },
  "kruidvat.nl": {
   "bg": "#E2001A",
   "src": "File:Kruidvat logo.svg"
@@ -457,6 +473,9 @@
  "schoonenberg.nl": {
   "bg": "#FFFFFF"
  },
+ "schuurman-schoenen.nl": {
+  "src": "site"
+ },
  "sephora.nl": {
   "src": "File:Sephora logo.svg"
  },
@@ -464,7 +483,7 @@
   "src": "File:Logo Shell 1973.jpg"
  },
  "shoeby.nl": {
-  "bg": "#FFFFFF"
+  "src": "File:Shoeby-logo.svg"
  },
  "sissy-boy.com": {},
  "sligro.nl": {
@@ -497,6 +516,9 @@
   "bg": "#1C2125"
  },
  "tango.nl": {},
+ "terstal.nl": {
+  "src": "site"
+ },
  "texaco.nl": {
   "src": "File:Texaco logo.svg"
  },
@@ -576,7 +598,8 @@
   "src": "File:Zeeman logo.svg"
  },
  "ziengs.nl": {
-  "bg": "#74F58D"
+  "bg": "#74F58D",
+  "src": "site"
  },
  "zooplus.nl": {
   "opaque": true
