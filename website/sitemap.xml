@@ -16,6 +16,13 @@
     </image:image>
   </url>
   <url>
+    <loc>https://pasr.nl/account/</loc>
+    <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/account/"/>
+    <lastmod>2026-11-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://pasr.nl/support/</loc>
     <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/support/"/>
     <lastmod>2026-10-31</lastmod>

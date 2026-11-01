@@ -33,8 +33,10 @@ struct SettingsView: View {
                     }
                     LabeledContent("Kaarten", value: "\(active.count)")
                 } footer: {
-                    Text("Je kaarten staan op je apparaten en in je eigen iCloud. Pasr heeft geen account en geen server, en verzamelt geen gegevens.")
+                    Text("Je kaarten staan op je apparaten en in je eigen iCloud. Kaartnummers, pincodes en notities zijn daar end-to-end versleuteld. Pasr verzamelt geen gegevens.")
                 }
+
+                AccountSettingsSection()
 
                 Section {
                     Toggle(isOn: Binding(get: { appLock }, set: { newValue in
@@ -88,7 +90,7 @@ struct SettingsView: View {
                             Circle().fill(Color(hex: card.colorHex)).frame(width: 12, height: 12)
                             Text(card.storeName)
                             Spacer()
-                            Button("Zet terug") { card.deletedAt = nil }
+                            Button("Zet terug") { card.deletedAt = nil; card.updatedAt = .now }
                                 .buttonStyle(.borderless)
                         }
                         .swipeActions {
@@ -98,6 +100,10 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button("Welkomstscherm opnieuw bekijken") {
+                        UserDefaults.standard.set(false, forKey: "pasr.onboarded")
+                        dismiss()
+                    }
                     LabeledContent("Versie", value: Bundle.main.versionString)
                     Link("lrvdlinden.app", destination: URL(string: "https://lrvdlinden.app")!)
                 }

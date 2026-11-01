@@ -22,6 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Account settings for the website
+        env:
+          A_URL: ${{ secrets.PASR_SUPABASE_URL }}
+          A_KEY: ${{ secrets.PASR_SUPABASE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          url, key = (os.environ.get("A_URL") or "").strip().rstrip("/"), (os.environ.get("A_KEY") or "").strip()
+          open("website/assets/account-config.js", "w").write(
+              "// Written by the Website workflow (public values).\nwindow.PASR_ACCOUNT = " + json.dumps({"url": url, "key": key}) + ";\n")
+          print("Account config:", "set" if url and key else "empty (secrets PASR_SUPABASE_URL / PASR_SUPABASE_KEY missing)")
+          PY
       - name: Install lftp
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
       - name: Upload via FTPS
