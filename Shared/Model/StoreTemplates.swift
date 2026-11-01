@@ -347,6 +347,7 @@ enum StoreTemplates {
         // Uitbreiding build 11
         .init(id: "mrfillet", name: "Mr. Fillet", domain: "mr-fillet.shop", category: "Drank en eten", colorHex: "#C8102E", format: .code128, aliases: ["mr fillet", "mr. filet", "mr filet", "mister fillet"]),
         .init(id: "levis", name: "Levi's", domain: "levi.com", category: "Mode en schoenen", colorHex: "#C41230", format: .code128, aliases: ["levis", "levi strauss", "red tab"]),
+        .init(id: "bataviastad", name: "Batavia Stad Fashion Outlet", domain: "bataviastad.nl", category: "Mode en schoenen", colorHex: "#1C2B4A", format: .code128, aliases: ["batavia stad", "bataviastad", "batavia outlet", "batavia stad outlet"]),
         .init(id: "amikappers", name: "AMI Kappers", domain: "amikappers.nl", category: "Drogist en beauty", colorHex: "#1A1A1A", format: .code128, aliases: ["ami kapsalons", "ami kapper"]),
     ]
 
