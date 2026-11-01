@@ -11,6 +11,7 @@ enum WidgetSync {
         #if os(iOS)
         WatchLink.shared.send(cards)
         #endif
+        Task { await Reminders.rescheduleVouchers(cards) }
     }
 
     /// A short fingerprint of everything the widgets show, so they only reload when it changes.

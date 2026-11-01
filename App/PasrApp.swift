@@ -9,6 +9,7 @@ struct PasrApp: App {
         #if os(iOS)
         WatchLink.shared.activate()
         #endif
+        NotificationRouter.shared.activate()
     }
 
     var body: some Scene {
@@ -38,6 +39,7 @@ struct RootView: View {
         ZStack {
             WalletView(openCardID: $openCardID)
                 .accountSync()
+                .reminders()
                 .opacity(showSplash || locked || !onboarded ? 0 : 1)
             if !onboarded && !showSplash {
                 OnboardingView { withAnimation(.easeOut(duration: 0.3)) { onboarded = true } }
@@ -65,6 +67,9 @@ struct RootView: View {
             }
         }
         .background(Brand.ink.ignoresSafeArea())
+        // A tapped notification (voucher reminder or "you're at the store") opens its card.
+        .onReceive(NotificationCenter.default.publisher(for: .pasrOpenCard)) { _ in openFromNotification() }
+        .onAppear { openFromNotification() }
         .onOpenURL { url in
             if let id = DeepLink.cardID(from: url) {
                 openCardID = id
@@ -88,5 +93,13 @@ struct RootView: View {
                 break
             }
         }
+    }
+}
+
+extension RootView {
+    fileprivate func openFromNotification() {
+        guard let id = NotificationRouter.pendingCardID else { return }
+        NotificationRouter.pendingCardID = nil
+        openCardID = id
     }
 }

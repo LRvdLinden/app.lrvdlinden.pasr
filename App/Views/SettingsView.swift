@@ -38,6 +38,8 @@ struct SettingsView: View {
 
                 AccountSettingsSection()
 
+                RemindersSettingsSection()
+
                 Section {
                     Toggle(isOn: Binding(get: { appLock }, set: { newValue in
                         // Confirm with Face ID before switching the lock on or off.
