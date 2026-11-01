@@ -196,7 +196,7 @@ struct CardFaceView: View {
 
     @ViewBuilder private var logo: some View {
         if let data = appearance.logoData {
-            StoreLogoMark(data: data, style: appearance.logoStyle, height: 34, maxWidth: 150)
+            StoreLogoMark(data: data, style: appearance.logoStyle, height: 38, maxWidth: 170, alignment: .leading)
         } else {
             Text(appearance.monogram)
                 .font(.system(size: 13, weight: .bold, design: .rounded))

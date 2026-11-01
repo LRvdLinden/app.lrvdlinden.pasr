@@ -8,6 +8,8 @@ struct StoreLogoMark: View {
     var style: StoreLogoStyle?
     var height: CGFloat
     var maxWidth: CGFloat? = nil
+    /// Leading on cards (like Wallet), centred on tiles.
+    var alignment: Alignment = .center
 
     var body: some View {
         if let image = Image(data: data) {
@@ -20,7 +22,7 @@ struct StoreLogoMark: View {
                         image.resizable().scaledToFit()
                     }
                 }
-                .frame(maxWidth: width, maxHeight: height)
+                .frame(maxWidth: width, maxHeight: height, alignment: alignment)
                 if let plate = style.plate {
                     mark.padding(.horizontal, height * 0.22).padding(.vertical, height * 0.14)
                         .frame(maxHeight: height)
@@ -31,8 +33,8 @@ struct StoreLogoMark: View {
             } else {
                 // Artwork that fills its square (or the user's own logo): a neat rounded icon.
                 image.resizable().scaledToFit()
-                    .frame(maxWidth: width, maxHeight: height)
                     .clipShape(RoundedRectangle(cornerRadius: height * 0.22, style: .continuous))
+                    .frame(maxWidth: width, maxHeight: height, alignment: alignment)
             }
         }
     }
