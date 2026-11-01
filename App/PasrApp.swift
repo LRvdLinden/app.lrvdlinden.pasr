@@ -68,7 +68,7 @@ struct RootView: View {
             }
         }
         .background(Brand.ink.ignoresSafeArea())
-        // "Vind je Pasr leuk?": één keer per apparaat, een paar uur na het eerste gebruik
+        // "Vind je Pasr leuk?": eerst een paar uur na het eerste gebruik, daarna hoogstens 1 keer per week
         .reviewPrompt(ready: !showSplash && onboarded && !locked && !covered && !cards.isEmpty && incoming == nil)
         // A tapped notification (voucher reminder or "you're at the store") opens its card.
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenCard)) { _ in openFromNotification() }
