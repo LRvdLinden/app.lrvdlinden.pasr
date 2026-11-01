@@ -169,6 +169,31 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
         placesWatched = chosen.count
     }
 
+    /// Up to 10 branches of one store around you, nearest first (for the locations of an Apple Wallet pass).
+    /// Empty without location access; it never asks for it.
+    func branchesNearby(of store: String) async -> [CLLocationCoordinate2D] {
+        guard !store.isEmpty, manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways,
+              let here = await currentLocation() else { return [] }
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = store
+        request.resultTypes = .pointOfInterest
+        request.region = MKCoordinateRegion(center: here.coordinate, latitudinalMeters: 25_000, longitudinalMeters: 25_000)
+        guard let response = try? await MKLocalSearch(request: request).start() else { return [] }
+        let wanted = Self.squash(store)
+        return response.mapItems
+            .filter { item in
+                guard let name = item.name else { return false }
+                return Self.squash(name).contains(wanted) || wanted.contains(Self.squash(name))
+            }
+            .map(\.placemark.coordinate)
+            .sorted {
+                here.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude))
+                    < here.distance(from: CLLocation(latitude: $1.latitude, longitude: $1.longitude))
+            }
+            .prefix(10)
+            .map { $0 }
+    }
+
     /// "AH" and "Albert Heijn", "Kruidvat Apeldoorn" → lowercase letters and digits only.
     private static func squash(_ text: String) -> String {
         text.lowercased().filter { $0.isLetter || $0.isNumber }

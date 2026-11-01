@@ -72,7 +72,7 @@ struct ScannerSheet: View {
                         Text("Richt de camera op de barcode")
                             .font(.subheadline.weight(.medium))
                             .padding(.horizontal, 16).padding(.vertical, 10)
-                            .glassEffect()
+                            .pasrGlass()
                             .padding(.bottom, 40)
                     }
                 } else {

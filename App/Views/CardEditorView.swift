@@ -250,12 +250,12 @@ struct CardEditorView: View {
                 Button { showScanner = true } label: {
                     Label("Scan", systemImage: "barcode.viewfinder").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glass)
+                .pasrGlassButton()
                 #endif
                 PhotosPicker(selection: $codePhoto, matching: .images) {
                     Label(readingPhoto ? "Lezen…" : "Uit foto", systemImage: "photo").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glass)
+                .pasrGlassButton()
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())

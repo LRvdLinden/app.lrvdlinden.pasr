@@ -41,7 +41,7 @@ struct CardScanView: View {
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.headline).frame(width: 44, height: 44)
             }
-            .buttonStyle(.glass)
+            .pasrGlassButton()
             .padding(20)
         }
         .preferredColorScheme(.dark)
@@ -62,7 +62,7 @@ struct CardScanView: View {
                     .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             }
             .padding(.horizontal, 20).padding(.vertical, 14)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .pasrGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             .padding(.horizontal, 20)
             .padding(.bottom, 36)
         }

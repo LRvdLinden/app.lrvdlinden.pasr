@@ -28,7 +28,7 @@ struct LockView: View {
                         .frame(maxWidth: 260)
                         .padding(.vertical, 6)
                 }
-                .buttonStyle(.glassProminent)
+                .pasrGlassButton(prominent: true)
                 .tint(Brand.iris)
                 .disabled(trying)
                 .padding(.bottom, 40)

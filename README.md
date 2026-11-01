@@ -44,6 +44,16 @@ De share-afbeeldingen maak je opnieuw met `python3 tools/og/render.py` (vanuit `
 
 Publiceren gaat via FTP met de workflow **Website** (`.github/workflows/website.yml`) bij elke push naar `main` die `website/` wijzigt. Zet hiervoor deze repository-secrets: `FTP_SERVER`, `FTP_USER`, `FTP_PASSWORD` en eventueel `FTP_PORT` en `FTP_DIR`. Zolang `FTP_SERVER` ontbreekt, slaat de workflow het uploaden over.
 
+## Apple Wallet (build 17)
+
+"Voeg toe aan Apple Wallet" bij een kaart die naar voren is gehaald. De app stuurt de kaart naar de functie `supabase/functions/wallet-pass` (Supabase Edge Function), die er een `.pkpass` van maakt, ondertekent met het Pass Type ID-certificaat en direct terugstuurt. Er wordt niets bewaard. Tot 10 filialen in de buurt gaan mee als `locations`, zodat iOS de pas op het toegangsscherm toont. EAN-codes worden Code 128 (Wallet kent geen EAN).
+
+Instellen:
+1. developer.apple.com › Identifiers › + › **Pass Type IDs** › `pass.nl.lrvdlinden.pasr`.
+2. Certificaat aanmaken met een CSR uit Sleutelhangertoegang, downloaden, dubbelklikken, en in Sleutelhangertoegang exporteren als `.p12` met wachtwoord.
+3. Repository-secrets: `PASS_CERT_P12` (`base64 -i Pasr.p12 | pbcopy`), `PASS_CERT_PASSWORD`, optioneel `PASS_TYPE_ID`.
+4. Draai Actions › Backend. De knop verschijnt in de app zodra `AccountConfig` is ingevuld.
+
 ## Logo's
 
 Pasr levert geen logo's van winkels mee. Er zijn twee manieren om er een op een kaart te krijgen:

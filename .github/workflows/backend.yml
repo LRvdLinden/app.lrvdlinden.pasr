@@ -8,6 +8,9 @@ name: Backend
 #   SUPABASE_PROJECT_REF    the project ref (the "abcd1234" in https://abcd1234.supabase.co)
 # Optional, for mails from your own address (without them Supabase only mails a few messages per hour):
 #   PASR_SMTP_HOST, PASR_SMTP_PORT, PASR_SMTP_USER, PASR_SMTP_PASSWORD, PASR_SMTP_FROM (e.g. noreply@pasr.nl)
+# For "Add to Apple Wallet" (function wallet-pass, signs the passes):
+#   PASS_CERT_P12 (the Pass Type ID certificate + key as .p12, base64), PASS_CERT_PASSWORD,
+#   PASS_TYPE_ID (default pass.nl.lrvdlinden.pasr), PASR_SUPABASE_KEY (the publishable key)
 on:
   push:
     branches: [main]
@@ -96,3 +99,24 @@ jobs:
               raise SystemExit(1)
           print("::notice::Branded mails, honeypot hook and Auth settings are set (links go to pasr.nl/bevestigen/).")
           PY
+      - uses: supabase/setup-cli@v1
+        if: steps.check.outputs.skip != '1'
+        with:
+          version: latest
+      - name: Apple Wallet function (wallet-pass)
+        if: steps.check.outputs.skip != '1'
+        env:
+          P12: ${{ secrets.PASS_CERT_P12 }}
+          PW: ${{ secrets.PASS_CERT_PASSWORD }}
+          PTID: ${{ secrets.PASS_TYPE_ID }}
+          PK: ${{ secrets.PASR_SUPABASE_KEY }}
+        run: |
+          supabase functions deploy wallet-pass --project-ref "$REF" --no-verify-jwt --use-api
+          if [ -n "$P12" ]; then
+            supabase secrets set --project-ref "$REF" \
+              PASS_CERT_P12="$P12" PASS_CERT_PASSWORD="$PW" PASS_TYPE_ID="${PTID:-pass.nl.lrvdlinden.pasr}" \
+              PASS_TEAM_ID=EU3UY476T6 PASR_PUBLISHABLE_KEY="$PK" >/dev/null
+            echo "::notice::Wallet function deployed and certificate set."
+          else
+            echo "::warning::PASS_CERT_P12 missing: the Wallet function is deployed but can't sign passes yet."
+          fi

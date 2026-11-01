@@ -78,7 +78,7 @@ struct ImportView: View {
             PhotosPicker(selection: $items, maxSelectionCount: 50, matching: .screenshots) {
                 Label("Kies screenshots", systemImage: "photo.on.rectangle").frame(maxWidth: 260).padding(.vertical, 6)
             }
-            .buttonStyle(.glassProminent)
+            .pasrGlassButton(prominent: true)
             .tint(Brand.iris)
             PhotosPicker(selection: $items, maxSelectionCount: 50, matching: .images) {
                 Text("Kies uit alle foto's")

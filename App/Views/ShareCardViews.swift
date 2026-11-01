@@ -30,7 +30,7 @@ struct ShareCardSheet: View {
                             .frame(maxWidth: 260)
                             .padding(.vertical, 6)
                     }
-                    .buttonStyle(.glassProminent)
+                    .pasrGlassButton(prominent: true)
                     .tint(Brand.iris)
 
                     Text("Logo's, foto's en notities gaan niet mee. Wie de link heeft, kan de kaart gebruiken.")
@@ -89,7 +89,7 @@ struct ReceiveCardSheet: View {
                         .frame(maxWidth: 260)
                         .padding(.vertical, 6)
                 }
-                .buttonStyle(.glassProminent)
+                .pasrGlassButton(prominent: true)
                 .tint(Brand.iris)
                 .disabled(alreadyAdded)
             }

@@ -179,6 +179,12 @@ struct WalletView: View {
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
 
+                if WalletPass.isAvailable, !card.number.isEmpty {
+                    AddToWalletButton(card: card)
+                        .id(card.id)
+                        .transition(.opacity)
+                }
+
                 if !card.note.isEmpty {
                     Text(card.note)
                         .font(.footnote)
@@ -198,7 +204,7 @@ struct WalletView: View {
                 .font(.title3)
                 .frame(width: 30, height: 30)
         }
-        .buttonStyle(.glass)
+        .pasrGlassButton()
         .accessibilityLabel(Text(label))
     }
 
@@ -267,12 +273,12 @@ struct WalletView: View {
                 Button { sheet = .add } label: {
                     Label("Kaart toevoegen", systemImage: "plus").frame(maxWidth: 260).padding(.vertical, 6)
                 }
-                .buttonStyle(.glassProminent)
+                .pasrGlassButton(prominent: true)
                 .tint(Brand.iris)
                 Button { sheet = .importScreenshots } label: {
                     Label("Screenshots importeren", systemImage: "photo.stack").frame(maxWidth: 260).padding(.vertical, 6)
                 }
-                .buttonStyle(.glass)
+                .pasrGlassButton()
                 #if DEBUG
                 Button("Voorbeeldkaarten laden") { PasrStore.insertSamples(into: context) }
                     .font(.footnote).padding(.top, 4)
