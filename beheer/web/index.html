@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta name="theme-color" content="#0A0B10">
+<meta name="color-scheme" content="dark">
+<title>Pasr Beheer</title>
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- inloggen / nog niet ingericht -->
+<main id="login" class="login hidden">
+  <div class="login-cards" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
+  <div class="login-card">
+    <div class="brand big"><img src="icon.png" alt="" width="44" height="44"><span class="word">pasr</span><span class="tag">beheer</span></div>
+    <form id="loginForm" novalidate>
+      <h1 class="login-h">Inloggen</h1>
+      <label><span>Gebruikersnaam</span><input id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label><span>Wachtwoord</span><input id="lp" name="password" type="password" autocomplete="current-password" required></label>
+      <div id="loginErr" class="err" role="alert"></div>
+      <button id="loginBtn" class="btn wide" type="submit">Inloggen</button>
+    </form>
+    <div id="setup" class="setup hidden">
+      <h1 class="login-h">Nog niet ingericht</h1>
+      <p>Het Supabase-project is nog niet gekoppeld. De workflow Beheer zet de URL en de publishable key in config.js zodra de secrets PASR_SUPABASE_URL en PASR_SUPABASE_KEY er zijn.</p>
+    </div>
+    <div class="login-foot"><a href="https://pasr.nl" rel="noopener">pasr.nl</a></div>
+  </div>
+</main>
+
+<!-- dashboard -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="top-in">
+      <div class="brand"><img src="icon.png" alt="" width="30" height="30"><span class="word">pasr</span><span class="tag">beheer</span></div>
+      <nav class="tabs" role="tablist" aria-label="Beheer">
+        <button role="tab" id="tab-overview" data-tab="overview" aria-controls="view-overview" aria-selected="true">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Overzicht</span></button>
+        <button role="tab" id="tab-accounts" data-tab="accounts" aria-controls="view-accounts" aria-selected="false">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg><span>Accounts</span></button>
+        <button role="tab" id="tab-settings" data-tab="settings" aria-controls="view-settings" aria-selected="false">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Instellingen</span></button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Overzicht -->
+    <section id="view-overview" class="view" role="tabpanel" aria-labelledby="tab-overview">
+      <div class="head">
+        <div><h1>Overzicht</h1><p class="muted" id="updated" aria-live="polite"></p></div>
+        <button id="refresh" class="btn ghost sm" type="button">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Vernieuwen</span></button>
+      </div>
+      <div id="ovErr" class="banner hidden" role="alert"></div>
+      <div id="kpis" class="kpis" aria-busy="true"></div>
+      <article class="card chart-card" aria-labelledby="chTitle">
+        <header class="chart-h">
+          <div class="chart-t">
+            <h2 id="chTitle">Per dag</h2>
+            <div class="chart-nav">
+              <button id="chPrev" class="icbtn" type="button" aria-label="Vorige periode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6"/></svg></button>
+              <span id="chPeriod" class="chart-period" aria-live="polite"></span>
+              <button id="chNext" class="icbtn" type="button" aria-label="Volgende periode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+            </div>
+          </div>
+          <div id="chSeg" class="seg" role="group" aria-label="Periode">
+            <button type="button" data-days="7">Week</button>
+            <button type="button" data-days="30">Maand</button>
+            <button type="button" data-days="90">Kwartaal</button>
+            <button type="button" data-days="365">Jaar</button>
+          </div>
+        </header>
+        <div id="chChips" class="chips" role="group" aria-label="Reeksen"></div>
+        <div id="chPlot" class="plot"><div id="chTip" class="tip hidden" aria-hidden="true"></div></div>
+        <div id="chSum" class="sums"></div>
+      </article>
+      <div class="grid2">
+        <article class="card"><header class="card-h"><h2>Tegengehouden aanmeldingen</h2><span class="muted sm">laatste 7 dagen</span></header><div id="bots" class="dist"></div></article>
+        <article class="card"><header class="card-h"><h2>Kaarten per account</h2><span class="muted sm">alle accounts</span></header><div id="perAccount" class="dist"></div></article>
+      </div>
+      <p class="foot-note muted sm">Alleen tellingen en accountgegevens. De inhoud van kaarten staat versleuteld op de server en is hier niet te zien. Dagen in UTC.</p>
+    </section>
+
+    <!-- Accounts -->
+    <section id="view-accounts" class="view hidden" role="tabpanel" aria-labelledby="tab-accounts">
+      <div class="head">
+        <div><h1>Accounts</h1><p class="muted" id="accCount"></p></div>
+      </div>
+      <div class="acc-tools">
+        <input id="accSearch" type="search" placeholder="Zoek op e-mail of naam" autocomplete="off" spellcheck="false" aria-label="Zoek accounts">
+        <div id="accFilter" class="seg" role="group" aria-label="Filter">
+          <button type="button" data-filter="all">Alle</button>
+          <button type="button" data-filter="unconfirmed">Onbevestigd</button>
+          <button type="button" data-filter="cards">Met kaarten</button>
+          <button type="button" data-filter="active">Actief</button>
+        </div>
+      </div>
+      <div id="accErr" class="banner hidden" role="alert"></div>
+      <div id="accList" class="acc-list" aria-busy="true"></div>
+      <div class="pager"><button id="accMore" class="btn ghost sm hidden" type="button">Meer laden</button></div>
+    </section>
+
+    <!-- Instellingen -->
+    <section id="view-settings" class="view hidden" role="tabpanel" aria-labelledby="tab-settings">
+      <div class="head"><div><h1>Instellingen</h1></div></div>
+      <div class="settings">
+        <article class="card">
+          <header class="card-h"><h2>Sessie</h2></header>
+          <p class="muted" id="sessionInfo"></p>
+          <div class="row-btns">
+            <button id="logout" class="btn ghost" type="button">Uitloggen</button>
+            <button id="logoutAll" class="btn danger" type="button">Overal uitloggen</button>
+          </div>
+          <p class="muted sm">Overal uitloggen maakt alle sessies ongeldig, ook in de app Pasr Beheer, en meldt alle apparaten af voor pushmeldingen.</p>
+          <div id="setMsg" class="err" role="status"></div>
+        </article>
+        <article class="card">
+          <header class="card-h"><h2>Pushmeldingen</h2></header>
+          <p class="muted" id="pushInfo">—</p>
+          <p class="muted sm">Meldingen bij nieuwe accounts, verwijderde accounts en tegengehouden bots gaan naar de app Pasr Beheer op je iPhone, iPad en Mac. Per apparaat zet je ze aan of uit in de app.</p>
+        </article>
+        <article class="card">
+          <header class="card-h"><h2>Links</h2></header>
+          <ul class="links">
+            <li><a href="https://pasr.nl" rel="noopener" target="_blank"><span>pasr.nl</span><small>Website</small></a></li>
+            <li><a href="https://supabase.com/dashboard/project/xcfuiszcfgkpbixqzrjb" rel="noopener" target="_blank"><span>Supabase</span><small>Project Pasr</small></a></li>
+            <li><a href="https://github.com/LRvdLinden/app.lrvdlinden.pasr/actions" rel="noopener" target="_blank"><span>GitHub Actions</span><small>Workflows</small></a></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- bevestigen (eigen venster, geen browser-dialoog) -->
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal-card">
+    <h2 id="mTitle"></h2>
+    <p id="mText" class="muted"></p>
+    <div class="row-btns end">
+      <button id="mCancel" class="btn ghost" type="button">Annuleren</button>
+      <button id="mOk" class="btn danger" type="button"></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<script src="config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

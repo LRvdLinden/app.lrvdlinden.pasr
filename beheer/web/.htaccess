@@ -1,0 +1,32 @@
+# Pasr Beheer: nooit indexeren, nooit in een frame, strikte Content-Security-Policy (alleen verbinding met Supabase)
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow"
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; font-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  # html/js/css altijd vers (geen build-stap, dus geen bestandsnamen met hash)
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # altijd https, naar hetzelfde pad (querystring gaat automatisch mee)
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteCond %{HTTP_HOST} ^beheer\.pasr\.nl$ [NC]
+  RewriteCond %{THE_REQUEST} ^[A-Z]+\s(/[^\s?]*)
+  RewriteRule ^ https://beheer.pasr.nl%1 [R=301,L,NE]
+  # alleen via beheer.pasr.nl (of localhost om te testen)
+  RewriteCond %{HTTP_HOST} !^beheer\.pasr\.nl$ [NC]
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+  RewriteRule ^ https://beheer.pasr.nl/ [R=302,L]
+</IfModule>
+
+DirectoryIndex index.html
+Options -Indexes
