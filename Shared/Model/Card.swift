@@ -73,13 +73,12 @@ final class Card {
 }
 
 extension Array where Element == Card {
-    /// Favourites first, then the cards you use most and most recently.
-    func smartSorted() -> [Card] {
+    /// Always A to Z by store name, everywhere (wallet, Watch, widgets).
+    func alphabetical() -> [Card] {
         sorted { a, b in
-            if a.isFavorite != b.isFavorite { return a.isFavorite }
-            let scoreA = Card.score(a), scoreB = Card.score(b)
-            if scoreA != scoreB { return scoreA > scoreB }
-            return a.storeName.localizedCaseInsensitiveCompare(b.storeName) == .orderedAscending
+            let order = a.storeName.localizedStandardCompare(b.storeName)
+            if order != .orderedSame { return order == .orderedAscending }
+            return a.number < b.number
         }
     }
 }

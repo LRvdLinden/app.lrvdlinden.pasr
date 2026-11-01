@@ -355,7 +355,7 @@ enum StoreTemplates {
     static let categories: [String] = {
         var seen: [String] = []
         for t in all where !seen.contains(t.category) { seen.append(t.category) }
-        return seen
+        return seen.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }()
 
     static func template(id: String?) -> StoreTemplate? {

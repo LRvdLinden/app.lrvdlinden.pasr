@@ -37,7 +37,7 @@ struct WalletView: View {
     }
 
     private var visibleCards: [Card] {
-        let sorted = cards.smartSorted()
+        let sorted = cards.alphabetical()
         let query = search.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return sorted }
         return sorted.filter {

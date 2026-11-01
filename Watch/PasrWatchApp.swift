@@ -105,12 +105,12 @@ struct WatchWalletView: View {
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var stored: [Card]
 
     private var cards: [WatchCard] {
-        let fromCloud = stored.smartSorted().map(WatchCard.init)
+        let fromCloud = stored.alphabetical().map(WatchCard.init)
         guard let fromPhone = phone.cards else { return fromCloud }
         let known = Set(fromPhone.map(\.id))
         let since = phone.receivedAt ?? .distantPast
         let newer = stored.filter { !known.contains($0.id.uuidString) && $0.createdAt > since }.map(WatchCard.init)
-        return fromPhone + newer
+        return (fromPhone + newer).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     var body: some View {

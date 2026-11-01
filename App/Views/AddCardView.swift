@@ -21,7 +21,7 @@ struct AddCardView: View {
 
     private var templates: [StoreTemplate] {
         let query = search.trimmingCharacters(in: .whitespaces)
-        let list = StoreTemplates.all.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        let list = StoreTemplates.all.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         guard !query.isEmpty else { return list }
         return list.filter { t in t.matchTerms.contains { $0.localizedCaseInsensitiveContains(query) } }
     }
