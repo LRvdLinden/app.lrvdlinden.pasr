@@ -96,13 +96,14 @@ struct CardEditorView: View {
         _draft = State(initialValue: d)
     }
 
-    init(template: StoreTemplate, onSaved: (() -> Void)? = nil) {
+    init(template: StoreTemplate, number: String? = nil, format: BarcodeFormat? = nil, onSaved: (() -> Void)? = nil) {
         existing = nil
         self.onSaved = onSaved
         var d = Draft()
         d.storeName = template.name
         d.templateID = template.id
-        d.format = template.format
+        d.format = format ?? template.format
+        d.number = number ?? ""
         d.colorHex = template.cardHex
         d.kind = template.kind
         // Known store: its logo is in the app, so the card shows it from the first moment.
@@ -113,11 +114,13 @@ struct CardEditorView: View {
         _draft = State(initialValue: d)
     }
 
-    init(storeName: String, onSaved: (() -> Void)? = nil) {
+    init(storeName: String, number: String? = nil, format: BarcodeFormat? = nil, onSaved: (() -> Void)? = nil) {
         existing = nil
         self.onSaved = onSaved
         var d = Draft()
         d.storeName = storeName
+        d.number = number ?? ""
+        if let format { d.format = format }
         d.colorHex = Brand.palette.randomElement() ?? "#6A5CFF"
         _draft = State(initialValue: d)
     }

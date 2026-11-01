@@ -5,6 +5,14 @@ struct AddCardView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
     @State private var path: [Choice] = []
+    @State private var showScan = false
+    /// A card scanned whose store wasn't recognised: picking a store fills in its number.
+    @State private var scanned: ScannedCode?
+
+    struct ScannedCode: Equatable {
+        var number: String
+        var format: BarcodeFormat
+    }
 
     enum Choice: Hashable {
         case template(StoreTemplate)
@@ -30,6 +38,9 @@ struct AddCardView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
+                scanBanner
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
                 LazyVGrid(columns: columns, spacing: 12, pinnedViews: [.sectionHeaders]) {
                     Button { path.append(.custom(search)) } label: {
                         tile(name: search.isEmpty ? String(localized: "Andere winkel") : search,
@@ -72,11 +83,58 @@ struct AddCardView: View {
             .navigationDestination(for: Choice.self) { choice in
                 switch choice {
                 case .template(let template):
-                    CardEditorView(template: template, onSaved: { dismiss() })
+                    CardEditorView(template: template, number: scanned?.number, format: scanned?.format, onSaved: { dismiss() })
                 case .custom(let name):
-                    CardEditorView(storeName: name, onSaved: { dismiss() })
+                    CardEditorView(storeName: name, number: scanned?.number, format: scanned?.format, onSaved: { dismiss() })
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showScan) {
+            CardScanView(onAdded: { _ in dismiss() },
+                         onUnknownStore: { number, format in
+                             withAnimation { scanned = ScannedCode(number: number, format: format) }
+                         })
+        }
+    }
+
+    /// "Scan je kaart" at the top; after a scan with an unknown store: which store is it?
+    @ViewBuilder private var scanBanner: some View {
+        if let scanned {
+            HStack(spacing: 12) {
+                Image(systemName: "barcode").font(.title2).foregroundStyle(Brand.mint)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kaart gescand").font(.headline)
+                    Text("Welke winkel is \(scanned.number)? Kies hem hieronder.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Button { withAnimation { self.scanned = nil } } label: {
+                    Image(systemName: "xmark.circle.fill").font(.title3).foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else {
+            Button { showScan = true } label: {
+                HStack(spacing: 14) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.system(size: 26, weight: .semibold))
+                        .frame(width: 52, height: 52)
+                        .background(.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Scan je kaart").font(.headline)
+                        Text("Pasr herkent de winkel en zet hem er meteen in").font(.subheadline).opacity(0.85)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").font(.subheadline.weight(.semibold)).opacity(0.7)
+                }
+                .foregroundStyle(.white)
+                .padding(14)
+                .background(LinearGradient(colors: [Brand.iris, Brand.iris.opacity(0.7)], startPoint: .leading, endPoint: .trailing),
+                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            .buttonStyle(.plain)
         }
     }
 
