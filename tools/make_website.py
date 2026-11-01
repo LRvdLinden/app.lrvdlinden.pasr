@@ -23,27 +23,48 @@ def bars(digits12):
     svg = f'<svg viewBox="0 0 115 1" preserveAspectRatio="none" aria-hidden="true"><path fill="#000" d="{d}"/></svg>'
     return number, svg
 
+# Real cards in the demo, with the logos and colours the app uses (Shared/StoreLogos, StoreLogoStyles.swift).
 CARDS = [
-    ("Bakkerij De Hoek", "BH", "#E2683C", "Klantenkaart", "871932700441", False),
-    ("Boekhandel Lint", "BL", "#6A5CFF", "Klantenkaart", "210123456789", False),
-    ("Tuincentrum Groenhof", "TG", "#1F9E6A", "Klantenkaart", "871200004567", False),
-    ("Cadeaukaart Stad", "CS", "#FFC233", "Voucher", "400638133393", True),
+    # (name, domain, kind, digits)
+    ("Jumbo", "jumbo.com", "Klantenkaart", "871932700441"),
+    ("Kruidvat", "kruidvat.nl", "Klantenkaart", "210123456789"),
+    ("IKEA Family", "ikea.com", "Klantenkaart", "627598012345"),
+    ("HEMA cadeaukaart", "hema.nl", "Voucher", "400638133393"),
+    ("Albert Heijn", "ah.nl", "Klantenkaart", "262012345678"),
 ]
 
+def _card_colours():
+    import re as _re
+    src = (ROOT.parent / "Shared" / "Model" / "StoreLogoStyles.swift").read_text()
+    return dict(_re.findall(r'"([^"]+)": \.init\(card: "([^"]+)"', src))
+
+def _is_light(hex_colour):
+    r, g, b = (int(hex_colour[i:i + 2], 16) for i in (1, 3, 5))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 160
+
+def copy_logos():
+    import shutil
+    out = ROOT / "assets" / "logos"
+    out.mkdir(parents=True, exist_ok=True)
+    for _, domain, _, _ in CARDS:
+        shutil.copy(ROOT.parent / "Shared" / "StoreLogos" / f"{domain}.png", out / f"{domain}.png")
+
 def pass_html(i, card):
-    name, mono, color, kind, digits, dark = card
+    name, domain, kind, digits = card
+    color = _card_colours().get(domain, "#2B2F3A")
     number, svg = bars(digits)
     grouped = " ".join(number[k:k+4] for k in range(0, 13, 4))
-    cls = "pass ink-dark" if dark else "pass"
-    bg = f"background: linear-gradient(135deg, color-mix(in srgb, {color}, #fff 16%), {color} 55%, color-mix(in srgb, {color}, #000 22%));"
+    cls = "pass ink-dark" if _is_light(color) else "pass"
+    bg = f"background: {color};"
+    logo = f'<img class="logo" src="/assets/logos/{domain}.png" alt="{name}" height="28">'
     extra = '<span class="num">€ 25,00 · geldig tot 31 dec</span>' if kind == "Voucher" else f'<span class="num">{grouped}</span>'
     return f'''        <button class="{cls}" style="top:{i*58}px; z-index:{i}" aria-label="{name}: toon de barcode">
           <span class="side front" style="{bg}">
-            <span class="head"><span class="mono">{mono}</span>{name}<span class="kind">{kind}</span></span>
+            <span class="head">{logo}<span class="kind">{kind}</span></span>
             {extra}
           </span>
           <span class="side back" style="{bg}">
-            <span class="head"><span class="mono">{mono}</span>{name}</span>
+            <span class="head">{logo}</span>
             <span class="code">{svg}<small>{grouped}</small></span>
           </span>
         </button>'''
@@ -93,9 +114,10 @@ FAQ = [
 APPLE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.7c1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.7 1.3-2.7s-2.4-1-2.4-4zM14 5.4c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/></svg>'
 
 def page():
+    copy_logos()
     passes = "\n".join(pass_html(i, c) for i, c in enumerate(CARDS))
-    _, watch_svg = bars(CARDS[0][4])
-    watch_num = CARDS[0][4] + str(v.check(CARDS[0][4]))
+    _, watch_svg = bars(CARDS[-1][3])
+    watch_num = CARDS[-1][3] + str(v.check(CARDS[-1][3]))
     features = "\n".join(f'''      <article class="feature">
         <div class="swatch" style="background:{color}">{icon(name)}</div>
         <h3>{title}</h3>
@@ -195,7 +217,7 @@ def page():
           </div>
         </div>
         <div class="watch" aria-hidden="true">
-          <div class="face"><b>{CARDS[0][0]}</b>{watch_svg}<small>{watch_num}</small></div>
+          <div class="face"><b>{CARDS[-1][0]}</b>{watch_svg}<small>{watch_num}</small></div>
         </div>
       </div>
     </div>
@@ -259,7 +281,7 @@ def page():
 
   <footer>
     <div class="wrap">
-      <span>&copy; 2026 Pasr</span>
+      <span>&copy; 2026 Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels; Pasr is niet aan hen verbonden.</span>
       <nav aria-label="Voettekst">
         <a href="/privacy/">Privacy</a>
         <a href="/support/">Support</a>

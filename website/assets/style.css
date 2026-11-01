@@ -100,11 +100,12 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   position: absolute; inset: 0; border-radius: var(--radius-card); padding: 14px;
   backface-visibility: hidden; -webkit-backface-visibility: hidden;
   text-align: left; color: #fff; overflow: hidden;
-  box-shadow: 0 10px 24px -10px rgba(0,0,0,.6), inset 0 0 0 .75px rgba(255,255,255,.18);
+  box-shadow: 0 10px 24px -10px rgba(0,0,0,.6);
 }
 .pass .back { transform: rotateY(180deg); display: flex; flex-direction: column; gap: 8px; }
 .pass .head { display: flex; align-items: center; gap: 9px; font-family: var(--display); font-weight: 700; font-size: 16px; }
 .pass .mono { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 12px; background: rgba(255,255,255,.18); }
+.pass .logo { height: 28px; width: auto; max-width: 150px; object-fit: contain; object-position: left center; display: block; }
 .pass .kind { margin-left: auto; font-family: var(--body); font-size: 10px; font-weight: 600; opacity: .75; }
 .pass .num { position: absolute; left: 14px; right: 14px; bottom: 14px; font: 500 13px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pass .code { flex: 1; background: #fff; border-radius: 12px; padding: 10px 12px 6px; display: flex; flex-direction: column; align-items: center; }
