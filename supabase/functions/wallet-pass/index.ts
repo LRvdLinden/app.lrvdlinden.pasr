@@ -1,7 +1,8 @@
 // Pasr → Apple Wallet. Builds a signed .pkpass for one card, on request of the app.
 //
 // The app sends the card (store, number, code type, colour, logo, nearby branches); this function turns it into
-// a Wallet pass, signs it with Pasr's pass certificate and sends it straight back. Nothing is stored.
+// a Wallet pass, signs it with Pasr's pass certificate and sends it straight back. Nothing is stored; only a
+// counter of passes per day goes up (pasr_daily.wallet, for Pasr Beheer).
 //
 // Function secrets (set by the workflow Backend from the GitHub secrets):
 //   PASS_TYPE_ID         e.g. pass.nl.lrvdlinden.pasr
@@ -63,6 +64,7 @@ Deno.serve(async (req) => {
 
   try {
     const pkpass = await buildPass(card);
+    countPass();
     return new Response(pkpass, {
       headers: {
         ...cors,
@@ -76,6 +78,18 @@ Deno.serve(async (req) => {
     return json({ error: "unavailable" }, 503);
   }
 });
+
+/** +1 op de teller van vandaag (pasr_daily.wallet) voor het beheer. Alleen een aantal; gaat nooit mis voor de gebruiker. */
+function countPass() {
+  const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return;
+  fetch(`${url}/rest/v1/rpc/pasr_count_wallet`, {
+    method: "POST",
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: "{}",
+    signal: AbortSignal.timeout(5000),
+  }).then((r) => r.body?.cancel()).catch(() => {});
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });

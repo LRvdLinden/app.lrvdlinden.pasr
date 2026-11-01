@@ -210,3 +210,260 @@ begin
 exception when others then
   raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
 end $$;
+
+-- ===============================================================================================================
+-- Pasr Beheer (beheer.pasr.nl en de app Pasr Beheer). Alleen de functie `admin` (service role) komt hierbij; voor
+-- anon en authenticated is alles dicht (RLS aan, geen policies). Het beheer ziet tellingen en accounts (e-mailadres,
+-- voornaam, data, aantal kaarten), nooit de inhoud van kaarten.
+-- ===============================================================================================================
+
+create extension if not exists pg_net with schema extensions;
+
+-- Inlogtokens van het beheer: versie (Overal uitloggen = +1) en een logboek (IP alleen gehasht).
+create table if not exists public.admin_token_state (id int primary key default 1 check (id = 1), v int not null default 1);
+insert into public.admin_token_state (id, v) values (1, 1) on conflict do nothing;
+create table if not exists public.admin_audit (
+  id bigint generated always as identity primary key,
+  at timestamptz not null default now(),
+  action text not null,
+  detail text not null default '',
+  ip_hash text not null default ''
+);
+create index if not exists admin_audit_action on public.admin_audit (action, at);
+
+-- Pushmeldingen van de app Pasr Beheer (APNs-token per apparaat, schakelaars per soort melding).
+create table if not exists public.admin_push_devices (
+  device_id  text primary key,
+  token      text not null,
+  platform   text not null,
+  sandbox    boolean not null default false,
+  app_build  int,
+  prefs      jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists admin_push_devices_token on public.admin_push_devices (token);
+-- Wanneer een soort melding het laatst ging (bots: hoogstens één melding per uur).
+create table if not exists public.admin_push_state (kind text primary key, last_at timestamptz not null);
+
+-- Tellingen per dag (UTC). Alleen aantallen, geen gegevens van wie dan ook.
+create table if not exists public.pasr_daily (
+  day       date primary key,
+  signups   int not null default 0,
+  confirmed int not null default 0,
+  deleted   int not null default 0,
+  expired   int not null default 0,
+  wallet    int not null default 0,
+  bots      int not null default 0
+);
+
+-- Waar de database de functie admin bereikt (gezet door de workflow Backend) en het geheim van die aanroep.
+create table if not exists public.pasr_admin_config (id int primary key default 1 check (id = 1), admin_url text);
+insert into public.pasr_admin_config (id) values (1) on conflict do nothing;
+alter table public.pasr_secret add column if not exists hook_secret text;
+update public.pasr_secret set hook_secret = encode(extensions.gen_random_bytes(32), 'hex') where id = 1 and hook_secret is null;
+
+alter table public.admin_token_state enable row level security;
+alter table public.admin_audit enable row level security;
+alter table public.admin_push_devices enable row level security;
+alter table public.admin_push_state enable row level security;
+alter table public.pasr_daily enable row level security;
+alter table public.pasr_admin_config enable row level security;
+revoke all on public.admin_token_state, public.admin_audit, public.admin_push_devices, public.admin_push_state,
+  public.pasr_daily, public.pasr_admin_config from anon, authenticated;
+
+create or replace function public.pasr_daily_bump(col text, n int default 1) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if col not in ('signups', 'confirmed', 'deleted', 'expired', 'wallet', 'bots') then return; end if;
+  execute format('insert into public.pasr_daily as d (day, %1$I) values ((now() at time zone ''utc'')::date, $1)
+                  on conflict (day) do update set %1$I = d.%1$I + $1', col) using n;
+end $$;
+revoke all on function public.pasr_daily_bump(text, int) from public, anon, authenticated;
+
+-- Seintje aan de functie admin (die stuurt de pushmeldingen). Via pg_net: gaat op de achtergrond en houdt nooit iets op.
+create or replace function public.pasr_admin_notify(kind text, extra jsonb default '{}'::jsonb) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare u text; s text;
+begin
+  select admin_url into u from public.pasr_admin_config where id = 1;
+  select hook_secret into s from public.pasr_secret where id = 1;
+  if coalesce(u, '') = '' or s is null then return; end if;
+  perform net.http_post(
+    url := u,
+    body := jsonb_build_object('action', 'notify', 'kind', kind) || coalesce(extra, '{}'::jsonb),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-pasr-hook', s),
+    timeout_milliseconds := 8000);
+exception when others then
+  raise warning 'pasr_admin_notify: %', sqlerrm;
+end $$;
+revoke all on function public.pasr_admin_notify(text, jsonb) from public, anon, authenticated;
+
+-- Gebeurtenissen rond accounts: tellen en (voor de pushmeldingen) de functie admin een seintje geven.
+create or replace function public.pasr_account_events() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then
+    perform public.pasr_daily_bump('signups');
+    perform public.pasr_admin_notify('signup');
+  elsif tg_op = 'UPDATE' then
+    if old.email_confirmed_at is null and new.email_confirmed_at is not null then
+      perform public.pasr_daily_bump('confirmed');
+      perform public.pasr_admin_notify('confirmed');
+    end if;
+  elsif tg_op = 'DELETE' then
+    if old.email_confirmed_at is null then
+      perform public.pasr_daily_bump('expired');      -- onbevestigd opgeruimd: wel tellen, geen melding
+    else
+      perform public.pasr_daily_bump('deleted');
+      perform public.pasr_admin_notify('deleted');
+    end if;
+  end if;
+  return null;
+exception when others then
+  raise warning 'pasr_account_events: %', sqlerrm;   -- tellen mag een aanmelding of verwijdering nooit tegenhouden
+  return null;
+end $$;
+revoke all on function public.pasr_account_events() from public, anon, authenticated;
+drop trigger if exists pasr_account_events on auth.users;
+create trigger pasr_account_events after insert or update of email_confirmed_at or delete on auth.users
+  for each row execute function public.pasr_account_events();
+
+create or replace function public.pasr_bot_events() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if not new.allowed then
+    perform public.pasr_daily_bump('bots');
+    perform public.pasr_admin_notify('bot', jsonb_build_object('reason', coalesce(new.reason, '')));
+  end if;
+  return null;
+exception when others then
+  raise warning 'pasr_bot_events: %', sqlerrm;
+  return null;
+end $$;
+revoke all on function public.pasr_bot_events() from public, anon, authenticated;
+drop trigger if exists pasr_bot_events on public.pasr_signup_attempts;
+create trigger pasr_bot_events after insert on public.pasr_signup_attempts
+  for each row execute function public.pasr_bot_events();
+grant execute on function public.pasr_bot_events(), public.pasr_daily_bump(text, int), public.pasr_admin_notify(text, jsonb)
+  to supabase_auth_admin;
+
+-- Wallet-pas gemaakt (functie wallet-pass): alleen +1 voor vandaag.
+create or replace function public.pasr_count_wallet() returns void
+language sql security definer set search_path = public as $$ select public.pasr_daily_bump('wallet'); $$;
+revoke all on function public.pasr_count_wallet() from public, anon, authenticated;
+
+create or replace function public.pasr_admin_logout_all() returns int
+language sql security definer set search_path = public as $$
+  update public.admin_token_state set v = v + 1 where id = 1 returning v;
+$$;
+revoke all on function public.pasr_admin_logout_all() from public, anon, authenticated;
+
+-- Statistieken voor het beheer. p_days ∈ 7|30|90|365, p_offset = aantal periodes terug.
+create or replace function public.pasr_admin_stats(p_days int default 30, p_offset int default 0) returns jsonb
+language plpgsql security definer set search_path = public, auth as $$
+declare
+  today date := (now() at time zone 'utc')::date;
+  last_day date := today - p_days * p_offset;
+  first_day date := last_day - p_days + 1;
+  result jsonb;
+begin
+  with users as (
+    select u.id, u.created_at, u.email_confirmed_at, u.last_sign_in_at,
+           (select count(*) from public.pasr_cards c where c.user_id = u.id and not c.deleted) as cards
+    from auth.users u
+  ), days as (
+    select g::date as day from generate_series(first_day, last_day, interval '1 day') g
+  )
+  select jsonb_build_object(
+    'generated', now(),
+    'totals', (select jsonb_build_object(
+        'accounts', count(*),
+        'confirmed', count(*) filter (where email_confirmed_at is not null),
+        'unconfirmed', count(*) filter (where email_confirmed_at is null),
+        'with_cards', count(*) filter (where cards > 0),
+        'cards', coalesce(sum(cards), 0),
+        'active_30d', count(*) filter (where last_sign_in_at > now() - interval '30 days'),
+        'new_today', count(*) filter (where created_at >= today::timestamptz),
+        'new_7d', count(*) filter (where created_at > now() - interval '7 days'),
+        'new_30d', count(*) filter (where created_at > now() - interval '30 days'))
+      from users),
+    'wallet_total', (select coalesce(sum(wallet), 0) from public.pasr_daily),
+    'range', jsonb_build_object('days', p_days, 'offset', p_offset, 'from', first_day, 'to', last_day),
+    'per_day', (select coalesce(jsonb_agg(jsonb_build_object(
+        'day', d.day, 'signups', coalesce(x.signups, 0), 'confirmed', coalesce(x.confirmed, 0),
+        'deleted', coalesce(x.deleted, 0), 'expired', coalesce(x.expired, 0), 'wallet', coalesce(x.wallet, 0),
+        'bots', coalesce(x.bots, 0)) order by d.day), '[]'::jsonb)
+      from days d left join public.pasr_daily x on x.day = d.day),
+    'bots_7d', (select coalesce(jsonb_object_agg(reason, n), '{}'::jsonb) from (
+        select coalesce(reason, 'other') as reason, count(*) as n from public.pasr_signup_attempts
+        where not allowed and at > now() - interval '7 days' group by 1) b),
+    'signups_allowed_7d', (select count(*) from public.pasr_signup_attempts where allowed and at > now() - interval '7 days'),
+    'cards_per_account', (select coalesce(jsonb_object_agg(bucket, n), '{}'::jsonb) from (
+        select case when cards = 0 then '0' when cards <= 5 then '1-5' when cards <= 15 then '6-15'
+                    when cards <= 30 then '16-30' else '31+' end as bucket, count(*) as n
+        from users group by 1) b),
+    'push_devices', (select count(*) from public.admin_push_devices)
+  ) into result;
+  return result;
+end $$;
+revoke all on function public.pasr_admin_stats(int, int) from public, anon, authenticated;
+
+-- Snelle tellingen voor de pushmeldingen.
+create or replace function public.pasr_admin_counts() returns jsonb
+language sql security definer set search_path = public, auth as $$
+  select jsonb_build_object(
+    'accounts', (select count(*) from auth.users),
+    'confirmed', (select count(*) from auth.users where email_confirmed_at is not null),
+    'bots_hour', (select count(*) from public.pasr_signup_attempts where not allowed and at > now() - interval '1 hour'));
+$$;
+revoke all on function public.pasr_admin_counts() from public, anon, authenticated;
+
+-- Accounts voor het beheer: zoeken op e-mail of voornaam, filter all|unconfirmed|cards|active, max. 100 per keer.
+create or replace function public.pasr_admin_users(p_search text default '', p_filter text default 'all',
+                                                   p_limit int default 50, p_offset int default 0) returns jsonb
+language plpgsql security definer set search_path = public, auth as $$
+declare
+  q text := lower(btrim(coalesce(p_search, '')));
+  result jsonb;
+begin
+  with base as (
+    select u.id, u.email, u.raw_user_meta_data->>'first_name' as first_name, u.created_at, u.email_confirmed_at,
+           u.last_sign_in_at,
+           (select count(*) from public.pasr_cards c where c.user_id = u.id and not c.deleted) as cards,
+           (select max(c.server_at) from public.pasr_cards c where c.user_id = u.id) as synced_at
+    from auth.users u
+    where (q = '' or position(q in lower(coalesce(u.email, ''))) > 0
+                  or position(q in lower(coalesce(u.raw_user_meta_data->>'first_name', ''))) > 0)
+  ), filtered as (
+    select * from base
+    where case p_filter
+      when 'unconfirmed' then email_confirmed_at is null
+      when 'cards' then cards > 0
+      when 'active' then last_sign_in_at > now() - interval '30 days'
+      else true end
+  )
+  select jsonb_build_object(
+    'total', (select count(*) from filtered),
+    'users', coalesce((select jsonb_agg(to_jsonb(f) order by f.created_at desc) from (
+        select * from filtered order by created_at desc
+        limit least(greatest(p_limit, 1), 100) offset greatest(p_offset, 0)) f), '[]'::jsonb)
+  ) into result;
+  return result;
+end $$;
+revoke all on function public.pasr_admin_users(text, text, int, int) from public, anon, authenticated;
+
+-- Opschonen: logboek ouder dan 400 dagen, tellingen ouder dan 3 jaar.
+create or replace function public.pasr_admin_cleanup() returns void
+language sql security definer set search_path = public as $$
+  delete from public.admin_audit where at < now() - interval '400 days';
+  delete from public.pasr_daily where day < (now() at time zone 'utc')::date - 1100;
+$$;
+revoke all on function public.pasr_admin_cleanup() from public, anon, authenticated;
+do $$
+begin
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-admin-cleanup';
+  perform cron.schedule('pasr-admin-cleanup', '41 3 * * *', 'select public.pasr_admin_cleanup()');
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;
