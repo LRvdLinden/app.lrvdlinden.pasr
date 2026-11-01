@@ -527,6 +527,8 @@ def main():
         return o.get("file") or o.get("logo_url") or ("site" if o.get("site") else None)
     changed = [d for d, o in OVERRIDES.items() if wanted(o) and metas.get(d, {}).get("src") != wanted(o)]
     todo = only or sorted({d for d in domains() if redo or not (OUT / f"{d}.png").exists()} | set(changed))
+    # "manual": the logo file was made by hand (e.g. from the shop's SVG); never fetch over it
+    todo = [d for d in todo if not OVERRIDES.get(d, {}).get("manual")]
     if DEBUG:
         for d in todo:
             print(d); fetch(d)
