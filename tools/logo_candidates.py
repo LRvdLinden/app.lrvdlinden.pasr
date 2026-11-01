@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Contact sheets of logo candidates from Wikimedia Commons, to pick the right brand logo by hand.
-python3 tools/logo_candidates.py "ah.nl=Albert Heijn" "kruidvat.nl=Kruidvat" ...
+python3 tools/logo_candidates.py "ah.nl=Albert Heijn; kruidvat.nl=Kruidvat; ..."
 Writes tools/candidates/sheet-N.png (each tile on a light and a dark half, numbered) and candidates.json."""
 import io, json, sys
 from pathlib import Path
@@ -30,7 +30,7 @@ def search(q):
 
 def main():
     OUT.mkdir(exist_ok=True)
-    brands = [a.split("=", 1) for a in sys.argv[1:]]
+    brands = [a.strip().split("=", 1) for a in " ".join(sys.argv[1:]).split(";") if "=" in a]
     result, rows = {}, []
     for domain, name in brands:
         cands = search(name)

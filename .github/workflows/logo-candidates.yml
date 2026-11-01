@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       brands:
-        description: 'Space separated domain=Name pairs, names with spaces quoted, e.g. ah.nl="Albert Heijn"'
+        description: 'domain=Name pairs separated by ";", e.g. ah.nl=Albert Heijn; hm.com=H&M'
         type: string
         required: true
 
@@ -25,7 +25,7 @@ jobs:
       - name: Build sheets
         env:
           BRANDS: ${{ inputs.brands }}
-        run: eval "python tools/logo_candidates.py $BRANDS"
+        run: python tools/logo_candidates.py "$BRANDS"
       - name: Push to branch logo-candidates
         run: |
           git config user.name "github-actions[bot]"
