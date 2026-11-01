@@ -31,6 +31,23 @@ def domains():
     return sorted({d for d in re.findall(r'domain: "([^"]+)"', src) if d})
 
 
+def manifest_icons(html, base):
+    m = re.search(r'<link\b[^>]*rel=["\']?manifest[^>]*>', html, re.I)
+    href = m and re.search(r'href=["\']?([^"\'\s>]+)', m.group(0))
+    if not href:
+        return []
+    try:
+        url = urllib.parse.urljoin(base, href.group(1).replace("&amp;", "&"))
+        icons = S.get(url, timeout=12).json().get("icons", [])
+    except Exception:
+        return []
+    def size(i):
+        m = re.match(r"(\d+)", str(i.get("sizes", "")))
+        return int(m.group(1)) if m else 0
+    return [urllib.parse.urljoin(url, i["src"]) for i in sorted(icons, key=lambda i: -size(i))
+            if i.get("src") and not i["src"].lower().endswith(".svg") and "monochrome" not in str(i.get("purpose", ""))]
+
+
 def icon_links(html, base):
     found = []
     for tag in re.findall(r"<link\b[^>]*>", html, re.I):
@@ -73,17 +90,23 @@ def square(img):
     return canvas.resize((SIZE, SIZE), Image.LANCZOS)
 
 
+# Sites whose own icon is not their logo (e.g. a country flag): use the icon services only.
+SKIP_SITE = {"aktiesport.nl", "perrysport.nl", "sportsdirect.com"}
+
+
 def fetch(domain):
     candidates = []
-    for home in (f"https://www.{domain}/", f"https://{domain}/"):
+    for home in () if domain in SKIP_SITE else (f"https://www.{domain}/", f"https://{domain}/"):
         try:
             r = S.get(home, timeout=12)
             if r.ok:
-                candidates += icon_links(r.text[:800_000], r.url)
+                html = r.text[:800_000]
+                candidates += icon_links(html, r.url) + manifest_icons(html, r.url)
                 break
         except Exception:
             continue
-    candidates += [f"https://www.{domain}/apple-touch-icon.png", f"https://{domain}/apple-touch-icon.png"]
+    if domain not in SKIP_SITE:
+        candidates += [f"https://www.{domain}/apple-touch-icon.png", f"https://{domain}/apple-touch-icon.png"]
     seen = set()
     for url in candidates:
         if url in seen:
@@ -92,8 +115,18 @@ def fetch(domain):
         img = load(url, 96)
         if img:
             return square(img)
-    img = load(f"https://www.google.com/s2/favicons?domain={domain}&sz=256", 64)
-    return square(img) if img else None
+    # Icon services, for sites that turn away scripts.
+    for url in (f"https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL"
+                f"&url=https://www.{domain}&size=256",
+                f"https://www.google.com/s2/favicons?domain={domain}&sz=256",
+                f"https://icons.duckduckgo.com/ip3/{domain}.ico",
+                f"https://www.{domain}/favicon.ico"):
+        if domain in SKIP_SITE and domain in url and "gstatic" not in url and "google" not in url:
+            continue
+        img = load(url, 64)
+        if img:
+            return square(img)
+    return None
 
 
 def main():
