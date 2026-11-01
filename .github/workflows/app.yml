@@ -1,0 +1,28 @@
+name: App
+
+# Checks that Pasr (iPhone/iPad app with widgets and the Watch app) builds, without signing.
+on:
+  push:
+    branches: [main]
+    paths: ["App/**", "Shared/**", "Watch/**", "Widgets/**", "Config/**", "Pasr.xcodeproj/**", ".github/workflows/app.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build -project Pasr.xcodeproj -target Pasr -configuration Debug -sdk iphonesimulator \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            | tee /tmp/build.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" /tmp/build.log
