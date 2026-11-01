@@ -48,7 +48,7 @@ enum StoreTemplates {
         .init(id: "etos", name: "Etos", domain: "etos.nl", category: "Drogist en beauty", colorHex: "#003B7E", format: .ean13),
         .init(id: "trekpleister", name: "Trekpleister", domain: "trekpleister.nl", category: "Drogist en beauty", colorHex: "#00A651", format: .ean13),
         .init(id: "da", name: "DA Drogist", domain: "da.nl", category: "Drogist en beauty", colorHex: "#E30613", format: .ean13),
-        .init(id: "hollandbarrett", name: "Holland & Barrett", domain: "hollandandbarrett.nl", category: "Drogist en beauty", colorHex: "#00563F", format: .ean13, aliases: ["holland and barrett"]),
+        .init(id: "hollandbarrett", name: "Holland & Barrett", domain: "hollandandbarrett.nl", category: "Drogist en beauty", colorHex: "#00563F", format: .ean13, aliases: ["holland and barrett", "de tuinen", "tuinen"]),
         .init(id: "douglas", name: "Douglas", domain: "douglas.nl", category: "Drogist en beauty", colorHex: "#1A1A1A", format: .ean13, aliases: ["beauty card"]),
         .init(id: "ici", name: "ICI PARIS XL", domain: "iciparisxl.nl", category: "Drogist en beauty", colorHex: "#111111", format: .ean13),
         .init(id: "rituals", name: "Rituals", domain: "rituals.com", category: "Drogist en beauty", colorHex: "#3B3A36", format: .code128),
@@ -357,6 +357,7 @@ enum StoreTemplates {
         .init(id: "schuurman", name: "Schuurman Schoenen", domain: "schuurman-schoenen.nl", category: "Mode en schoenen", colorHex: "#1A1A1A", format: .ean13, aliases: ["schuurman"]),
         .init(id: "restaurantorange", name: "Restaurant Orange", domain: "restaurantorange.nl", category: "Drank en eten", colorHex: "#FFFFFF", format: .code128, aliases: ["orange apeldoorn", "orange restaurant"]),
         .init(id: "shabushabu", name: "Shabu Shabu", domain: "shabushabu.nl", category: "Drank en eten", colorHex: "#1A1A1A", format: .code128, aliases: ["shabu-shabu"]),
+        .init(id: "open32", name: "OPEN32", domain: "open32.nl", category: "Mode en schoenen", colorHex: "#05141B", format: .code128, aliases: ["open 32", "open32"]),
         .init(id: "kleiboer", name: "Carwash Kleiboer", domain: "carwashkleiboer.nl", category: "Tanken en sparen", colorHex: "#12253C", format: .qr, aliases: ["kleiboer", "carwash kleiboer"]),
         .init(id: "amikappers", name: "AMI Kappers", domain: "amikappers.nl", category: "Drogist en beauty", colorHex: "#1A1A1A", format: .code128, aliases: ["ami kapsalons", "ami kapper"]),
     ]

@@ -324,5 +324,10 @@
  "petsplace.nl": {
   "logo_url": "https://www.petsplace.nl/static/version1792483315/frontend/ISM/ijsvogel/nl_NL/images/logo.svg",
   "card": "#DD0611"
+ },
+ "open32.nl": {
+  "logo_url": "https://www.open32.nl/static/version1793256005/frontend/Open32/Open32/nl_NL/images/logo.svg",
+  "card": "#05141B",
+  "recolour": "#FFFFFF"
  }
 }
