@@ -13,6 +13,10 @@ on:
         description: "Fetch all logos again"
         type: boolean
         default: false
+      debug:
+        description: "Only test these domains (space separated) and show what each address returns"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -30,8 +34,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q requests pillow
-      - run: python tools/fetch_logos.py ${{ inputs.all && '--all' || '' }}
+      - if: ${{ inputs.debug != '' && inputs.debug != null }}
+        run: python tools/fetch_logos.py --debug ${{ inputs.debug }}
+      - if: ${{ inputs.debug == '' || inputs.debug == null }}
+        run: python tools/fetch_logos.py ${{ inputs.all && '--all' || '' }}
       - name: Commit logos
+        if: ${{ inputs.debug == '' || inputs.debug == null }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"

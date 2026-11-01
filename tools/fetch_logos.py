@@ -63,9 +63,18 @@ def icon_links(html, base):
     return [u for u, _ in sorted(found, key=lambda x: -x[1])]
 
 
+DEBUG = "--debug" in sys.argv
+
+
 def load(url, min_side):
     try:
         r = S.get(url, timeout=12)
+        if DEBUG:
+            try:
+                size = Image.open(io.BytesIO(r.content)).size
+            except Exception:
+                size = "geen beeld"
+            print(f"   {r.status_code} {size} {url[:110]}")
         if r.status_code >= 400 or len(r.content) > 4_000_000:
             return None
         img = Image.open(io.BytesIO(r.content))
@@ -132,7 +141,12 @@ def fetch(domain):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     redo = "--all" in sys.argv
-    todo = [d for d in domains() if redo or not (OUT / f"{d}.png").exists()]
+    only = [a for a in sys.argv[1:] if not a.startswith("--")]
+    todo = only or [d for d in domains() if redo or not (OUT / f"{d}.png").exists()]
+    if DEBUG:
+        for d in todo:
+            print(d); fetch(d)
+        return
     missing = []
 
     def work(d):
