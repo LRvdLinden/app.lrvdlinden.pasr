@@ -407,7 +407,7 @@ def fetch(domain):
         # hand-picked: that file or nothing (never fall back to a different logo)
         return commons_file(OVERRIDES[domain]["file"])
     # 1. The full logo (wordmark) on Wikidata/Wikimedia Commons: sharp and complete, like SuperCards shows it.
-    img = wikidata_logo(domain)
+    img = None if OVERRIDES.get(domain, {}).get("nowiki") else wikidata_logo(domain)
     if img:
         return img
     # 2. Otherwise the icon the store publishes on its website.

@@ -74,9 +74,7 @@
   "src": "File:Bp logo89.svg"
  },
  "brico.nl": {},
- "bristol.nl": {
-  "src": "File:Bristol logo 02.png"
- },
+ "bristol.nl": {},
  "broekhuis.nl": {},
  "bruna.nl": {
   "src": "File:Bruna logo.png"
@@ -195,9 +193,7 @@
  "formido.nl": {
   "bg": "#FDDB02"
  },
- "gall.nl": {
-  "src": "File:Logo Gall & Gall.png"
- },
+ "gall.nl": {},
  "gamemania.nl": {
   "opaque": true
  },
@@ -268,8 +264,7 @@
   "src": "File:Jysk logo.svg"
  },
  "karwei.nl": {
-  "bg": "#231F20",
-  "src": "File:Karwei logo (2017).png"
+  "bg": "#231F20"
  },
  "kfc.nl": {
   "bg": "#FFFFFF"
@@ -317,9 +312,7 @@
   "bg": "#FFFFFF",
   "src": "File:Lush Logo.png"
  },
- "makro.nl": {
-  "src": "File:Makro Europe logo.png"
- },
+ "makro.nl": {},
  "mango.com": {
   "bg": "#FFFFFF"
  },
@@ -394,9 +387,6 @@
  },
  "playstation.com": {
   "bg": "#FFFFFF"
- },
- "plus.nl": {
-  "bg": "#FEFEFE"
  },
  "podiumcadeaukaart.nl": {
   "opaque": true

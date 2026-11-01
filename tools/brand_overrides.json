@@ -11,7 +11,7 @@
  },
  "lidl.nl": {
   "file": "File:Lidl-Logo.svg",
-  "card": "bg"
+  "card": "#0040A4"
  },
  "spar.nl": {
   "file": "File:Wordmark SPAR.svg",
@@ -55,7 +55,7 @@
  },
  "karwei.nl": {
   "file": "File:Karwei logo (2017).png",
-  "card": "#000000"
+  "card": "#231F20"
  },
  "gamma.nl": {
   "file": "File:GAMMA Logo.svg",
@@ -144,7 +144,7 @@
  },
  "bristol.nl": {
   "file": "File:Bristol logo 02.png",
-  "card": "bg"
+  "card": "#002F9C"
  },
  "scapino.nl": {
   "file": "File:Scapino logo 04.png",
@@ -196,7 +196,7 @@
  },
  "makro.nl": {
   "file": "File:Makro Europe logo.png",
-  "card": "bg"
+  "card": "#002470"
  },
  "bruna.nl": {
   "file": "File:Bruna logo.png",
@@ -208,7 +208,7 @@
  },
  "gall.nl": {
   "file": "File:Logo Gall & Gall.png",
-  "card": "bg"
+  "card": "#312F2F"
  },
  "payback.de": {
   "file": "File:Payback Logo 2023.svg",
@@ -227,7 +227,8 @@
   "card": "#FFFFFF"
  },
  "plus.nl": {
-  "card": "#A2C11C"
+  "card": "#A2C11C",
+  "nowiki": true
  },
  "aldi.nl": {
   "file": "File:Aldi Nord 201x logo.svg",
