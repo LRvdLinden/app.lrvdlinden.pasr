@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Pasr App Store</title>
+<style>
+@font-face { font-family: "Bricolage"; font-weight: 600; src: url(fonts/bricolage-grotesque-latin-600-normal.woff2); }
+@font-face { font-family: "Bricolage"; font-weight: 700; src: url(fonts/bricolage-grotesque-latin-700-normal.woff2); }
+@font-face { font-family: "Bricolage"; font-weight: 800; src: url(fonts/bricolage-grotesque-latin-800-normal.woff2); }
+@font-face { font-family: "Figtree"; font-weight: 400; src: url(fonts/figtree-latin-400-normal.woff2); }
+@font-face { font-family: "Figtree"; font-weight: 500; src: url(fonts/figtree-latin-500-normal.woff2); }
+@font-face { font-family: "Figtree"; font-weight: 600; src: url(fonts/figtree-latin-600-normal.woff2); }
+@font-face { font-family: "Figtree"; font-weight: 700; src: url(fonts/figtree-latin-700-normal.woff2); }
+@font-face { font-family: "Figtree"; font-weight: 800; src: url(fonts/figtree-latin-800-normal.woff2); }
+:root {
+  --ink: #0A0B10; --raised: #15171F; --raised2: #1E2130; --line: #2A2E3D; --muted: #9A98B3;
+  --iris: #6A5CFF; --coral: #FF6B57; --mint: #2ED3A6; --paper: #F4F3FF; --deep: #17162A;
+  --ui: "Inter", -apple-system, "SF Pro Text", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: var(--w); height: var(--h); overflow: hidden; }
+body { font-family: "Figtree", sans-serif; -webkit-font-smoothing: antialiased; }
+img { display: block; }
+
+/* ---------- canvas (marketing) ---------- */
+.canvas { position: relative; width: var(--w); height: var(--h); overflow: hidden; color: #fff; }
+.canvas.dark { background: radial-gradient(60% 40% at 50% 0%, rgba(106, 92, 255, .45), transparent 70%),
+  radial-gradient(50% 35% at 100% 100%, rgba(255, 107, 87, .28), transparent 70%), var(--ink); }
+.canvas.light { color: var(--deep); background: radial-gradient(60% 40% at 50% 0%, rgba(106, 92, 255, .22), transparent 70%),
+  radial-gradient(50% 35% at 0% 100%, rgba(46, 211, 166, .22), transparent 70%), var(--paper); }
+.canvas.iris { background: radial-gradient(70% 45% at 20% 0%, rgba(255, 255, 255, .22), transparent 70%),
+  linear-gradient(160deg, #7B6EFF 0%, #5544F0 55%, #3E2FC9 100%); }
+.head { position: absolute; left: 0; right: 0; text-align: center; padding: 0 calc(var(--u) * 7); z-index: 3; }
+.eyebrow { display: inline-flex; align-items: center; gap: calc(var(--u) * .9); font: 700 calc(var(--u) * 2.6)/1 "Figtree";
+  letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * 1.1) calc(var(--u) * 2); border-radius: 999px;
+  background: rgba(255, 255, 255, .12); margin-bottom: calc(var(--u) * 2.6); }
+.light .eyebrow { background: rgba(106, 92, 255, .12); color: var(--iris); }
+.eyebrow i { width: calc(var(--u) * 1.2); height: calc(var(--u) * 1.2); border-radius: 50%; background: var(--mint); }
+h1 { font: 800 calc(var(--u) * 8.6)/1.0 "Bricolage"; letter-spacing: -.035em; }
+h1 em { font-style: normal; background: linear-gradient(90deg, #A79FFF, #FF8A78); -webkit-background-clip: text; color: transparent; }
+.light h1 em { background: linear-gradient(90deg, #5A4CF0, #E8553F); -webkit-background-clip: text; }
+.sub { font: 500 calc(var(--u) * 3.5)/1.3 "Figtree"; opacity: .8; margin-top: calc(var(--u) * 2.4); }
+
+.is-ipad h1 { font-size: calc(var(--u) * 6.4); }
+.is-ipad .sub { font-size: calc(var(--u) * 2.7); }
+.is-ipad .eyebrow { font-size: calc(var(--u) * 2); }
+.is-ipad .feat { font-size: calc(var(--u) * 3); }
+.is-ipad .feat small { font-size: calc(var(--u) * 2.3); }
+.is-ipad .feat i { width: calc(var(--u) * 7); height: calc(var(--u) * 7); }
+/* ---------- toestellen ---------- */
+.device { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; }
+.phone { width: calc(var(--u) * 78); aspect-ratio: 440 / 956; border-radius: calc(var(--u) * 11.4); padding: calc(var(--u) * 1.5);
+  background: linear-gradient(145deg, #3B3D47, #121318 40%, #2A2C34); box-shadow: 0 calc(var(--u) * 6) calc(var(--u) * 14) rgba(0, 0, 0, .55),
+  inset 0 0 0 calc(var(--u) * .25) rgba(255, 255, 255, .14); }
+.light .phone { box-shadow: 0 calc(var(--u) * 6) calc(var(--u) * 14) rgba(40, 30, 120, .35), inset 0 0 0 calc(var(--u) * .25) rgba(255, 255, 255, .2); }
+.screen { position: relative; width: 100%; height: 100%; border-radius: calc(var(--u) * 10); overflow: hidden; background: var(--ink); }
+.ui { position: absolute; left: 0; top: 0; width: 440px; height: 956px; transform-origin: 0 0; transform: scale(var(--k)); font-family: var(--ui); color: #fff; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 126px; height: 37px; border-radius: 20px; background: #000; z-index: 50; }
+.status { position: absolute; top: 0; left: 0; right: 0; height: 54px; display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 34px 0 46px; font: 600 17px/1 var(--ui); z-index: 40; }
+.status .r { display: flex; gap: 6px; align-items: center; }
+.status svg { height: 13px; fill: currentColor; }
+.homebar { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 146px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .85); z-index: 50; }
+
+.ipad { width: calc(var(--u) * 92); aspect-ratio: 1032 / 1376; border-radius: calc(var(--u) * 5.6); padding: calc(var(--u) * 2.2);
+  background: linear-gradient(145deg, #3B3D47, #121318 40%, #2A2C34); box-shadow: 0 calc(var(--u) * 6) calc(var(--u) * 14) rgba(0, 0, 0, .5); }
+.ipad .screen { border-radius: calc(var(--u) * 3.6); }
+.ipad .ui { width: 1032px; height: 1376px; }
+
+/* ---------- Pasr-app ---------- */
+.app { position: absolute; inset: 0; background: var(--ink); }
+.nav { position: absolute; top: 58px; left: 0; right: 0; height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+.glass { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; background: rgba(255, 255, 255, .1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+.glass svg { width: 21px; height: 21px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.large { position: absolute; top: 108px; left: 20px; font: 800 34px/1 var(--ui); letter-spacing: -.02em; }
+.search { position: absolute; top: 156px; left: 16px; right: 16px; height: 40px; border-radius: 12px; background: rgba(118, 118, 128, .24);
+  display: flex; align-items: center; gap: 8px; padding: 0 10px; color: rgba(235, 235, 245, .6); font: 400 17px var(--ui); }
+.search svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.stack { position: absolute; left: 16px; right: 16px; top: 214px; }
+.pcard { position: absolute; left: 0; width: 408px; height: 257px; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, .08) inset, 0 -8px 22px rgba(0, 0, 0, .28); }
+.pcard .logo { position: absolute; left: 22px; top: 18px; max-height: 32px; max-width: 170px; object-fit: contain; object-position: left center; }
+.pcard .kind { position: absolute; right: 20px; top: 24px; font: 600 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.pcard.lightbg { color: #111; }
+.pcard .sheen { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255, 255, 255, .14), transparent 45%); }
+.pcard .bottom { position: absolute; left: 22px; right: 22px; bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;
+  font: 600 15px var(--ui); }
+.pcard .bottom small { display: block; font: 600 11px var(--ui); letter-spacing: .07em; text-transform: uppercase; opacity: .65; margin-bottom: 3px; }
+
+.back { position: absolute; width: 420px; height: 265px; border-radius: 18px; background: #fff; color: #111; overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .55); }
+.back .bar { position: absolute; left: 0; right: 0; top: 0; height: 58px; display: flex; align-items: center; padding: 0 20px; }
+.back .bar img { max-height: 28px; max-width: 150px; }
+.back .code { position: absolute; left: 36px; right: 36px; top: 76px; height: 132px; display: grid; place-items: center; }
+.back .code svg { width: 100%; height: 100%; }
+.back .num { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font: 600 17px var(--ui); letter-spacing: .14em; }
+.actions { position: absolute; display: flex; gap: 14px; justify-content: center; left: 0; right: 0; }
+.actions .glass { width: 54px; height: 54px; border-radius: 27px; }
+.actions .glass svg { width: 23px; height: 23px; }
+.walletbtn { position: absolute; left: 50%; transform: translateX(-50%); width: 280px; height: 46px; border-radius: 10px; background: #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 16px var(--ui); }
+.walletbtn .wi { width: 30px; height: 22px; border-radius: 4px; background: linear-gradient(180deg, #3FB4E9 0 25%, #F5B22A 25% 50%, #F05A5A 50% 75%, #4CC27E 75%); }
+.dim { position: absolute; inset: 0; background: rgba(0, 0, 0, .5); backdrop-filter: blur(10px); }
+
+/* scanner */
+.camera { position: absolute; inset: 0; background: radial-gradient(70% 50% at 50% 45%, #3A3530, #14120F 75%); }
+.held { position: absolute; left: 62px; top: 300px; width: 316px; height: 200px; border-radius: 14px; transform: rotate(-4deg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .6); overflow: hidden; }
+.held .logo { position: absolute; left: 18px; top: 16px; max-height: 26px; }
+.held .bc { position: absolute; left: 30px; right: 30px; bottom: 26px; height: 64px; background: #fff; border-radius: 6px; padding: 6px 10px; }
+.held .bc svg { width: 100%; height: 100%; }
+.frame { position: absolute; left: 44px; top: 268px; width: 352px; height: 264px; }
+.frame i { position: absolute; width: 46px; height: 46px; border: 5px solid #fff; }
+.frame i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-radius: 16px 0 0 0; }
+.frame i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-radius: 0 16px 0 0; }
+.frame i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 16px; }
+.frame i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-radius: 0 0 16px 0; }
+.found { position: absolute; left: 16px; right: 16px; bottom: 40px; border-radius: 26px; padding: 18px; background: rgba(30, 32, 44, .92);
+  backdrop-filter: blur(20px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+.found .row { display: flex; align-items: center; gap: 14px; }
+.tile { width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; overflow: hidden; flex: none; }
+.tile img { max-width: 44px; max-height: 26px; }
+.found b { display: block; font: 700 19px var(--ui); }
+.found span { font: 500 15px var(--ui); color: var(--muted); letter-spacing: .06em; }
+.btn { margin-top: 16px; height: 52px; border-radius: 26px; background: var(--iris); display: grid; place-items: center; font: 700 17px var(--ui); }
+.hint { position: absolute; top: 140px; left: 0; right: 0; text-align: center; font: 600 17px var(--ui); }
+.hint small { display: block; font: 500 14px var(--ui); opacity: .7; margin-top: 6px; }
+.chiprow { position: absolute; top: 560px; left: 0; right: 0; display: flex; justify-content: center; }
+.chiprow span { padding: 8px 14px; border-radius: 99px; background: rgba(46, 211, 166, .2); color: #7DF0CF; font: 700 14px var(--ui); }
+
+/* toegangsscherm */
+.lock { position: absolute; inset: 0; background: radial-gradient(80% 60% at 30% 10%, #6A5CFF, transparent 60%),
+  radial-gradient(70% 60% at 90% 80%, #FF6B57, transparent 60%), linear-gradient(180deg, #2B2470, #120F2E); }
+.lock .date { position: absolute; top: 96px; left: 0; right: 0; text-align: center; font: 600 21px var(--ui); opacity: .9; }
+.lock .time { position: absolute; top: 116px; left: 0; right: 0; text-align: center; font: 700 104px/1 "Bricolage"; letter-spacing: -.02em; }
+.notif { position: absolute; left: 12px; right: 12px; border-radius: 22px; padding: 14px 16px; display: flex; gap: 12px; align-items: center;
+  background: rgba(40, 38, 60, .55); backdrop-filter: blur(24px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.notif .ico { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; flex: none; }
+.notif .ico img { width: 100%; height: 100%; }
+.notif .t { flex: 1; min-width: 0; }
+.notif .t b { display: block; font: 700 15px var(--ui); }
+.notif .t p { font: 400 15px/1.3 var(--ui); opacity: .92; }
+.notif time { align-self: flex-start; font: 500 13px var(--ui); opacity: .6; }
+.passmini { position: absolute; left: 12px; right: 12px; border-radius: 18px; overflow: hidden; height: 150px; }
+.passmini .logo { position: absolute; left: 16px; top: 14px; max-height: 26px; max-width: 150px; }
+.passmini .brand { position: absolute; right: 16px; top: 16px; font: 800 16px "Bricolage"; opacity: .85; }
+.passmini .f { position: absolute; left: 16px; bottom: 16px; font: 600 12px var(--ui); letter-spacing: .07em; opacity: .75; }
+.passmini .f b { display: block; font: 600 20px var(--ui); letter-spacing: .08em; opacity: 1; margin-top: 3px; }
+
+/* voucher */
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 70px; background: #16181F; border-radius: 30px 30px 0 0; }
+.sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .25); margin: 8px auto 0; }
+.sheet h3 { font: 700 17px var(--ui); text-align: center; margin-top: 14px; }
+.form { position: absolute; left: 16px; right: 16px; }
+.group { background: #22252F; border-radius: 14px; margin-bottom: 22px; overflow: hidden; }
+.group .r { display: flex; justify-content: space-between; align-items: center; height: 50px; padding: 0 16px; font: 400 17px var(--ui);
+  border-bottom: 1px solid rgba(255, 255, 255, .07); }
+.group .r:last-child { border-bottom: 0; }
+.group .r span { color: var(--muted); }
+.group .r b { font-weight: 600; }
+.switch { width: 51px; height: 31px; border-radius: 16px; background: #34C759; position: relative; }
+.switch::after { content: ""; position: absolute; right: 2px; top: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; }
+.label { font: 500 13px var(--ui); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 0 16px 7px; }
+.saldo { position: absolute; left: 0; right: 0; text-align: center; }
+.saldo small { display: block; font: 600 13px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.saldo b { font: 800 56px/1.1 "Bricolage"; letter-spacing: -.02em; }
+
+/* thuisscherm met widgets */
+.home { position: absolute; inset: 0; background: radial-gradient(80% 60% at 20% 0%, #3E35A8, transparent 60%),
+  radial-gradient(80% 70% at 100% 100%, #0E6B57, transparent 60%), #0D0C1C; }
+.widget { position: absolute; border-radius: 26px; background: rgba(28, 30, 40, .78); backdrop-filter: blur(20px); padding: 16px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+.widget .wh { display: flex; align-items: center; gap: 8px; font: 700 13px var(--ui); opacity: .8; margin-bottom: 10px; }
+.widget .wh img { width: 18px; height: 18px; border-radius: 5px; }
+.wgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.wgrid .tile { width: 100%; height: 50px; border-radius: 11px; }
+.wgrid .tile img { max-width: 52px; max-height: 22px; }
+.wbig { height: 100%; border-radius: 18px; overflow: hidden; position: relative; }
+.apps { position: absolute; display: grid; grid-template-columns: repeat(4, 64px); gap: 26px 34px; }
+.apps i { width: 64px; height: 64px; border-radius: 15px; display: block; }
+.dock { position: absolute; left: 14px; right: 14px; bottom: 22px; height: 96px; border-radius: 34px; background: rgba(255, 255, 255, .14);
+  display: flex; justify-content: space-around; align-items: center; }
+.dock i { width: 64px; height: 64px; border-radius: 15px; display: block; }
+
+/* watch */
+.watch { position: absolute; z-index: 4; width: calc(var(--u) * 30); aspect-ratio: 422 / 514; border-radius: calc(var(--u) * 7);
+  padding: calc(var(--u) * 1.8); background: linear-gradient(145deg, #C9C3B5, #8D8778 40%, #B9B2A2);
+  box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 9) rgba(0, 0, 0, .55); }
+.watch::after { content: ""; position: absolute; right: calc(var(--u) * -1.2); top: 28%; width: calc(var(--u) * 1.6); height: 18%;
+  border-radius: calc(var(--u) * .6); background: linear-gradient(90deg, #8D8778, #E0DACB); }
+.watch .screen { border-radius: calc(var(--u) * 5.4); background: #000; }
+.watch .ui { width: 211px; height: 257px; font-family: var(--ui); }
+.wui { position: absolute; inset: 0; background: #000; color: #fff; }
+.wui .wt { position: absolute; top: 10px; left: 14px; right: 14px; display: flex; justify-content: space-between; font: 700 15px var(--ui); }
+.wui .wt span:last-child { font-weight: 500; }
+.wcard { position: absolute; left: 8px; right: 8px; height: 56px; border-radius: 12px; overflow: hidden; }
+.wcard img { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); max-height: 20px; max-width: 110px; }
+.wcode { position: absolute; left: 0; right: 0; top: 30px; bottom: 0; background: #fff; border-radius: 22px 22px 0 0; padding: 14px 12px; color: #111; text-align: center; }
+.wcode svg { width: 100%; height: 120px; }
+.wcode b { font: 600 13px var(--ui); letter-spacing: .1em; }
+
+/* Face ID */
+.lockapp { position: absolute; inset: 0; background: radial-gradient(70% 45% at 50% 30%, rgba(106, 92, 255, .4), transparent 70%), var(--ink);
+  display: grid; place-items: center; }
+.faceid { width: 120px; height: 120px; stroke: #fff; fill: none; stroke-width: 4; stroke-linecap: round; }
+.lockapp p { font: 700 24px var(--ui); margin-top: 22px; text-align: center; }
+.lockapp small { display: block; font: 500 16px var(--ui); color: var(--muted); margin-top: 8px; }
+.feats { position: absolute; left: 0; right: 0; display: grid; gap: calc(var(--u) * 2.8); padding: 0 calc(var(--u) * 8); z-index: 3; }
+.feat { display: flex; align-items: center; gap: calc(var(--u) * 3); font: 700 calc(var(--u) * 3.9)/1.2 "Figtree"; }
+.feat i { width: calc(var(--u) * 9); height: calc(var(--u) * 9); border-radius: calc(var(--u) * 1.8); display: grid; place-items: center; flex: none;
+  background: rgba(255, 255, 255, .12); }
+.feat i svg { width: 55%; height: 55%; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.feat small { display: block; font: 500 calc(var(--u) * 3)/1.3 "Figtree"; opacity: .75; margin-top: calc(var(--u) * .4); }
+
+/* floating losse kaarten */
+.float { position: absolute; z-index: 1; border-radius: calc(var(--u) * 2.6); overflow: hidden; box-shadow: 0 calc(var(--u) * 3) calc(var(--u) * 6) rgba(0, 0, 0, .4); }
+.float img { position: absolute; left: 9%; top: 12%; max-height: 18%; max-width: 50%; }
+
+/* promo */
+.promo-logo { display: flex; align-items: center; gap: calc(var(--u) * 2); }
+.promo-logo img { width: calc(var(--u) * 10); height: calc(var(--u) * 10); border-radius: calc(var(--u) * 2.3); }
+.promo-logo span { font: 800 calc(var(--u) * 9)/1 "Bricolage"; letter-spacing: -.04em; }
+.badge { display: inline-flex; align-items: center; gap: calc(var(--u) * 1); padding: calc(var(--u) * 1.1) calc(var(--u) * 2); border-radius: 999px;
+  background: rgba(255, 255, 255, .12); font: 700 calc(var(--u) * 2)/1 "Figtree"; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="jsbarcode.min.js"></script>
+<script src="qrcode.js"></script>
+<script>
+const P = new URLSearchParams(location.search);
+const W = +P.get("w"), H = +P.get("h"), SCENE = P.get("s"), KIND = P.get("k") || "iphone";
+document.documentElement.style.setProperty("--w", W + "px");
+document.documentElement.style.setProperty("--h", H + "px");
+// eenheid: 1% van de breedte bij staand, van de hoogte bij liggend
+const U = (W < H ? W : H * 1.25) / 100;
+document.documentElement.style.setProperty("--u", U + "px");
+
+const C = {
+  "ah.nl": "#00A0E2", "jumbo.com": "#FFC800", "kruidvat.nl": "#FFFFFF", "ikea.com": "#0058AB", "hema.nl": "#E3191C",
+  "action.com": "#FFFFFF", "etos.nl": "#FFFFFF", "gamma.nl": "#003978", "lidl.nl": "#0040A4", "decathlon.nl": "#1482C2",
+  "zara.com": "#000000", "bol.com": "#0000A5", "shell.nl": "#FFD500", "primark.com": "#00AEEF", "hm.com": "#FFFFFF",
+  "praxis.nl": "#FFDD00", "ns.nl": "#FFC917", "klm.com": "#00A1DE", "open32.nl": "#05141B",
+};
+const light = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255) > 160; };
+const logo = (d, cls = "logo") => `<img class="${cls}" src="logos/${d}.png">`;
+const ICON = {
+  gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m14 6 4 4"/></svg>',
+  share: '<svg viewBox="0 0 24 24"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v8h14v-8"/></svg>',
+  trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  shield: '<svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
+  nosign: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></svg>',
+  euro: '<svg viewBox="0 0 24 24"><path d="M17 6.5A6.5 6.5 0 1 0 17 17.5M4 10h9M4 14h9"/></svg>',
+};
+const status = (dark = true) => `<div class="island"></div><div class="status" style="color:${dark ? "#fff" : "#000"}"><span>9:41</span><span class="r">
+  <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+  <svg viewBox="0 0 16 12"><path d="M8 2.5c2.3 0 4.4.9 6 2.4l1.2-1.3A10.2 10.2 0 0 0 8 .7 10.2 10.2 0 0 0 .8 3.6L2 4.9a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.2-1.3A6.7 6.7 0 0 0 8 4.3 6.7 6.7 0 0 0 3.4 6.1l1.2 1.3c.9-.8 2.1-1.3 3.4-1.3zm0 3.5L6 11.5 8 12l2-.5z"/></svg>
+  <svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="23" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="8" rx="2"/><path d="M25 4v4c.8-.3 1.3-1.1 1.3-2S25.8 4.3 25 4z" opacity=".4"/></svg></span></div><div class="homebar"></div>`;
+const card = (d, top, opts = {}) => {
+  const c = C[d], lt = light(c);
+  return `<div class="pcard ${lt ? "lightbg" : ""}" style="top:${top}px;background:${c};${opts.style || ""}"><div class="sheen"></div>${logo(d)}
+    ${opts.kind ? `<span class="kind">${opts.kind}</span>` : ""}
+    ${opts.bottom ? `<div class="bottom" style="color:${lt ? "#111" : "#fff"}">${opts.bottom}</div>` : ""}</div>`;
+};
+function ean(v) {
+  const d = v.replace(/\D/g, "").slice(0, 12);
+  const sum = [...d].reduce((a, c, i) => a + Number(c) * (i % 2 ? 3 : 1), 0);
+  return d + ((10 - (sum % 10)) % 10);
+}
+function barcodeSVG(value, format = "EAN13", h = 100) {
+  if (format === "EAN13") value = ean(value);
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  JsBarcode(s, value, { format, displayValue: false, height: h, margin: 0, width: 3, background: "transparent" });
+  s.setAttribute("preserveAspectRatio", "none");
+  return s.outerHTML;
+}
+function qrSVG(text) {
+  const q = qrcode(0, "M"); q.addData(text); q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+}
+
+// ---------- app-schermen (440 × 956 pt) ----------
+const SCREENS = {
+  stack: () => `<div class="app">${status()}
+    <div class="nav"><div class="glass">${ICON.gear}</div><div class="glass">${ICON.plus}</div></div>
+    <div class="large">Kaarten</div>
+    <div class="search">${ICON.search}<span>Zoek kaarten</span></div>
+    <div class="stack">${["ah.nl", "action.com", "decathlon.nl", "hema.nl", "ikea.com", "jumbo.com", "kruidvat.nl", "lidl.nl", "praxis.nl", "zara.com"]
+      .map((d, i) => card(d, i * 62)).join("")}</div></div>`,
+  forward: () => `<div class="app">${status()}
+    <div class="stack" style="filter:blur(14px);opacity:.6">${["ah.nl", "action.com", "decathlon.nl", "hema.nl", "ikea.com", "jumbo.com", "kruidvat.nl", "lidl.nl"]
+      .map((d, i) => card(d, i * 62)).join("")}</div><div class="dim"></div>
+    <div class="nav"><span style="font:600 17px var(--ui);color:#A79FFF">Klaar</span></div>
+    <div class="back" style="left:10px;top:250px"><div class="bar" style="background:#00A0E2">${logo("ah.nl", "")}</div>
+      <div class="code">${barcodeSVG("2620123456784")}</div><div class="num">2620 1234 5678 4</div></div>
+    <div class="actions" style="top:546px"><div class="glass">${ICON.star}</div><div class="glass">${ICON.pencil}</div><div class="glass">${ICON.share}</div><div class="glass">${ICON.trash}</div></div>
+    <div class="walletbtn" style="top:626px"><i class="wi"></i>Voeg toe aan Apple Wallet</div>
+    <div style="position:absolute;top:700px;left:0;right:0;text-align:center;font:500 14px var(--ui);color:var(--muted)">Scherm staat op volle helderheid</div></div>`,
+  scan: () => `<div class="app"><div class="camera"></div>${status()}
+    <div class="hint">Houd je kaart in beeld<small>Pasr leest de code en herkent de winkel</small></div>
+    <div class="held" style="background:#fff">${logo("kruidvat.nl")}<div class="bc">${barcodeSVG("2101234567897", "EAN13", 60)}</div></div>
+    <div class="frame"><i></i><i></i><i></i><i></i></div>
+    <div class="chiprow"><span>✓ Code gevonden</span></div>
+    <div class="found"><div class="row"><div class="tile" style="background:#fff">${logo("kruidvat.nl", "")}</div>
+      <div><b>Kruidvat herkend</b><span>2101 2345 6789 7</span></div></div><div class="btn">Kaart toevoegen</div></div></div>`,
+  lockscreen: () => `<div class="lock">${status()}<div class="date">Zaterdag 7 november</div><div class="time">9:41</div>
+    <div class="notif" style="top:640px"><div class="ico"><img src="icon.png"></div><div class="t"><b>Je bent bij Albert Heijn</b><p>Tik om je kaart te tonen.</p></div><time>nu</time></div>
+    <div class="passmini" style="top:724px;background:#00A0E2">${logo("ah.nl")}<span class="brand">pasr</span><div class="f">NUMMER<b>2620 1234 5678</b></div></div></div>`,
+  voucher: () => `<div class="app">${status()}<div class="sheet"><div class="grab"></div><h3>Cadeaukaart</h3>
+    <div class="pcard" style="left:16px;top:60px;width:408px;background:#E3191C"><div class="sheen"></div>${logo("hema.nl")}<span class="kind">Cadeaukaart</span>
+      <div class="bottom" style="color:#fff"><div><small>Saldo</small>€ 25,00</div><div style="text-align:right"><small>Geldig tot</small>31 dec 2026</div></div></div>
+    <div class="saldo" style="top:345px"><small>Tegoed</small><b>€ 25,00</b></div>
+    <div class="form" style="top:440px"><div class="label">Voucher</div><div class="group">
+      <div class="r"><span>Saldo</span><b>€ 25,00</b></div><div class="r"><span>Geldig tot</span><b>31 december 2026</b></div><div class="r"><span>Pincode</span><b>••••</b></div></div>
+      <div class="label">Meldingen</div><div class="group"><div class="r">Herinnering vóór vervaldatum<div class="switch"></div></div><div class="r">Melding bij de winkel<div class="switch"></div></div></div>
+      <div class="label">Beveiliging</div><div class="group"><div class="r">Vergrendel met Face ID<div class="switch"></div></div></div></div></div></div>`,
+  widgets: () => `<div class="home">${status()}
+    <div class="widget" style="left:22px;right:22px;top:70px;height:186px"><div class="wh"><img src="icon.png">MEEST GEBRUIKT</div>
+      <div class="wgrid">${["ah.nl", "jumbo.com", "kruidvat.nl", "ikea.com", "hema.nl", "action.com", "lidl.nl", "gamma.nl"]
+        .map((d) => `<div class="tile" style="background:${C[d]}">${logo(d, "")}</div>`).join("")}</div></div>
+    <div class="widget" style="left:22px;top:282px;width:186px;height:186px;padding:12px"><div class="wbig" style="background:#FFC800">${logo("jumbo.com", "")
+      .replace('class=""', 'style="position:absolute;left:12px;top:12px;max-height:22px;max-width:110px"')}
+      <div style="position:absolute;left:10px;right:10px;bottom:10px;height:78px;background:#fff;border-radius:10px;padding:8px">${barcodeSVG("8719327004417", "EAN13", 50)}</div></div></div>
+    <div class="apps" style="left:248px;top:290px;grid-template-columns:repeat(2,64px);gap:26px 34px">${["#34C759", "#FF9F0A", "#0A84FF", "#FF375F"].map((c) => `<i style="background:${c}"></i>`).join("")}</div>
+    <div class="apps" style="left:34px;top:500px">${["#5E5CE6", "#FFD60A", "#64D2FF", "#30D158", "#BF5AF2", "#FF453A", "#FF9F0A", "#AC8E68"].map((c) => `<i style="background:${c}"></i>`).join("")}</div>
+    <div class="dock"><i style="background:#30D158"></i><i style="background:#0A84FF"></i><i style="background:#fff"></i><i style="background:url(icon.png) center/cover"></i></div></div>`,
+  faceid: () => `<div class="lockapp">${status()}<div style="text-align:center">
+    <svg class="faceid" viewBox="0 0 64 64"><path d="M4 20V10a6 6 0 0 1 6-6h10M44 4h10a6 6 0 0 1 6 6v10M60 44v10a6 6 0 0 1-6 6H44M20 60H10a6 6 0 0 1-6-6V44M22 24v6M42 24v6M32 24v14h-4M24 46c4 3 12 3 16 0"/></svg>
+    <p>Pasr is vergrendeld<small>Ontgrendel met Face ID</small></p></div></div>`,
+  watchlist: () => `<div class="wui"><div class="wt"><span style="color:#A79FFF">Pasr</span><span>9:41</span></div>
+    ${["ah.nl", "jumbo.com", "kruidvat.nl", "ikea.com"].map((d, i) => `<div class="wcard" style="top:${40 + i * 62}px;background:${C[d]}">${logo(d, "")}</div>`).join("")}</div>`,
+  watchcode: () => `<div class="wui"><div class="wt"><span style="color:#A79FFF">‹ Jumbo</span><span>9:41</span></div>
+    <div class="wcode">${barcodeSVG("8719327004417", "EAN13", 120)}<b>8719 3270 0441 7</b></div></div>`,
+  watchqr: () => `<div class="wui"><div class="wt"><span style="color:#A79FFF">‹ IKEA</span><span>9:41</span></div>
+    <div class="wcode" style="display:grid;place-items:center;padding:16px 40px 20px">${qrSVG("IKEA-FAMILY-627598012345")}<b style="margin-top:8px">6275 9801 2345</b></div></div>`,
+};
+
+function device(kind, screen, style = "") {
+  if (kind === "watch") {
+    return `<div class="watch" style="${style}"><div class="screen"><div class="ui" style="--k:var(--wk)">${SCREENS[screen]()}</div></div></div>`;
+  }
+  if (kind === "ipad") {
+    // iPad: dezelfde app, kaarten in het midden (zoals Pasr op de iPad), achtergrond over het hele scherm
+    const inner = SCREENS[screen]().replace('<div class="island"></div>', "").replace('<div class="homebar"></div>', "");
+    const bg = screen === "lockscreen" ? "lock" : screen === "widgets" ? "home" : screen === "scan" ? "camera" : screen === "faceid" ? "lockapp" : "app";
+    return `<div class="device ipad" style="${style}"><div class="screen"><div class="ui"><div class="${bg}"></div>
+      <div style="position:absolute;left:${(1032 - 440 * 1.42) / 2}px;top:20px;width:440px;height:956px;transform:scale(1.42);transform-origin:0 0">${inner}</div>
+      <div class="homebar" style="width:300px"></div></div></div></div>`;
+  }
+  return `<div class="device phone" style="${style}"><div class="screen"><div class="ui">${SCREENS[screen]()}</div></div></div>`;
+}
+
+const floatCard = (d, l, t, w, rot) => `<div class="float" style="left:${l}%;top:${t}%;width:${w}%;aspect-ratio:1.586;background:${C[d]};transform:rotate(${rot}deg)">${logo(d, "")}</div>`;
+
+// ---------- marketing-scènes ----------
+const SCENES = {
+  // iPhone en iPad (staand): kop boven, toestel eronder
+  s1: { bg: "dark", eyebrow: "Gratis · zonder reclame", title: "Al je klantenkaarten <em>in één app</em>", sub: "Je portemonnee wordt een stuk dunner.", screen: "stack" },
+  s2: { bg: "light", eyebrow: "Aan de kassa", title: "Eén tik en je pas <em>staat klaar</em>", sub: "Op volle helderheid, zodat elke scanner hem leest.", screen: "forward" },
+  s3: { bg: "dark", eyebrow: "Toevoegen in seconden", title: "Scan je kaart, <em>Pasr herkent de winkel</em>", sub: "Logo en kleur van ruim 300 winkels.", screen: "scan" },
+  s4: { bg: "iris", eyebrow: "Apple Wallet", title: "Je kaart verschijnt <em>als je er bent</em>", sub: "In Apple Wallet en met een melding bij de winkel.", screen: "lockscreen" },
+  s5: { bg: "light", eyebrow: "Cadeaukaarten en vouchers", title: "Je tegoed <em>altijd bij de hand</em>", sub: "Met een herinnering voordat hij verloopt.", screen: "voucher" },
+  s6: { bg: "dark", eyebrow: "iPhone, iPad en Apple Watch", title: "Op je pols en <em>op je beginscherm</em>", sub: "Widgets en een app voor je Apple Watch.", screen: "widgets", watch: "watchcode" },
+  s7: { bg: "iris", eyebrow: "Privé", title: "Jouw kaarten, <em>alleen van jou</em>", sub: null, screen: "faceid", feats: true },
+};
+
+function marketing(sc, kind) {
+  const ipad = kind === "ipad";
+  let html = `<div class="canvas ${sc.bg} ${ipad ? "is-ipad" : ""}">`;
+  html += `<div class="head" style="top:${ipad ? 4.6 : 5.6}%"><div class="eyebrow"><i></i>${sc.eyebrow}</div><h1>${sc.title}</h1>${sc.sub ? `<p class="sub">${sc.sub}</p>` : ""}</div>`;
+  if (sc.screen === "stack") html += floatCard("klm.com", -6, 30, 22, -14) + floatCard("ns.nl", 84, 34, 22, 12);
+  if (sc.feats) {
+    html += `<div class="feats" style="top:${ipad ? 20 : 24}%;${ipad ? "padding:0 calc(var(--u) * 14)" : ""}">
+      <div class="feat"><i>${ICON.nosign}</i><div>Geen reclame, geen tracking<small>We verkopen niets en kijken niet mee.</small></div></div>
+      <div class="feat"><i>${ICON.cloud}</i><div>In je eigen iCloud<small>Of in een versleuteld Pasr-account, als je wilt.</small></div></div>
+      <div class="feat"><i>${ICON.shield}</i><div>Vergrendel met Face ID<small>Per kaart of de hele app.</small></div></div>
+      <div class="feat"><i>${ICON.euro}</i><div>Helemaal gratis<small>Geen abonnement, geen premium.</small></div></div></div>`;
+    html += device(kind, sc.screen, `top:${ipad ? 58 : 66}%;width:calc(var(--u) * ${ipad ? 62 : 70})`);
+  } else {
+    html += device(kind, sc.screen, `top:${ipad ? 25 : 29}%;width:calc(var(--u) * ${ipad ? 84 : 82})`);
+  }
+  if (sc.watch) html += device("watch", sc.watch, `left:${ipad ? 74 : 66}%;top:${ipad ? 62 : 66}%;transform:rotate(-6deg)`);
+  return html + "</div>";
+}
+
+function promo(kind) {
+  // 16:9 (In-App Event en artwork) of 9:16
+  const wide = W > H;
+  let html = `<div class="canvas dark">`;
+  if (wide) {
+    html += `<div style="position:absolute;left:7%;top:50%;transform:translateY(-50%);width:44%;z-index:3">
+      <div class="promo-logo"><img src="icon.png"><span>pasr</span></div>
+      <h1 style="margin-top:calc(var(--u)*3.5);font-size:calc(var(--u)*6.4)">Al je klantenkaarten <em>in één app</em></h1>
+      <p class="sub" style="font-size:calc(var(--u)*2.4)">Gratis, zonder reclame. Voor iPhone, iPad en Apple Watch.</p>
+      <div style="display:flex;gap:calc(var(--u)*1.4);margin-top:calc(var(--u)*3.5)"><span class="badge">Apple Wallet</span><span class="badge">Face ID</span><span class="badge">300+ winkels</span></div></div>`;
+    const cards = [["ah.nl", 54, 14, -10], ["ikea.com", 70, 8, 8], ["jumbo.com", 60, 40, 4], ["hema.nl", 77, 44, -7], ["kruidvat.nl", 52, 64, 9], ["zara.com", 70, 70, -4]];
+    html += cards.map(([d, l, t, r]) => `<div class="float" style="left:${l}%;top:${t}%;width:22%;aspect-ratio:1.586;background:${C[d]};transform:rotate(${r}deg)">${logo(d, "")}</div>`).join("");
+  } else {
+    html += `<div class="head" style="top:7%"><div class="promo-logo" style="justify-content:center"><img src="icon.png"><span>pasr</span></div>
+      <h1 style="margin-top:calc(var(--u)*5)">Al je klantenkaarten <em>in één app</em></h1><p class="sub">Gratis en zonder reclame.</p></div>`;
+    html += device("iphone", "stack", "top:38%;width:calc(var(--u)*66)");
+  }
+  return html + "</div>";
+}
+
+const root = document.getElementById("root");
+if (KIND === "watch") {
+  document.documentElement.style.setProperty("--wk", W / 211);
+  root.innerHTML = `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden"><div class="ui" style="--k:${W / 211};width:211px;height:${H / (W / 211)}px">${SCREENS[SCENE]()}</div></div>`;
+} else if (KIND === "promo") {
+  root.innerHTML = promo();
+} else {
+  root.innerHTML = marketing(SCENES[SCENE], KIND);
+}
+// schaal de app binnen het toestel
+requestAnimationFrame(() => {
+  document.querySelectorAll(".screen").forEach((s) => {
+    const ui = s.querySelector(".ui");
+    const base = s.closest(".watch") ? 211 : s.closest(".ipad") ? 1032 : 440;
+    ui.style.setProperty("--k", s.clientWidth / base);
+  });
+  document.fonts.ready.then(() => { document.body.dataset.ready = "1"; });
+});
+</script>
+</body>
+</html>

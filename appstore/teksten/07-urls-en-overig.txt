@@ -1,0 +1,10 @@
+Support-URL: https://pasr.nl/support/
+Marketing-URL: https://pasr.nl
+Privacybeleid-URL: https://pasr.nl/privacy/
+Copyright: 2026 Léon van der Linden
+Primaire categorie: Winkelen
+Secundaire categorie: Lifestyle
+Prijs: Gratis (geen in-app aankopen)
+Leeftijdsclassificatie: 4+ (alle vragen in de vragenlijst: Geen / Nee)
+Beschikbaarheid: Nederland (eventueel ook België)
+Taal: Nederlands

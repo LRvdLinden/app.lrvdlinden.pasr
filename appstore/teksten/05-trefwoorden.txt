@@ -1,0 +1,1 @@
+klantenkaart,pasjes,kaarten,wallet,cadeaukaart,voucher,barcode,spaarpas,loyalty,portemonnee,bonus

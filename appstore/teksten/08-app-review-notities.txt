@@ -1,0 +1,16 @@
+Pasr is a free wallet app for loyalty cards, gift cards and vouchers for Dutch stores. No ads, no in-app purchases.
+
+How to test:
+1. Open the app and go through the welcome screens. Creating an account is optional; tap "Ga verder zonder account" to continue without one.
+2. Tap + and choose a store (for example "Albert Heijn"), enter any number (for example 2620123456784) and save. Or tap "Scan je kaart" to scan any barcode.
+3. Tap a card: it comes forward and shows the barcode at full screen brightness.
+4. "Voeg toe aan Apple Wallet" under a card creates a signed Wallet pass (pass type pass.nl.lrvdlinden.pasr) via our server. Nothing is stored on the server.
+
+Optional account (for syncing cards between devices):
+Demo account: [VUL IN: e-mailadres]  Password: [VUL IN: wachtwoord]
+
+Location: only used, when the user turns it on in Settings, to show a local notification when the user is near a store they have a card for, and to add nearby branch locations to a Wallet pass. The user's location never leaves the device.
+Notifications: local only (reminders before a voucher expires, and the store notification above).
+Camera: scanning barcodes. Face ID: optional lock for the app or single cards.
+
+Store logos are shown only to help users recognise their own cards. Pasr is not affiliated with these stores.
