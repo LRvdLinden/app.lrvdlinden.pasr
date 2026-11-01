@@ -36,7 +36,16 @@ enum LogoService {
                 changed = true
             }
         }
-        // Store logos (not the owner's own): always the current logo that ships with the app.
+        // Once: cards of a known store made before logos shipped with the app get the store logo too, even if a
+        // logo was cut out of a screenshot back then.
+        let migrated = UserDefaults.standard.bool(forKey: "pasr.storeLogoMigration")
+        if !migrated {
+            for card in all where !card.logoFromWebsite && card.templateID != nil {
+                if let domain = card.logoDomain, bundledLogo(for: domain) != nil { card.logoFromWebsite = true }
+            }
+            UserDefaults.standard.set(true, forKey: "pasr.storeLogoMigration")
+        }
+        // Store logos (not a logo the owner picked in the editor): always the current logo that ships with the app.
         for card in all where card.logoData == nil || card.logoFromWebsite {
             guard let domain = card.logoDomain, let bundled = bundledLogo(for: domain) else { continue }
             if card.logoData != bundled {

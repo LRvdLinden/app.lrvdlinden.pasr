@@ -311,7 +311,8 @@
 "#E30613"
 ],
 "dominos": [
-"#006491"
+"#006491",
+"#FFFFFF"
 ],
 "donner": [
 "#1A1A1A",
@@ -383,6 +384,7 @@
 "#003B7E"
 ],
 "flyingblue": [
+"#000099",
 "#00205B"
 ],
 "flyingtiger": [
@@ -591,6 +593,9 @@
 "kiosk": [
 "#FFC917"
 ],
+"kleiboer": [
+"#12253C"
+],
 "klm": [
 "#00A1DE"
 ],
@@ -718,7 +723,8 @@
 "#641C75"
 ],
 "nelson": [
-"#1A1A1A"
+"#1A1A1A",
+"#FFFFFF"
 ],
 "netflixgift": [
 "#E50914"
@@ -767,6 +773,7 @@
 "#E30613"
 ],
 "petsplace": [
+"#DD0611",
 "#E2001A"
 ],
 "petsplace2": [
@@ -825,6 +832,9 @@
 "readshop": [
 "#E30613"
 ],
+"restaurantorange": [
+"#FFFFFF"
+],
 "rijksmuseum": [
 "#1A1A1A"
 ],
@@ -861,6 +871,9 @@
 ],
 "sephora": [
 "#000000",
+"#1A1A1A"
+],
+"shabushabu": [
 "#1A1A1A"
 ],
 "shell": [

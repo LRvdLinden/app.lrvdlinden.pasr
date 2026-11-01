@@ -194,6 +194,8 @@ struct ImportView: View {
                             kind: item.kind, colorHex: item.colorHex)
             card.templateID = item.templateID
             card.logoData = item.logoData
+            // A logo cut from a Klarna/Stocard screenshot of a known store makes way for the store's own logo.
+            card.logoFromWebsite = card.templateID != nil
             card.refreshCodeImage()
             context.insert(card)
         }

@@ -355,6 +355,9 @@ enum StoreTemplates {
         .init(id: "funzone", name: "FunZone", domain: "funzone.nl", category: "Uitgaan en vrije tijd", colorHex: "#E6007E", format: .qr, aliases: ["fun zone"]),
         .init(id: "gstaroutlet", name: "G-Star RAW Outlet", domain: "g-star.com", category: "Mode en schoenen", colorHex: "#000000", format: .code128, aliases: ["g-star", "g star", "gstar", "g-star raw"]),
         .init(id: "schuurman", name: "Schuurman Schoenen", domain: "schuurman-schoenen.nl", category: "Mode en schoenen", colorHex: "#1A1A1A", format: .ean13, aliases: ["schuurman"]),
+        .init(id: "restaurantorange", name: "Restaurant Orange", domain: "restaurantorange.nl", category: "Drank en eten", colorHex: "#FFFFFF", format: .code128, aliases: ["orange apeldoorn", "orange restaurant"]),
+        .init(id: "shabushabu", name: "Shabu Shabu", domain: "shabushabu.nl", category: "Drank en eten", colorHex: "#1A1A1A", format: .code128, aliases: ["shabu-shabu"]),
+        .init(id: "kleiboer", name: "Carwash Kleiboer", domain: "carwashkleiboer.nl", category: "Tanken en sparen", colorHex: "#12253C", format: .qr, aliases: ["kleiboer", "carwash kleiboer"]),
         .init(id: "amikappers", name: "AMI Kappers", domain: "amikappers.nl", category: "Drogist en beauty", colorHex: "#1A1A1A", format: .code128, aliases: ["ami kapsalons", "ami kapper"]),
     ]
 

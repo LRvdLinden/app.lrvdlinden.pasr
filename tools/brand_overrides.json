@@ -288,5 +288,41 @@
  "coop.nl": {
   "file": "File:Coop Supermarkten logo.jpg",
   "card": "#FFFFFF"
+ },
+ "restaurantorange.nl": {
+  "logo_url": "https://www.restaurantorange.nl/wp-content/uploads/2018/12/orange-logo.svg",
+  "card": "#FFFFFF"
+ },
+ "shabushabu.nl": {
+  "file": "File:Shabu Shabu Logo.png",
+  "card": "bg"
+ },
+ "dominos.nl": {
+  "file": "File:Domino's pizza logo.svg",
+  "card": "#FFFFFF"
+ },
+ "newyorkpizza.nl": {
+  "site": true,
+  "card": "#00843D"
+ },
+ "nelson.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "carwashkleiboer.nl": {
+  "logo_url": "https://www.carwashkleiboer.nl/here/wp-content/uploads/2024/08/carwash-kleiboer-logo-wit.svg",
+  "card": "#12253C"
+ },
+ "discus.nl": {
+  "logo_url": "https://www.discus.nl/image/logo/6ab9ff80-de7a-11e7-8c26-88a08bd89a7b?rev=1793442265&extension=png",
+  "card": "bg"
+ },
+ "flyingblue.com": {
+  "manual": true,
+  "card": "#000099"
+ },
+ "petsplace.nl": {
+  "logo_url": "https://www.petsplace.nl/static/version1792483315/frontend/ISM/ijsvogel/nl_NL/images/logo.svg",
+  "card": "#DD0611"
  }
 }
