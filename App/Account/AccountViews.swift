@@ -221,7 +221,7 @@ struct AccountSheet: View {
                     let ms = Int(Date.now.timeIntervalSince(shownAt) * 1000)
                     let result = try await account.signUp(firstName: firstName, email: email, password: password,
                                                           honeypot: website, fillMilliseconds: ms)
-                    if result == .signedIn { finish() } else { mode = .checkInbox }
+                    if result == .signedIn { finish() } else { mode = .checkInbox; onDone() }
                 case .signIn:
                     try await account.signIn(email: email, password: password)
                     finish()
@@ -316,7 +316,6 @@ struct AccountSettingsSection: View {
                 Button { showAccount = true } label: {
                     Label("Inloggen of account maken", systemImage: "person.crop.circle.badge.plus")
                 }
-                .disabled(!AccountConfig.isConfigured)
             }
         } header: {
             Text("Pasr-account")

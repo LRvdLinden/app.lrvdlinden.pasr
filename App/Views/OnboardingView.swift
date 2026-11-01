@@ -5,6 +5,9 @@ struct OnboardingView: View {
     var onFinish: () -> Void
     @State private var page = 0
     @State private var accountMode: AccountSheet.Mode?
+    /// After the account step: ask whether to lock Pasr with Face ID.
+    @State private var askFaceID = false
+    @State private var accountDone = false
 
     private struct Page: Identifiable {
         let id: Int
@@ -27,6 +30,81 @@ struct OnboardingView: View {
     private var isLast: Bool { page == pages.count }
 
     var body: some View {
+        ZStack {
+            if askFaceID {
+                faceIDStep.transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                pagesView.transition(.opacity)
+            }
+        }
+        .preferredColorScheme(.dark)
+        .sheet(item: $accountMode, onDismiss: {
+            // Signed in, or account made and waiting for the confirmation mail: on to the Face ID question.
+            if accountDone { afterAccount() }
+        }) { mode in
+            AccountSheet(mode: mode) { accountDone = true }
+        }
+    }
+
+    /// Account done or skipped: next the Face ID question (when the device has Face ID, Touch ID or a passcode).
+    private func afterAccount() {
+        guard Biometrics.isAvailable, !Biometrics.isAppLockEnabled else { return onFinish() }
+        withAnimation(.snappy) { askFaceID = true }
+    }
+
+    private var faceIDStep: some View {
+        ZStack {
+            Brand.ink.ignoresSafeArea()
+            RadialGradient(colors: [Brand.mint.opacity(0.28), .clear], center: .top, startRadius: 10, endRadius: 520)
+                .ignoresSafeArea()
+            VStack(spacing: 22) {
+                Spacer(minLength: 0)
+                RoundedRectangle(cornerRadius: 44, style: .continuous)
+                    .fill(LinearGradient(colors: [Brand.mint, Brand.mint.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 150, height: 150)
+                    .overlay {
+                        Image(systemName: Biometrics.symbolName)
+                            .font(.system(size: 72, weight: .regular))
+                            .foregroundStyle(.white)
+                    }
+                    .shadow(color: Brand.mint.opacity(0.45), radius: 30, y: 12)
+                VStack(spacing: 12) {
+                    Text("Pasr beveiligen met \(Biometrics.methodName)?")
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .multilineTextAlignment(.center)
+                    Text("Dan vraagt Pasr \(Biometrics.methodName) als je de app opent, zodat niemand anders je kaarten kan zien. Je kunt dit later altijd wijzigen in Instellingen.")
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 32)
+                Spacer(minLength: 0)
+                VStack(spacing: 12) {
+                    Button {
+                        Task {
+                            if await Biometrics.authenticate(reason: String(localized: "Bevestig om Pasr te vergrendelen met \(Biometrics.methodName).")) {
+                                UserDefaults.standard.set(true, forKey: Biometrics.appLockKey)
+                            }
+                            onFinish()
+                        }
+                    } label: {
+                        Text("Zet \(Biometrics.methodName) aan").fontWeight(.semibold).frame(maxWidth: .infinity, minHeight: 54)
+                    }
+                    .buttonStyle(.borderedProminent).tint(Brand.iris)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    Button("Niet nu") { onFinish() }
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
+            .frame(maxWidth: 560)
+        }
+    }
+
+    private var pagesView: some View {
         ZStack {
             Brand.ink.ignoresSafeArea()
             RadialGradient(colors: [Brand.iris.opacity(0.35), .clear], center: .top, startRadius: 10, endRadius: 520)
@@ -69,10 +147,6 @@ struct OnboardingView: View {
                 }
             }
             .frame(maxWidth: 560)
-        }
-        .preferredColorScheme(.dark)
-        .sheet(item: $accountMode) { mode in
-            AccountSheet(mode: mode) { onFinish() }
         }
     }
 
@@ -154,7 +228,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
             Spacer(minLength: 0)
             VStack(spacing: 12) {
-                if AccountConfig.isConfigured {
+                Group {
                     Button { accountMode = .signUp } label: {
                         Text("Maak een account").fontWeight(.semibold).frame(maxWidth: .infinity, minHeight: 54)
                     }
@@ -166,7 +240,7 @@ struct OnboardingView: View {
                     .buttonStyle(.bordered).tint(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
-                Button(AccountConfig.isConfigured ? "Ga verder zonder account" : "Aan de slag") { onFinish() }
+                Button("Ga verder zonder account") { afterAccount() }
                     .font(.callout.weight(.medium))
                     .foregroundStyle(.secondary)
                     .padding(.top, 4)
