@@ -124,9 +124,13 @@ async function buildPass(card: Card): Promise<Uint8Array> {
       altText: grouped,
     }],
     storeCard: {
-      headerFields: voucher && card.balance != null
-        ? [{ key: "balance", label: "TEGOED", value: card.balance, currencyCode: card.currency ?? "EUR" }]
-        : [],
+      // Rechtsboven: het tegoed van een cadeaukaart en altijd het merk Pasr (Wallet staat daar alleen tekst toe).
+      headerFields: [
+        ...(voucher && card.balance != null
+          ? [{ key: "balance", label: "TEGOED", value: card.balance, currencyCode: card.currency ?? "EUR" }]
+          : []),
+        { key: "brand", label: " ", value: "pasr" },
+      ],
       secondaryFields: [{ key: "number", label: voucher ? "KAARTNUMMER" : "NUMMER", value: grouped }],
       auxiliaryFields: voucher && card.expiresAt
         ? [{ key: "expires", label: "GELDIG TOT", value: card.expiresAt, dateStyle: "PKDateStyleMedium" }]
