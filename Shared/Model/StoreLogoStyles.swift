@@ -186,7 +186,7 @@ enum StoreLogoStyles {
         "primark.com": .init(card: "#00AEEF", tint: nil, plate: nil, opaque: false),
         "primera.nl": .init(card: "#E2001A", tint: nil, plate: nil, opaque: false),
         "profile.nl": .init(card: "#E30613", tint: nil, plate: nil, opaque: false),
-        "q-park.nl": .init(card: "#0072CE", tint: nil, plate: nil, opaque: false),
+        "q-park.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "q8.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "ranzijn.nl": .init(card: "#00843D", tint: nil, plate: nil, opaque: false),
         "readshop.nl": .init(card: "#E30613", tint: nil, plate: nil, opaque: false),
