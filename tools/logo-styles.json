@@ -405,6 +405,9 @@
   "bg": "#FFFFFF"
  },
  "only.com": {},
+ "open32.nl": {
+  "src": "https://www.open32.nl/static/version1793256005/frontend/Open32/Open32/nl_NL/images/logo.svg"
+ },
  "pathe.nl": {
   "opaque": true
  },

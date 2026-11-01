@@ -229,6 +229,7 @@ enum StoreColourHistory {
         "omoda": ["#1A1A1A"],
         "only": ["#1A1A1A"],
         "ooievaarspas": ["#E30613"],
+        "open32": ["#05141B"],
         "overvecht": ["#78B829"],
         "ovpas": ["#00A0E2"],
         "pathe": ["#FFB800"],

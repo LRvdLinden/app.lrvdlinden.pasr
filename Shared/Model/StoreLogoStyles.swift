@@ -178,6 +178,7 @@ enum StoreLogoStyles {
         "odin.nl": .init(card: "#5A8C2B", tint: nil, plate: nil, opaque: false),
         "omoda.nl": .init(card: "#1A1A1A", tint: nil, plate: nil, opaque: false),
         "only.com": .init(card: "#1A1A1A", tint: nil, plate: nil, opaque: false),
+        "open32.nl": .init(card: "#05141B", tint: nil, plate: nil, opaque: false),
         "pathe.nl": .init(card: "#FFB800", tint: nil, plate: nil, opaque: true),
         "payback.de": .init(card: "#003EB0", tint: nil, plate: nil, opaque: false),
         "pearle.nl": .init(card: "#00843D", tint: nil, plate: nil, opaque: false),
