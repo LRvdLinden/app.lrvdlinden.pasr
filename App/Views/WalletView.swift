@@ -80,7 +80,7 @@ struct WalletView: View {
             case .share(let card): ShareCardSheet(card: card)
             }
         }
-        .confirmationDialog(Text("\(deleting?.storeName ?? "") naar Recent verwijderd verplaatsen?"),
+        .confirmationDialog(Text("\(deleting?.storeName ?? "kaart") verwijderen?"),
                             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
                             titleVisibility: .visible) {
             Button("Verwijder", role: .destructive) {

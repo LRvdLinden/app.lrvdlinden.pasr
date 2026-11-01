@@ -302,7 +302,7 @@ struct AccountSettingsSection: View {
                     }
                 } label: {
                     HStack {
-                        Label("Nu synchroniseren", systemImage: "arrow.triangle.2.circlepath")
+                        SettingsLabel("Nu synchroniseren", symbol: "arrow.triangle.2.circlepath", color: Brand.iris)
                         Spacer()
                         if working { ProgressView() }
                         else if let last = CardSync.lastSync(for: session.userID) {
@@ -310,15 +310,19 @@ struct AccountSettingsSection: View {
                         }
                     }
                 }
-                Button("Uitloggen") { Task { await account.signOut() } }
-                Button("Account verwijderen", role: .destructive) { confirmDelete = true }
+                Button { Task { await account.signOut() } } label: {
+                    SettingsLabel("Uitloggen", symbol: "rectangle.portrait.and.arrow.right", color: .gray)
+                }
+                Button(role: .destructive) { confirmDelete = true } label: {
+                    Text("Account verwijderen").foregroundStyle(Brand.coral)
+                }
             } else {
                 Button { showAccount = true } label: {
-                    Label("Inloggen of account maken", systemImage: "person.crop.circle.badge.plus")
+                    SettingsLabel("Inloggen of account maken", symbol: "person.crop.circle.fill.badge.plus", color: Brand.iris)
                 }
             }
         } header: {
-            Text("Pasr-account")
+            Text("Account")
         } footer: {
             Text(error ?? footer)
         }
@@ -338,10 +342,10 @@ struct AccountSettingsSection: View {
 
     private var footer: String {
         if !AccountConfig.isConfigured {
-            return String(localized: "Accounts komen binnenkort. Tot die tijd staan je kaarten in je eigen iCloud.")
+            return String(localized: "Accounts komen binnenkort.")
         }
         return account.isSignedIn
-            ? String(localized: "Je kaarten staan versleuteld in je account en zijn zo op al je apparaten, ook na een nieuwe telefoon. Uitloggen laat de kaarten op dit apparaat staan.")
-            : String(localized: "Optioneel. Met een gratis account staan al je kaarten versleuteld op één plek en heb je ze op elk apparaat.")
+            ? String(localized: "Je kaarten staan versleuteld in je account, op al je apparaten.")
+            : String(localized: "Optioneel en gratis: je kaarten versleuteld op één plek, op elk apparaat.")
     }
 }

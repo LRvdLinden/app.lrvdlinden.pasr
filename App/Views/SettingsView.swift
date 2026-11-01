@@ -5,8 +5,6 @@ import CloudKit
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @Query(filter: #Predicate<Card> { $0.deletedAt != nil }, sort: \Card.deletedAt, order: .reverse)
-    private var deleted: [Card]
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var active: [Card]
     @State private var iCloudStatus: CKAccountStatus?
     @AppStorage(LogoService.settingKey) private var fetchLogos = true
@@ -22,25 +20,26 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // Overzicht: hoeveel kaarten en of iCloud bijhoudt
                 Section {
-                    LabeledContent("iCloud") {
-                        switch iCloudStatus {
-                        case .available: Label("Synchroniseert", systemImage: "checkmark.icloud").foregroundStyle(Brand.mint)
-                        case .noAccount: Text("Niet ingelogd").foregroundStyle(Brand.coral)
-                        case nil: ProgressView()
-                        default: Text("Niet beschikbaar").foregroundStyle(.secondary)
+                    HStack(spacing: 14) {
+                        Image("PasrIcon")
+                            .resizable()
+                            .frame(width: 52, height: 52)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(active.count == 1 ? "1 kaart" : "\(active.count) kaarten").font(.headline)
+                            iCloudLine.font(.subheadline)
                         }
                     }
-                    LabeledContent("Kaarten", value: "\(active.count)")
-                } footer: {
-                    Text("Je kaarten staan op je apparaten en in je eigen iCloud. Kaartnummers, pincodes en notities zijn daar end-to-end versleuteld. Pasr verzamelt geen gegevens.")
+                    .padding(.vertical, 4)
                 }
 
                 AccountSettingsSection()
 
                 RemindersSettingsSection()
 
-                Section {
+                Section("Privacy en beveiliging") {
                     Toggle(isOn: Binding(get: { appLock }, set: { newValue in
                         // Confirm with Face ID before switching the lock on or off.
                         Task {
@@ -49,65 +48,55 @@ struct SettingsView: View {
                             }
                         }
                     })) {
-                        Label("Pasr vergrendelen met \(Biometrics.methodName)", systemImage: Biometrics.symbolName)
+                        SettingsLabel("Vergrendelen met \(Biometrics.methodName)", symbol: Biometrics.symbolName, color: Brand.mint)
                     }
-                } header: {
-                    Text("Beveiliging")
-                } footer: {
-                    Text("Pasr vraagt \(Biometrics.methodName) bij het openen en als je terugkomt in de app. Losse kaarten kun je ook afschermen: zet dan in de kaart \"Code afschermen\" aan.")
-                }
-
-                Section {
-                    Toggle("Winkellogo's", isOn: $fetchLogos)
-                        .onChange(of: fetchLogos) { _, on in
-                            if on {
-                                Task { await LogoService.fillMissing(in: context) }
-                            } else {
-                                LogoService.removeWebsiteLogos(in: context)
-                            }
+                    Toggle(isOn: $fetchLogos) {
+                        SettingsLabel("Logo's van websites ophalen", symbol: "photo", color: .orange)
+                    }
+                    .onChange(of: fetchLogos) { _, on in
+                        if on {
+                            Task { await LogoService.fillMissing(in: context) }
+                        } else {
+                            LogoService.removeWebsiteLogos(in: context)
                         }
-                } footer: {
-                    Text("Bekende winkels hebben hun logo al in Pasr. Voor andere winkels haalt je iPhone het icoon op van de website. Logo's die je zelf hebt uitgeknipt blijven altijd staan.")
+                    }
                 }
 
                 Section {
                     Button { askBackupPassword = true } label: {
-                        Label("Maak een back-upbestand", systemImage: "arrow.down.doc")
+                        SettingsLabel("Back-up maken", symbol: "arrow.down.doc.fill", color: .blue)
                     }
                     Button { showImporter = true } label: {
-                        Label("Zet een back-up terug", systemImage: "arrow.up.doc")
+                        SettingsLabel("Back-up terugzetten", symbol: "arrow.up.doc.fill", color: .blue)
                     }
                 } header: {
                     Text("Back-up")
                 } footer: {
-                    Text(backupMessage ?? String(localized: "iCloud bewaart je kaarten al. Met een back-upbestand heb je een extra kopie met logo's en foto's, bijvoorbeeld in iCloud Drive, versleuteld met je eigen wachtwoord. Terugzetten voegt alleen kaarten toe die er nog niet zijn."))
+                    Text(backupMessage ?? String(localized: "Een extra kopie met logo's en foto's, versleuteld met je eigen wachtwoord."))
                 }
 
-                Section("Recent verwijderd") {
-                    if deleted.isEmpty {
-                        Text("Niets hier. Verwijderde kaarten blijven 30 dagen bewaard.").foregroundStyle(.secondary)
+                Section("Hulp") {
+                    Link(destination: URL(string: "https://pasr.nl/support/")!) {
+                        SettingsLabel("Hulp en contact", symbol: "questionmark.circle.fill", color: Brand.iris, external: true)
                     }
-                    ForEach(deleted) { card in
-                        HStack {
-                            Circle().fill(Color(hex: card.colorHex)).frame(width: 12, height: 12)
-                            Text(card.storeName)
-                            Spacer()
-                            Button("Zet terug") { card.deletedAt = nil; card.updatedAt = .now }
-                                .buttonStyle(.borderless)
-                        }
-                        .swipeActions {
-                            Button("Nu verwijderen", role: .destructive) { context.delete(card) }
-                        }
+                    Link(destination: URL(string: "https://pasr.nl/privacy/")!) {
+                        SettingsLabel("Privacyverklaring", symbol: "hand.raised.fill", color: Brand.iris, external: true)
                     }
+                    Button {
+                        UserDefaults.standard.set(false, forKey: "pasr.onboarded")
+                        dismiss()
+                    } label: {
+                        SettingsLabel("Welkomstscherm opnieuw bekijken", symbol: "sparkles", color: Brand.coral)
+                    }
+                }
+
+                Section("Ontdekken") {
+                    MoreAppsRow()
                 }
 
                 Section {
-                    Button("Welkomstscherm opnieuw bekijken") {
-                        UserDefaults.standard.set(false, forKey: "pasr.onboarded")
-                        dismiss()
-                    }
-                    LabeledContent("Versie", value: Bundle.main.versionString)
-                    Link("lrvdlinden.app", destination: URL(string: "https://lrvdlinden.app")!)
+                } footer: {
+                    AboutFooter()
                 }
             }
             .formStyle(.grouped)
@@ -162,6 +151,15 @@ struct SettingsView: View {
 }
 
 extension SettingsView {
+    @ViewBuilder fileprivate var iCloudLine: some View {
+        switch iCloudStatus {
+        case .available: Label("Synchroniseert met iCloud", systemImage: "checkmark.icloud").foregroundStyle(Brand.mint)
+        case .noAccount: Label("Niet ingelogd bij iCloud", systemImage: "icloud.slash").foregroundStyle(Brand.coral)
+        case nil: Text("iCloud controleren…").foregroundStyle(.secondary)
+        default: Label("iCloud niet beschikbaar", systemImage: "icloud.slash").foregroundStyle(.secondary)
+        }
+    }
+
     fileprivate func restore(_ data: Data, password: String?) {
         do {
             let added = try BackupDocument.decode(data, password: password).restore(into: context)
@@ -171,6 +169,86 @@ extension SettingsView {
         } catch {
             backupMessage = String(localized: "Dit bestand is geen Pasr-back-up.")
         }
+    }
+}
+
+/// Rij zoals in Instellingen van iOS: gekleurd blokje met symbool en de tekst.
+struct SettingsLabel: View {
+    let title: String
+    let symbol: String
+    let color: Color
+    var external = false
+
+    init(_ title: String, symbol: String, color: Color, external: Bool = false) {
+        self.title = title
+        self.symbol = symbol
+        self.color = color
+        self.external = external
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 29, height: 29)
+                .background(color.gradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            Text(title).foregroundStyle(.primary)
+            if external {
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+        }
+    }
+}
+
+/// "Meer apps van de maker": naar lrvdlinden.app.
+struct MoreAppsRow: View {
+    var body: some View {
+        Link(destination: URL(string: "https://lrvdlinden.app")!) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(LinearGradient(colors: [Brand.iris, Brand.coral], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    Image(systemName: "square.grid.2x2.fill")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 58, height: 58)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Meer apps van Léon").font(.headline).foregroundStyle(.primary)
+                    Text("Apps voor iPhone, iPad, Apple TV en Homey").font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+                }
+                Spacer(minLength: 8)
+                VStack(spacing: 1) {
+                    Text("Bekijk").font(.headline).foregroundStyle(Brand.coral)
+                    Text("lrvdlinden.app").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .accessibilityLabel("Meer apps van Léon op lrvdlinden.app")
+    }
+}
+
+/// Onderaan: icoon, versie en build, copyright (zoals Bingr).
+struct AboutFooter: View {
+    var body: some View {
+        VStack(spacing: 10) {
+            Image("PasrIcon")
+                .resizable()
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
+            Text("Versie: \(Bundle.main.versionString)")
+            Text("© \(String(Calendar.current.component(.year, from: .now))) Pasr")
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+        .padding(.bottom, 24)
+        .accessibilityElement(children: .combine)
     }
 }
 

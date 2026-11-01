@@ -281,7 +281,7 @@ struct RemindersSettingsSection: View {
     var body: some View {
         Section {
             Toggle(isOn: $vouchers) {
-                Label("Herinnering als een voucher verloopt", systemImage: "bell.badge")
+                SettingsLabel("Herinnering als een voucher verloopt", symbol: "bell.badge.fill", color: .red)
             }
             .onChange(of: vouchers) { _, _ in Task { await Reminders.rescheduleVouchers(cards) } }
 
@@ -296,7 +296,7 @@ struct RemindersSettingsSection: View {
                     }
                 }
             })) {
-                Label("Kaart tonen bij de winkel", systemImage: "location.fill")
+                SettingsLabel("Kaart tonen bij de winkel", symbol: "location.fill", color: .blue)
             }
         } header: {
             Text("Meldingen")
@@ -306,9 +306,7 @@ struct RemindersSettingsSection: View {
     }
 
     private var footer: String {
-        var text = String(localized: "Een week voor en op de dag dat een cadeaukaart of voucher verloopt, krijg je een seintje.")
-        text += " "
-        text += String(localized: "Met \"Kaart tonen bij de winkel\" verschijnt je kaart op je toegangsscherm zodra je een winkel binnenloopt; tik erop en de kaart staat klaar. Pasr zoekt de dichtstbijzijnde filialen op je iPhone zelf; je locatie gaat nergens heen.")
+        var text = String(localized: "Bij de winkel verschijnt je kaart op je toegangsscherm. Je locatie blijft op je iPhone.")
         if nearby, stores.placesWatched > 0 {
             text += " " + String(localized: "Nu actief voor \(stores.placesWatched) winkels in de buurt.")
         }

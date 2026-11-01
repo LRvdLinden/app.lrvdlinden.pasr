@@ -215,7 +215,7 @@ struct CardEditorView: View {
         }
         .onChange(of: frontItem) { _, item in Task { draft.frontPhoto = await loadImage(item, maxSide: 1600) } }
         .onChange(of: backItem) { _, item in Task { draft.backPhoto = await loadImage(item, maxSide: 1600) } }
-        .confirmationDialog("Deze kaart naar Recent verwijderd verplaatsen?", isPresented: $confirmDelete, titleVisibility: .visible) {
+        .confirmationDialog("Deze kaart verwijderen?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Verwijder", role: .destructive) {
                 existing?.deletedAt = .now
                 dismiss()
