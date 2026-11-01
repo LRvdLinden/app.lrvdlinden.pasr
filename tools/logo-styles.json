@@ -2,10 +2,14 @@
  "acsi.eu": {
   "bg": "#009932"
  },
- "action.com": {},
- "ah.nl": {},
+ "action.com": {
+  "src": "File:Action Nederland Logo 2020.svg"
+ },
+ "ah.nl": {
+  "src": "File:Albert Heijn Logo.svg"
+ },
  "airmiles.nl": {
-  "opaque": true
+  "src": "File:Air Miles.svg"
  },
  "aldi.nl": {
   "bg": "#C80000"
@@ -23,14 +27,17 @@
   "bg": "#FFFFFF"
  },
  "asadventure.nl": {},
- "avia.nl": {},
+ "avia.nl": {
+  "src": "File:AVIA International logo.svg"
+ },
  "bagelsbeans.nl": {},
  "bakkerbart.nl": {},
  "bartsmit.nl": {
   "bg": "#FFDD00"
  },
  "basic-fit.com": {
-  "bg": "#FE7000"
+  "bg": "#FB7819",
+  "src": "File:Basic-Fit logo.png"
  },
  "bauhaus.nl": {},
  "bcc.nl": {
@@ -39,13 +46,15 @@
  "benu.nl": {},
  "bever.nl": {},
  "bidfood.nl": {},
- "bigbazar.eu": {},
+ "bigbazar.eu": {
+  "src": "File:Big Bazar Logo.svg"
+ },
  "biggym.nl": {
   "opaque": true
  },
  "bioscoopbon.nl": {},
  "blokker.nl": {
-  "bg": "#FFFFFF"
+  "src": "File:Blokker-Logo.svg"
  },
  "boekenbon.nl": {
   "opaque": true
@@ -61,12 +70,16 @@
   "opaque": true
  },
  "bp.com": {
-  "bg": "#FFFFFF"
+  "src": "File:Bp logo89.svg"
  },
  "brico.nl": {},
+ "bristol.nl": {
+  "src": "File:Bristol logo 02.png"
+ },
  "broekhuis.nl": {},
  "bruna.nl": {
-  "bg": "#FFFFFF"
+  "opaque": true,
+  "src": "File:Bruna logo.png"
  },
  "burgerking.nl": {},
  "burgerszoo.nl": {},
@@ -81,7 +94,8 @@
   "bg": "#FFFFFF"
  },
  "coolblue.nl": {
-  "opaque": true
+  "bg": "#0090E3",
+  "src": "File:Logo-coolblue-500x500.jpg"
  },
  "coolcat.nl": {},
  "coop.nl": {},
@@ -95,13 +109,15 @@
  "da.nl": {
   "bg": "#FFFFFF"
  },
- "debijenkorf.nl": {},
+ "debijenkorf.nl": {
+  "src": "File:De Bijenkorf logo.svg"
+ },
  "decathlon.nl": {
-  "bg": "#3643BA"
+  "src": "File:Decathlon - logo (1990-2024).svg"
  },
  "deen.nl": {},
  "dekamarkt.nl": {
-  "bg": "#87BE34"
+  "src": "File:Logo of Dekamarkt.svg"
  },
  "denhaag.nl": {},
  "didi.nl": {
@@ -125,7 +141,7 @@
  "dominos.nl": {},
  "donner.nl": {},
  "douglas.nl": {
-  "opaque": true
+  "src": "File:Douglas Logo 06.2018.svg"
  },
  "dungelmann.nl": {},
  "efteling.com": {
@@ -136,9 +152,12 @@
  },
  "ep.nl": {},
  "esprit.nl": {},
- "esso.nl": {},
+ "esso.nl": {
+  "src": "File:Esso 1934.svg"
+ },
  "etos.nl": {
-  "opaque": true
+  "bg": "#FFFFFF",
+  "src": "File:AD Etos Logo Positive.jpg"
  },
  "expert.nl": {
   "bg": "#FFFFFF"
@@ -176,13 +195,15 @@
   "bg": "#FDDB02"
  },
  "gall.nl": {
-  "bg": "#FFFFFF"
+  "opaque": true,
+  "src": "File:Logo Gall & Gall.png"
  },
  "gamemania.nl": {
   "opaque": true
  },
  "gamma.nl": {
-  "bg": "#003878"
+  "opaque": true,
+  "src": "File:GAMMA Logo.svg"
  },
  "goossens.nl": {
   "bg": "#FFFFFF"
@@ -195,18 +216,24 @@
  "hanos.nl": {
   "bg": "#57004E"
  },
- "hansanders.nl": {},
+ "hansanders.nl": {
+  "src": "File:Logo of Hans Anders.svg"
+ },
  "healthcity.nl": {},
  "hema.nl": {
-  "opaque": true
+  "bg": "#E3191C",
+  "src": "File:HEMA Logo.svg"
  },
- "hm.com": {},
+ "hm.com": {
+  "src": "File:H&M-Logo.svg"
+ },
  "hollandandbarrett.nl": {},
  "hoogvliet.com": {
-  "bg": "#FFFFFF"
+  "src": "File:Hoogvliet logo.png"
  },
  "hornbach.nl": {
-  "opaque": true
+  "opaque": true,
+  "src": "File:Hornbach Logo black.svg"
  },
  "hubo.nl": {},
  "hudsonsbay.nl": {},
@@ -215,10 +242,11 @@
   "bg": "#0E0506"
  },
  "ikea.com": {
-  "bg": "#FFFFFF"
+  "bg": "#0058AB",
+  "src": "File:Ikea logo.svg"
  },
  "intersport.nl": {
-  "bg": "#FFFFFF"
+  "src": "File:Intersport logo 2022.svg"
  },
  "intertoys.nl": {
   "bg": "#FFDD00"
@@ -230,16 +258,17 @@
   "bg": "#FFFFFF"
  },
  "jumbo.com": {
-  "bg": "#EEB717"
+  "src": "File:Jumbo Logo.svg"
  },
  "jumper.nl": {
   "opaque": true
  },
  "jysk.nl": {
-  "opaque": true
+  "opaque": true,
+  "src": "File:Jysk logo.svg"
  },
  "karwei.nl": {
-  "bg": "#FFFFFF"
+  "src": "File:Karwei logo (2017).png"
  },
  "kfc.nl": {
   "bg": "#FFFFFF"
@@ -248,7 +277,10 @@
   "opaque": true
  },
  "kinepolis.nl": {},
- "kruidvat.nl": {},
+ "kruidvat.nl": {
+  "opaque": true,
+  "src": "File:Kruidvat logo.svg"
+ },
  "kwantum.nl": {
   "bg": "#FF5C00"
  },
@@ -257,7 +289,7 @@
  },
  "laplace.com": {},
  "leenbakker.nl": {
-  "bg": "#FFFFFF"
+  "src": "File:Logo Leen Bakker 2015.png"
  },
  "lego.com": {
   "bg": "#000000"
@@ -270,7 +302,8 @@
   "bg": "#ED1A21"
  },
  "lidl.nl": {
-  "bg": "#0050AA"
+  "bg": "#0050AA",
+  "src": "File:Lidl-Logo.svg"
  },
  "loccitane.com": {
   "bg": "#FFC700"
@@ -280,10 +313,12 @@
  },
  "lucardi.nl": {},
  "lush.com": {
-  "bg": "#FFFFFF"
+  "bg": "#FFFFFF",
+  "src": "File:Lush Logo.png"
  },
  "makro.nl": {
-  "bg": "#002D72"
+  "bg": "#002D72",
+  "src": "File:Makro Europe logo.png"
  },
  "mango.com": {
   "bg": "#FFFFFF"
@@ -297,7 +332,9 @@
  "mcdonalds.nl": {
   "opaque": true
  },
- "mediamarkt.nl": {},
+ "mediamarkt.nl": {
+  "src": "File:Mediamarkt.png"
+ },
  "mediq.nl": {},
  "missetam.nl": {},
  "mitra.nl": {
@@ -327,7 +364,8 @@
   "bg": "#E60012"
  },
  "ns.nl": {
-  "opaque": true
+  "opaque": true,
+  "src": "File:Nederlandse Spoorwegen logo.svg"
  },
  "odin.nl": {
   "bg": "#FEFEFE"
@@ -339,13 +377,16 @@
  "pathe.nl": {
   "opaque": true
  },
- "payback.de": {},
+ "payback.de": {
+  "src": "File:Payback Logo 2023.svg"
+ },
  "pearle.nl": {},
  "petsplace.nl": {
   "bg": "#FFFFFF"
  },
  "picnic.app": {
-  "bg": "#C00022"
+  "bg": "#C00022",
+  "src": "File:Picnic logo.svg"
  },
  "play.google.com": {
   "bg": "#FFFFFF"
@@ -364,7 +405,8 @@
   "bg": "#000000"
  },
  "praxis.nl": {
-  "bg": "#FDDB02"
+  "bg": "#FDDB02",
+  "src": "File:Praxis logo (Pays-Bas).png"
  },
  "primark.com": {
   "bg": "#FFFFFF"
@@ -376,7 +418,9 @@
  "q-park.nl": {
   "bg": "#FFFFFF"
  },
- "q8.nl": {},
+ "q8.nl": {
+  "src": "File:Q8 logo.svg"
+ },
  "ranzijn.nl": {},
  "readshop.nl": {},
  "rijksmuseum.nl": {
@@ -396,7 +440,8 @@
   "bg": "#FFFFFF"
  },
  "scapino.nl": {
-  "opaque": true
+  "opaque": true,
+  "src": "File:Scapino logo 04.png"
  },
  "schiphol.nl": {
   "opaque": true
@@ -406,21 +451,28 @@
   "bg": "#FFFFFF"
  },
  "sephora.nl": {},
- "shell.nl": {},
+ "shell.nl": {
+  "src": "File:Logo Shell 1973.jpg"
+ },
  "shoeby.nl": {
   "bg": "#FFFFFF"
  },
  "sissy-boy.com": {},
- "sligro.nl": {},
+ "sligro.nl": {
+  "src": "File:Logo of Sligro Food Group.svg"
+ },
  "smullers.nl": {},
  "snapfitness.com": {},
  "sostrenegrene.com": {
   "bg": "#FFFEF7"
  },
  "spar.nl": {
-  "bg": "#FFFFFF"
+  "bg": "#FFFFFF",
+  "src": "File:Wordmark SPAR.svg"
  },
- "specsavers.nl": {},
+ "specsavers.nl": {
+  "src": "File:Specsavers logo.svg"
+ },
  "sportcity.nl": {
   "opaque": true
  },
@@ -437,7 +489,9 @@
   "bg": "#1C2125"
  },
  "tango.nl": {},
- "texaco.nl": {},
+ "texaco.nl": {
+  "src": "File:Texaco logo.svg"
+ },
  "thesting.com": {
   "bg": "#FFFFFF"
  },
@@ -452,7 +506,9 @@
  "travelcard.nl": {
   "bg": "#C6EF56"
  },
- "trekpleister.nl": {},
+ "trekpleister.nl": {
+  "src": "File:Trekpleister Logo since 2024.webp"
+ },
  "trendhopper.nl": {
   "bg": "#FFFFFF"
  },
@@ -465,7 +521,8 @@
  },
  "veromoda.com": {},
  "vomar.nl": {
-  "bg": "#F13033"
+  "bg": "#F13033",
+  "src": "File:Vomar logo.png"
  },
  "vuecinemas.nl": {
   "bg": "#000000"
@@ -486,11 +543,15 @@
  "welkoop.nl": {
   "bg": "#1F4814"
  },
- "wibra.nl": {},
+ "wibra.nl": {
+  "bg": "#EF2800",
+  "src": "File:Wibra logo 2021 RGB 198x99.png"
+ },
  "wijncadeau.nl": {},
  "xbox.com": {},
  "xenos.nl": {
-  "bg": "#232323"
+  "bg": "#232323",
+  "src": "File:Logo-Xenos-Rubin-Red.png"
  },
  "yellowbrick.nl": {},
  "yourgift.nl": {},
@@ -501,10 +562,12 @@
   "bg": "#FFFFFF"
  },
  "zara.com": {
-  "bg": "#FFFFFF"
+  "bg": "#FFFFFF",
+  "src": "File:Zara Logo.svg"
  },
  "zeeman.com": {
-  "bg": "#F8DC00"
+  "bg": "#F8DC00",
+  "src": "File:Zeeman logo.svg"
  },
  "ziengs.nl": {
   "bg": "#74F58D"
