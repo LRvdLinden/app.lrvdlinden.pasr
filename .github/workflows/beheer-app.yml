@@ -1,0 +1,35 @@
+name: Beheer-app
+
+# Checks that the app Pasr Beheer (beheer/apple) builds for iPhone/iPad (simulator) and the Mac, without signing.
+# Runs on every push that changes beheer/apple, or by hand.
+on:
+  push:
+    branches: [main]
+    paths: ["beheer/apple/**", ".github/workflows/beheer-app.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beheer-app
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        dest: ["generic/platform=iOS Simulator", "generic/platform=macOS"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        working-directory: beheer/apple
+        run: |
+          xcodebuild -version
+          set -o pipefail
+          xcodebuild build -project PasrBeheer.xcodeproj -scheme PasrBeheer -configuration Debug \
+            -destination "${{ matrix.dest }}" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            | tee /tmp/build.log | grep -E "error:|warning: .*(deprecated|will never)|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" /tmp/build.log
