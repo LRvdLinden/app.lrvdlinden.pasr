@@ -145,7 +145,7 @@ jobs:
             args+=("PASR_TOKEN_SECRET=$(openssl rand -hex 32)")
           fi
           if [ -n "$A_USER" ] && [ -n "$A_PASS" ]; then
-            [ ${#A_PASS} -ge 12 ] || { echo "::error::PASR_ADMIN_PASSWORD must be at least 12 characters"; exit 1; }
+            [ ${#A_PASS} -ge 6 ] || { echo "::error::PASR_ADMIN_PASSWORD must be at least 6 characters"; exit 1; }
             args+=("PASR_ADMIN_USER=$A_USER" "PASR_ADMIN_PASSWORD=$A_PASS")
           else
             echo "::warning::PASR_ADMIN_USER / PASR_ADMIN_PASSWORD missing: you can't log in to Pasr Beheer yet."

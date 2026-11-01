@@ -25,7 +25,7 @@ De database geeft de functie `admin` via pg_net een seintje bij een nieuw accoun
 
 | Secret | Voor |
 |---|---|
-| `PASR_ADMIN_USER`, `PASR_ADMIN_PASSWORD` | inloggen (wachtwoord minstens 12 tekens) |
+| `PASR_ADMIN_USER`, `PASR_ADMIN_PASSWORD` | inloggen (wachtwoord minstens 6 tekens) |
 | `PASR_APNS_KEY_P8` | inhoud van het .p8-bestand van een APNs-sleutel (Apple Developer › Keys, "Apple Push Notifications service"); een sleutel van hetzelfde team werkt voor alle apps |
 | `PASR_APNS_KEY_ID` | de Key ID van die sleutel (10 tekens) |
 | `BEHEER_FTP_USER`, `BEHEER_FTP_PASSWORD` | een FTP-account dat uitkomt in de map van beheer.pasr.nl; of in plaats daarvan `BEHEER_FTP_DIR` (die map, gezien vanaf de FTP-login van pasr.nl) |
