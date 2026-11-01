@@ -54,7 +54,7 @@ def wikidata_logo(domain):
         try:
             hits = requests.get("https://www.wikidata.org/w/api.php", headers=WIKI_UA, timeout=15, params={
                 "action": "wbsearchentities", "search": name, "language": "nl", "uselang": "nl",
-                "limit": 7, "format": "json"}).json().get("search", [])
+                "limit": 10, "format": "json"}).json().get("search", [])
         except Exception:
             continue
         ids = [h["id"] for h in hits if h["id"] not in seen]
@@ -70,7 +70,8 @@ def wikidata_logo(domain):
             claims = ents.get(qid, {}).get("claims", {})
             sites = [c["mainsnak"].get("datavalue", {}).get("value", "") for c in claims.get("P856", [])]
             hosts = {urllib.parse.urlparse(u).netloc.lower().removeprefix("www.") for u in sites if u}
-            if domain not in hosts:
+            # Same website, or the same brand on another country domain (mcdonalds.com for mcdonalds.nl).
+            if domain not in hosts and base not in {h.split(".")[0] for h in hosts}:
                 continue
             for c in claims.get("P154", []):
                 file = c["mainsnak"].get("datavalue", {}).get("value")
