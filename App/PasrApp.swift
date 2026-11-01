@@ -5,6 +5,12 @@ import SwiftData
 struct PasrApp: App {
     let container = PasrStore.makeContainer()
 
+    init() {
+        #if os(iOS)
+        WatchLink.shared.activate()
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
