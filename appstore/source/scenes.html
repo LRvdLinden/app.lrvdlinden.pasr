@@ -217,6 +217,19 @@ h1 em { font-style: normal; background: linear-gradient(90deg, #A79FFF, #FF8A78)
 .float { position: absolute; z-index: 1; border-radius: calc(var(--u) * 2.6); overflow: hidden; box-shadow: 0 calc(var(--u) * 3) calc(var(--u) * 6) rgba(0, 0, 0, .4); }
 .float img { position: absolute; left: 9%; top: 12%; max-height: 18%; max-width: 50%; }
 
+/* Apple Watch Ultra 3-mockup */
+.ultra { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 74%; aspect-ratio: 410 / 500; }
+.ultra .case { position: absolute; inset: 0; border-radius: 22%/18%; background: linear-gradient(150deg, #5A5D63, #2B2D31 35%, #4A4C52 70%, #1E1F22);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .6), inset 0 0 0 1.5px rgba(255, 255, 255, .18); }
+.ultra .bezel { position: absolute; inset: 6.5%; border-radius: 19%/15.5%; background: #000; overflow: hidden; }
+.ultra .bezel .ui { width: 211px; height: 257px; }
+.ultra .crown { position: absolute; right: -6%; top: 26%; width: 8%; height: 17%; border-radius: 4px; background: linear-gradient(90deg, #2A2C30, #6A6D73 60%, #3A3C40); }
+.ultra .guard { position: absolute; right: -3%; top: 20%; width: 5%; height: 30%; border-radius: 3px; background: #3A3C41; }
+.ultra .side { position: absolute; right: -4.5%; top: 52%; width: 5%; height: 12%; border-radius: 3px; background: #2E3034; }
+.ultra .action { position: absolute; left: -4%; top: 30%; width: 5%; height: 18%; border-radius: 3px; background: #FF6A1A; }
+.ultra .band { position: absolute; left: 14%; right: 14%; height: 30%; background: linear-gradient(180deg, #1F2A44, #18213A); z-index: -1; }
+.ultra .band.t { top: -26%; border-radius: 12px 12px 0 0; }
+.ultra .band.b { bottom: -26%; border-radius: 0 0 12px 12px; }
 /* promo */
 .promo-logo { display: flex; align-items: center; gap: calc(var(--u) * 2); }
 .promo-logo img { width: calc(var(--u) * 10); height: calc(var(--u) * 10); border-radius: calc(var(--u) * 2.3); }
@@ -395,9 +408,9 @@ function promo(kind) {
   const wide = W > H;
   let html = `<div class="canvas dark">`;
   if (wide) {
-    html += `<div style="position:absolute;left:7%;top:50%;transform:translateY(-50%);width:44%;z-index:3">
+    html += `<div style="position:absolute;left:7%;top:50%;transform:translateY(-50%);width:${W / H < 1.7 ? 46 : 44}%;z-index:3">
       <div class="promo-logo"><img src="icon.png"><span>pasr</span></div>
-      <h1 style="margin-top:calc(var(--u)*3.5);font-size:calc(var(--u)*6.4)">Al je klantenkaarten <em>in één app</em></h1>
+      <h1 style="margin-top:calc(var(--u)*3.5);font-size:calc(var(--u)*${W / H < 1.7 ? 5.2 : 6.4})">Al je klantenkaarten <em>in één app</em></h1>
       <p class="sub" style="font-size:calc(var(--u)*2.4)">Gratis, zonder reclame. Voor iPhone, iPad en Apple Watch.</p>
       <div style="display:flex;gap:calc(var(--u)*1.4);margin-top:calc(var(--u)*3.5)"><span class="badge">Apple Wallet</span><span class="badge">Face ID</span><span class="badge">300+ winkels</span></div></div>`;
     const cards = [["ah.nl", 54, 14, -10], ["ikea.com", 70, 8, 8], ["jumbo.com", 60, 40, 4], ["hema.nl", 77, 44, -7], ["kruidvat.nl", 52, 64, 9], ["zara.com", 70, 70, -4]];
@@ -411,7 +424,13 @@ function promo(kind) {
 }
 
 const root = document.getElementById("root");
-if (KIND === "watch") {
+if (KIND === "watchmock") {
+  root.innerHTML = `<div class="canvas dark" style="position:relative"><div class="ultra"><div class="band t"></div><div class="band b"></div>
+    <div class="case"></div><div class="guard"></div><div class="crown"></div><div class="side"></div><div class="action"></div>
+    <div class="bezel"><div class="ui">${SCREENS[SCENE]()}</div></div></div></div>`;
+  requestAnimationFrame(() => { const b = document.querySelector(".ultra .bezel"); b.querySelector(".ui").style.setProperty("--k", b.clientWidth / 211);
+    b.querySelector(".ui").style.height = (b.clientHeight / (b.clientWidth / 211)) + "px"; });
+} else if (KIND === "watch") {
   document.documentElement.style.setProperty("--wk", W / 211);
   root.innerHTML = `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden"><div class="ui" style="--k:${W / 211};width:211px;height:${H / (W / 211)}px">${SCREENS[SCENE]()}</div></div>`;
 } else if (KIND === "promo") {

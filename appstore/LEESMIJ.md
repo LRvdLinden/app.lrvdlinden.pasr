@@ -21,18 +21,22 @@ Alles om Pasr in App Store Connect te zetten: teksten (Nederlands), screenshots 
 | Map | Toestel in App Store Connect | Formaat | Aantal |
 |---|---|---|---|
 | `iPhone 6.9 inch (1320x2868)` | iPhone 6,9" (verplicht) | 1320 × 2868 | 7 |
-| `iPhone 6.5 inch (1284x2778)` | iPhone 6,5" (optioneel; anders schaalt Apple de 6,9") | 1284 × 2778 | 7 |
+| `iPhone 6.5 inch (1284x2778)` | iPhone 6,5" | 1284 × 2778 | 7 |
+| `iPhone 6.3 inch (1206x2622)` | iPhone 6,3" | 1206 × 2622 | 7 |
+| `iPhone 6.1 inch (1179x2556)` | iPhone 6,1" | 1179 × 2556 | 7 |
 | `iPad 13 inch (2064x2752)` | iPad 13" (verplicht, Pasr werkt op de iPad) | 2064 × 2752 | 6 |
-| `Apple Watch Ultra (422x514)` | Apple Watch Ultra 3 (verplicht, Pasr heeft een Watch-app) | 422 × 514 | 3 |
-| `Apple Watch Series 46mm (416x496)` | Apple Watch Series 11 46 mm (optioneel) | 416 × 496 | 3 |
+| `Apple Watch Ultra 3 (422x514)` | Apple Watch Ultra 3, in een Ultra 3-mockup | 422 × 514 | 3 |
+| `Apple Watch Ultra 3 zonder mockup (422x514)` | Apple Watch Ultra 3, alleen het scherm (als Apple de mockup niet accepteert) | 422 × 514 | 3 |
+| `Apple Watch Series 46mm (416x496)` | Apple Watch Series 11 46 mm, in mockup | 416 × 496 | 3 |
 
 Volgorde = bestandsnaam (01 eerst). Apple staat 1 tot 10 screenshots per toestel toe.
 
 ## Promotie (`promo/`)
 
-- `artwork-1920x1080.png` en `artwork-3840x2160.png`: artwork om Pasr bij Apple aan te melden voor uitlichting (App Store Connect › Featuring nomination) en voor de website.
-- `event-card-1920x1080.png` en `event-details-1080x1920.png`: formaten voor een In-App Event (kaart 16:9 en detail 9:16).
-- `social-1200x630.png`: voor sociale media en links.
+- `App Store artwork 1 (5244x2950, 3840x1646)`: voor het eerste artwork-vak (5244 × 2950 en 3840 × 1646).
+- `App Store artwork 2 (5244x2950, 3840x2560, 1920x1280)`: voor het tweede artwork-vak.
+- `In-App Event`: kaart 1920 × 1080 en detail 1080 × 1920.
+- `Overig/social-1200x630.png`: voor sociale media en links.
 
 ## App-icoon
 
