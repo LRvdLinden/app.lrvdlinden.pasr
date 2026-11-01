@@ -5,8 +5,8 @@ import Observation
 /// Where the Pasr account lives. Both values are public (the publishable key only allows what the database
 /// rules allow). Empty = this build has no accounts: the app then works as before, with iCloud only.
 enum AccountConfig {
-    static let url = ""              // e.g. "https://abcd1234.supabase.co"
-    static let publishableKey = ""   // "sb_publishable_…" or the anon key "eyJ…"
+    static let url = "https://xcfuiszcfgkpbixqzrjb.supabase.co"              // e.g. "https://abcd1234.supabase.co"
+    static let publishableKey = "sb_publishable_wFRG_22hV_8FJUX1JcS8SQ_2JHxQlzw"   // "sb_publishable_…" or the anon key "eyJ…"
 
     static var isConfigured: Bool { !url.isEmpty && !publishableKey.isEmpty }
 }

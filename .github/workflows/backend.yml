@@ -120,3 +120,40 @@ jobs:
           else
             echo "::warning::PASS_CERT_P12 missing: the Wallet function is deployed but can't sign passes yet."
           fi
+      - name: Beheer function (admin)
+        if: steps.check.outputs.skip != '1'
+        env:
+          A_USER: ${{ secrets.PASR_ADMIN_USER }}
+          A_PASS: ${{ secrets.PASR_ADMIN_PASSWORD }}
+          APNS_P8: ${{ secrets.PASR_APNS_KEY_P8 }}
+          APNS_ID: ${{ secrets.PASR_APNS_KEY_ID }}
+        run: |
+          set -euo pipefail
+          deno_ok=1
+          curl -fsSL https://deno.land/install.sh | sh -s -- -y >/dev/null 2>&1 || deno_ok=0
+          if [ "$deno_ok" = 1 ]; then
+            ~/.deno/bin/deno test --no-check supabase/functions/admin/ || { echo "::error::Tests of the admin function failed"; exit 1; }
+          fi
+          supabase functions deploy admin --project-ref "$REF" --no-verify-jwt --use-api
+          # Where the database reaches the function (push notifications via pg_net)
+          python3 -c 'import json,os;print(json.dumps({"query":"update public.pasr_admin_config set admin_url = '"'"'https://%s.supabase.co/functions/v1/admin'"'"' where id = 1" % os.environ["REF"]}))' > /tmp/u.json
+          curl -sf -o /dev/null -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/u.json
+          args=()
+          # Token secret: made once, never in GitHub
+          if ! supabase secrets list --project-ref "$REF" 2>/dev/null | grep -q PASR_TOKEN_SECRET; then
+            args+=("PASR_TOKEN_SECRET=$(openssl rand -hex 32)")
+          fi
+          if [ -n "$A_USER" ] && [ -n "$A_PASS" ]; then
+            [ ${#A_PASS} -ge 12 ] || { echo "::error::PASR_ADMIN_PASSWORD must be at least 12 characters"; exit 1; }
+            args+=("PASR_ADMIN_USER=$A_USER" "PASR_ADMIN_PASSWORD=$A_PASS")
+          else
+            echo "::warning::PASR_ADMIN_USER / PASR_ADMIN_PASSWORD missing: you can't log in to Pasr Beheer yet."
+          fi
+          if [ -n "$APNS_P8" ] && [ -n "$APNS_ID" ]; then
+            args+=("APNS_KEY_P8=$APNS_P8" "APNS_KEY_ID=$APNS_ID" "APNS_TEAM_ID=EU3UY476T6")
+          else
+            echo "::warning::PASR_APNS_KEY_P8 / PASR_APNS_KEY_ID missing: no push notifications for Pasr Beheer yet."
+          fi
+          if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$REF" "${args[@]}" >/dev/null; fi
+          echo "::notice::Admin function deployed."
