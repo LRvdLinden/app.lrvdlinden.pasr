@@ -101,6 +101,11 @@ struct CardEditorView: View {
         d.format = template.format
         d.colorHex = template.colorHex
         d.kind = template.kind
+        // Known store: its logo is in the app, so the card shows it from the first moment.
+        if LogoService.isEnabled, let logo = LogoService.bundledLogo(for: template.domain) {
+            d.logoData = logo
+            d.logoFromWebsite = true
+        }
         _draft = State(initialValue: d)
     }
 
@@ -176,7 +181,7 @@ struct CardEditorView: View {
         }
         #endif
         .task {
-            // New card from a store: show its website logo in the preview right away.
+            // New card from a store without a logo in the app: fetch it from the website.
             guard existing == nil, draft.logoData == nil, LogoService.isEnabled, let domain = templateDomain else { return }
             if let logo = await LogoService.logo(for: domain), draft.logoData == nil {
                 draft.logoData = logo

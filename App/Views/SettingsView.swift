@@ -54,7 +54,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("Logo's van winkelwebsites", isOn: $fetchLogos)
+                    Toggle("Winkellogo's", isOn: $fetchLogos)
                         .onChange(of: fetchLogos) { _, on in
                             if on {
                                 Task { await LogoService.fillMissing(in: context) }
@@ -63,7 +63,7 @@ struct SettingsView: View {
                             }
                         }
                 } footer: {
-                    Text("Je iPhone haalt het icoon op dat een winkel zelf op zijn website zet. Pasr levert geen logo's mee. Logo's die je zelf hebt uitgeknipt blijven altijd staan.")
+                    Text("Bekende winkels hebben hun logo al in Pasr. Voor andere winkels haalt je iPhone het icoon op van de website. Logo's die je zelf hebt uitgeknipt blijven altijd staan.")
                 }
 
                 Section {

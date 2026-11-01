@@ -1,9 +1,9 @@
 import Foundation
 import SwiftData
 
-/// Fetches a store's logo from its own website: the icon the store publishes for home screens
-/// (apple-touch-icon) or, failing that, its site icon. This happens on the device; Pasr ships
-/// no logos and runs no server. Users can switch it off in Settings.
+/// Store logos. Known stores have their logo in the app (Shared/StoreLogos, filled by
+/// tools/fetch_logos.py), so it shows at once, offline too. For other websites the device fetches
+/// the icon the store publishes (apple-touch-icon or site icon). Users can switch logos off in Settings.
 enum LogoService {
     static let settingKey = "fetchStoreLogos"
 
@@ -51,10 +51,23 @@ enum LogoService {
 
     private static func diskURL(_ domain: String) -> URL { cacheFolder.appending(path: domain + ".png") }
 
-    /// A logo that is already cached, without going to the network.
+    /// The logo that ships with the app for a known store, e.g. "ah.nl".
+    static func bundledLogo(for domain: String) -> Data? {
+        guard !domain.isEmpty,
+              let url = Bundle.main.url(forResource: domain, withExtension: "png")
+                ?? Bundle.main.url(forResource: domain, withExtension: "png", subdirectory: "StoreLogos")
+        else { return nil }
+        return try? Data(contentsOf: url)
+    }
+
+    /// A logo that is in the app or already cached, without going to the network.
     @MainActor
     static func cachedLogo(for domain: String) -> Data? {
         if let cached = cache[domain] { return cached }
+        if let bundled = bundledLogo(for: domain) {
+            cache[domain] = bundled
+            return bundled
+        }
         let url = diskURL(domain)
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
               let modified = attrs[.modificationDate] as? Date,

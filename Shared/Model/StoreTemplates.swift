@@ -1,8 +1,8 @@
 import Foundation
 
 /// A known Dutch store: name, website (for its logo), card colour and usual barcode type.
-/// Colours approximate the store's house colour. Pasr bundles no logos; the device can fetch
-/// the icon the store publishes on its own website (see LogoService).
+/// Colours approximate the store's house colour. Logos live in Shared/StoreLogos/<domain>.png
+/// (see tools/fetch_logos.py and LogoService).
 struct StoreTemplate: Identifiable, Hashable {
     let id: String
     let name: String

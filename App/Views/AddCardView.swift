@@ -87,7 +87,7 @@ struct AddCardView: View {
                 .fill(LinearGradient(colors: [Color.shade(colorHex, by: 0.12), Color(hex: colorHex), Color.shade(colorHex, by: -0.2)],
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
             if let domain {
-                StoreLogoView(domain: domain, height: 34)
+                StoreLogoView(domain: domain, height: 44)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .padding(12)
             }

@@ -1,12 +1,18 @@
 import SwiftUI
 
-/// The logo from a store's website, loaded on demand and cached. Shows nothing until it arrives,
-/// and nothing at all when website logos are switched off in Settings.
+/// A store's logo: straight from the app for known stores, otherwise fetched from the store's
+/// website and cached. Shows nothing when logos are switched off in Settings.
 struct StoreLogoView: View {
     let domain: String
     var height: CGFloat = 30
     @AppStorage(LogoService.settingKey) private var enabled = true
     @State private var data: Data?
+
+    init(domain: String, height: CGFloat = 30) {
+        self.domain = domain
+        self.height = height
+        _data = State(initialValue: LogoService.bundledLogo(for: domain))
+    }
 
     var body: some View {
         Group {
@@ -18,6 +24,7 @@ struct StoreLogoView: View {
                         RoundedRectangle(cornerRadius: height * 0.24, style: .continuous)
                             .strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
                     }
+                    .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
         }
