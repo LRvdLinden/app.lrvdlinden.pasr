@@ -344,6 +344,10 @@ enum StoreTemplates {
         .init(id: "zorgverzekeraar", name: "Zorgpas (eigen verzekeraar)", domain: "", category: "Optiek en zorg", colorHex: "#0A84FF", format: .code128, aliases: ["zorgpas"]),
         .init(id: "tandarts", name: "Tandarts (eigen kaart)", domain: "", category: "Optiek en zorg", colorHex: "#8E8E93", format: .code128),
         .init(id: "dierenarts", name: "Dierenarts (eigen kaart)", domain: "", category: "Optiek en zorg", colorHex: "#8E8E93", format: .code128),
+        // Uitbreiding build 11
+        .init(id: "mrfillet", name: "Mr. Fillet", domain: "mr-fillet.shop", category: "Drank en eten", colorHex: "#C8102E", format: .code128, aliases: ["mr fillet", "mr. filet", "mr filet", "mister fillet"]),
+        .init(id: "levis", name: "Levi's", domain: "levi.com", category: "Mode en schoenen", colorHex: "#C41230", format: .code128, aliases: ["levis", "levi strauss", "red tab"]),
+        .init(id: "amikappers", name: "AMI Kappers", domain: "amikappers.nl", category: "Drogist en beauty", colorHex: "#1A1A1A", format: .code128, aliases: ["ami kapsalons", "ami kapper"]),
     ]
 
     /// Category names in display order.
