@@ -230,3 +230,53 @@ footer a:hover { color: var(--ink); }
 .auth .switch a { color: var(--iris-deep); font-weight: 600; }
 .auth .small { font-size: 13px; color: var(--ink-2); }
 .hp-field { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; overflow: hidden; }
+
+/* ---------- Animaties ---------- */
+@keyframes rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes phoneIn { from { opacity: 0; transform: translateY(60px) rotate(4deg) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes dealIn { from { opacity: 0; transform: translateY(-140px) rotate(-6deg); } to { opacity: 1; transform: none; } }
+@keyframes watchIn { from { opacity: 0; transform: translateY(30px) scale(.8); } to { opacity: 1; transform: none; } }
+@keyframes float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+@keyframes drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes shine { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+
+.js .enter { opacity: 0; animation: rise .8s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--d) * 120ms + 100ms); }
+.js .hero h1 span { display: inline-block; }
+.js .enter-stage .phone { opacity: 0; animation: phoneIn 1s cubic-bezier(.2,.8,.2,1) .35s forwards; }
+.js .enter-stage .watch { opacity: 0; animation: watchIn .8s cubic-bezier(.3,1.4,.5,1) 1.3s forwards; }
+.js .enter-stage .pass { opacity: 0; animation: dealIn .7s cubic-bezier(.2,.9,.25,1.15) forwards; animation-delay: calc(var(--i) * 110ms + 700ms); }
+.js .stage.floating .phone { animation: float 6s ease-in-out infinite; }
+.stage .phone { transition: transform .4s cubic-bezier(.2,.8,.2,1); will-change: transform; }
+
+/* winkelband */
+.stores { padding: 10px 0 90px; overflow: hidden; }
+.stores-title { text-align: center; font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: -.01em; margin: 0 auto 26px; color: var(--ink); max-width: 90%; }
+.stores-title .count { color: var(--iris); font-variant-numeric: tabular-nums; }
+.marquee-row { overflow: hidden; padding: 7px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.marquee-track { display: flex; gap: 14px; width: max-content; animation: drift 46s linear infinite; }
+.marquee-row.reverse .marquee-track { animation-direction: reverse; animation-duration: 52s; }
+.marquee-row:hover .marquee-track { animation-play-state: paused; }
+.tile { width: 150px; height: 95px; border-radius: 14px; display: grid; place-items: center; flex: none; box-shadow: 0 10px 22px -14px rgba(23,22,42,.45), inset 0 0 0 1px rgba(23,22,42,.06); transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.tile:hover { transform: translateY(-4px) scale(1.04); }
+.tile img { max-width: 64%; max-height: 46%; object-fit: contain; }
+
+/* binnenschuiven bij scrollen */
+.js .reveal { opacity: 0; transform: translateY(32px); transition: opacity .8s cubic-bezier(.2,.8,.2,1), transform .8s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--r, 0) * 90ms); }
+.js .reveal.in { opacity: 1; transform: none; }
+.feature .swatch { transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.feature:hover .swatch { transform: translateY(-4px) rotate(-1.5deg); }
+.feature:hover .swatch svg { animation: none; }
+.btn { transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+.btn:hover { transform: translateY(-2px); }
+.btn-primary:hover { box-shadow: 0 12px 26px -12px rgba(23,22,42,.55); }
+.cta h2 { background: linear-gradient(90deg, var(--ink), var(--iris), var(--coral), var(--ink)); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 9s linear infinite; }
+
+@media (max-width: 720px) {
+  .tile { width: 118px; height: 75px; border-radius: 12px; }
+  .stores-title { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .enter, .js .enter-stage .phone, .js .enter-stage .watch, .js .enter-stage .pass { animation: none; opacity: 1; }
+  .js .stage.floating .phone, .marquee-track, .cta h2 { animation: none; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+}

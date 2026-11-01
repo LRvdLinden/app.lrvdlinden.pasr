@@ -38,6 +38,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/style.css">
+  <script>document.documentElement.classList.add('js')</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[
     {"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl"},
     {"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{"@id":"https://pasr.nl/#org"}},
@@ -61,27 +62,27 @@
   <main>
     <div class="wrap hero">
       <div>
-        <h1>Al je pasjes. Zonder gedoe.</h1>
-        <p class="lead">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
-        <div class="actions">
+        <h1 class="enter" style="--d:0"><span>Al je pasjes.</span> <span>Zonder gedoe.</span></h1>
+        <p class="lead enter" style="--d:1">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
+        <div class="actions enter" style="--d:2">
           <a class="btn btn-primary" aria-disabled="true" role="link"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.7c1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.7 1.3-2.7s-2.4-1-2.4-4zM14 5.4c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/></svg>Binnenkort in de App Store</a>
           <a class="btn btn-ghost" href="#functies">Bekijk wat Pasr kan</a>
         </div>
-        <ul class="platforms" aria-label="Geschikt voor">
+        <ul class="platforms enter" style="--d:3" aria-label="Geschikt voor">
           <li><b>iPhone</b> iOS 26+</li>
           <li><b>iPad</b> iPadOS 26+</li>
           <li><b>Apple Watch</b> watchOS 26+</li>
         </ul>
       </div>
 
-      <div class="stage">
+      <div class="stage enter-stage">
         <div class="phone" aria-label="Voorbeeld van de app">
           <div class="screen">
             <div class="statusbar" aria-hidden="true"><span>9:41</span><span>●●●</span></div>
             <div class="island" aria-hidden="true"></div>
             <h2>Kaarten</h2>
             <div class="stack" id="stack">
-        <button class="pass ink-dark" style="top:0px; z-index:0" aria-label="Jumbo: toon de barcode">
+        <button class="pass ink-dark" style="top:0px; z-index:0; --i:0" aria-label="Jumbo: toon de barcode">
           <span class="side front" style="background: #FFC800;">
             <span class="head"><img class="logo" src="/assets/logos/jumbo.com.png" alt="Jumbo" height="28"><span class="kind">Klantenkaart</span></span>
             <span class="num">8719 3270 0441 8</span>
@@ -91,7 +92,7 @@
             <span class="code"><svg viewBox="0 0 115 1" preserveAspectRatio="none" aria-hidden="true"><path fill="#000" d="M10 0h1v1h-1zM12 0h1v1h-1zM14 0h3v1h-3zM18 0h2v1h-2zM21 0h2v1h-2zM25 0h2v1h-2zM30 0h1v1h-1zM32 0h2v1h-2zM35 0h1v1h-1zM40 0h1v1h-1zM43 0h2v1h-2zM46 0h2v1h-2zM49 0h3v1h-3zM53 0h2v1h-2zM56 0h1v1h-1zM58 0h1v1h-1zM60 0h3v1h-3zM65 0h1v1h-1zM67 0h3v1h-3zM72 0h1v1h-1zM74 0h1v1h-1zM76 0h3v1h-3zM81 0h1v1h-1zM83 0h3v1h-3zM88 0h2v1h-2zM92 0h2v1h-2zM95 0h1v1h-1zM98 0h1v1h-1zM102 0h1v1h-1zM104 0h1v1h-1z"/></svg><small>8719 3270 0441 8</small></span>
           </span>
         </button>
-        <button class="pass ink-dark" style="top:58px; z-index:1" aria-label="Kruidvat: toon de barcode">
+        <button class="pass ink-dark" style="top:58px; z-index:1; --i:1" aria-label="Kruidvat: toon de barcode">
           <span class="side front" style="background: #FFFFFF;">
             <span class="head"><img class="logo" src="/assets/logos/kruidvat.nl.png" alt="Kruidvat" height="28"><span class="kind">Klantenkaart</span></span>
             <span class="num">2101 2345 6789 0</span>
@@ -101,7 +102,7 @@
             <span class="code"><svg viewBox="0 0 115 1" preserveAspectRatio="none" aria-hidden="true"><path fill="#000" d="M10 0h1v1h-1zM12 0h1v1h-1zM15 0h2v1h-2zM19 0h1v1h-1zM23 0h2v1h-2zM26 0h1v1h-1zM28 0h2v1h-2zM32 0h2v1h-2zM36 0h2v1h-2zM39 0h2v1h-2zM42 0h4v1h-4zM47 0h1v1h-1zM50 0h3v1h-3zM54 0h1v1h-1zM56 0h1v1h-1zM58 0h1v1h-1zM60 0h1v1h-1zM63 0h3v1h-3zM67 0h1v1h-1zM69 0h1v1h-1zM74 0h1v1h-1zM78 0h1v1h-1zM81 0h1v1h-1zM84 0h1v1h-1zM88 0h3v1h-3zM92 0h1v1h-1zM95 0h3v1h-3zM100 0h1v1h-1zM102 0h1v1h-1zM104 0h1v1h-1z"/></svg><small>2101 2345 6789 0</small></span>
           </span>
         </button>
-        <button class="pass" style="top:116px; z-index:2" aria-label="IKEA Family: toon de barcode">
+        <button class="pass" style="top:116px; z-index:2; --i:2" aria-label="IKEA Family: toon de barcode">
           <span class="side front" style="background: #0058AB;">
             <span class="head"><img class="logo" src="/assets/logos/ikea.com.png" alt="IKEA Family" height="28"><span class="kind">Klantenkaart</span></span>
             <span class="num">6275 9801 2345 0</span>
@@ -111,7 +112,7 @@
             <span class="code"><svg viewBox="0 0 115 1" preserveAspectRatio="none" aria-hidden="true"><path fill="#000" d="M10 0h1v1h-1zM12 0h1v1h-1zM15 0h1v1h-1zM18 0h2v1h-2zM22 0h1v1h-1zM26 0h1v1h-1zM28 0h3v1h-3zM33 0h1v1h-1zM36 0h1v1h-1zM38 0h3v1h-3zM42 0h2v1h-2zM45 0h3v1h-3zM51 0h2v1h-2zM54 0h1v1h-1zM56 0h1v1h-1zM58 0h1v1h-1zM60 0h2v1h-2zM64 0h2v1h-2zM67 0h2v1h-2zM70 0h2v1h-2zM74 0h1v1h-1zM79 0h1v1h-1zM81 0h1v1h-1zM83 0h3v1h-3zM88 0h1v1h-1zM91 0h3v1h-3zM95 0h3v1h-3zM100 0h1v1h-1zM102 0h1v1h-1zM104 0h1v1h-1z"/></svg><small>6275 9801 2345 0</small></span>
           </span>
         </button>
-        <button class="pass" style="top:174px; z-index:3" aria-label="HEMA cadeaukaart: toon de barcode">
+        <button class="pass" style="top:174px; z-index:3; --i:3" aria-label="HEMA cadeaukaart: toon de barcode">
           <span class="side front" style="background: #E3191C;">
             <span class="head"><img class="logo" src="/assets/logos/hema.nl.png" alt="HEMA cadeaukaart" height="28"><span class="kind">Voucher</span></span>
             <span class="num">€ 25,00 · geldig tot 31 dec</span>
@@ -121,7 +122,7 @@
             <span class="code"><svg viewBox="0 0 115 1" preserveAspectRatio="none" aria-hidden="true"><path fill="#000" d="M10 0h1v1h-1zM12 0h1v1h-1zM16 0h2v1h-2zM19 0h1v1h-1zM21 0h1v1h-1zM24 0h3v1h-3zM28 0h1v1h-1zM30 0h4v1h-4zM35 0h4v1h-4zM40 0h1v1h-1zM44 0h1v1h-1zM47 0h1v1h-1zM49 0h2v1h-2zM53 0h2v1h-2zM56 0h1v1h-1zM58 0h1v1h-1zM60 0h1v1h-1zM65 0h1v1h-1zM67 0h1v1h-1zM72 0h1v1h-1zM74 0h1v1h-1zM79 0h1v1h-1zM81 0h3v1h-3zM85 0h1v1h-1zM88 0h1v1h-1zM93 0h1v1h-1zM95 0h2v1h-2zM99 0h2v1h-2zM102 0h1v1h-1zM104 0h1v1h-1z"/></svg><small>4006 3813 3393 1</small></span>
           </span>
         </button>
-        <button class="pass" style="top:232px; z-index:4" aria-label="Albert Heijn: toon de barcode">
+        <button class="pass" style="top:232px; z-index:4; --i:4" aria-label="Albert Heijn: toon de barcode">
           <span class="side front" style="background: #00A0E2;">
             <span class="head"><img class="logo" src="/assets/logos/ah.nl.png" alt="Albert Heijn" height="28"><span class="kind">Klantenkaart</span></span>
             <span class="num">2620 1234 5678 2</span>
@@ -140,6 +141,12 @@
         </div>
       </div>
     </div>
+
+    <section class="stores" aria-label="Winkels in Pasr">
+      <p class="stores-title"><span class="count" data-to="300">300</span>+ Nederlandse winkels, met hun eigen logo en kleur</p>
+<div class="marquee-row" aria-hidden="true"><div class="marquee-track"><span class="tile" style="background:#00A0E2"><img src="/assets/logos/ah.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/kruidvat.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#0058AB"><img src="/assets/logos/ikea.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFC800"><img src="/assets/logos/jumbo.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#E3191C"><img src="/assets/logos/hema.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/action.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#003978"><img src="/assets/logos/gamma.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#0040A4"><img src="/assets/logos/lidl.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#000000"><img src="/assets/logos/zara.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#0000A5"><img src="/assets/logos/bol.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/etos.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFDD00"><img src="/assets/logos/praxis.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#1482C2"><img src="/assets/logos/decathlon.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFD500"><img src="/assets/logos/shell.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#00A0E2"><img src="/assets/logos/ah.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/kruidvat.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#0058AB"><img src="/assets/logos/ikea.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFC800"><img src="/assets/logos/jumbo.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#E3191C"><img src="/assets/logos/hema.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/action.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#003978"><img src="/assets/logos/gamma.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#0040A4"><img src="/assets/logos/lidl.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#000000"><img src="/assets/logos/zara.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#0000A5"><img src="/assets/logos/bol.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/etos.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFDD00"><img src="/assets/logos/praxis.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#1482C2"><img src="/assets/logos/decathlon.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFD500"><img src="/assets/logos/shell.nl.png" alt="" loading="lazy"></span></div></div>
+<div class="marquee-row reverse" aria-hidden="true"><div class="marquee-track"><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/hm.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#DF0000"><img src="/assets/logos/mediamarkt.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#0090E3"><img src="/assets/logos/coolblue.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#231F20"><img src="/assets/logos/karwei.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#E40613"><img src="/assets/logos/picnic.app.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/esso.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#00AEEF"><img src="/assets/logos/primark.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#034694"><img src="/assets/logos/jysk.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FB7819"><img src="/assets/logos/basic-fit.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#000000"><img src="/assets/logos/sephora.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFC917"><img src="/assets/logos/ns.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#00A1DE"><img src="/assets/logos/klm.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#00A13A"><img src="/assets/logos/discus.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#1F4814"><img src="/assets/logos/welkoop.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/hm.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#DF0000"><img src="/assets/logos/mediamarkt.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#0090E3"><img src="/assets/logos/coolblue.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#231F20"><img src="/assets/logos/karwei.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#E40613"><img src="/assets/logos/picnic.app.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFFFFF"><img src="/assets/logos/esso.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#00AEEF"><img src="/assets/logos/primark.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#034694"><img src="/assets/logos/jysk.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FB7819"><img src="/assets/logos/basic-fit.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#000000"><img src="/assets/logos/sephora.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#FFC917"><img src="/assets/logos/ns.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#00A1DE"><img src="/assets/logos/klm.com.png" alt="" loading="lazy"></span><span class="tile" style="background:#00A13A"><img src="/assets/logos/discus.nl.png" alt="" loading="lazy"></span><span class="tile" style="background:#1F4814"><img src="/assets/logos/welkoop.nl.png" alt="" loading="lazy"></span></div></div>
+    </section>
 
     <div class="wrap">
       <section class="why" aria-labelledby="why-title">

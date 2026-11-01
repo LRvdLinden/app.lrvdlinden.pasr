@@ -49,6 +49,33 @@ def copy_logos():
     for _, domain, _, _ in CARDS:
         shutil.copy(ROOT.parent / "Shared" / "StoreLogos" / f"{domain}.png", out / f"{domain}.png")
 
+# The band of store logos under the hero ("Ruim 300 winkels"): two rows that drift past.
+MARQUEE = [
+    ["ah.nl", "kruidvat.nl", "ikea.com", "jumbo.com", "hema.nl", "action.com", "gamma.nl", "lidl.nl", "zara.com",
+     "bol.com", "etos.nl", "praxis.nl", "decathlon.nl", "shell.nl"],
+    ["hm.com", "mediamarkt.nl", "coolblue.nl", "karwei.nl", "picnic.app", "esso.nl", "primark.com", "jysk.nl",
+     "basic-fit.com", "sephora.nl", "ns.nl", "klm.com", "discus.nl", "welkoop.nl"],
+]
+
+def marquee_html():
+    import shutil
+    colours = _card_colours()
+    out = ROOT / "assets" / "logos"
+    out.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for r, row in enumerate(MARQUEE):
+        tiles = []
+        for domain in row:
+            src = ROOT.parent / "Shared" / "StoreLogos" / f"{domain}.png"
+            if not src.exists():
+                continue
+            shutil.copy(src, out / f"{domain}.png")
+            tiles.append(f'<span class="tile" style="background:{colours.get(domain, "#2B2F3A")}"><img src="/assets/logos/{domain}.png" alt="" loading="lazy"></span>')
+        strip = "".join(tiles)
+        # twice, so the loop is seamless
+        rows.append(f'<div class="marquee-row{" reverse" if r else ""}" aria-hidden="true"><div class="marquee-track">{strip}{strip}</div></div>')
+    return "\n".join(rows)
+
 def pass_html(i, card):
     name, domain, kind, digits = card
     color = _card_colours().get(domain, "#2B2F3A")
@@ -58,7 +85,7 @@ def pass_html(i, card):
     bg = f"background: {color};"
     logo = f'<img class="logo" src="/assets/logos/{domain}.png" alt="{name}" height="28">'
     extra = '<span class="num">€ 25,00 · geldig tot 31 dec</span>' if kind == "Voucher" else f'<span class="num">{grouped}</span>'
-    return f'''        <button class="{cls}" style="top:{i*58}px; z-index:{i}" aria-label="{name}: toon de barcode">
+    return f'''        <button class="{cls}" style="top:{i*58}px; z-index:{i}; --i:{i}" aria-label="{name}: toon de barcode">
           <span class="side front" style="{bg}">
             <span class="head">{logo}<span class="kind">{kind}</span></span>
             {extra}
@@ -115,6 +142,7 @@ APPLE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d
 
 def page():
     copy_logos()
+    marquee = marquee_html()
     passes = "\n".join(pass_html(i, c) for i, c in enumerate(CARDS))
     _, watch_svg = bars(CARDS[-1][3])
     watch_num = CARDS[-1][3] + str(v.check(CARDS[-1][3]))
@@ -168,6 +196,7 @@ def page():
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/style.css">
+  <script>document.documentElement.classList.add('js')</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl"}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
@@ -191,20 +220,20 @@ def page():
   <main>
     <div class="wrap hero">
       <div>
-        <h1>Al je pasjes. Zonder gedoe.</h1>
-        <p class="lead">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
-        <div class="actions">
+        <h1 class="enter" style="--d:0"><span>Al je pasjes.</span> <span>Zonder gedoe.</span></h1>
+        <p class="lead enter" style="--d:1">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
+        <div class="actions enter" style="--d:2">
           <a class="btn btn-primary" aria-disabled="true" role="link">{APPLE}Binnenkort in de App Store</a>
           <a class="btn btn-ghost" href="#functies">Bekijk wat Pasr kan</a>
         </div>
-        <ul class="platforms" aria-label="Geschikt voor">
+        <ul class="platforms enter" style="--d:3" aria-label="Geschikt voor">
           <li><b>iPhone</b> iOS 26+</li>
           <li><b>iPad</b> iPadOS 26+</li>
           <li><b>Apple Watch</b> watchOS 26+</li>
         </ul>
       </div>
 
-      <div class="stage">
+      <div class="stage enter-stage">
         <div class="phone" aria-label="Voorbeeld van de app">
           <div class="screen">
             <div class="statusbar" aria-hidden="true"><span>9:41</span><span>●●●</span></div>
@@ -221,6 +250,11 @@ def page():
         </div>
       </div>
     </div>
+
+    <section class="stores" aria-label="Winkels in Pasr">
+      <p class="stores-title"><span class="count" data-to="300">300</span>+ Nederlandse winkels, met hun eigen logo en kleur</p>
+{marquee}
+    </section>
 
     <div class="wrap">
       <section class="why" aria-labelledby="why-title">
