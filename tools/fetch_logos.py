@@ -3,8 +3,9 @@
 Shared/StoreLogos/<domain>.png (square, 160 px). Runs in GitHub Actions (Actions › Logos),
 because that machine can reach the store websites.
 
-Order per store: the icon the home page declares (apple-touch-icon first, largest first),
-the usual /apple-touch-icon.png, then the site icon via Google's favicon service.
+Order per store: the icon the home page or its web manifest declares (apple-touch-icon first,
+largest first), the usual /apple-touch-icon.png, the store's logo on Wikidata/Wikimedia Commons
+(on a white tile), and finally a small site icon via Google's favicon service.
 Existing files are kept unless --all is given. Writes tools/logos-missing.txt.
 """
 import concurrent.futures as cf
@@ -24,11 +25,79 @@ UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.
       "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1")
 S = requests.Session()
 S.headers.update({"User-Agent": UA, "Accept-Language": "nl-NL,nl;q=0.9"})
+DEBUG = "--debug" in sys.argv
+
+
+def templates():
+    """{domain: [store names]} from StoreTemplates.swift."""
+    src = (ROOT / "Shared/Model/StoreTemplates.swift").read_text()
+    out = {}
+    for name, domain in re.findall(r'name: "([^"]+)", domain: "([^"]*)"', src):
+        if domain:
+            out.setdefault(domain, []).append(name)
+    return out
 
 
 def domains():
-    src = (ROOT / "Shared/Model/StoreTemplates.swift").read_text()
-    return sorted({d for d in re.findall(r'domain: "([^"]+)"', src) if d})
+    return sorted(templates())
+
+
+WIKI_UA = {"User-Agent": "PasrLogoFetcher/1.0 (https://pasr.nl; support@pasr.nl)"}
+
+
+def wikidata_logo(domain):
+    """The logo on Wikidata for an organisation whose official website is `domain`."""
+    base = domain.split(".")[0]
+    names = templates().get(domain, []) + [base]
+    seen = set()
+    for name in names:
+        try:
+            hits = requests.get("https://www.wikidata.org/w/api.php", headers=WIKI_UA, timeout=15, params={
+                "action": "wbsearchentities", "search": name, "language": "nl", "uselang": "nl",
+                "limit": 7, "format": "json"}).json().get("search", [])
+        except Exception:
+            continue
+        ids = [h["id"] for h in hits if h["id"] not in seen]
+        seen.update(ids)
+        if not ids:
+            continue
+        try:
+            ents = requests.get("https://www.wikidata.org/w/api.php", headers=WIKI_UA, timeout=15, params={
+                "action": "wbgetentities", "ids": "|".join(ids), "props": "claims", "format": "json"}).json()["entities"]
+        except Exception:
+            continue
+        for qid in ids:
+            claims = ents.get(qid, {}).get("claims", {})
+            sites = [c["mainsnak"].get("datavalue", {}).get("value", "") for c in claims.get("P856", [])]
+            hosts = {urllib.parse.urlparse(u).netloc.lower().removeprefix("www.") for u in sites if u}
+            if domain not in hosts:
+                continue
+            for c in claims.get("P154", []):
+                file = c["mainsnak"].get("datavalue", {}).get("value")
+                if not file:
+                    continue
+                url = "https://commons.wikimedia.org/wiki/Special:FilePath/" + urllib.parse.quote(file) + "?width=480"
+                try:
+                    r = requests.get(url, headers=WIKI_UA, timeout=20)
+                    img = Image.open(io.BytesIO(r.content)).convert("RGBA")
+                except Exception:
+                    continue
+                if DEBUG:
+                    print(f"   wikidata {qid} {file} {img.size}")
+                return tile(img)
+    return None
+
+
+def tile(img):
+    """A wordmark logo centred on a white rounded-off square, like an app icon."""
+    bbox = img.getchannel("A").getbbox()
+    if bbox:
+        img = img.crop(bbox)
+    canvas = Image.new("RGBA", (SIZE * 2, SIZE * 2), (255, 255, 255, 255))
+    box = int(SIZE * 2 * 0.8)
+    img.thumbnail((box, box), Image.LANCZOS)
+    canvas.paste(img, ((canvas.width - img.width) // 2, (canvas.height - img.height) // 2), img)
+    return canvas.resize((SIZE, SIZE), Image.LANCZOS)
 
 
 def manifest_icons(html, base):
@@ -61,9 +130,6 @@ def icon_links(html, base):
         score = (10000 if "apple-touch-icon" in rel else 0) + (int(m.group(1)) if m else 0)
         found.append((urllib.parse.urljoin(base, href.replace("&amp;", "&")), score))
     return [u for u, _ in sorted(found, key=lambda x: -x[1])]
-
-
-DEBUG = "--debug" in sys.argv
 
 
 def load(url, min_side):
@@ -124,7 +190,10 @@ def fetch(domain):
         img = load(url, 96)
         if img:
             return square(img)
-    # Icon services, for sites that turn away scripts.
+    # The logo on Wikidata (sharp, any size), then small site icons as a last resort.
+    img = wikidata_logo(domain)
+    if img:
+        return img
     for url in (f"https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL"
                 f"&url=https://www.{domain}&size=256",
                 f"https://www.google.com/s2/favicons?domain={domain}&sz=256",
@@ -132,7 +201,7 @@ def fetch(domain):
                 f"https://www.{domain}/favicon.ico"):
         if domain in SKIP_SITE and domain in url and "gstatic" not in url and "google" not in url:
             continue
-        img = load(url, 64)
+        img = load(url, 48)
         if img:
             return square(img)
     return None
