@@ -82,45 +82,39 @@ struct FavoritesView: View {
     }
 }
 
-/// A small card: house colour, logo or letters, and the name.
+/// A small card like in SuperCards: the brand colour with the logo in the middle, nothing else.
+/// Without a logo: letters and the name.
 struct CardTile: View {
     let card: WidgetCard
     var compact = false
 
     var body: some View {
         let ink = Color.onCard(card.colorHex)
+        let shape = RoundedRectangle(cornerRadius: compact ? 9 : 11, style: .continuous)
         ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: compact ? 9 : 11, style: .continuous)
-                .fill(LinearGradient(colors: [Color.shade(card.colorHex, by: 0.14), Color(hex: card.colorHex),
-                                              Color.shade(card.colorHex, by: -0.2)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-            if let data = card.logoData, let image = Image(data: data) {
-                image.resizable().scaledToFit()
-                    .frame(maxWidth: compact ? 34 : 44, maxHeight: compact ? 18 : 22)
-                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .padding(compact ? 5 : 7)
+            shape.fill(Color(hex: card.colorHex))
+            if let data = card.logoData {
+                StoreLogoMark(data: data, style: StoreLogoStyles.style(for: card.logoDomain),
+                              height: compact ? 20 : 26, maxWidth: compact ? 52 : 72)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Text(card.monogram)
                     .font(.system(size: compact ? 11 : 13, weight: .bold, design: .rounded))
                     .foregroundStyle(ink)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .padding(compact ? 5 : 7)
-            }
-            if !compact {
-                Text(card.name)
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(ink)
-                    .lineLimit(1)
-                    .padding(.horizontal, 7)
-                    .padding(.bottom, 5)
+                if !compact {
+                    Text(card.name)
+                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .foregroundStyle(ink)
+                        .lineLimit(1)
+                        .padding(.horizontal, 7)
+                        .padding(.bottom, 5)
+                }
             }
         }
         .aspectRatio(Brand.cardAspect, contentMode: .fit)
-        .overlay {
-            RoundedRectangle(cornerRadius: compact ? 9 : 11, style: .continuous)
-                .strokeBorder(.white.opacity(0.16), lineWidth: 0.5)
-        }
+        .clipShape(shape)
         .accessibilityLabel(Text(card.name))
     }
 }

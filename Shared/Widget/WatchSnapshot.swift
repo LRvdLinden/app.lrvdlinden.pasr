@@ -15,6 +15,8 @@ struct WatchCard: Codable, Identifiable, Hashable {
     var currencyCode: String?
     var expiresAt: Date?
     var score: Double
+    /// Website of the store, to draw its logo the right way (see StoreLogoStyles).
+    var logoDomain: String? = nil
     var logo: Data?
     var code: Data?
 
@@ -24,7 +26,7 @@ struct WatchCard: Codable, Identifiable, Hashable {
     var appearance: CardAppearance {
         CardAppearance(storeName: name, number: number, format: format, colorHex: colorHex, kind: kind,
                        isFavorite: isFavorite, logoData: logo, balance: balance, currencyCode: currencyCode,
-                       expiresAt: expiresAt, isLocked: isLocked)
+                       expiresAt: expiresAt, isLocked: isLocked, logoStyle: StoreLogoStyles.style(for: logoDomain))
     }
 
     /// Without images: small enough for the application context, which arrives fastest.
@@ -41,7 +43,8 @@ extension WatchCard {
         self.init(id: card.id.uuidString, name: card.storeName, colorHex: card.colorHex, number: card.number,
                   formatRaw: card.formatRaw, kindRaw: card.kindRaw, isFavorite: card.isFavorite,
                   isLocked: card.isLocked, balance: card.balance, currencyCode: card.currencyCode,
-                  expiresAt: card.expiresAt, score: Card.score(card), logo: card.logoData, code: card.codeImage)
+                  expiresAt: card.expiresAt, score: Card.score(card),
+                  logoDomain: card.logoFromWebsite ? card.logoDomain : nil, logo: card.logoData, code: card.codeImage)
     }
 }
 

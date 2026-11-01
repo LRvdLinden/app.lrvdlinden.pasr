@@ -14,10 +14,13 @@ struct CardAppearance: Equatable {
     var currencyCode: String?
     var expiresAt: Date?
     var isLocked = false
+    /// How to draw a store logo that came with the app or from the website (nil for own logos).
+    var logoStyle: StoreLogoStyle?
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
-         balance: Double? = nil, currencyCode: String? = nil, expiresAt: Date? = nil, isLocked: Bool = false) {
+         balance: Double? = nil, currencyCode: String? = nil, expiresAt: Date? = nil, isLocked: Bool = false,
+         logoStyle: StoreLogoStyle? = nil) {
         self.storeName = storeName
         self.number = number
         self.format = format
@@ -30,13 +33,15 @@ struct CardAppearance: Equatable {
         self.currencyCode = currencyCode
         self.expiresAt = expiresAt
         self.isLocked = isLocked
+        self.logoStyle = logoStyle
     }
 
     init(_ card: Card) {
         self.init(storeName: card.storeName, number: card.number, format: card.format, colorHex: card.colorHex,
                   kind: card.kind, isFavorite: card.isFavorite, logoData: card.logoData, codeImage: card.codeImage,
                   balance: card.balance, currencyCode: card.currencyCode, expiresAt: card.expiresAt,
-                  isLocked: card.isLocked)
+                  isLocked: card.isLocked,
+                  logoStyle: card.logoFromWebsite ? StoreLogoStyles.style(for: card.logoDomain) : nil)
     }
 
     var displayName: String { storeName.isEmpty ? String(localized: "Nieuwe kaart") : storeName }
@@ -208,13 +213,8 @@ struct CardFaceView: View {
     }
 
     @ViewBuilder private var logo: some View {
-        if let data = appearance.logoData, let image = Image(data: data) {
-            image.resizable().scaledToFit()
-                .frame(maxWidth: 76, maxHeight: 32)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
-                }
+        if let data = appearance.logoData {
+            StoreLogoMark(data: data, style: appearance.logoStyle, height: 32, maxWidth: 104)
         } else {
             Text(appearance.monogram)
                 .font(.system(size: 13, weight: .bold, design: .rounded))

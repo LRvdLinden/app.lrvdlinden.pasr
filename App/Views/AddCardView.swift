@@ -41,7 +41,7 @@ struct AddCardView: View {
                         Section {
                             ForEach(items) { template in
                                 Button { path.append(.template(template)) } label: {
-                                    tile(name: template.name, colorHex: template.colorHex, symbol: nil,
+                                    tile(name: template.name, colorHex: template.cardHex, symbol: nil,
                                          domain: template.domain.isEmpty ? nil : template.domain)
                                 }
                                 .buttonStyle(.plain)
@@ -80,32 +80,40 @@ struct AddCardView: View {
         }
     }
 
+    /// A tile like the cards in SuperCards: the brand colour with the logo big in the middle, the name
+    /// underneath. Without a logo, the name goes on the tile.
     private func tile(name: String, colorHex: String, symbol: String?, domain: String? = nil) -> some View {
         let ink = Color.onCard(colorHex)
-        return ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(LinearGradient(colors: [Color.shade(colorHex, by: 0.12), Color(hex: colorHex), Color.shade(colorHex, by: -0.2)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-            if let domain {
-                StoreLogoView(domain: domain, height: 44)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .padding(12)
+        let hasLogo = domain.map { LogoService.bundledLogo(for: $0) != nil } ?? false
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        return VStack(alignment: .leading, spacing: 6) {
+            ZStack(alignment: .bottomLeading) {
+                shape.fill(Color(hex: colorHex))
+                if let domain {
+                    StoreLogoView(domain: domain, height: 40, maxWidth: 110)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                if let symbol {
+                    Image(systemName: symbol)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(ink)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                if !hasLogo && symbol == nil {
+                    Text(name)
+                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(ink)
+                        .lineLimit(2)
+                        .padding(12)
+                }
             }
-            if let symbol {
-                Image(systemName: symbol)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(ink)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            .aspectRatio(Brand.cardAspect, contentMode: .fit)
+            .clipShape(shape)
             Text(name)
-                .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                .foregroundStyle(ink)
-                .lineLimit(2)
-                .padding(12)
-        }
-        .aspectRatio(Brand.cardAspect, contentMode: .fit)
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 0.75)
+                .font(.system(.footnote, design: .rounded).weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .padding(.horizontal, 2)
         }
         .contentShape(Rectangle())
     }

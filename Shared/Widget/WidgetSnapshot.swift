@@ -15,6 +15,8 @@ struct WidgetCard: Codable, Identifiable, Hashable {
     var currencyCode: String?
     var expiresAt: Date?
     var score: Double
+    /// Website of the store, to draw its logo the right way (see StoreLogoStyles).
+    var logoDomain: String? = nil
 
     var format: BarcodeFormat { BarcodeFormat(rawValue: formatRaw) ?? .code128 }
     var kind: CardKind { CardKind(rawValue: kindRaw) ?? .loyalty }
@@ -25,7 +27,7 @@ struct WidgetCard: Codable, Identifiable, Hashable {
     var appearance: CardAppearance {
         CardAppearance(storeName: name, number: number, format: format, colorHex: colorHex, kind: kind,
                        isFavorite: isFavorite, logoData: logoData, balance: balance, currencyCode: currencyCode,
-                       expiresAt: expiresAt, isLocked: isLocked)
+                       expiresAt: expiresAt, isLocked: isLocked, logoStyle: StoreLogoStyles.style(for: logoDomain))
     }
 
     var monogram: String {
@@ -97,7 +99,8 @@ extension Array where Element == Card {
             return WidgetCard(id: card.id.uuidString, name: card.storeName, colorHex: card.colorHex,
                               number: card.number, formatRaw: card.formatRaw, kindRaw: card.kindRaw,
                               isFavorite: card.isFavorite, isLocked: card.isLocked, balance: card.balance,
-                              currencyCode: card.currencyCode, expiresAt: card.expiresAt, score: Card.score(card))
+                              currencyCode: card.currencyCode, expiresAt: card.expiresAt, score: Card.score(card),
+                              logoDomain: card.logoFromWebsite ? card.logoDomain : nil)
         }
         return (cards, logos)
     }

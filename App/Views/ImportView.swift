@@ -166,7 +166,7 @@ struct ImportView: View {
                     let template = result.template
                     found.append(Found(storeName: template?.name ?? guessName(from: result.recognizedText),
                                        number: result.payload, format: result.format,
-                                       colorHex: template?.colorHex ?? (Brand.palette.randomElement() ?? "#6A5CFF"),
+                                       colorHex: template?.cardHex ?? (Brand.palette.randomElement() ?? "#6A5CFF"),
                                        templateID: template?.id, kind: template?.kind ?? .loyalty,
                                        imageData: data))
                 }

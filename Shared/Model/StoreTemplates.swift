@@ -13,6 +13,9 @@ struct StoreTemplate: Identifiable, Hashable {
     var aliases: [String] = []
     var kind: CardKind = .loyalty
 
+    /// The card colour: the brand colour behind the store's logo when Pasr has one, else the house colour.
+    var cardHex: String { StoreLogoStyles.style(for: domain)?.card ?? colorHex }
+
     /// Lowercased words used to recognise the store in screenshot text.
     var matchTerms: [String] { ([name] + aliases).map { $0.lowercased() } }
 }

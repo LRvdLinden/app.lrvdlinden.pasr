@@ -1,0 +1,695 @@
+{
+ "acsi.eu": {
+  "bg": "#009932"
+ },
+ "action.com": {
+  "bg": "#FFFFFF"
+ },
+ "ah.nl": {
+  "bg": "#FFFFFF"
+ },
+ "airmiles.nl": {
+  "opaque": true
+ },
+ "aldi.nl": {
+  "bg": "#FFFFFF"
+ },
+ "amazon.nl": {
+  "bg": "#1C1C1E"
+ },
+ "americatoday.com": {
+  "opaque": true
+ },
+ "anwb.nl": {
+  "bg": "#FFFFFF"
+ },
+ "anytimefitness.nl": {
+  "bg": "#FFFFFF"
+ },
+ "apple.com": {
+  "bg": "#F2F2F2"
+ },
+ "artis.nl": {
+  "bg": "#FFFFFF"
+ },
+ "asadventure.nl": {
+  "bg": "#1C1C1E"
+ },
+ "avia.nl": {
+  "bg": "#FFFFFF"
+ },
+ "bagelsbeans.nl": {
+  "bg": "#1C1C1E"
+ },
+ "bakkerbart.nl": {
+  "bg": "#FFFFFF"
+ },
+ "bartsmit.nl": {
+  "bg": "#FFDD00"
+ },
+ "basic-fit.com": {
+  "bg": "#FE7000"
+ },
+ "bauhaus.nl": {
+  "bg": "#FFFFFF"
+ },
+ "bcc.nl": {
+  "bg": "#FFFFFF"
+ },
+ "benu.nl": {
+  "bg": "#1C1C1E"
+ },
+ "bever.nl": {
+  "bg": "#1C1C1E"
+ },
+ "bidfood.nl": {
+  "bg": "#FFFFFF"
+ },
+ "bigbazar.eu": {
+  "bg": "#FFFFFF"
+ },
+ "biggym.nl": {
+  "opaque": true
+ },
+ "bioscoopbon.nl": {
+  "bg": "#1C1C1E"
+ },
+ "blokker.nl": {
+  "bg": "#FFFFFF"
+ },
+ "boekenbon.nl": {
+  "opaque": true
+ },
+ "bol.com": {
+  "bg": "#0000A5"
+ },
+ "boni.nl": {
+  "bg": "#FFFFFF"
+ },
+ "boonsmarkt.nl": {
+  "bg": "#FFFFFF"
+ },
+ "bouwmaat.nl": {
+  "opaque": true
+ },
+ "bp.com": {
+  "bg": "#FFFFFF"
+ },
+ "brico.nl": {
+  "bg": "#FFFFFF"
+ },
+ "broekhuis.nl": {
+  "bg": "#FFFFFF"
+ },
+ "bruna.nl": {
+  "bg": "#FFFFFF"
+ },
+ "burgerking.nl": {
+  "bg": "#FFFFFF"
+ },
+ "burgerszoo.nl": {
+  "bg": "#FFFFFF"
+ },
+ "c-and-a.com": {
+  "bg": "#1C1C1E"
+ },
+ "casashops.com": {
+  "bg": "#97C000"
+ },
+ "centerparcs.nl": {
+  "bg": "#FFFFFF"
+ },
+ "cineville.nl": {
+  "bg": "#1C1C1E"
+ },
+ "cjp.nl": {
+  "bg": "#FFFFFF"
+ },
+ "coffeecompany.nl": {
+  "bg": "#FFFFFF"
+ },
+ "coolblue.nl": {
+  "opaque": true
+ },
+ "coolcat.nl": {
+  "bg": "#FFFFFF"
+ },
+ "coop.nl": {
+  "bg": "#FFFFFF"
+ },
+ "costco.nl": {
+  "bg": "#FFFFFF"
+ },
+ "costesfashion.com": {
+  "bg": "#FFFFFF"
+ },
+ "crisp.nl": {
+  "bg": "#003B40"
+ },
+ "da.nl": {
+  "bg": "#FFFFFF"
+ },
+ "debijenkorf.nl": {
+  "bg": "#1C1C1E"
+ },
+ "decathlon.nl": {
+  "bg": "#3643BA"
+ },
+ "deen.nl": {
+  "bg": "#1C1C1E"
+ },
+ "dekamarkt.nl": {
+  "bg": "#FFFFFF"
+ },
+ "denhaag.nl": {
+  "bg": "#1C1C1E"
+ },
+ "didi.nl": {
+  "bg": "#FFFFFF"
+ },
+ "diergaardeblijdorp.nl": {
+  "bg": "#FFFFFF"
+ },
+ "dille-kamille.nl": {
+  "bg": "#FFFFFF"
+ },
+ "dinercadeau.nl": {
+  "bg": "#FFFFFF"
+ },
+ "dirk.nl": {
+  "opaque": true
+ },
+ "discus.nl": {
+  "bg": "#09A13B"
+ },
+ "dominos.nl": {
+  "bg": "#FFFFFF"
+ },
+ "donner.nl": {
+  "bg": "#FFFFFF"
+ },
+ "douglas.nl": {
+  "bg": "#1C1C1E"
+ },
+ "dungelmann.nl": {
+  "bg": "#FFFFFF"
+ },
+ "efteling.com": {
+  "bg": "#FCF5ED"
+ },
+ "ekoplaza.nl": {
+  "bg": "#651C77"
+ },
+ "ep.nl": {
+  "bg": "#FFFFFF"
+ },
+ "esprit.nl": {
+  "bg": "#1C1C1E"
+ },
+ "esso.nl": {
+  "bg": "#1C1C1E"
+ },
+ "etos.nl": {
+  "opaque": true
+ },
+ "expert.nl": {
+  "bg": "#FFFFFF"
+ },
+ "eyewish.nl": {
+  "bg": "#1C1C1E"
+ },
+ "fashioncheque.com": {
+  "bg": "#FFFFFF"
+ },
+ "fastnedcharging.com": {
+  "opaque": true
+ },
+ "febo.nl": {
+  "bg": "#E32D38"
+ },
+ "fietsenwinkel.nl": {
+  "opaque": true
+ },
+ "firezone.nl": {
+  "bg": "#333333"
+ },
+ "fit20.nl": {
+  "bg": "#FFFFFF"
+ },
+ "fitforfree.nl": {
+  "opaque": true
+ },
+ "fletcher.nl": {
+  "opaque": true
+ },
+ "flyingblue.com": {
+  "opaque": true
+ },
+ "flyingtiger.com": {
+  "bg": "#1C1C1E"
+ },
+ "formido.nl": {
+  "bg": "#1C1C1E"
+ },
+ "gall.nl": {
+  "opaque": true
+ },
+ "gamemania.nl": {
+  "opaque": true
+ },
+ "gamma.nl": {
+  "bg": "#003878"
+ },
+ "goossens.nl": {
+  "opaque": true
+ },
+ "greenwheels.nl": {
+  "bg": "#FFFFFF"
+ },
+ "groenrijk.nl": {
+  "bg": "#1C1C1E"
+ },
+ "gulf.nl": {
+  "bg": "#1C1C1E"
+ },
+ "hanos.nl": {
+  "bg": "#57004E"
+ },
+ "hansanders.nl": {
+  "bg": "#FFFFFF"
+ },
+ "healthcity.nl": {
+  "bg": "#FFFFFF"
+ },
+ "hema.nl": {
+  "bg": "#FFFFFF"
+ },
+ "hm.com": {
+  "bg": "#1C1C1E"
+ },
+ "hollandandbarrett.nl": {
+  "bg": "#FFFFFF"
+ },
+ "hoogvliet.com": {
+  "bg": "#FFFFFF"
+ },
+ "hornbach.nl": {
+  "opaque": true
+ },
+ "hubo.nl": {
+  "bg": "#FFFFFF"
+ },
+ "hudsonsbay.nl": {
+  "bg": "#FFFFFF"
+ },
+ "hunkemoller.nl": {
+  "bg": "#FFFFFF"
+ },
+ "iciparisxl.nl": {
+  "bg": "#0C0304"
+ },
+ "ikea.com": {
+  "bg": "#FFFFFF"
+ },
+ "intersport.nl": {
+  "bg": "#FFFFFF"
+ },
+ "intertoys.nl": {
+  "bg": "#FFDD00"
+ },
+ "jackjones.com": {
+  "opaque": true
+ },
+ "janlinders.nl": {
+  "bg": "#FFFFFF"
+ },
+ "jumbo.com": {
+  "bg": "#EEB717"
+ },
+ "jumper.nl": {
+  "opaque": true
+ },
+ "jysk.nl": {
+  "opaque": true
+ },
+ "karwei.nl": {
+  "bg": "#FFFFFF"
+ },
+ "kfc.nl": {
+  "bg": "#FFFFFF"
+ },
+ "kikocosmetics.com": {
+  "opaque": true
+ },
+ "kinepolis.nl": {
+  "bg": "#FFFFFF"
+ },
+ "kruidvat.nl": {
+  "bg": "#FFFFFF"
+ },
+ "kwantum.nl": {
+  "bg": "#FF5C00"
+ },
+ "landal.nl": {
+  "bg": "#FFFAE9"
+ },
+ "laplace.com": {
+  "bg": "#FFFFFF"
+ },
+ "leenbakker.nl": {
+  "bg": "#FFFFFF"
+ },
+ "lego.com": {
+  "bg": "#000000"
+ },
+ "lekkerland.nl": {
+  "bg": "#FFFFFF"
+ },
+ "lepainquotidien.com": {
+  "bg": "#1C1C1E"
+ },
+ "libris.nl": {
+  "bg": "#ED1A21"
+ },
+ "lidl.nl": {
+  "opaque": true
+ },
+ "loccitane.com": {
+  "bg": "#FFC700"
+ },
+ "lookfantastic.nl": {
+  "bg": "#222B31"
+ },
+ "lucardi.nl": {
+  "bg": "#FFFFFF"
+ },
+ "lush.com": {
+  "bg": "#FFFFFF"
+ },
+ "makro.nl": {
+  "bg": "#002D72"
+ },
+ "mango.com": {
+  "bg": "#FFFFFF"
+ },
+ "marqt.com": {
+  "bg": "#000000"
+ },
+ "mcd-supermarkt.nl": {
+  "bg": "#DB2F36"
+ },
+ "mcdonalds.nl": {
+  "bg": "#FFFFFF"
+ },
+ "mediamarkt.nl": {
+  "bg": "#FFFFFF"
+ },
+ "mediq.nl": {
+  "bg": "#FFFFFF"
+ },
+ "missetam.nl": {
+  "bg": "#FFFFFF"
+ },
+ "mitra.nl": {
+  "bg": "#393E35"
+ },
+ "msmode.nl": {
+  "bg": "#FFFFFF"
+ },
+ "museum.nl": {
+  "bg": "#FFFFFF"
+ },
+ "natuurmonumenten.nl": {
+  "bg": "#000F95"
+ },
+ "natuurwinkel.nl": {
+  "bg": "#641C75"
+ },
+ "nelson.nl": {
+  "opaque": true
+ },
+ "netflix.com": {
+  "bg": "#FFFFFF"
+ },
+ "nettorama.nl": {
+  "bg": "#FFFFFF"
+ },
+ "newyorkpizza.nl": {
+  "bg": "#FFFFFF"
+ },
+ "nintendo.com": {
+  "bg": "#E60012"
+ },
+ "ns.nl": {
+  "opaque": true
+ },
+ "odin.nl": {
+  "bg": "#FFFFFF"
+ },
+ "omoda.nl": {
+  "bg": "#FFFFFF"
+ },
+ "only.com": {
+  "bg": "#FFFFFF"
+ },
+ "pathe.nl": {
+  "opaque": true
+ },
+ "payback.de": {
+  "opaque": true
+ },
+ "pearle.nl": {
+  "bg": "#FFFFFF"
+ },
+ "petsplace.nl": {
+  "bg": "#FFFFFF"
+ },
+ "picnic.app": {
+  "bg": "#C00022"
+ },
+ "play.google.com": {
+  "bg": "#FFFFFF"
+ },
+ "playstation.com": {
+  "bg": "#FFFFFF"
+ },
+ "plus.nl": {
+  "bg": "#FFFFFF"
+ },
+ "podiumcadeaukaart.nl": {
+  "opaque": true
+ },
+ "poiesz-supermarkten.nl": {
+  "bg": "#FFFFFF"
+ },
+ "pourvous.nl": {
+  "bg": "#000000"
+ },
+ "praxis.nl": {
+  "bg": "#1C1C1E"
+ },
+ "primark.com": {
+  "bg": "#FFFFFF"
+ },
+ "primera.nl": {
+  "bg": "#1C1C1E"
+ },
+ "profile.nl": {
+  "bg": "#FFFFFF"
+ },
+ "q-park.nl": {
+  "bg": "#FFFFFF"
+ },
+ "q8.nl": {
+  "bg": "#FFFFFF"
+ },
+ "ranzijn.nl": {
+  "bg": "#1C1C1E"
+ },
+ "readshop.nl": {
+  "opaque": true
+ },
+ "rijksmuseum.nl": {
+  "bg": "#000000"
+ },
+ "rituals.com": {
+  "bg": "#1A1919"
+ },
+ "roompot.nl": {
+  "bg": "#FFFFFF"
+ },
+ "rotterdampas.nl": {
+  "bg": "#FFED00"
+ },
+ "runnersworld.nl": {
+  "bg": "#1C1C1E"
+ },
+ "sanquin.nl": {
+  "bg": "#FFFFFF"
+ },
+ "scapino.nl": {
+  "opaque": true
+ },
+ "schiphol.nl": {
+  "opaque": true
+ },
+ "schoenenreus.nl": {
+  "bg": "#FFFFFF"
+ },
+ "schoonenberg.nl": {
+  "bg": "#FFFFFF"
+ },
+ "sephora.nl": {
+  "bg": "#FFFFFF"
+ },
+ "shell.nl": {
+  "bg": "#FFFFFF"
+ },
+ "shoeby.nl": {
+  "bg": "#FFFFFF"
+ },
+ "sissy-boy.com": {
+  "bg": "#FFFFFF"
+ },
+ "sligro.nl": {
+  "bg": "#FFFFFF"
+ },
+ "smullers.nl": {
+  "bg": "#1C1C1E"
+ },
+ "snapfitness.com": {
+  "bg": "#1C1C1E"
+ },
+ "sostrenegrene.com": {
+  "bg": "#FFFEF7"
+ },
+ "spar.nl": {
+  "bg": "#FFFFFF"
+ },
+ "specsavers.nl": {
+  "bg": "#FFFFFF"
+ },
+ "sportcity.nl": {
+  "opaque": true
+ },
+ "spotify.com": {
+  "opaque": true
+ },
+ "staatsbosbeheer.nl": {
+  "bg": "#439439"
+ },
+ "starbucks.nl": {
+  "bg": "#FFFFFF"
+ },
+ "steampowered.com": {
+  "bg": "#FFFFFF"
+ },
+ "subway.com": {
+  "bg": "#FFFFFF"
+ },
+ "swisssense.nl": {
+  "bg": "#1C2125"
+ },
+ "tango.nl": {
+  "bg": "#FFFFFF"
+ },
+ "texaco.nl": {
+  "bg": "#FFFFFF"
+ },
+ "thesting.com": {
+  "bg": "#FFFFFF"
+ },
+ "ticketmaster.nl": {
+  "bg": "#FFFFFF"
+ },
+ "tinq.nl": {
+  "bg": "#FFFFFF"
+ },
+ "top1toys.nl": {
+  "bg": "#FFDA00"
+ },
+ "totalenergies.nl": {
+  "bg": "#FFFFFF"
+ },
+ "travelcard.nl": {
+  "bg": "#C6EF56"
+ },
+ "trekpleister.nl": {
+  "bg": "#1C1C1E"
+ },
+ "trendhopper.nl": {
+  "bg": "#FFFFFF"
+ },
+ "tuincentrumovervecht.nl": {
+  "bg": "#FFFFFF"
+ },
+ "valk.com": {
+  "bg": "#FFFFFF"
+ },
+ "vanharen.nl": {
+  "bg": "#EC6707"
+ },
+ "veromoda.com": {
+  "bg": "#FFFFFF"
+ },
+ "vomar.nl": {
+  "bg": "#F13033"
+ },
+ "vuecinemas.nl": {
+  "bg": "#000000"
+ },
+ "vvvcadeaukaarten.nl": {
+  "bg": "#FFFFFF"
+ },
+ "walibi.nl": {
+  "bg": "#FFFFFF"
+ },
+ "waterstones.com": {
+  "bg": "#FFFFFF"
+ },
+ "wefashion.nl": {
+  "bg": "#000000"
+ },
+ "wehkamp.nl": {
+  "bg": "#FFFFFF"
+ },
+ "welkoop.nl": {
+  "bg": "#1F4814"
+ },
+ "wibra.nl": {
+  "bg": "#EF2800"
+ },
+ "wijncadeau.nl": {
+  "bg": "#FFFFFF"
+ },
+ "xbox.com": {
+  "bg": "#FFFFFF"
+ },
+ "xenos.nl": {
+  "bg": "#232323"
+ },
+ "yellowbrick.nl": {
+  "bg": "#FFFFFF"
+ },
+ "yourgift.nl": {
+  "bg": "#FFFFFF"
+ },
+ "yves-rocher.nl": {
+  "bg": "#014E2E"
+ },
+ "zalando.nl": {
+  "bg": "#FFFFFF"
+ },
+ "zara.com": {
+  "bg": "#FFFFFF"
+ },
+ "zeeman.com": {
+  "bg": "#F8DC00"
+ },
+ "ziengs.nl": {
+  "bg": "#74F58D"
+ },
+ "zooplus.nl": {
+  "opaque": true
+ }
+}

@@ -15,6 +15,21 @@ enum LogoService {
         guard isEnabled else { return }
         let all = (try? context.fetch(FetchDescriptor<Card>(predicate: #Predicate { $0.deletedAt == nil }))) ?? []
         var changed = false
+        // Cards with a store logo get the clean logo that ships with the app, and, if their colour was
+        // never changed, the brand colour that goes with it.
+        for card in all where card.logoData == nil || card.logoFromWebsite {
+            guard let domain = card.logoDomain, let bundled = bundledLogo(for: domain) else { continue }
+            if card.logoData != bundled {
+                card.logoData = bundled
+                card.logoFromWebsite = true
+                changed = true
+            }
+            if let template = StoreTemplates.template(id: card.templateID), card.colorHex == template.colorHex,
+               template.cardHex != template.colorHex {
+                card.colorHex = template.cardHex
+                changed = true
+            }
+        }
         for card in all where card.logoData == nil {
             guard let domain = card.logoDomain, let logo = await logo(for: domain) else { continue }
             guard card.logoData == nil else { continue } // the user picked one meanwhile

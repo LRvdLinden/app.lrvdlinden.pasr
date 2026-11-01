@@ -60,7 +60,11 @@ struct CardEditorView: View {
             CardAppearance(storeName: storeName, number: number.isEmpty ? "0000000000000" : number, format: format,
                            colorHex: colorHex, kind: kind, isFavorite: isFavorite, logoData: logoData,
                            balance: kind == .voucher ? balance : nil, currencyCode: currencyCode,
-                           expiresAt: kind == .voucher && hasExpiry ? expiresAt : nil)
+                           expiresAt: kind == .voucher && hasExpiry ? expiresAt : nil,
+                           logoStyle: logoFromWebsite
+                               ? StoreLogoStyles.style(for: StoreTemplates.normalizedDomain(website)
+                                   ?? StoreTemplates.template(id: templateID)?.domain)
+                               : nil)
         }
     }
 
@@ -99,7 +103,7 @@ struct CardEditorView: View {
         d.storeName = template.name
         d.templateID = template.id
         d.format = template.format
-        d.colorHex = template.colorHex
+        d.colorHex = template.cardHex
         d.kind = template.kind
         // Known store: its logo is in the app, so the card shows it from the first moment.
         if LogoService.isEnabled, let logo = LogoService.bundledLogo(for: template.domain) {
@@ -400,7 +404,7 @@ struct CardEditorView: View {
             photoMessage = nil
             if draft.storeName.isEmpty, let template = result.template {
                 draft.storeName = template.name
-                draft.colorHex = template.colorHex
+                draft.colorHex = template.cardHex
                 draft.templateID = template.id
             }
         } else {
