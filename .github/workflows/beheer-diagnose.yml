@@ -1,0 +1,37 @@
+name: Beheer diagnose
+
+# Shows the last login attempts of Pasr Beheer (from admin_audit: only time, action and a short hash of the network)
+# and whether login works with the GitHub secrets. Run by hand.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      REF: ${{ secrets.SUPABASE_PROJECT_REF || 'xcfuiszcfgkpbixqzrjb' }}
+    steps:
+      - name: Last login attempts
+        run: |
+          q='select to_char(at at time zone '"'"'Europe/Amsterdam'"'"', '"'"'DD-MM HH24:MI:SS'"'"') as tijd, action, left(ip_hash, 6) as netwerk, left(detail, 40) as detail from public.admin_audit order by at desc limit 25'
+          python3 -c 'import json,sys;print(json.dumps({"query":sys.argv[1]}))' "$q" > /tmp/q.json
+          curl -s -X POST "https://api.supabase.com/v1/projects/$REF/database/query" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data @/tmp/q.json | python3 -c 'import json,sys
+          rows=json.load(sys.stdin)
+          for r in rows: print(r["tijd"], r["action"].ljust(14), r["netwerk"], r["detail"])' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Secrets in Supabase
+        run: |
+          curl -s "https://api.supabase.com/v1/projects/$REF/secrets" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            | python3 -c 'import json,sys;print("Function secrets:", ", ".join(sorted(s["name"] for s in json.load(sys.stdin) if not s["name"].startswith("SUPABASE_"))))'
+      - name: Dashboard
+        run: |
+          echo "beheer.pasr.nl: HTTP $(curl -s -o /tmp/i.html -w '%{http_code}' https://beheer.pasr.nl/) $(grep -c 'Pasr Beheer' /tmp/i.html 2>/dev/null) $(curl -s https://beheer.pasr.nl/config.js | head -c 0)"
+          curl -s https://beheer.pasr.nl/config.js | tail -1 | cut -c1-80
+          curl -s -o /dev/null -w 'CORS preflight: %{http_code}\n' -X OPTIONS "https://$REF.supabase.co/functions/v1/admin" \
+            -H "Origin: https://beheer.pasr.nl" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: apikey,content-type"
+          curl -s -D - -o /dev/null -X OPTIONS "https://$REF.supabase.co/functions/v1/admin" -H "Origin: https://beheer.pasr.nl" \
+            -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: apikey,content-type" | grep -i "access-control"
