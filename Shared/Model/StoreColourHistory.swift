@@ -260,7 +260,7 @@ enum StoreColourHistory {
         "schiphol": ["#141251"],
         "schoonenberg": ["#003B7E"],
         "schuurman": ["#1A1A1A", "#FFFFFF"],
-        "score": ["#1A1A1A"],
+        "score": ["#000000", "#1A1A1A"],
         "sephora": ["#000000", "#1A1A1A"],
         "shell": ["#FFD500"],
         "shoeby": ["#1A1A1A", "#FFFFFF"],

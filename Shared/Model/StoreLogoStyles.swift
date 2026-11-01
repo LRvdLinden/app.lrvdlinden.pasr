@@ -207,6 +207,7 @@ enum StoreLogoStyles {
         "schoenenreus.nl": .init(card: "#E30613", tint: nil, plate: nil, opaque: false),
         "schoonenberg.nl": .init(card: "#003B7E", tint: nil, plate: nil, opaque: false),
         "schuurman-schoenen.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
+        "score.nl": .init(card: "#000000", tint: nil, plate: nil, opaque: false),
         "sephora.nl": .init(card: "#000000", tint: nil, plate: nil, opaque: false),
         "shell.nl": .init(card: "#FFD500", tint: nil, plate: nil, opaque: false),
         "shoeby.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),

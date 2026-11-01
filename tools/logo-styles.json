@@ -95,8 +95,7 @@
  },
  "centerparcs.nl": {},
  "chasin.nl": {
-  "bg": "#FFFFFF",
-  "src": "site"
+  "src": "https://chasin.cdn.prismic.io/chasin/Zuvw0bVsGrYSvlPU_CHASIN%C2%B4_Performance-Jeanswear.svg"
  },
  "cineville.nl": {},
  "cjp.nl": {},
@@ -108,7 +107,10 @@
   "src": "File:Logo-coolblue-500x500.jpg"
  },
  "coolcat.nl": {},
- "coop.nl": {},
+ "coop.nl": {
+  "bg": "#FFFFFF",
+  "src": "File:Coop Supermarkten logo.jpg"
+ },
  "costco.nl": {},
  "costesfashion.com": {
   "bg": "#FFFFFF"
@@ -475,6 +477,9 @@
  },
  "schuurman-schoenen.nl": {
   "src": "site"
+ },
+ "score.nl": {
+  "src": "https://score.nl/cdn/shop/files/Ontwerp_zonder_titel_47.png?v=1733824435&width=714"
  },
  "sephora.nl": {
   "src": "File:Sephora logo.svg"
