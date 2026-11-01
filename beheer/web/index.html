@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="theme-color" content="#0A0B10">
 <meta name="color-scheme" content="dark">
-<title>Pasr Beheer</title>
+<title>PasrBeheer</title>
 <link rel="icon" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="admin.css">
@@ -43,6 +43,8 @@
       <nav class="tabs" role="tablist" aria-label="Beheer">
         <button role="tab" id="tab-overview" data-tab="overview" aria-controls="view-overview" aria-selected="true">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Overzicht</span></button>
+        <button role="tab" id="tab-insights" data-tab="insights" aria-controls="view-insights" aria-selected="false">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 4 4-7 5 6"/><path d="M3 21h18"/></svg><span>Insights</span></button>
         <button role="tab" id="tab-accounts" data-tab="accounts" aria-controls="view-accounts" aria-selected="false">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg><span>Accounts</span></button>
         <button role="tab" id="tab-settings" data-tab="settings" aria-controls="view-settings" aria-selected="false">
@@ -61,32 +63,51 @@
       </div>
       <div id="ovErr" class="banner hidden" role="alert"></div>
       <div id="kpis" class="kpis" aria-busy="true"></div>
-      <article class="card chart-card" aria-labelledby="chTitle">
-        <header class="chart-h">
-          <div class="chart-t">
-            <h2 id="chTitle">Per dag</h2>
-            <div class="chart-nav">
-              <button id="chPrev" class="icbtn" type="button" aria-label="Vorige periode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6"/></svg></button>
-              <span id="chPeriod" class="chart-period" aria-live="polite"></span>
-              <button id="chNext" class="icbtn" type="button" aria-label="Volgende periode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
-            </div>
-          </div>
-          <div id="chSeg" class="seg" role="group" aria-label="Periode">
-            <button type="button" data-days="7">Week</button>
-            <button type="button" data-days="30">Maand</button>
-            <button type="button" data-days="90">Kwartaal</button>
-            <button type="button" data-days="365">Jaar</button>
-          </div>
+      <article class="card ins-card">
+        <header class="ins-h">
+          <div class="ins-t"><h2>Accounts</h2><div class="period" data-period></div></div>
+          <div class="ins-tools"><div class="seg" data-range role="group" aria-label="Periode"></div>
+            <button class="icbtn" type="button" data-goto="insights" aria-label="Open in Insights" title="Open in Insights">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5"/></svg></button></div>
         </header>
-        <div id="chChips" class="chips" role="group" aria-label="Reeksen"></div>
-        <div id="chPlot" class="plot"><div id="chTip" class="tip hidden" aria-hidden="true"></div></div>
-        <div id="chSum" class="sums"></div>
+        <div id="ovPanels" class="panels"></div>
       </article>
-      <div class="grid2">
+      <div class="grid3">
         <article class="card"><header class="card-h"><h2>Tegengehouden aanmeldingen</h2><span class="muted sm">laatste 7 dagen</span></header><div id="bots" class="dist"></div></article>
         <article class="card"><header class="card-h"><h2>Kaarten per account</h2><span class="muted sm">alle accounts</span></header><div id="perAccount" class="dist"></div></article>
+        <article class="card"><header class="card-h"><h2>Landen</h2><span class="muted sm">regio van het apparaat</span></header><div id="countries" class="dist"></div></article>
       </div>
       <p class="foot-note muted sm">Alleen tellingen en accountgegevens. De inhoud van kaarten staat versleuteld op de server en is hier niet te zien. Dagen in UTC.</p>
+    </section>
+
+    <!-- Insights (zoals Homey Insights): bronnen aanvinken, één periode, grafieken onder elkaar met een gedeelde kruisdraad -->
+    <section id="view-insights" class="view hidden" role="tabpanel" aria-labelledby="tab-insights">
+      <div class="head">
+        <div><h1>Insights</h1><p class="muted" data-period></p></div>
+        <div class="row-btns">
+          <button id="insCsv" class="btn ghost sm" type="button">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M4 20h16"/></svg><span>CSV</span></button>
+        </div>
+      </div>
+      <div id="insErr" class="banner hidden" role="alert"></div>
+      <div class="ins-layout">
+        <aside class="card ins-sources">
+          <h2>Bronnen</h2>
+          <p class="muted sm">Vink aan wat je wilt vergelijken. Alle grafieken volgen dezelfde periode.</p>
+          <div id="insSources" class="sources"></div>
+        </aside>
+        <div class="ins-main">
+          <div class="card ins-bar">
+            <div class="ins-nav">
+              <button class="icbtn" type="button" data-prev aria-label="Vorige periode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6"/></svg></button>
+              <span class="period strong" data-period></span>
+              <button class="icbtn" type="button" data-next aria-label="Volgende periode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+            </div>
+            <div class="seg" data-range role="group" aria-label="Periode"></div>
+          </div>
+          <div id="insPanels" class="panels stacked"></div>
+        </div>
+      </div>
     </section>
 
     <!-- Accounts -->
@@ -119,13 +140,13 @@
             <button id="logout" class="btn ghost" type="button">Uitloggen</button>
             <button id="logoutAll" class="btn danger" type="button">Overal uitloggen</button>
           </div>
-          <p class="muted sm">Overal uitloggen maakt alle sessies ongeldig, ook in de app Pasr Beheer, en meldt alle apparaten af voor pushmeldingen.</p>
+          <p class="muted sm">Overal uitloggen maakt alle sessies ongeldig, ook in de app PasrBeheer, en meldt alle apparaten af voor pushmeldingen.</p>
           <div id="setMsg" class="err" role="status"></div>
         </article>
         <article class="card">
           <header class="card-h"><h2>Pushmeldingen</h2></header>
           <p class="muted" id="pushInfo">—</p>
-          <p class="muted sm">Meldingen bij nieuwe accounts, verwijderde accounts en tegengehouden bots gaan naar de app Pasr Beheer op je iPhone, iPad en Mac. Per apparaat zet je ze aan of uit in de app.</p>
+          <p class="muted sm">Meldingen bij nieuwe accounts, verwijderde accounts en tegengehouden bots gaan naar de app PasrBeheer op je iPhone, iPad en Mac. Per apparaat zet je ze aan of uit in de app.</p>
         </article>
         <article class="card">
           <header class="card-h"><h2>Links</h2></header>

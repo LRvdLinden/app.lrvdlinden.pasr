@@ -1,4 +1,4 @@
-// Pasr Beheer (beheer.pasr.nl). Praat alleen met de functie admin; token in sessionStorage (weg als het tabblad dicht gaat).
+// PasrBeheer (beheer.pasr.nl). Praat alleen met de functie admin; token in sessionStorage (weg als het tabblad dicht gaat).
 // Geen inline scripts of styles (CSP): kleuren en breedtes gaan via element.style.
 (() => {
   "use strict";
@@ -107,23 +107,64 @@
     tab = t;
     document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== "view-" + t));
-    if (t === "overview") loadStats();
+    if (t === "overview" || t === "insights") { skeleton(); if (stats) renderAll(); else loadStats(); }
     if (t === "accounts") loadUsers(true);
     if (t === "settings") showSettings();
     try { history.replaceState(null, "", "#" + t); } catch {}
   }
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
 
-  // ---- overzicht ----
-  const SERIES = [
-    { key: "signups", label: "Nieuwe accounts", color: "#6A5CFF" },
-    { key: "confirmed", label: "Bevestigd", color: "#2ED3A6" },
-    { key: "deleted", label: "Verwijderd", color: "#FF6B57" },
-    { key: "wallet", label: "Wallet-passen", color: "#4FB3FF" },
-    { key: "bots", label: "Bots", color: "#FFB547" },
+  // ---- statistieken (gedeeld door Overzicht en Insights) ----
+  const METRICS = [
+    { key: "accounts", label: "Accounts", detail: "totaal aan het eind van de dag", kind: "line", color: "#8A7FFF" },
+    { key: "signups", label: "Nieuwe accounts", detail: "aangemaakt", kind: "bar", color: "#6A5CFF" },
+    { key: "confirmed", label: "Bevestigd", detail: "e-mailadres bevestigd", kind: "bar", color: "#2ED3A6" },
+    { key: "deleted", label: "Verwijderd", detail: "door de gebruiker zelf", kind: "bar", color: "#FF6B57" },
+    { key: "cards", label: "Kaarten in accounts", detail: "totaal (elk uur gemeten)", kind: "line", color: "#FF8A78" },
+    { key: "wallet", label: "Wallet-passen", detail: "gemaakt", kind: "bar", color: "#4FB3FF" },
+    { key: "bots", label: "Bots tegengehouden", detail: "aanmeldingen geweigerd", kind: "bar", color: "#FFB547" },
   ];
-  const on = new Set(["signups", "confirmed", "wallet"]);
-  let range = { days: 30, offset: 0 }, stats = null;
+  const RANGES = [[7, "Week"], [30, "Maand"], [90, "Kwartaal"], [365, "Jaar"]];
+  const saved = (() => { try { return JSON.parse(localStorage.getItem("pasr.beheer.insights") || "{}"); } catch { return {}; } })();
+  let range = { days: RANGES.some(([d]) => d === saved.days) ? saved.days : 30, offset: 0 };
+  let sources = Array.isArray(saved.sources) ? saved.sources.filter((k) => METRICS.some((m) => m.key === k)) : ["accounts", "signups", "wallet"];
+  const remember = () => { try { localStorage.setItem("pasr.beheer.insights", JSON.stringify({ days: range.days, sources })); } catch {} };
+  let stats = null, loading = null;
+
+  async function loadStats() {
+    const key = range.days + "|" + range.offset;
+    if (loading === key) return;
+    loading = key;
+    $("ovErr").classList.add("hidden"); $("insErr").classList.add("hidden");
+    try {
+      const s = await api("stats", range);
+      if (loading !== key) return;
+      stats = s;
+      renderAll();
+    } catch (err) {
+      if (err.status === 401) return;
+      for (const id of ["ovErr", "insErr"]) { $(id).textContent = err.message; $(id).classList.remove("hidden"); }
+    } finally { if (loading === key) loading = null; }
+  }
+  function setRange(days, offset) {
+    range = { days, offset: Math.max(0, offset) };
+    remember();
+    document.querySelectorAll(".panels").forEach((p) => p.classList.add("busy"));
+    loadStats();
+  }
+  $("refresh").addEventListener("click", loadStats);
+
+  function renderAll() {
+    if (!stats) return;
+    document.querySelectorAll(".panels").forEach((p) => p.classList.remove("busy"));
+    renderKpis(stats);
+    renderDists();
+    renderControls();
+    drawPanels($("ovPanels"), ["accounts", "signups"], true);
+    drawPanels($("insPanels"), sources, false);
+    renderSources();
+    $("updated").textContent = "Bijgewerkt om " + new Date(stats.generated || Date.now()).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+  }
 
   function kpi(label, value, sub, color) {
     const k = el("div", "kpi");
@@ -137,14 +178,15 @@
     const box = $("kpis");
     box.replaceChildren();
     box.removeAttribute("aria-busy");
-    const plus = (n, word) => { const b = el("b", null, "+" + num(n)); return [b, document.createTextNode(" " + word)]; };
+    const plus = (n, word) => [el("b", null, "+" + num(n)), document.createTextNode(" " + word)];
+    const txt = (x) => [document.createTextNode(x)];
     box.append(
       kpi("Accounts", num(t.accounts), plus(t.new_7d, "deze week"), "#6A5CFF"),
-      kpi("Bevestigd", num(t.confirmed), [document.createTextNode(`${num(t.unconfirmed)} wachten nog`)], "#2ED3A6"),
-      kpi("Kaarten in accounts", num(t.cards), [document.createTextNode(`${num(t.with_cards)} accounts met kaarten`)], "#FF6B57"),
-      kpi("Actief", num(t.active_30d), [document.createTextNode("ingelogd, 30 dagen")], "#8A7FFF"),
-      kpi("Wallet-passen", num(s.wallet_total), [document.createTextNode("gemaakt, totaal")], "#4FB3FF"),
-      kpi("Nieuw vandaag", num(t.new_today), [document.createTextNode(`${num(t.new_30d)} in 30 dagen`)], "#FFB547"),
+      kpi("Bevestigd", num(t.confirmed), txt(`${num(t.unconfirmed)} wachten nog`), "#2ED3A6"),
+      kpi("Kaarten in accounts", num(t.cards), txt(`${num(t.with_cards)} accounts met kaarten`), "#FF6B57"),
+      kpi("Actief", num(t.active_30d), txt("ingelogd, 30 dagen"), "#8A7FFF"),
+      kpi("Wallet-passen", num(s.wallet_total), txt("gemaakt, totaal"), "#4FB3FF"),
+      kpi("Landen", num(Object.keys(s.countries || {}).filter((c) => c !== "?").length), txt("waar accounts vandaan komen"), "#FFB547"),
     );
   }
   function skeleton() {
@@ -153,146 +195,232 @@
     for (let i = 0; i < 6; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
   }
 
-  async function loadStats() {
-    skeleton();
-    $("ovErr").classList.add("hidden");
-    try {
-      stats = await api("stats", range);
-      renderKpis(stats);
-      renderChart();
-      renderDists();
-      $("updated").textContent = "Bijgewerkt om " + new Date(stats.generated || Date.now()).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
-    } catch (err) {
-      if (err.status === 401) return;
-      $("ovErr").textContent = err.message;
-      $("ovErr").classList.remove("hidden");
-    }
-  }
-  $("refresh").addEventListener("click", loadStats);
-
-  // periode
-  document.querySelectorAll("#chSeg button").forEach((b) => b.addEventListener("click", () => {
-    range = { days: Number(b.dataset.days), offset: 0 };
-    loadStats();
-  }));
-  $("chPrev").addEventListener("click", () => { range.offset++; loadStats(); });
-  $("chNext").addEventListener("click", () => { if (range.offset > 0) { range.offset--; loadStats(); } });
-
-  function renderChips() {
-    const box = $("chChips");
-    box.replaceChildren();
-    for (const s of SERIES) {
-      const c = el("button", "chip");
-      c.type = "button";
-      c.style.setProperty("--c", s.color);
-      c.setAttribute("aria-pressed", String(on.has(s.key)));
-      c.append(el("i"), document.createTextNode(s.label));
-      c.addEventListener("click", () => { on.has(s.key) ? on.delete(s.key) : on.add(s.key); if (!on.size) on.add(s.key); renderChart(); });
-      box.append(c);
-    }
-  }
-
   const fmtDay = (d, opts) => new Date(d + "T00:00:00Z").toLocaleDateString("nl-NL", { timeZone: "UTC", ...opts });
-  function renderChart() {
-    if (!stats) return;
-    renderChips();
-    document.querySelectorAll("#chSeg button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.days) === range.days)));
-    const r = stats.range || {};
-    $("chPeriod").textContent = r.from ? `${fmtDay(r.from, { day: "numeric", month: "short" })} – ${fmtDay(r.to, { day: "numeric", month: "short", year: "numeric" })}` : "";
-    $("chNext").disabled = range.offset === 0;
-    $("chPrev").disabled = (range.offset + 1) * range.days > 1100;
-
-    // per dag, bij een jaar per week (52 staven blijven leesbaar)
-    let rows = (stats.per_day || []).map((d) => ({ ...d, label: d.day }));
-    if (range.days === 365) {
-      const weeks = [];
-      for (let i = 0; i < rows.length; i += 7) {
-        const chunk = rows.slice(i, i + 7), w = { label: chunk[0].day, to: chunk[chunk.length - 1].day };
-        for (const s of SERIES) w[s.key] = chunk.reduce((a, x) => a + (x[s.key] || 0), 0);
-        weeks.push(w);
+  const periodText = () => {
+    const r = stats?.range;
+    return r?.from ? `${fmtDay(r.from, { day: "numeric", month: "short" })} – ${fmtDay(r.to, { day: "numeric", month: "short", year: "numeric" })}` : "";
+  };
+  function renderControls() {
+    document.querySelectorAll("[data-period]").forEach((e) => { e.textContent = periodText(); });
+    document.querySelectorAll("[data-range]").forEach((box) => {
+      if (!box.children.length) {
+        for (const [d, label] of RANGES) {
+          const b = el("button", null, label);
+          b.type = "button"; b.dataset.days = d;
+          b.addEventListener("click", () => setRange(d, 0));
+          box.append(b);
+        }
       }
-      rows = weeks;
+      box.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.days) === range.days)));
+    });
+    document.querySelectorAll("[data-prev]").forEach((b) => { b.disabled = (range.offset + 1) * range.days > 1100; b.onclick = () => setRange(range.days, range.offset + 1); });
+    document.querySelectorAll("[data-next]").forEach((b) => { b.disabled = range.offset === 0; b.onclick = () => setRange(range.days, range.offset - 1); });
+  }
+  document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.goto)));
+
+  // Reeks van de periode; bij een jaar per week (staven opgeteld, lijnen de laatste waarde van de week).
+  function seriesRows() {
+    const days = stats?.per_day || [];
+    if (range.days !== 365) return { rows: days.map((d) => ({ ...d, label: d.day })), step: "dag" };
+    const out = [];
+    for (let i = 0; i < days.length; i += 7) {
+      const chunk = days.slice(i, i + 7), w = { label: chunk[0].day, to: chunk[chunk.length - 1].day };
+      for (const m of METRICS) {
+        if (m.kind === "bar") w[m.key] = chunk.reduce((a, x) => a + (x[m.key] || 0), 0);
+        else { const v = chunk.map((x) => x[m.key]).filter((x) => x != null); w[m.key] = v.length ? v[v.length - 1] : null; }
+      }
+      out.push(w);
     }
-    const active = SERIES.filter((s) => on.has(s.key));
-    const plot = $("chPlot");
-    plot.querySelector("svg")?.remove();
-    const W = plot.clientWidth || 800, H = plot.clientHeight || 260, L = 34, B = 24, T = 8;
-    const max = Math.max(1, ...rows.map((d) => active.reduce((a, s) => a + (d[s.key] || 0), 0)));
-    const step = niceStep(max), top = Math.ceil(max / step) * step;
-    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Grafiek per dag" });
+    return { rows: out, step: "week" };
+  }
+
+  function summary(rows, m) {
+    const v = rows.map((r) => r[m.key]).filter((x) => x != null);
+    if (!v.length) return null;
+    const sum = v.reduce((a, b) => a + b, 0);
+    const s = { Min: Math.min(...v), Max: Math.max(...v), "Gem.": sum / v.length, Laatste: v[v.length - 1] };
+    if (m.kind === "bar") s.Totaal = sum;
+    return s;
+  }
+  function niceScale(max, ticks = 4) {
+    if (max <= 0) return { top: 4, step: 1 };
+    let best = null;
+    for (let e = 1; e <= max * 10; e *= 10) {
+      for (const k of [1, 2, 2.5, 5]) {
+        const step = k * e;
+        if (step !== Math.round(step)) continue;
+        const n = Math.max(1, Math.ceil(max / step));
+        if (n > ticks || (n < 2 && max > 1)) continue;
+        const top = n * step;
+        if (!best || top < best.top || (top === best.top && step > best.step)) best = { top, step };
+      }
+    }
+    return best || { top: Math.ceil(max), step: Math.ceil(max) };
+  }
+  // vloeiende lijn zonder doorschieten (monotone cubic)
+  function smoothPath(pts) {
+    if (pts.length < 2) return pts.length ? `M${pts[0][0]},${pts[0][1]}` : "";
+    const n = pts.length, dx = [], dy = [], m = [], t = [];
+    for (let i = 0; i < n - 1; i++) { dx[i] = pts[i + 1][0] - pts[i][0]; dy[i] = pts[i + 1][1] - pts[i][1]; m[i] = dy[i] / dx[i]; }
+    t[0] = m[0]; t[n - 1] = m[n - 2];
+    for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for (let i = 0; i < n - 1; i++) {
+      const h = dx[i] / 3;
+      d += ` C${pts[i][0] + h},${pts[i][1] + t[i] * h} ${pts[i + 1][0] - h},${pts[i + 1][1] - t[i + 1] * h} ${pts[i + 1][0]},${pts[i + 1][1]}`;
+    }
+    return d;
+  }
+
+  // Grafiekkaarten onder elkaar met één gedeelde kruisdraad (zoals Homey Insights).
+  function drawPanels(root, keys, compact) {
+    root.replaceChildren();
+    if (!stats) return;
+    const { rows, step } = seriesRows();
+    const list = METRICS.filter((m) => keys.includes(m.key));
+    if (!list.length) { root.append(el("p", "acc-empty", "Kies links één of meer bronnen.")); return; }
+    const panels = [];
+    const highlight = (i) => panels.forEach((p) => p.show(i));
+    const clear = () => panels.forEach((p) => p.hide());
+    for (const m of list) panels.push(panel(root, rows, m, step, compact, highlight, clear));
+  }
+
+  function panel(root, rows, m, step, compact, highlight, clear) {
+    const box = el("section", compact ? "panel" : "panel card");
+    const head = el("div", "panel-h"), title = el("div", "panel-t"), sw = el("i", "sw " + m.kind);
+    sw.style.setProperty("--c", m.color);
+    title.append(sw, el("strong", null, m.label), el("span", "muted sm", " · " + m.detail + (step === "week" ? ", per week" : "")));
+    head.append(title);
+    const sums = summary(rows, m);
+    const sumBox = el("div", "panel-sum");
+    if (sums) for (const [k, v] of Object.entries(sums)) {
+      const c = el("div"); c.append(el("small", null, k.toUpperCase()), el("b", null, k === "Gem." ? (Math.round(v * 10) / 10).toLocaleString("nl-NL") : num(v)));
+      sumBox.append(c);
+    }
+    head.append(sumBox);
+    const plot = el("div", "plot"), tip = el("div", "tip hidden");
+    plot.append(tip);
+    box.append(head, plot);
+    root.append(box);
+
+    const W = plot.clientWidth || 800, H = compact ? 150 : 190, L = 40, B = 22, T = 10;
+    plot.style.height = H + "px";
+    const vals = rows.map((r) => r[m.key]);
+    const sc = niceScale(Math.max(0, ...vals.filter((v) => v != null)) * 1.05);
+    const n = rows.length, cw = (W - L) / Math.max(n, 1);
+    const x = (i) => L + i * cw + cw / 2, y = (v) => T + (H - T - B) * (1 - v / sc.top);
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": m.label });
     const grid = svgEl("g", { class: "grid" });
-    for (let v = 0; v <= top; v += step) {
-      const y = T + (H - T - B) * (1 - v / top);
-      grid.append(svgEl("line", { x1: L, x2: W, y1: y, y2: y }));
-      const tx = svgEl("text", { x: L - 8, y: y + 4, "text-anchor": "end" }); tx.textContent = num(v); grid.append(tx);
+    for (let v = 0; v <= sc.top + 1e-9; v += sc.step) {
+      grid.append(svgEl("line", { x1: L, x2: W, y1: y(v), y2: y(v), class: v === 0 ? "base" : "" }));
+      const t = svgEl("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }); t.textContent = num(v); grid.append(t);
     }
     svg.append(grid);
-    const n = rows.length, cw = (W - L) / Math.max(n, 1), bw = Math.max(2, Math.min(28, cw * 0.62));
-    const hover = svgEl("rect", { class: "hover-col", y: T, height: H - T - B, width: cw, x: -999 });
-    svg.append(hover);
+    const defs = svgEl("defs", {}), gid = "g" + Math.random().toString(36).slice(2);
+    const lg = svgEl("linearGradient", { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 });
+    lg.append(svgEl("stop", { offset: "0", "stop-color": m.color, "stop-opacity": ".32" }), svgEl("stop", { offset: "1", "stop-color": m.color, "stop-opacity": "0" }));
+    defs.append(lg); svg.append(defs);
+    const bars = [];
+    if (m.kind === "bar") {
+      const bw = Math.max(1.5, Math.min(26, cw * (n > 120 ? 0.85 : 0.64)));
+      rows.forEach((r, i) => {
+        const v = r[m.key] || 0;
+        const h = Math.max(v ? 2 : 0, (H - T - B) * (v / sc.top));
+        const rect = svgEl("rect", { class: "bar", x: x(i) - bw / 2, y: H - B - h, width: bw, height: h, rx: Math.min(3, bw / 3), fill: m.color });
+        bars.push(rect); svg.append(rect);
+      });
+    } else {
+      // lijn met vlak eronder; ontbrekende dagen (nog niet gemeten) breken de lijn
+      let seg = [];
+      const flush = () => {
+        if (seg.length) {
+          const d = smoothPath(seg);
+          svg.append(svgEl("path", { d: `${d} L${seg[seg.length - 1][0]},${H - B} L${seg[0][0]},${H - B} Z`, fill: `url(#${gid})` }));
+          svg.append(svgEl("path", { d, class: "line", stroke: m.color }));
+        }
+        seg = [];
+      };
+      rows.forEach((r, i) => { const v = r[m.key]; if (v == null) flush(); else seg.push([x(i), y(v)]); });
+      flush();
+      if (vals.every((v) => v == null)) {
+        const t = svgEl("text", { x: (W + L) / 2, y: H / 2, "text-anchor": "middle", class: "empty" });
+        t.textContent = "Nog geen metingen in deze periode"; svg.append(t);
+      }
+    }
     const axis = svgEl("g", { class: "axis" });
-    const every = Math.ceil(n / Math.max(1, Math.floor((W - L) / 64)));
-    rows.forEach((d, i) => {
-      let y = H - B;
-      const x = L + i * cw + (cw - bw) / 2;
-      for (const s of active) {
-        const v = d[s.key] || 0;
-        if (!v) continue;
-        const h = (H - T - B) * (v / top);
-        y -= h;
-        svg.append(svgEl("rect", { class: "bar", x, y, width: bw, height: Math.max(h - 1, 1), rx: Math.min(4, bw / 3), fill: s.color }));
-      }
-      if (i % every === 0) {
-        const t = svgEl("text", { x: L + i * cw + cw / 2, y: H - 6, "text-anchor": "middle" });
-        t.textContent = range.days === 365 ? fmtDay(d.label, { month: "short" }) : fmtDay(d.label, { day: "numeric", month: range.days === 7 ? "short" : undefined }).replace(/\s+$/, "");
-        axis.append(t);
-      }
+    const every = Math.ceil(n / Math.max(1, Math.floor((W - L) / 70)));
+    rows.forEach((r, i) => {
+      if ((n - 1 - i) % every) return;
+      const t = svgEl("text", { x: x(i), y: H - 5, "text-anchor": "middle" });
+      t.textContent = range.days === 365 ? fmtDay(r.label, { month: "short" }) : fmtDay(r.label, range.days === 7 ? { weekday: "short", day: "numeric" } : { day: "numeric", month: "short" });
+      axis.append(t);
     });
     svg.append(axis);
+    const rule = svgEl("line", { class: "rule", y1: T, y2: H - B, x1: 0, x2: 0, visibility: "hidden" });
+    const dot = svgEl("circle", { class: "dot", r: 5, cx: 0, cy: 0, fill: m.color, visibility: "hidden" });
+    svg.append(rule, dot);
     plot.prepend(svg);
 
-    // tooltip
-    const tip = $("chTip");
-    const show = (clientX) => {
-      const box = plot.getBoundingClientRect();
-      const i = Math.min(n - 1, Math.max(0, Math.floor(((clientX - box.left) * (W / box.width) - L) / cw)));
-      const d = rows[i];
-      if (!d) return;
-      hover.setAttribute("x", L + i * cw);
-      tip.replaceChildren(el("b", null, d.to ? `Week van ${fmtDay(d.label, { day: "numeric", month: "short" })}` : fmtDay(d.label, { weekday: "short", day: "numeric", month: "long" })));
-      for (const s of SERIES) {
-        const row = el("div"), name = el("span"), dot = el("i");
-        dot.style.setProperty("--c", s.color);
-        name.append(dot, document.createTextNode(s.label));
-        row.append(name, el("strong", null, num(d[s.key])));
-        tip.append(row);
-      }
-      tip.classList.remove("hidden");
-      const px = (L + i * cw + cw / 2) * (box.width / W);
-      tip.style.left = Math.min(Math.max(px - 80, 0), box.width - 170) + "px";
+    const idx = (clientX) => {
+      const b = plot.getBoundingClientRect();
+      return Math.min(n - 1, Math.max(0, Math.floor(((clientX - b.left) * (W / b.width) - L) / cw)));
     };
-    plot.onmousemove = (e) => show(e.clientX);
-    plot.ontouchstart = plot.ontouchmove = (e) => show(e.touches[0].clientX);
-    plot.onmouseleave = () => { tip.classList.add("hidden"); hover.setAttribute("x", -999); };
+    plot.addEventListener("pointermove", (e) => highlight(idx(e.clientX)));
+    plot.addEventListener("pointerdown", (e) => highlight(idx(e.clientX)));
+    plot.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") clear(); });
+    return {
+      show(i) {
+        const r = rows[i]; if (!r) return;
+        rule.setAttribute("x1", x(i)); rule.setAttribute("x2", x(i)); rule.setAttribute("visibility", "visible");
+        const v = r[m.key];
+        if (m.kind === "line" && v != null) { dot.setAttribute("cx", x(i)); dot.setAttribute("cy", y(v)); dot.setAttribute("visibility", "visible"); }
+        else dot.setAttribute("visibility", "hidden");
+        bars.forEach((b, j) => b.classList.toggle("dim", j !== i));
+        tip.replaceChildren(el("b", null, r.to ? `Week van ${fmtDay(r.label, { day: "numeric", month: "short" })}` : fmtDay(r.label, { weekday: "short", day: "numeric", month: "long" })),
+          el("span", null, v == null ? "geen meting" : num(v)));
+        tip.classList.remove("hidden");
+        const b = plot.getBoundingClientRect(), px = x(i) * (b.width / W);
+        tip.style.left = Math.min(Math.max(px - 70, 0), b.width - 140) + "px";
+      },
+      hide() { rule.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); bars.forEach((b) => b.classList.remove("dim")); tip.classList.add("hidden"); },
+    };
+  }
 
-    // totalen van de periode
-    const sums = $("chSum");
-    sums.replaceChildren();
-    for (const s of SERIES) {
-      const box = el("div");
-      box.append(el("b", null, num((stats.per_day || []).reduce((a, x) => a + (x[s.key] || 0), 0))), document.createTextNode(s.label));
-      sums.append(box);
+  function renderSources() {
+    const box = $("insSources");
+    box.replaceChildren();
+    for (const m of METRICS) {
+      const lab = el("label", "source"), cb = el("input"), sw = el("i", "sw " + m.kind), txt = el("span");
+      cb.type = "checkbox"; cb.checked = sources.includes(m.key);
+      cb.addEventListener("change", () => {
+        sources = METRICS.map((x) => x.key).filter((k) => (k === m.key ? cb.checked : sources.includes(k)));
+        remember();
+        drawPanels($("insPanels"), sources, false);
+      });
+      sw.style.setProperty("--c", m.color);
+      txt.append(el("strong", null, m.label), el("small", null, m.detail));
+      lab.append(cb, sw, txt);
+      box.append(lab);
     }
   }
-  function niceStep(max) {
-    const raw = max / 4, pow = Math.pow(10, Math.floor(Math.log10(raw)));
-    const n = raw / pow;
-    return Math.max(1, (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * pow);
-  }
+  $("insCsv").addEventListener("click", () => {
+    if (!stats) return;
+    const list = METRICS.filter((m) => sources.includes(m.key));
+    const lines = [["dag", ...list.map((m) => m.label)].join(";")];
+    for (const d of stats.per_day || []) lines.push([d.day, ...list.map((m) => d[m.key] ?? "")].join(";"));
+    const a = el("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
+    a.download = `pasr-insights-${stats.range.from}-${stats.range.to}.csv`;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
   let resizeTimer;
-  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderChart, 120); });
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderAll, 150); });
 
+  // ---- verdelingen ----
   const REASONS = { honeypot: "Honeypot ingevuld", too_fast: "Te snel ingevuld", rate_limit: "Te veel vanaf één netwerk", disposable: "Wegwerpadres", other: "Overig" };
+  const flag = (cc) => (/^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : "🌐");
+  const countryName = (cc) => { if (cc === "?") return "Onbekend"; try { return new Intl.DisplayNames(["nl"], { type: "region" }).of(cc) || cc; } catch { return cc; } };
   function dist(box, entries, color, emptyText) {
     box.replaceChildren();
     const total = entries.reduce((a, [, n]) => a + n, 0);
@@ -313,6 +441,8 @@
       `Geen bots deze week. ${num(stats.signups_allowed_7d)} gewone aanmeldingen.`);
     const order = ["0", "1-5", "6-15", "16-30", "31+"], c = stats.cards_per_account || {};
     dist($("perAccount"), order.filter((k) => c[k]).map((k) => [k === "0" ? "Nog geen kaarten" : `${k} kaarten`, c[k]]), "#6A5CFF", "Nog geen accounts.");
+    const co = Object.entries(stats.countries || {}).sort((x, y) => (x[0] === "?") - (y[0] === "?") || y[1] - x[1]);
+    dist($("countries"), co.slice(0, 12).map(([k, n]) => [`${flag(k)}  ${countryName(k)}`, n]), "#2ED3A6", "Nog geen accounts.");
   }
 
   // ---- accounts ----
@@ -355,6 +485,7 @@
     const badge = el("span", "badge " + (u.email_confirmed_at ? "ok" : "wait"), u.email_confirmed_at ? "Bevestigd" : "Onbevestigd");
     meta.append(badge);
     if (u.first_name) meta.append(el("span", null, u.first_name));
+    if (u.country) meta.append(el("span", null, `${flag(u.country)} ${countryName(u.country)}`));
     meta.append(el("span", null, `${num(u.cards)} ${u.cards === 1 ? "kaart" : "kaarten"}`),
       el("span", null, "Aangemaakt " + ago(u.created_at)), el("span", null, "Ingelogd " + ago(u.last_sign_in_at)));
     if (u.synced_at) meta.append(el("span", null, "Sync " + ago(u.synced_at)));
@@ -399,7 +530,7 @@
   }
   $("logout").addEventListener("click", () => signOut());
   $("logoutAll").addEventListener("click", async () => {
-    if (!(await ask("Overal uitloggen?", "Alle sessies vervallen, ook in de app Pasr Beheer op je andere apparaten. Daar moet je opnieuw inloggen en pushmeldingen opnieuw aanzetten.", "Overal uitloggen"))) return;
+    if (!(await ask("Overal uitloggen?", "Alle sessies vervallen, ook in de app PasrBeheer op je andere apparaten. Daar moet je opnieuw inloggen en pushmeldingen opnieuw aanzetten.", "Overal uitloggen"))) return;
     try { await api("logout_all"); signOut("Je bent overal uitgelogd."); }
     catch (err) { $("setMsg").textContent = err.message; }
   });
@@ -409,7 +540,7 @@
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
     const want = (location.hash || "").slice(1);
-    setTab(["overview", "accounts", "settings"].includes(want) ? want : "overview");
+    setTab(["overview", "insights", "accounts", "settings"].includes(want) ? want : "overview");
   }
   if (token && expires > Date.now() && URL_ADMIN) start(); else signOut();
   // sessie verloopt: terug naar inloggen

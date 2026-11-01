@@ -1,7 +1,7 @@
-// Pushmeldingen van de app Pasr Beheer: registratie van apparaten (admin_push_devices), de meldingen zelf en APNs.
+// Pushmeldingen van de app PasrBeheer: registratie van apparaten (admin_push_devices), de meldingen zelf en APNs.
 // Pure hulpjes zonder netwerk of database, getest in push_test.ts. Nooit tokens, sleutels of apparaat-id's loggen.
 
-/** Platforms van de app Pasr Beheer (macos = native Mac-app). */
+/** Platforms van de app PasrBeheer (macos = native Mac-app). */
 export const PLATFORMS = ["ios", "ipados", "macos"] as const;
 export type Platform = typeof PLATFORMS[number];
 /** Soorten meldingen die je per apparaat aan of uit zet. */
@@ -9,7 +9,7 @@ export const PREF_KEYS = ["signups", "confirmed", "deleted", "bots"] as const;
 export type PrefKey = typeof PREF_KEYS[number];
 export type Prefs = Record<PrefKey, boolean>;
 export const DEFAULT_PREFS: Prefs = { signups: true, confirmed: false, deleted: true, bots: true };
-/** Bundle-id van Pasr Beheer = APNs-topic (function-secret PASR_APNS_TOPIC mag hem vervangen). */
+/** Bundle-id van PasrBeheer = APNs-topic (function-secret PASR_APNS_TOPIC mag hem vervangen). */
 export const DEFAULT_TOPIC = "nl.lrvdlinden.pasr.beheer";
 
 export type RegisterInput = {
@@ -109,7 +109,7 @@ export function message(kind: Kind, c: Counts, reason?: unknown) {
 
 export function testPayload() {
   return {
-    aps: { alert: { title: "Testmelding", body: "Pushmeldingen van Pasr Beheer werken op dit apparaat." }, sound: "default", "thread-id": "test" },
+    aps: { alert: { title: "Testmelding", body: "Pushmeldingen van PasrBeheer werken op dit apparaat." }, sound: "default", "thread-id": "test" },
     kind: "test",
     url: "pasrbeheer://settings",
   };

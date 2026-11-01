@@ -17,7 +17,7 @@ struct PushPrefs: Codable, Equatable {
     var params: [String: Bool] { ["signups": signups, "confirmed": confirmed, "deleted": deleted, "bots": bots] }
 }
 
-/// Pushmeldingen van Pasr Beheer (APNs, topic nl.lrvdlinden.pasr.beheer) op iPhone, iPad en Mac.
+/// Pushmeldingen van PasrBeheer (APNs, topic nl.lrvdlinden.pasr.beheer) op iPhone, iPad en Mac.
 /// Het APNs-token gaat met `push_register` naar de functie admin; uitloggen meldt het apparaat af.
 @MainActor
 @Observable

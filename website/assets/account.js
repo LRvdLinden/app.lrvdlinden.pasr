@@ -121,6 +121,8 @@
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setMsg("Dit e-mailadres klopt niet.");
       if (pw.length < 8) return setMsg("Kies een wachtwoord van minstens 8 tekens.");
       const data = { first_name: name, fill_ms: Math.round(performance.now() - shown), app: "web" };
+      // regio van de browserinstelling (bv. nl-NL → NL), alleen voor de landentelling; geen locatie
+      try { const r = new Intl.Locale(navigator.language || "").maximize().region; if (/^[A-Z]{2}$/.test(r || "")) data.country = r; } catch {}
       if (hp) data.hp = hp;
       const btn = ev.target.querySelector("button"); btn.disabled = true;
       try {

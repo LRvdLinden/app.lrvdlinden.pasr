@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Kleuren en bouwstenen van Pasr Beheer (zelfde kleuren als Pasr en beheer.pasr.nl).
+/// Kleuren en bouwstenen van PasrBeheer (zelfde kleuren als Pasr en beheer.pasr.nl).
 enum Theme {
     static let bg = Color(hex: 0x0A0B10)
     static let card = Color(hex: 0x15171F)
@@ -14,11 +14,13 @@ enum Theme {
     static let amber = Color(hex: 0xFFB547)
     static let sky = Color(hex: 0x4FB3FF)
 
-    static func color(_ s: Series) -> Color {
-        switch s {
+    static func color(_ m: Metric) -> Color {
+        switch m {
+        case .accounts: iris2
         case .signups: iris
         case .confirmed: mint
         case .deleted: coral
+        case .cards: Color(hex: 0xFF8A78)
         case .wallet: sky
         case .bots: amber
         }
@@ -52,7 +54,7 @@ struct BeheerLogo: View {
                 .overlay(Capsule().stroke(Theme.line))
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Pasr Beheer")
+        .accessibilityLabel("PasrBeheer")
     }
 }
 

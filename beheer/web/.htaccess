@@ -1,4 +1,4 @@
-# Pasr Beheer: nooit indexeren, nooit in een frame, strikte Content-Security-Policy (alleen verbinding met Supabase)
+# PasrBeheer: nooit indexeren, nooit in een frame, strikte Content-Security-Policy (alleen verbinding met Supabase)
 <IfModule mod_headers.c>
   Header always set X-Robots-Tag "noindex, nofollow"
   Header always set Strict-Transport-Security "max-age=31536000"

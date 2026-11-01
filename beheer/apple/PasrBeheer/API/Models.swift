@@ -24,14 +24,18 @@ struct Stats: Decodable {
     struct Day: Decodable, Identifiable {
         let day: String
         var signups = 0, confirmed = 0, deleted = 0, expired = 0, wallet = 0, bots = 0
+        var accounts: Int? = nil
+        var cards: Int? = nil
         var id: String { day }
         var date: Date { DateParse.day(day) ?? .distantPast }
 
-        func value(_ s: Series) -> Int {
-            switch s {
+        func value(_ m: Metric) -> Int? {
+            switch m {
+            case .accounts: accounts
             case .signups: signups
             case .confirmed: confirmed
             case .deleted: deleted
+            case .cards: cards
             case .wallet: wallet
             case .bots: bots
             }
@@ -48,22 +52,39 @@ struct Stats: Decodable {
     let cards_per_account: [String: Int]
     let push_devices: Int
     let push_ready: Bool?
+    var countries: [String: Int]? = nil
 }
 
-/// Reeksen in de grafiek.
-enum Series: String, CaseIterable, Identifiable {
-    case signups, confirmed, deleted, wallet, bots
+/// Bronnen in Insights (zoals Homey Insights): lijnen voor totalen, staven voor aantallen per dag.
+enum Metric: String, CaseIterable, Identifiable, Codable {
+    case accounts, signups, confirmed, deleted, cards, wallet, bots
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .accounts: "Accounts"
         case .signups: "Nieuwe accounts"
         case .confirmed: "Bevestigd"
         case .deleted: "Verwijderd"
+        case .cards: "Kaarten in accounts"
         case .wallet: "Wallet-passen"
-        case .bots: "Bots"
+        case .bots: "Bots tegengehouden"
         }
     }
+
+    var detail: String {
+        switch self {
+        case .accounts: "totaal aan het eind van de dag"
+        case .signups: "aangemaakt"
+        case .confirmed: "e-mailadres bevestigd"
+        case .deleted: "door de gebruiker zelf"
+        case .cards: "totaal (elk uur gemeten)"
+        case .wallet: "gemaakt"
+        case .bots: "aanmeldingen geweigerd"
+        }
+    }
+
+    var isLine: Bool { self == .accounts || self == .cards }
 }
 
 struct UsersResponse: Decodable {
@@ -75,6 +96,7 @@ struct User: Decodable, Identifiable, Hashable {
     let id: String
     let email: String?
     let first_name: String?
+    var country: String? = nil
     let created_at: String?
     let email_confirmed_at: String?
     let last_sign_in_at: String?

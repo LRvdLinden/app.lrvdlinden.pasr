@@ -48,6 +48,7 @@ final class AccountService {
     func signUp(firstName: String, email: String, password: String, honeypot: String, fillMilliseconds: Int) async throws -> SignUpResult {
         var data: [String: Any] = ["first_name": Self.cleanName(firstName), "fill_ms": fillMilliseconds, "app": "ios"]
         if !honeypot.isEmpty { data["hp"] = honeypot }
+        if let country = Self.deviceCountry { data["country"] = country }
         let body: [String: Any] = ["email": email.trimmingCharacters(in: .whitespaces).lowercased(), "password": password, "data": data]
         let json = try await request("auth/v1/signup?redirect_to=https%3A%2F%2Fpasr.nl%2Fbevestigen%2F", body: body)
         if json["access_token"] != nil {
@@ -191,6 +192,12 @@ final class AccountService {
             }
         }
         return AccountError(message: text, status: f.status)
+    }
+
+    /// Regio-instelling van het apparaat ("NL"), alleen voor de landentelling in het beheer. Geen locatie.
+    static var deviceCountry: String? {
+        guard let code = Locale.current.region?.identifier, code.count == 2, code.allSatisfy(\.isLetter) else { return nil }
+        return code.uppercased()
     }
 
     static func cleanName(_ name: String) -> String {

@@ -18,9 +18,9 @@ struct SettingsView: View {
                 Text("Beveiliging")
             } footer: {
                 #if os(macOS)
-                Text("Pasr Beheer vraagt om \(session.biometryName) bij het openen en als de app 5 minuten niet voorop stond.")
+                Text("PasrBeheer vraagt om \(session.biometryName) bij het openen en als de app 5 minuten niet voorop stond.")
                 #else
-                Text("Pasr Beheer vraagt om \(session.biometryName) bij het openen en elke keer dat je terugkomt in de app.")
+                Text("PasrBeheer vraagt om \(session.biometryName) bij het openen en elke keer dat je terugkomt in de app.")
                 #endif
             }
 
@@ -40,7 +40,7 @@ struct SettingsView: View {
                     } label: { Label("Testmelding sturen", systemImage: "paperplane") }
                     if let testState { Text(testState).font(.footnote).foregroundStyle(Theme.muted) }
                 case .denied:
-                    Text("Meldingen staan uit voor Pasr Beheer.").foregroundStyle(Theme.muted)
+                    Text("Meldingen staan uit voor PasrBeheer.").foregroundStyle(Theme.muted)
                     Button("Open instellingen") { push.openSystemSettings() }
                 default:
                     Button { Task { await push.requestPermission() } } label: { Label("Meldingen aanzetten", systemImage: "bell.badge") }

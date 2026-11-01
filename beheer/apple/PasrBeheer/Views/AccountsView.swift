@@ -147,6 +147,7 @@ struct UserRow: View {
                 Text(user.email ?? "—").font(.body.weight(.semibold)).lineLimit(1).truncationMode(.middle)
                 HStack(spacing: 8) {
                     StatusBadge(confirmed: user.isConfirmed)
+                    if let c = user.country { Text(Fmt.flag(c)) }
                     Text(Fmt.plural(user.cards, "kaart", "kaarten"))
                     Text("· \(Fmt.ago(user.created_at))")
                 }
@@ -205,6 +206,7 @@ struct UserDetailView: View {
             }
             Section("Gegevens") {
                 LabeledContent("Kaarten op de server", value: Fmt.n(user.cards))
+                LabeledContent("Land", value: user.country.map { "\(Fmt.flag($0)) \(Fmt.country($0))" } ?? "onbekend")
                 LabeledContent("Aangemaakt", value: Fmt.ago(user.created_at))
                 LabeledContent("Bevestigd", value: user.isConfirmed ? Fmt.ago(user.email_confirmed_at) : "nog niet")
                 LabeledContent("Laatst ingelogd", value: Fmt.ago(user.last_sign_in_at))

@@ -174,6 +174,14 @@ declare v text;
 begin
   if new.raw_user_meta_data is null or jsonb_typeof(new.raw_user_meta_data) <> 'object' then return new; end if;
   new.raw_user_meta_data := new.raw_user_meta_data - 'hp' - 'fill_ms';
+  -- land = de regio-instelling van het apparaat (twee letters, bv. NL); iets anders gaat weg
+  if new.raw_user_meta_data ? 'country' then
+    if upper(coalesce(new.raw_user_meta_data->>'country', '')) ~ '^[A-Z]{2}$' then
+      new.raw_user_meta_data := jsonb_set(new.raw_user_meta_data, '{country}', to_jsonb(upper(new.raw_user_meta_data->>'country')));
+    else
+      new.raw_user_meta_data := new.raw_user_meta_data - 'country';
+    end if;
+  end if;
   v := new.raw_user_meta_data->>'first_name';
   if v is not null then
     v := left(btrim(regexp_replace(regexp_replace(v, '[<>]', '', 'g'), '\s+', ' ', 'g')), 40);
@@ -256,6 +264,35 @@ create table if not exists public.pasr_daily (
   wallet    int not null default 0,
   bots      int not null default 0
 );
+
+alter table public.pasr_daily add column if not exists cards_total int;
+
+-- Elk uur: het aantal kaarten in accounts van vandaag (voor de grafiek; alleen een getal).
+create or replace function public.pasr_daily_snapshot() returns void
+language sql security definer set search_path = public as $$
+  insert into public.pasr_daily as d (day, cards_total)
+  values ((now() at time zone 'utc')::date, (select count(*) from public.pasr_cards where not deleted))
+  on conflict (day) do update set cards_total = excluded.cards_total;
+$$;
+revoke all on function public.pasr_daily_snapshot() from public, anon, authenticated;
+do $$
+begin
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-daily-snapshot';
+  perform cron.schedule('pasr-daily-snapshot', '7 * * * *', 'select public.pasr_daily_snapshot()');
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;
+
+-- Land van je account (regio-instelling van je apparaat), voor accounts van vóór deze instelling. Alleen als het nog leeg is.
+create or replace function public.pasr_set_country(p_country text) returns void
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if auth.uid() is null or upper(coalesce(p_country, '')) !~ '^[A-Z]{2}$' then return; end if;
+  update auth.users set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('country', upper(p_country))
+  where id = auth.uid() and coalesce(raw_user_meta_data->>'country', '') = '';
+end $$;
+revoke all on function public.pasr_set_country(text) from public, anon;
+grant execute on function public.pasr_set_country(text) to authenticated;
 
 -- Waar de database de functie admin bereikt (gezet door de workflow Backend) en het geheim van die aanroep.
 create table if not exists public.pasr_admin_config (id int primary key default 1 check (id = 1), admin_url text);
@@ -374,6 +411,11 @@ begin
     from auth.users u
   ), days as (
     select g::date as day from generate_series(first_day, last_day, interval '1 day') g
+  ), totals_per_day as (
+    -- accounts aan het eind van elke dag: nu, min wat er daarna bij kwam, plus wat er daarna weg ging
+    select d.day,
+           (select count(*) from users) - coalesce((select sum(x.signups - x.deleted - x.expired) from public.pasr_daily x where x.day > d.day), 0) as accounts
+    from days d
   )
   select jsonb_build_object(
     'generated', now(),
@@ -393,8 +435,10 @@ begin
     'per_day', (select coalesce(jsonb_agg(jsonb_build_object(
         'day', d.day, 'signups', coalesce(x.signups, 0), 'confirmed', coalesce(x.confirmed, 0),
         'deleted', coalesce(x.deleted, 0), 'expired', coalesce(x.expired, 0), 'wallet', coalesce(x.wallet, 0),
-        'bots', coalesce(x.bots, 0)) order by d.day), '[]'::jsonb)
-      from days d left join public.pasr_daily x on x.day = d.day),
+        'bots', coalesce(x.bots, 0), 'accounts', greatest(t.accounts, 0), 'cards', x.cards_total) order by d.day), '[]'::jsonb)
+      from days d left join public.pasr_daily x on x.day = d.day left join totals_per_day t on t.day = d.day),
+    'countries', (select coalesce(jsonb_object_agg(c, n), '{}'::jsonb) from (
+        select coalesce(u.raw_user_meta_data->>'country', '?') as c, count(*) as n from auth.users u group by 1) cc),
     'bots_7d', (select coalesce(jsonb_object_agg(reason, n), '{}'::jsonb) from (
         select coalesce(reason, 'other') as reason, count(*) as n from public.pasr_signup_attempts
         where not allowed and at > now() - interval '7 days' group by 1) b),
@@ -428,7 +472,8 @@ declare
   result jsonb;
 begin
   with base as (
-    select u.id, u.email, u.raw_user_meta_data->>'first_name' as first_name, u.created_at, u.email_confirmed_at,
+    select u.id, u.email, u.raw_user_meta_data->>'first_name' as first_name, u.raw_user_meta_data->>'country' as country,
+           u.created_at, u.email_confirmed_at,
            u.last_sign_in_at,
            (select count(*) from public.pasr_cards c where c.user_id = u.id and not c.deleted) as cards,
            (select max(c.server_at) from public.pasr_cards c where c.user_id = u.id) as synced_at

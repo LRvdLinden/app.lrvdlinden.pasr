@@ -49,6 +49,12 @@ enum CardSync {
             if let now = result["now"] as? String { UserDefaults.standard.set(now, forKey: sinceKey(user)) }
             UserDefaults.standard.set(started.timeIntervalSince1970, forKey: pushedKey(user))
             lastError = nil
+            // eenmalig: land (regio-instelling) bij accounts van vóór build 20, voor de landentelling in het beheer
+            let countryKey = "pasr.sync.country.\(user)"
+            if !UserDefaults.standard.bool(forKey: countryKey), let country = AccountService.deviceCountry,
+               (try? await account.rpc("pasr_set_country", body: ["p_country": country])) != nil {
+                UserDefaults.standard.set(true, forKey: countryKey)
+            }
             await LogoService.fillMissing(in: context)
         } catch {
             lastError = error.localizedDescription

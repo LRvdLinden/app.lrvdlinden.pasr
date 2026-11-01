@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		F06B955F0A1D2B78E685DB57 /* Pasr Beheer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pasr Beheer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F06B955F0A1D2B78E685DB57 /* PasrBeheer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "PasrBeheer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A922DA9EA9C124A26351BA8B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D2AAA946C9FA73BFD9678FF4 /* PasrBeheer-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrBeheer-iOS.entitlements"; sourceTree = "<group>"; };
 		CA2DE57880C2736937C5627A /* PasrBeheer-macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrBeheer-macOS.entitlements"; sourceTree = "<group>"; };
@@ -54,7 +54,7 @@
 		B0F05B9120EF55E37081CEE3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F06B955F0A1D2B78E685DB57 /* Pasr Beheer.app */,
+				F06B955F0A1D2B78E685DB57 /* PasrBeheer.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -81,7 +81,7 @@
 			packageProductDependencies = (
 			);
 			productName = PasrBeheer;
-			productReference = F06B955F0A1D2B78E685DB57 /* Pasr Beheer.app */;
+			productReference = F06B955F0A1D2B78E685DB57 /* PasrBeheer.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -193,14 +193,14 @@
 				CODE_SIGN_ENTITLEMENTS = "Config/PasrBeheer-iOS.entitlements";
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/PasrBeheer-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "1";
+				CURRENT_PROJECT_VERSION = "2";
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Beheer";
+				INFOPLIST_KEY_CFBundleDisplayName = PasrBeheer;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr Beheer gebruikt Face ID om het beheer af te schermen.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "PasrBeheer gebruikt Face ID om het beheer af te schermen.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphone*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphone*]" = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -216,7 +216,7 @@
 				);
 				MARKETING_VERSION = "1.0.0";
 				PRODUCT_BUNDLE_IDENTIFIER = nl.lrvdlinden.pasr.beheer;
-				PRODUCT_NAME = "Pasr Beheer";
+				PRODUCT_NAME = PasrBeheer;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
@@ -235,14 +235,14 @@
 				CODE_SIGN_ENTITLEMENTS = "Config/PasrBeheer-iOS.entitlements";
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/PasrBeheer-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "1";
+				CURRENT_PROJECT_VERSION = "2";
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Beheer";
+				INFOPLIST_KEY_CFBundleDisplayName = PasrBeheer;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr Beheer gebruikt Face ID om het beheer af te schermen.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "PasrBeheer gebruikt Face ID om het beheer af te schermen.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphone*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphone*]" = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -258,7 +258,7 @@
 				);
 				MARKETING_VERSION = "1.0.0";
 				PRODUCT_BUNDLE_IDENTIFIER = nl.lrvdlinden.pasr.beheer;
-				PRODUCT_NAME = "Pasr Beheer";
+				PRODUCT_NAME = PasrBeheer;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;

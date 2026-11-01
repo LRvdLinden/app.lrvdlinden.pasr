@@ -115,6 +115,7 @@ struct SectionContent: View {
     var body: some View {
         switch section {
         case .overview: OverviewView()
+        case .insights: InsightsView()
         case .accounts: AccountsView()
         case .settings: SettingsView()
         }

@@ -27,6 +27,16 @@ enum Fmt {
         }
     }
 
+    /// 🇳🇱 voor "NL".
+    static func flag(_ code: String) -> String {
+        guard code.count == 2, code.allSatisfy({ $0.isASCII && $0.isLetter }) else { return "🌐" }
+        return String(String.UnicodeScalarView(code.uppercased().unicodeScalars.compactMap { UnicodeScalar(127_397 + $0.value) }))
+    }
+
+    static func country(_ code: String) -> String {
+        code == "?" ? "Onbekend" : (Locale(identifier: "nl_NL").localizedString(forRegionCode: code) ?? code)
+    }
+
     static func time(_ date: Date) -> String {
         date.formatted(.dateTime.hour().minute().locale(Locale(identifier: "nl_NL")))
     }

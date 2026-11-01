@@ -8,7 +8,7 @@ import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-BUILD = "1"
+BUILD = "2"
 VERSION = "1.0.0"
 
 
@@ -64,9 +64,9 @@ APP = {
     "ENABLE_PREVIEWS": "YES",
     "GENERATE_INFOPLIST_FILE": "YES",
     "INFOPLIST_FILE": "Config/Info.plist",
-    "INFOPLIST_KEY_CFBundleDisplayName": "Pasr Beheer",
+    "INFOPLIST_KEY_CFBundleDisplayName": "PasrBeheer",
     "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.business",
-    "INFOPLIST_KEY_NSFaceIDUsageDescription": "Pasr Beheer gebruikt Face ID om het beheer af te schermen.",
+    "INFOPLIST_KEY_NSFaceIDUsageDescription": "PasrBeheer gebruikt Face ID om het beheer af te schermen.",
     "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphone*]": "YES",
     "INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphone*]": "YES",
     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
@@ -76,7 +76,7 @@ APP = {
     "LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]": ["$(inherited)", "@executable_path/../Frameworks"],
     "MARKETING_VERSION": VERSION,
     "PRODUCT_BUNDLE_IDENTIFIER": "nl.lrvdlinden.pasr.beheer",
-    "PRODUCT_NAME": "Pasr Beheer",
+    "PRODUCT_NAME": "PasrBeheer",
     "SDKROOT": "auto",
     "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator macosx",
     "SUPPORTS_MACCATALYST": "NO",
@@ -112,7 +112,7 @@ def build():
 \tobjects = {{
 
 /* Begin PBXFileReference section */
-\t\t{I['product']} /* Pasr Beheer.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pasr Beheer.app"; sourceTree = BUILT_PRODUCTS_DIR; }};
+\t\t{I['product']} /* PasrBeheer.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "PasrBeheer.app"; sourceTree = BUILT_PRODUCTS_DIR; }};
 \t\t{I['f.info']} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; }};
 \t\t{I['f.ios']} /* PasrBeheer-iOS.entitlements */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrBeheer-iOS.entitlements"; sourceTree = "<group>"; }};
 \t\t{I['f.mac']} /* PasrBeheer-macOS.entitlements */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrBeheer-macOS.entitlements"; sourceTree = "<group>"; }};
@@ -152,7 +152,7 @@ def build():
 \t\t{I['products']} /* Products */ = {{
 \t\t\tisa = PBXGroup;
 \t\t\tchildren = (
-\t\t\t\t{I['product']} /* Pasr Beheer.app */,
+\t\t\t\t{I['product']} /* PasrBeheer.app */,
 \t\t\t);
 \t\t\tname = Products;
 \t\t\tsourceTree = "<group>";
@@ -179,7 +179,7 @@ def build():
 \t\t\tpackageProductDependencies = (
 \t\t\t);
 \t\t\tproductName = PasrBeheer;
-\t\t\tproductReference = {I['product']} /* Pasr Beheer.app */;
+\t\t\tproductReference = {I['product']} /* PasrBeheer.app */;
 \t\t\tproductType = "com.apple.product-type.application";
 \t\t}};
 /* End PBXNativeTarget section */
@@ -238,7 +238,7 @@ SCHEME = """<?xml version="1.0" encoding="UTF-8"?>
    <BuildAction parallelizeBuildables = "YES" buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry buildForTesting = "YES" buildForRunning = "YES" buildForProfiling = "YES" buildForArchiving = "YES" buildForAnalyzing = "YES">
-            <BuildableReference BuildableIdentifier = "primary" BlueprintIdentifier = "{target}" BuildableName = "Pasr Beheer.app" BlueprintName = "PasrBeheer" ReferencedContainer = "container:PasrBeheer.xcodeproj">
+            <BuildableReference BuildableIdentifier = "primary" BlueprintIdentifier = "{target}" BuildableName = "PasrBeheer.app" BlueprintName = "PasrBeheer" ReferencedContainer = "container:PasrBeheer.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -247,7 +247,7 @@ SCHEME = """<?xml version="1.0" encoding="UTF-8"?>
    </TestAction>
    <LaunchAction buildConfiguration = "Debug" selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB" launchStyle = "0" useCustomWorkingDirectory = "NO" ignoresPersistentStateOnLaunch = "NO" debugDocumentVersioning = "YES" debugServiceExtension = "internal" allowLocationSimulation = "YES">
       <BuildableProductRunnable runnableDebuggingMode = "0">
-         <BuildableReference BuildableIdentifier = "primary" BlueprintIdentifier = "{target}" BuildableName = "Pasr Beheer.app" BlueprintName = "PasrBeheer" ReferencedContainer = "container:PasrBeheer.xcodeproj">
+         <BuildableReference BuildableIdentifier = "primary" BlueprintIdentifier = "{target}" BuildableName = "PasrBeheer.app" BlueprintName = "PasrBeheer" ReferencedContainer = "container:PasrBeheer.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>

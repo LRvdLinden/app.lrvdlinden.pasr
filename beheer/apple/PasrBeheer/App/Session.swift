@@ -4,12 +4,13 @@ import SwiftUI
 
 /// Onderdelen (tabs op de iPhone, zijbalk op iPad en Mac).
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case overview, accounts, settings
+    case overview, insights, accounts, settings
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .overview: "Overzicht"
+        case .insights: "Insights"
         case .accounts: "Accounts"
         case .settings: "Instellingen"
         }
@@ -17,7 +18,8 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
 
     var icon: String {
         switch self {
-        case .overview: "chart.bar.xaxis"
+        case .overview: "square.grid.2x2"
+        case .insights: "chart.xyaxis.line"
         case .accounts: "person.2"
         case .settings: "gearshape"
         }
@@ -166,7 +168,7 @@ final class Session: ObservableObject {
         let ctx = LAContext()
         ctx.localizedCancelTitle = "Annuleren"
         guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) else { isLocked = false; return }
-        if (try? await ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Ontgrendel Pasr Beheer")) == true {
+        if (try? await ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Ontgrendel PasrBeheer")) == true {
             isLocked = false
             requestRefresh()
         }
