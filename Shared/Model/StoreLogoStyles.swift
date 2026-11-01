@@ -33,6 +33,7 @@ enum StoreLogoStyles {
         "bakkerbart.nl": .init(card: "#E30613", tint: nil, plate: nil, opaque: false),
         "bartsmit.nl": .init(card: "#FFDD00", tint: nil, plate: nil, opaque: false),
         "basic-fit.com": .init(card: "#FB7819", tint: nil, plate: nil, opaque: false),
+        "bataviastad.nl": .init(card: "#1C2B4A", tint: nil, plate: nil, opaque: false),
         "bauhaus.nl": .init(card: "#E30613", tint: nil, plate: nil, opaque: false),
         "bcc.nl": .init(card: "#E30613", tint: nil, plate: nil, opaque: false),
         "benu.nl": .init(card: "#E30613", tint: nil, plate: nil, opaque: false),
