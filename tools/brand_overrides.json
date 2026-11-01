@@ -236,5 +236,51 @@
  },
  "q-park.nl": {
   "card": "#FFFFFF"
+ },
+ "shoeby.nl": {
+  "file": "File:Shoeby-logo.svg",
+  "card": "#FFFFFF"
+ },
+ "britishairways.com": {
+  "file": "File:BRITISH AIRWAYS logo.svg",
+  "card": "#FFFFFF"
+ },
+ "klm.com": {
+  "file": "File:KLM logo.svg",
+  "card": "#00A1DE",
+  "recolour": "#FFFFFF"
+ },
+ "g-star.com": {
+  "file": "File:G-Star Raw logo.svg",
+  "card": "#000000",
+  "recolour": "#FFFFFF"
+ },
+ "ziengs.nl": {
+  "site": true,
+  "card": "bg"
+ },
+ "terstal.nl": {
+  "site": true,
+  "card": "bg"
+ },
+ "score.nl": {
+  "site": true,
+  "card": "bg"
+ },
+ "chasin.nl": {
+  "site": true,
+  "card": "bg"
+ },
+ "funzone.nl": {
+  "site": true,
+  "card": "bg"
+ },
+ "schuurman-schoenen.nl": {
+  "site": true,
+  "card": "bg"
+ },
+ "amikappers.nl": {
+  "site": true,
+  "card": "bg"
  }
 }

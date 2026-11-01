@@ -15,18 +15,33 @@ enum LogoService {
         guard isEnabled else { return }
         let all = (try? context.fetch(FetchDescriptor<Card>(predicate: #Predicate { $0.deletedAt == nil }))) ?? []
         var changed = false
-        // Cards with a store logo get the clean logo that ships with the app, and, if their colour was
-        // never changed, the brand colour that goes with it.
+        // Cards without a store link whose name is exactly a store in the list get linked to it.
+        for card in all where card.templateID == nil {
+            if let template = StoreTemplates.all.first(where: { Self.sameName($0.name, card.storeName) }) {
+                card.templateID = template.id
+                changed = true
+            }
+        }
+        // Store changes reach existing cards too: the brand colour (when the owner never picked another colour)
+        // and the store's current spelling.
+        for card in all {
+            guard let template = StoreTemplates.template(id: card.templateID) else { continue }
+            if card.colorHex.uppercased() != template.cardHex.uppercased(),
+               StoreColourHistory.isDefault(card.colorHex, for: template.id) {
+                card.colorHex = template.cardHex
+                changed = true
+            }
+            if card.storeName != template.name, Self.sameName(card.storeName, template.name) {
+                card.storeName = template.name
+                changed = true
+            }
+        }
+        // Store logos (not the owner's own): always the current logo that ships with the app.
         for card in all where card.logoData == nil || card.logoFromWebsite {
             guard let domain = card.logoDomain, let bundled = bundledLogo(for: domain) else { continue }
             if card.logoData != bundled {
                 card.logoData = bundled
                 card.logoFromWebsite = true
-                changed = true
-            }
-            if let template = StoreTemplates.template(id: card.templateID), card.colorHex == template.colorHex,
-               template.cardHex != template.colorHex {
-                card.colorHex = template.cardHex
                 changed = true
             }
         }
@@ -38,6 +53,13 @@ enum LogoService {
             changed = true
         }
         if changed { try? context.save() }
+    }
+
+    /// Same store name, ignoring case, spaces, dots and apostrophes ("Ter Stal" = "TerStal", "Levis" = "Levi's").
+    static func sameName(_ a: String, _ b: String) -> Bool {
+        let clean = { (t: String) in t.lowercased().filter { $0.isLetter || $0.isNumber } }
+        let x = clean(a), y = clean(b)
+        return !x.isEmpty && x == y
     }
 
     /// Removes logos that came from websites (when the setting is switched off). Own logos stay.

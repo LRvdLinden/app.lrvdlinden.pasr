@@ -83,7 +83,7 @@ enum StoreTemplates {
         .init(id: "nelson", name: "Nelson", domain: "nelson.nl", category: "Mode en schoenen", colorHex: "#1A1A1A", format: .ean13),
         .init(id: "ziengs", name: "Ziengs", domain: "ziengs.nl", category: "Mode en schoenen", colorHex: "#1A1A1A", format: .ean13),
         .init(id: "bristol", name: "Bristol", domain: "bristol.nl", category: "Mode en schoenen", colorHex: "#E30613", format: .ean13),
-        .init(id: "terstal", name: "Ter Stal", domain: "terstal.nl", category: "Mode en schoenen", colorHex: "#E30613", format: .ean13, aliases: ["terstal"]),
+        .init(id: "terstal", name: "TerStal", domain: "terstal.nl", category: "Mode en schoenen", colorHex: "#E30613", format: .ean13, aliases: ["ter stal"]),
         // Klussen, tuin en dieren
         .init(id: "praxis", name: "Praxis", domain: "praxis.nl", category: "Klussen, tuin en dieren", colorHex: "#E30613", format: .ean13),
         .init(id: "gamma", name: "GAMMA", domain: "gamma.nl", category: "Klussen, tuin en dieren", colorHex: "#0050A0", format: .ean13),
@@ -268,7 +268,7 @@ enum StoreTemplates {
         .init(id: "fastned", name: "Fastned", domain: "fastnedcharging.com", category: "Tanken en sparen", colorHex: "#FFD500", format: .qr),
         .init(id: "travelcard", name: "Travelcard", domain: "travelcard.nl", category: "Tanken en sparen", colorHex: "#003B7E", format: .code128),
         .init(id: "multitankcard", name: "MultiTankcard", domain: "multitankcard.nl", category: "Tanken en sparen", colorHex: "#E30613", format: .code128),
-        .init(id: "flyingblue", name: "Flying Blue", domain: "flyingblue.com", category: "Tanken en sparen", colorHex: "#00205B", format: .code128, aliases: ["klm"]),
+        .init(id: "flyingblue", name: "Flying Blue", domain: "flyingblue.com", category: "Tanken en sparen", colorHex: "#00205B", format: .code128, aliases: ["klm flying blue"]),
         .init(id: "payback", name: "Payback", domain: "payback.de", category: "Tanken en sparen", colorHex: "#00338D", format: .code128),
         .init(id: "ns", name: "NS Flex", domain: "ns.nl", category: "Tanken en sparen", colorHex: "#FFC917", format: .qr, aliases: ["ns"]),
         .init(id: "ovpas", name: "OV-pas (eigen)", domain: "ov-chipkaart.nl", category: "Tanken en sparen", colorHex: "#00A0E2", format: .code128, aliases: ["ov-chipkaart"]),
@@ -348,6 +348,13 @@ enum StoreTemplates {
         .init(id: "mrfillet", name: "Mr. Fillet", domain: "mr-fillet.shop", category: "Drank en eten", colorHex: "#C8102E", format: .code128, aliases: ["mr fillet", "mr. filet", "mr filet", "mister fillet"]),
         .init(id: "levis", name: "Levi's", domain: "levi.com", category: "Mode en schoenen", colorHex: "#C41230", format: .code128, aliases: ["levis", "levi strauss", "red tab"]),
         .init(id: "bataviastad", name: "Batavia Stad Fashion Outlet", domain: "bataviastad.nl", category: "Mode en schoenen", colorHex: "#1C2B4A", format: .code128, aliases: ["batavia stad", "bataviastad", "batavia outlet", "batavia stad outlet"]),
+        .init(id: "bpfreebees", name: "BP FreeBees", domain: "bp.com", category: "Tanken en sparen", colorHex: "#00843D", format: .ean13, aliases: ["freebees", "free bees", "bp freebees"]),
+        .init(id: "britishairways", name: "British Airways Club", domain: "britishairways.com", category: "Tanken en sparen", colorHex: "#FFFFFF", format: .code128, aliases: ["british airways", "executive club", "avios"]),
+        .init(id: "klm", name: "KLM", domain: "klm.com", category: "Tanken en sparen", colorHex: "#00A1DE", format: .code128, aliases: ["klm royal dutch airlines"]),
+        .init(id: "chasin", name: "Chasin'", domain: "chasin.nl", category: "Mode en schoenen", colorHex: "#1A1A1A", format: .code128, aliases: ["chasin"]),
+        .init(id: "funzone", name: "FunZone", domain: "funzone.nl", category: "Uitgaan en vrije tijd", colorHex: "#E6007E", format: .qr, aliases: ["fun zone"]),
+        .init(id: "gstaroutlet", name: "G-Star RAW Outlet", domain: "g-star.com", category: "Mode en schoenen", colorHex: "#000000", format: .code128, aliases: ["g-star", "g star", "gstar", "g-star raw"]),
+        .init(id: "schuurman", name: "Schuurman Schoenen", domain: "schuurman-schoenen.nl", category: "Mode en schoenen", colorHex: "#1A1A1A", format: .ean13, aliases: ["schuurman"]),
         .init(id: "amikappers", name: "AMI Kappers", domain: "amikappers.nl", category: "Drogist en beauty", colorHex: "#1A1A1A", format: .code128, aliases: ["ami kapsalons", "ami kapper"]),
     ]
 

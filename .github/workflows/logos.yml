@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -q requests pillow
+      - run: pip install -q requests pillow cairosvg
       - if: ${{ inputs.debug != '' && inputs.debug != null }}
         run: python tools/fetch_logos.py --debug ${{ inputs.debug }}
       - if: ${{ inputs.debug == '' || inputs.debug == null }}
@@ -43,7 +43,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add Shared/StoreLogos Shared/Model/StoreLogoStyles.swift tools/logos-missing.txt tools/logo-styles.json
+          git add Shared/StoreLogos Shared/Model/StoreLogoStyles.swift Shared/Model/StoreColourHistory.swift tools/logos-missing.txt tools/logo-styles.json tools/colour-history.json
           if git diff --cached --quiet; then echo "No new logos."; exit 0; fi
           git commit -m "Winkellogo's bijgewerkt"
           git pull --rebase -q
