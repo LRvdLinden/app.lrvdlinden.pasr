@@ -6,7 +6,7 @@ name: Logos
 on:
   push:
     branches: [main]
-    paths: ["Shared/Model/StoreTemplates.swift", "tools/fetch_logos.py", ".github/workflows/logos.yml"]
+    paths: ["Shared/Model/StoreTemplates.swift", "tools/fetch_logos.py", "tools/brand_overrides.json", ".github/workflows/logos.yml"]
   workflow_dispatch:
     inputs:
       all:

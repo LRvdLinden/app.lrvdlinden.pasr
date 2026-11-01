@@ -31,6 +31,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "Shared" / "StoreLogos"
 SIZE = 256
 STYLES_JSON = ROOT / "tools" / "logo-styles.json"
+# Hand-picked per brand (tools/logo_candidates.py): the Wikimedia Commons file, the colour of the real card
+# ("bg" = the logo's own background colour) and optionally the colour to draw the logo in.
+OVERRIDES = json.loads((ROOT / "tools" / "brand_overrides.json").read_text()) if (ROOT / "tools" / "brand_overrides.json").exists() else {}
 STYLES_SWIFT = ROOT / "Shared" / "Model" / "StoreLogoStyles.swift"
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1")
@@ -275,10 +278,13 @@ def style(img, meta, template_hex):
     return card, False, (bg if bg and bg != card else ('#FFFFFF' if lum(card) < 0.4 else '#1C1C1E'))
 
 
-def recolour(img, card):
+def recolour(img, card, on_hex=None):
     """Main colour → white/black, details in that colour → transparent (the card shows through)."""
     _, ink = ink_stats(img)
-    on = (255, 255, 255) if lum(card) < 0.4 else (17, 17, 17)
+    if on_hex:
+        on = tuple(int(on_hex[i:i + 2], 16) for i in (1, 3, 5))
+    else:
+        on = (255, 255, 255) if lum(card) < 0.4 else (17, 17, 17)
     ik = tuple(int(ink[i:i + 2], 16) for i in (1, 3, 5))
     dist = lambda p, q: sum(abs(p[i] - q[i]) for i in range(3))
     out = []
@@ -310,6 +316,9 @@ def write_styles():
         meta = metas.get(d, {})
         img = Image.open(f).convert("RGBA")
         card, bake, plate = style(img, meta, colours.get(d, "#2B2F3A"))
+        if d in OVERRIDES:   # hand-picked: the real card colour, the logo as saved
+            want = OVERRIDES[d].get("card", card)
+            card, bake, plate = (meta.get("bg") or card) if want == "bg" else want, False, None
         if bake:   # baked into the PNG once; afterwards the contrast is fine and nothing changes
             recolour(img, card).save(f, optimize=True)
         tint = None
@@ -343,11 +352,30 @@ enum StoreLogoStyles {
 def save_logo(domain, img, metas):
     clean, meta = process(img)
     clean.thumbnail((SIZE * 2, SIZE), Image.LANCZOS)
+    o = OVERRIDES.get(domain, {})
+    if o.get("recolour"):
+        card = o.get("card") if o.get("card") not in (None, "bg") else meta.get("bg", "#000000")
+        clean = recolour(clean, card, o["recolour"])
     clean.save(OUT / f"{domain}.png", optimize=True)
     metas[domain] = {k: v for k, v in meta.items() if k in ("bg", "opaque")}
+    if o.get("file"):
+        metas[domain]["src"] = o["file"]
+
+
+def commons_file(title):
+    url = "https://commons.wikimedia.org/wiki/Special:FilePath/" + urllib.parse.quote(title.removeprefix("File:")) + "?width=800"
+    try:
+        r = requests.get(url, headers=WIKI_UA, timeout=25)
+        return Image.open(io.BytesIO(r.content)).convert("RGBA")
+    except Exception:
+        return None
 
 
 def fetch(domain):
+    if OVERRIDES.get(domain, {}).get("file"):
+        img = commons_file(OVERRIDES[domain]["file"])
+        if img:
+            return img
     # 1. The full logo (wordmark) on Wikidata/Wikimedia Commons: sharp and complete, like SuperCards shows it.
     img = wikidata_logo(domain)
     if img:
@@ -391,11 +419,13 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     redo = "--all" in sys.argv
     only = [a for a in sys.argv[1:] if not a.startswith("--")]
-    todo = only or [d for d in domains() if redo or not (OUT / f"{d}.png").exists()]
+    metas = json.loads(STYLES_JSON.read_text()) if STYLES_JSON.exists() else {}
     if "--styles" in sys.argv:
         write_styles()
         return
-    metas = json.loads(STYLES_JSON.read_text()) if STYLES_JSON.exists() else {}
+    # new hand-picked logos are fetched again too
+    changed = [d for d, o in OVERRIDES.items() if o.get("file") and metas.get(d, {}).get("src") != o["file"]]
+    todo = only or sorted({d for d in domains() if redo or not (OUT / f"{d}.png").exists()} | set(changed))
     if DEBUG:
         for d in todo:
             print(d); fetch(d)

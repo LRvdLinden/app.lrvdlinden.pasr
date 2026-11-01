@@ -1,0 +1,233 @@
+{
+ "ah.nl": {
+  "file": "File:Albert Heijn Logo.svg",
+  "card": "#00A0E2",
+  "recolour": "#FFFFFF"
+ },
+ "jumbo.com": {
+  "file": "File:Jumbo Logo.svg",
+  "card": "#FFC800",
+  "recolour": "#FFFFFF"
+ },
+ "lidl.nl": {
+  "file": "File:Lidl-Logo.svg",
+  "card": "bg"
+ },
+ "spar.nl": {
+  "file": "File:Wordmark SPAR.svg",
+  "card": "#FFFFFF"
+ },
+ "vomar.nl": {
+  "file": "File:Vomar logo.png",
+  "card": "bg"
+ },
+ "hoogvliet.com": {
+  "file": "File:Hoogvliet logo.png",
+  "card": "#FFFFFF"
+ },
+ "dekamarkt.nl": {
+  "file": "File:Logo of Dekamarkt.svg",
+  "card": "#FFFFFF"
+ },
+ "picnic.app": {
+  "file": "File:Picnic logo.svg",
+  "card": "bg"
+ },
+ "kruidvat.nl": {
+  "file": "File:Kruidvat logo.svg",
+  "card": "#FFFFFF"
+ },
+ "etos.nl": {
+  "file": "File:AD Etos Logo Positive.jpg",
+  "card": "#FFFFFF"
+ },
+ "hema.nl": {
+  "file": "File:HEMA Logo.svg",
+  "card": "bg"
+ },
+ "action.com": {
+  "file": "File:Action Nederland Logo 2020.svg",
+  "card": "#FFFFFF"
+ },
+ "airmiles.nl": {
+  "file": "File:Air Miles.svg",
+  "card": "#FFFFFF"
+ },
+ "karwei.nl": {
+  "file": "File:Karwei logo (2017).png",
+  "card": "#000000"
+ },
+ "gamma.nl": {
+  "file": "File:GAMMA Logo.svg",
+  "card": "bg"
+ },
+ "praxis.nl": {
+  "file": "File:Praxis logo (Pays-Bas).png",
+  "card": "bg"
+ },
+ "hornbach.nl": {
+  "file": "File:Hornbach Logo black.svg",
+  "card": "#FFFFFF"
+ },
+ "ikea.com": {
+  "file": "File:Ikea logo.svg",
+  "card": "bg"
+ },
+ "blokker.nl": {
+  "file": "File:Blokker-Logo.svg",
+  "card": "#FFFFFF"
+ },
+ "douglas.nl": {
+  "file": "File:Douglas Logo 06.2018.svg",
+  "card": "#FFFFFF"
+ },
+ "shell.nl": {
+  "file": "File:Logo Shell 1973.jpg",
+  "card": "bg"
+ },
+ "bp.com": {
+  "file": "File:Bp logo89.svg",
+  "card": "#00843D"
+ },
+ "esso.nl": {
+  "file": "File:Esso 1934.svg",
+  "card": "#FFFFFF"
+ },
+ "texaco.nl": {
+  "file": "File:Texaco logo.svg",
+  "card": "#FFFFFF"
+ },
+ "primark.com": {
+  "file": "File:Primark Logo 2024.svg",
+  "card": "#00AEEF",
+  "recolour": "#FFFFFF"
+ },
+ "zeeman.com": {
+  "file": "File:Zeeman logo.svg",
+  "card": "#FFFFFF"
+ },
+ "wibra.nl": {
+  "file": "File:Wibra logo 2021 RGB 198x99.png",
+  "card": "bg"
+ },
+ "xenos.nl": {
+  "file": "File:Logo-Xenos-Rubin-Red.png",
+  "card": "#FFFFFF"
+ },
+ "leenbakker.nl": {
+  "file": "File:Logo Leen Bakker 2015.png",
+  "card": "#FFFFFF"
+ },
+ "bigbazar.eu": {
+  "file": "File:Big Bazar Logo.svg",
+  "card": "#FFFFFF"
+ },
+ "trekpleister.nl": {
+  "file": "File:Trekpleister Logo since 2024.webp",
+  "card": "#FFFFFF"
+ },
+ "mediamarkt.nl": {
+  "file": "File:Mediamarkt.png",
+  "card": "bg"
+ },
+ "coolblue.nl": {
+  "file": "File:Logo-coolblue-500x500.jpg",
+  "card": "bg"
+ },
+ "decathlon.nl": {
+  "file": "File:Decathlon - logo (1990-2024).svg",
+  "card": "bg"
+ },
+ "intersport.nl": {
+  "file": "File:Intersport logo 2022.svg",
+  "card": "#FFFFFF"
+ },
+ "bristol.nl": {
+  "file": "File:Bristol logo 02.png",
+  "card": "bg"
+ },
+ "scapino.nl": {
+  "file": "File:Scapino logo 04.png",
+  "card": "#FFFFFF"
+ },
+ "zara.com": {
+  "file": "File:Zara Logo.svg",
+  "card": "#000000",
+  "recolour": "#FFFFFF"
+ },
+ "hm.com": {
+  "file": "File:H&M-Logo.svg",
+  "card": "#FFFFFF"
+ },
+ "ns.nl": {
+  "file": "File:Nederlandse Spoorwegen logo.svg",
+  "card": "#FFC917"
+ },
+ "lush.com": {
+  "file": "File:Lush Logo.png",
+  "card": "#000000",
+  "recolour": "#FFFFFF"
+ },
+ "sephora.nl": {
+  "file": "File:Sephora logo.svg",
+  "card": "#000000",
+  "recolour": "#FFFFFF"
+ },
+ "specsavers.nl": {
+  "file": "File:Specsavers logo.svg",
+  "card": "#009A44",
+  "recolour": "#FFFFFF"
+ },
+ "hansanders.nl": {
+  "file": "File:Logo of Hans Anders.svg",
+  "card": "#FFFFFF"
+ },
+ "basic-fit.com": {
+  "file": "File:Basic-Fit logo.png",
+  "card": "bg"
+ },
+ "debijenkorf.nl": {
+  "file": "File:De Bijenkorf logo.svg",
+  "card": "#000000",
+  "recolour": "#FFFFFF"
+ },
+ "sligro.nl": {
+  "file": "File:Logo of Sligro Food Group.svg",
+  "card": "#FFFFFF"
+ },
+ "makro.nl": {
+  "file": "File:Makro Europe logo.png",
+  "card": "bg"
+ },
+ "bruna.nl": {
+  "file": "File:Bruna logo.png",
+  "card": "#FFFFFF"
+ },
+ "jysk.nl": {
+  "file": "File:Jysk logo.svg",
+  "card": "bg"
+ },
+ "gall.nl": {
+  "file": "File:Logo Gall & Gall.png",
+  "card": "bg"
+ },
+ "payback.de": {
+  "file": "File:Payback Logo 2023.svg",
+  "card": "bg"
+ },
+ "q8.nl": {
+  "file": "File:Q8 logo.svg",
+  "card": "#FFFFFF"
+ },
+ "tinq.nl": {
+  "file": "File:TinQ logo 01.gif",
+  "card": "#FFFFFF"
+ },
+ "avia.nl": {
+  "file": "File:AVIA International logo.svg",
+  "card": "#FFFFFF"
+ },
+ "plus.nl": {
+  "card": "#A2C11C"
+ }
+}
