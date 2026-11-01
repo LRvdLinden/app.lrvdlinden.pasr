@@ -2,17 +2,13 @@
  "acsi.eu": {
   "bg": "#009932"
  },
- "action.com": {
-  "bg": "#FFFFFF"
- },
- "ah.nl": {
-  "bg": "#FFFFFF"
- },
+ "action.com": {},
+ "ah.nl": {},
  "airmiles.nl": {
   "opaque": true
  },
  "aldi.nl": {
-  "bg": "#FFFFFF"
+  "bg": "#C80000"
  },
  "amazon.nl": {},
  "americatoday.com": {
@@ -22,9 +18,7 @@
   "bg": "#FFFFFF"
  },
  "anytimefitness.nl": {},
- "apple.com": {
-  "bg": "#F2F2F2"
- },
+ "apple.com": {},
  "artis.nl": {
   "bg": "#FFFFFF"
  },
@@ -38,9 +32,7 @@
  "basic-fit.com": {
   "bg": "#FE7000"
  },
- "bauhaus.nl": {
-  "bg": "#FFFFFF"
- },
+ "bauhaus.nl": {},
  "bcc.nl": {
   "bg": "#FFFFFF"
  },
@@ -74,7 +66,7 @@
  "brico.nl": {},
  "broekhuis.nl": {},
  "bruna.nl": {
-  "opaque": true
+  "bg": "#FFFFFF"
  },
  "burgerking.nl": {},
  "burgerszoo.nl": {},
@@ -104,7 +96,9 @@
   "bg": "#FFFFFF"
  },
  "debijenkorf.nl": {},
- "decathlon.nl": {},
+ "decathlon.nl": {
+  "bg": "#3643BA"
+ },
  "deen.nl": {},
  "dekamarkt.nl": {
   "bg": "#87BE34"
@@ -129,9 +123,7 @@
   "bg": "#09A13B"
  },
  "dominos.nl": {},
- "donner.nl": {
-  "bg": "#EB5D17"
- },
+ "donner.nl": {},
  "douglas.nl": {
   "opaque": true
  },
@@ -145,7 +137,9 @@
  "ep.nl": {},
  "esprit.nl": {},
  "esso.nl": {},
- "etos.nl": {},
+ "etos.nl": {
+  "opaque": true
+ },
  "expert.nl": {
   "bg": "#FFFFFF"
  },
@@ -182,7 +176,7 @@
   "bg": "#FDDB02"
  },
  "gall.nl": {
-  "bg": "#242323"
+  "bg": "#FFFFFF"
  },
  "gamemania.nl": {
   "opaque": true
@@ -204,7 +198,7 @@
  "hansanders.nl": {},
  "healthcity.nl": {},
  "hema.nl": {
-  "bg": "#E3191C"
+  "opaque": true
  },
  "hm.com": {},
  "hollandandbarrett.nl": {},
@@ -217,7 +211,9 @@
  "hubo.nl": {},
  "hudsonsbay.nl": {},
  "hunkemoller.nl": {},
- "iciparisxl.nl": {},
+ "iciparisxl.nl": {
+  "bg": "#0E0506"
+ },
  "ikea.com": {
   "bg": "#FFFFFF"
  },
@@ -230,7 +226,9 @@
  "jackjones.com": {
   "opaque": true
  },
- "janlinders.nl": {},
+ "janlinders.nl": {
+  "bg": "#FFFFFF"
+ },
  "jumbo.com": {
   "bg": "#EEB717"
  },
@@ -240,11 +238,15 @@
  "jysk.nl": {
   "opaque": true
  },
- "karwei.nl": {},
+ "karwei.nl": {
+  "bg": "#FFFFFF"
+ },
  "kfc.nl": {
   "bg": "#FFFFFF"
  },
- "kikocosmetics.com": {},
+ "kikocosmetics.com": {
+  "opaque": true
+ },
  "kinepolis.nl": {},
  "kruidvat.nl": {},
  "kwantum.nl": {
@@ -277,15 +279,17 @@
   "bg": "#222B31"
  },
  "lucardi.nl": {},
- "lush.com": {},
+ "lush.com": {
+  "bg": "#FFFFFF"
+ },
  "makro.nl": {
-  "opaque": true
+  "bg": "#002D72"
  },
  "mango.com": {
   "bg": "#FFFFFF"
  },
  "marqt.com": {
-  "bg": "#573009"
+  "bg": "#000000"
  },
  "mcd-supermarkt.nl": {
   "bg": "#DB2F36"
@@ -312,10 +316,10 @@
  "nelson.nl": {
   "opaque": true
  },
- "netflix.com": {},
- "nettorama.nl": {
-  "bg": "#FFFFFF"
+ "netflix.com": {
+  "opaque": true
  },
+ "nettorama.nl": {},
  "newyorkpizza.nl": {
   "bg": "#FFFFFF"
  },
@@ -394,7 +398,9 @@
  "scapino.nl": {
   "opaque": true
  },
- "schiphol.nl": {},
+ "schiphol.nl": {
+  "opaque": true
+ },
  "schoenenreus.nl": {},
  "schoonenberg.nl": {
   "bg": "#FFFFFF"
@@ -488,11 +494,17 @@
  },
  "yellowbrick.nl": {},
  "yourgift.nl": {},
- "yves-rocher.nl": {},
- "zalando.nl": {},
- "zara.com": {},
+ "yves-rocher.nl": {
+  "bg": "#014E2E"
+ },
+ "zalando.nl": {
+  "bg": "#FFFFFF"
+ },
+ "zara.com": {
+  "bg": "#FFFFFF"
+ },
  "zeeman.com": {
-  "opaque": true
+  "bg": "#F8DC00"
  },
  "ziengs.nl": {
   "bg": "#74F58D"
