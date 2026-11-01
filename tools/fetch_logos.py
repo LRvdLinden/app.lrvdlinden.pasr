@@ -350,12 +350,22 @@ enum StoreLogoStyles {
 
 
 def save_logo(domain, img, metas):
-    clean, meta = process(img)
-    clean.thumbnail((SIZE * 2, SIZE), Image.LANCZOS)
     o = OVERRIDES.get(domain, {})
-    if o.get("recolour"):
-        card = o.get("card") if o.get("card") not in (None, "bg") else meta.get("bg", "#000000")
-        clean = recolour(clean, card, o["recolour"])
+    if o.get("file"):
+        # Hand-picked logos stay as drawn (no background removal): cropped to the artwork, and a logo in a
+        # coloured box sits on a card of exactly that colour, so the box blends into the card.
+        clean = img.convert("RGBA")
+        bbox = clean.getchannel("A").point(lambda a: 255 if a > 24 else 0).getbbox()
+        if bbox:
+            clean = clean.crop(bbox)
+        bg = border_colour(clean)
+        meta = {"bg": hexc(bg)} if bg else {}
+        if o.get("recolour"):
+            card = o.get("card") if o.get("card") not in (None, "bg") else meta.get("bg", "#000000")
+            clean = recolour(clean, card, o["recolour"])
+    else:
+        clean, meta = process(img)
+    clean.thumbnail((SIZE * 2, SIZE), Image.LANCZOS)
     clean.save(OUT / f"{domain}.png", optimize=True)
     metas[domain] = {k: v for k, v in meta.items() if k in ("bg", "opaque")}
     if o.get("file"):
@@ -363,19 +373,26 @@ def save_logo(domain, img, metas):
 
 
 def commons_file(title):
+    """A Commons file as an 800 px image; retries politely when Wikimedia asks to slow down."""
+    import time
     url = "https://commons.wikimedia.org/wiki/Special:FilePath/" + urllib.parse.quote(title.removeprefix("File:")) + "?width=800"
-    try:
-        r = requests.get(url, headers=WIKI_UA, timeout=25)
-        return Image.open(io.BytesIO(r.content)).convert("RGBA")
-    except Exception:
-        return None
+    for attempt in range(5):
+        try:
+            r = requests.get(url, headers=WIKI_UA, timeout=25)
+            if r.status_code == 429 or r.status_code >= 500:
+                time.sleep(3 + attempt * 4)
+                continue
+            return Image.open(io.BytesIO(r.content)).convert("RGBA")
+        except Exception:
+            time.sleep(2)
+    print("   commons failed:", title, flush=True)
+    return None
 
 
 def fetch(domain):
     if OVERRIDES.get(domain, {}).get("file"):
-        img = commons_file(OVERRIDES[domain]["file"])
-        if img:
-            return img
+        # hand-picked: that file or nothing (never fall back to a different logo)
+        return commons_file(OVERRIDES[domain]["file"])
     # 1. The full logo (wordmark) on Wikidata/Wikimedia Commons: sharp and complete, like SuperCards shows it.
     img = wikidata_logo(domain)
     if img:
@@ -439,8 +456,14 @@ def main():
             return d, True
         return d, False
 
+    first = [d for d in todo if d in OVERRIDES]
+    for d in first:   # Commons one at a time (it rate-limits bursts)
+        d, ok = work(d)
+        print(("ok      " if ok else "MISSING ") + d, flush=True)
+        if not ok:
+            missing.append(d)
     with cf.ThreadPoolExecutor(12) as pool:
-        for d, ok in pool.map(work, todo):
+        for d, ok in pool.map(work, [d for d in todo if d not in OVERRIDES]):
             print(("ok      " if ok else "MISSING ") + d, flush=True)
             if not ok:
                 missing.append(d)
