@@ -175,15 +175,12 @@ struct WalletView: View {
                     }
                     actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
                     actionButton("square.and.arrow.up", label: "Deel") { sheet = .share(card) }
+                    if WalletPass.isAvailable, !card.number.isEmpty {
+                        WalletActionButton(card: card).id(card.id)
+                    }
                     actionButton("trash", label: "Verwijder", role: .destructive) { deleting = card }
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
-
-                if WalletPass.isAvailable, !card.number.isEmpty {
-                    AddToWalletButton(card: card)
-                        .id(card.id)
-                        .transition(.opacity)
-                }
 
                 if !card.note.isEmpty {
                     Text(card.note)

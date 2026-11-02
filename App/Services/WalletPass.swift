@@ -116,6 +116,51 @@ struct AddToWalletButton: View {
     }
 }
 
+/// Wallet-knop in het rijtje onder een kaart (zelfde glazen knop als de andere acties).
+struct WalletActionButton: View {
+    let card: Card
+    @State private var pass: PKPass?
+    @State private var busy = false
+    @State private var error: String?
+
+    var body: some View {
+        Button {
+            Task { await add() }
+        } label: {
+            ZStack {
+                Label("Voeg toe aan Apple Wallet", systemImage: "wallet.pass")
+                    .labelStyle(.iconOnly)
+                    .opacity(busy ? 0 : 1)
+                if busy { ProgressView().controlSize(.small) }
+            }
+            .font(.title3)
+            .frame(width: 30, height: 30)
+        }
+        .pasrGlassButton()
+        .disabled(busy)
+        .accessibilityLabel(Text("Voeg toe aan Apple Wallet"))
+        .sheet(item: Binding(get: { pass.map(IdentifiedPass.init) }, set: { if $0 == nil { pass = nil } })) { item in
+            AddPassSheet(pass: item.pass) {}
+                .ignoresSafeArea()
+        }
+        .alert("Apple Wallet", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "")
+        }
+    }
+
+    private func add() async {
+        busy = true
+        defer { busy = false }
+        do {
+            pass = try await WalletPass.make(for: card)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+}
+
 private struct IdentifiedPass: Identifiable {
     let pass: PKPass
     var id: String { pass.serialNumber }
