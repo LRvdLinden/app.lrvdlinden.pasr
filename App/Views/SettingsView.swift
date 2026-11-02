@@ -216,7 +216,7 @@ struct MoreAppsRow: View {
                 }
                 .frame(width: 58, height: 58)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Meer apps van Léon").font(.headline).foregroundStyle(.primary)
+                    Text("Meer apps van de ontwikkelaar").font(.headline).foregroundStyle(.primary)
                     Text("Apps voor iPhone, iPad, Apple TV en Homey").font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
                 }
                 Spacer(minLength: 8)
@@ -227,7 +227,7 @@ struct MoreAppsRow: View {
             }
             .padding(.vertical, 4)
         }
-        .accessibilityLabel("Meer apps van Léon op lrvdlinden.app")
+        .accessibilityLabel("Meer apps van de ontwikkelaar op lrvdlinden.app")
     }
 }
 
