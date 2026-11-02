@@ -69,6 +69,14 @@ struct SettingsView: View {
             }
 
             Section {
+                MoreAppsCard()
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            } header: {
+                Text(MoreAppsText.current.section)
+            }
+
+            Section {
                 LabeledContent("Versie", value: "\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?") (\(PushService.appBuild))")
             }
         }

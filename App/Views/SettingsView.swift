@@ -90,8 +90,12 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Ontdekken") {
-                    MoreAppsRow()
+                Section {
+                    MoreAppsCard()
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                } header: {
+                    Text(MoreAppsText.current.section)
                 }
 
                 Section {
@@ -199,35 +203,6 @@ struct SettingsLabel: View {
                 Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
             }
         }
-    }
-}
-
-/// "Meer apps van de maker": naar lrvdlinden.app.
-struct MoreAppsRow: View {
-    var body: some View {
-        Link(destination: URL(string: "https://lrvdlinden.app")!) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(LinearGradient(colors: [Brand.iris, Brand.coral], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    Image(systemName: "square.grid.2x2.fill")
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 58, height: 58)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Meer apps van de ontwikkelaar").font(.headline).foregroundStyle(.primary)
-                    Text("Apps voor iPhone, iPad, Apple TV en Homey").font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-                }
-                Spacer(minLength: 8)
-                VStack(spacing: 1) {
-                    Text("Bekijk").font(.headline).foregroundStyle(Brand.coral)
-                    Text("lrvdlinden.app").font(.caption2).foregroundStyle(.secondary)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-        .accessibilityLabel("Meer apps van de ontwikkelaar op lrvdlinden.app")
     }
 }
 
