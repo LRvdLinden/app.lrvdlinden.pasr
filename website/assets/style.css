@@ -280,3 +280,30 @@ footer a:hover { color: var(--ink); }
   .js .stage.floating .phone, .marquee-track, .cta h2 { animation: none; }
   .js .reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* Cookiemelding (zoals weekdot.com) */
+#pasr-consent { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 9999; max-width: 560px; margin: 0 auto;
+  background: rgba(23, 22, 42, .92); backdrop-filter: saturate(160%) blur(16px); -webkit-backdrop-filter: saturate(160%) blur(16px);
+  border: 1px solid rgba(255, 255, 255, .14); border-radius: 22px; padding: 20px 22px; color: #fff; font: 15px/1.5 var(--body);
+  box-shadow: 0 24px 60px -10px rgba(23, 22, 42, .55); animation: pasr-up .35s cubic-bezier(.2, .8, .2, 1); text-align: start; }
+#pasr-consent .t { font: 800 18px/1.25 var(--display); margin: 0 0 6px; color: #fff; letter-spacing: -.01em; }
+#pasr-consent p { margin: 0; color: #CFCDE6; font-size: 14px; }
+#pasr-consent a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+#pasr-consent .b { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+#pasr-consent button { font: inherit; font-weight: 700; border: 0; border-radius: 12px; padding: 11px 18px; cursor: pointer; transition: filter .15s, background .15s; }
+#pasr-consent .y { background: var(--iris); color: #fff; }
+#pasr-consent .y:hover { filter: brightness(1.1); }
+#pasr-consent .n { background: rgba(255, 255, 255, .12); color: #fff; }
+#pasr-consent .n:hover { background: rgba(255, 255, 255, .2); }
+#pasr-consent button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+#pasr-consent:focus { outline: none; }
+@media (max-width: 420px) { #pasr-consent .b button { flex: 1 1 auto; } }
+@keyframes pasr-up { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+#pasr-cookie-btn { position: fixed; left: 16px; bottom: 16px; z-index: 9998; width: 44px; height: 44px; border-radius: 50%; padding: 0;
+  border: 1px solid rgba(255, 255, 255, .18); background: rgba(23, 22, 42, .88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 6px 20px rgba(23, 22, 42, .35); transition: transform .2s, background .2s; }
+#pasr-cookie-btn:hover { transform: scale(1.08); background: var(--iris); }
+#pasr-cookie-btn:focus-visible { outline: 3px solid var(--iris); outline-offset: 3px; }
+#pasr-cookie-btn svg { width: 24px; height: 24px; }
+@media (max-width: 560px) { #pasr-cookie-btn { width: 38px; height: 38px; left: 12px; bottom: 12px; opacity: .9; } #pasr-cookie-btn svg { width: 20px; height: 20px; } }
+@media (prefers-reduced-motion: reduce) { #pasr-consent { animation: none; } #pasr-cookie-btn { transition: none; } }

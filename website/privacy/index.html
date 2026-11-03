@@ -23,9 +23,7 @@
   <meta name="theme-color" content="#F4F3FF">
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
@@ -79,8 +77,9 @@
     <h2>Kaarten delen</h2>
     <p>Als je een kaart deelt, zit de kaart zelf in de link: de naam, het nummer, het soort code en de kleur, en bij een cadeaukaart het saldo en de vervaldatum. Dat deel staat na het #-teken, en dat stuurt een browser nooit naar onze server. Iedereen die de link heeft, kan de kaart gebruiken; deel hem dus alleen met wie je vertrouwt.</p>
 
-    <h2>Deze website</h2>
-    <p>pasr.nl gebruikt geen cookies en geen statistieken. De lettertypen worden geladen via Google Fonts.</p>
+    <h2 id="cookies">Deze website en cookies</h2>
+    <p>pasr.nl gebruikt geen tracking, geen statistieken en geen advertenties. Bij je eerste bezoek vragen we of we de lettertypen van Google Fonts mogen laden. Kies je "Alleen noodzakelijk", dan laadt er niets van Google en gebruikt je browser zijn eigen letter. Kies je "Accepteren", dan haalt je browser de lettertypen op bij Google, dat daarbij je IP-adres ziet.</p>
+    <p>Je keuze bewaren we 12 maanden op je eigen apparaat (in je browser, onder de naam <code>pasr_consent</code>). Dat is noodzakelijke opslag. Je kunt je keuze altijd wijzigen met het koekje linksonder of met <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a> onderaan elke pagina.</p>
 
     <h2>Contact</h2>
     <p>Vragen over privacy? Mail naar <a href="mailto:support@pasr.nl">support@pasr.nl</a>.</p>
@@ -90,6 +89,7 @@
       <span>&copy; 2026 Pasr</span>
       <nav aria-label="Voettekst">
         <a href="/privacy/">Privacy</a>
+        <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>
       </nav>
     </div>

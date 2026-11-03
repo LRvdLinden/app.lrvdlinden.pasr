@@ -192,9 +192,7 @@ def page():
   <meta name="twitter:image:alt" content="Drie klantenkaarten in Pasr, met een barcode op de voorste kaart">
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <script>document.documentElement.classList.add('js')</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
@@ -318,6 +316,7 @@ def page():
       <span>&copy; 2026 Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels; Pasr is niet aan hen verbonden.</span>
       <nav aria-label="Voettekst">
         <a href="/privacy/">Privacy</a>
+        <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>
       </nav>
     </div>
