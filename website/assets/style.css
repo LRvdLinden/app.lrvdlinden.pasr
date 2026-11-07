@@ -513,3 +513,14 @@ footer a:hover { color: var(--ink); }
   .ft td.ft-pasr, .ft th.ft-pasr, .ft td:not(.ft-pasr) { width: 19%; }
   .ft thead th { font-size: 11px; }
 }
+
+/* Deelbare #-links naast koppen */
+[id] { scroll-margin-top: 24px; }
+.anchor { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-left: 8px; border-radius: 9px; vertical-align: middle;
+  color: var(--iris); background: color-mix(in srgb, var(--iris), transparent 90%); opacity: 0; transition: opacity .2s, background .2s; position: relative; }
+.anchor svg { width: 17px; height: 17px; }
+:is(h2, h3, summary):hover .anchor, .anchor:focus-visible { opacity: 1; }
+@media (pointer: coarse) { .anchor { opacity: .7; } }
+.why .anchor, .ft-wrap .anchor, .tp-phone .anchor { color: #C9C6E8; background: rgba(255,255,255,.1); }
+.anchor.copied::after { content: "Link gekopieerd"; position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); white-space: nowrap;
+  font: 600 12px var(--body); color: #fff; background: var(--ink); padding: 5px 9px; border-radius: 8px; letter-spacing: 0; }
