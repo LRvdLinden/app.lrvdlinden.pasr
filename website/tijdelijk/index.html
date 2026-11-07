@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tijdelijk gedeelde kaart | Pasr</title>
+  <meta name="description" content="Iemand deelt tijdelijk een klantenkaart met je. Voeg hem toe aan Pasr of laat hem direct scannen, tot de einddatum.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pasr">
+  <meta property="og:title" content="Er is tijdelijk een kaart met je gedeeld">
+  <meta property="og:description" content="Open de kaart in Pasr. Hij werkt tot de einddatum die de ander koos.">
+  <meta property="og:image" content="https://pasr.nl/assets/og-share.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#F4F3FF">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <script src="/assets/consent.js" defer></script>
+  <link rel="stylesheet" href="/assets/style.css">
+  <style>
+    .shared { max-width: 520px; margin: 0 auto; padding: 20px 0 90px; text-align: center; }
+    .shared h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 7vw, 48px); letter-spacing: -0.04em; line-height: 1.02; margin: 16px 0 10px; }
+    .shared p { color: var(--ink-2); margin: 0 0 26px; }
+    .flip { perspective: 1200px; margin: 0 auto 28px; width: min(100%, 420px); aspect-ratio: 1.586; cursor: pointer; border: 0; padding: 0; background: none; display: block; }
+    .flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .7s cubic-bezier(.2,.8,.2,1); }
+    .flip.turned .flip-inner { transform: rotateY(180deg); }
+    .face { position: absolute; inset: 0; border-radius: 22px; padding: 18px; color: #fff; text-align: left;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column;
+      box-shadow: 0 30px 60px -28px rgba(30, 20, 90, .55), inset 0 0 0 .75px rgba(255,255,255,.2); }
+    .face.back { transform: rotateY(180deg); gap: 10px; }
+    .face .head { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 19px; }
+    .face .mono { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 13px; background: rgba(255,255,255,.2); }
+    .face .kind { margin-left: auto; font-family: var(--body); font-size: 12px; font-weight: 600; opacity: .75; }
+    .face .num { margin-top: auto; font: 500 17px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .face .extra { font-weight: 600; font-size: 15px; opacity: .9; }
+    .face .code { flex: 1; background: #fff; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; min-height: 0; }
+    .face .code svg, .face .code img { max-width: 100%; max-height: 100%; flex: 1; min-height: 0; }
+    .face .code small { font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #333; margin-top: 4px; }
+    .dark .face { color: #17162A; }
+    .shared .actions { justify-content: center; }
+    .note { font-size: 15px; }
+    .error { display: none; }
+      .timer { display: inline-flex; align-items: center; gap: 10px; background: var(--paper-2); border: 1px solid var(--line);
+      border-radius: 999px; padding: 8px 16px; margin: -6px auto 22px; font-weight: 600; font-size: 15px; }
+    .timer b { font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .ring { width: 22px; height: 22px; transform: rotate(-90deg); }
+    .ring circle { fill: none; stroke-width: 4; }
+    .ring .bg { stroke: var(--line); }
+    .ring .fg { stroke: var(--mint); stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke .4s; }
+    .timer.soon .ring .fg { stroke: var(--coral); }
+    .timer.soon b { color: #B83A27; }
+    .face .code { transition: filter .6s, opacity .6s; }
+    .expired .face .code { filter: blur(6px) grayscale(1); opacity: .35; }
+    .stamp { position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%) rotate(-12deg) scale(1.8); opacity: 0;
+      font: 800 26px var(--display); letter-spacing: .05em; text-transform: uppercase; color: var(--coral); border: 4px solid var(--coral);
+      padding: 4px 16px; border-radius: 10px; background: rgba(255,255,255,.94); transition: opacity .35s, transform .5s cubic-bezier(.3,1.6,.5,1); pointer-events: none; }
+    .expired .stamp { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+    .state { display: none; }
+    .state.on { display: block; animation: rise .6s cubic-bezier(.2,.8,.2,1); }
+    .big-icon { width: 76px; height: 76px; margin: 10px auto 0; border-radius: 22px; display: grid; place-items: center; color: #fff;
+      background: linear-gradient(135deg, #FF8A78, var(--coral)); box-shadow: 0 20px 40px -18px rgba(255,107,87,.7); }
+    .big-icon svg { width: 38px; height: 38px; }
+    .loading { width: 42px; height: 42px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--iris); margin: 60px auto; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header class="wrap nav">
+    <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span></a>
+  </header>
+  <main class="wrap shared">
+    <div class="state on" id="s-loading"><div class="loading" role="status" aria-label="Kaart laden"></div></div>
+
+    <div class="state" id="s-ok">
+      <h1>Er is tijdelijk een kaart met je gedeeld</h1>
+      <p>Tik op de kaart om de barcode te zien. Voeg hem toe aan Pasr, of laat hem zo scannen tot de einddatum.</p>
+      <div class="timer" id="timer" aria-live="polite">
+        <svg class="ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="bg" cx="12" cy="12" r="9"/><circle class="fg" id="ringfg" cx="12" cy="12" r="9" stroke-dasharray="56.55" stroke-dashoffset="0"/></svg>
+        <span id="tlabel">Nog geldig</span> <b id="tleft">…</b>
+      </div>
+      <button class="flip" id="flip" aria-label="Draai de kaart om">
+        <div class="flip-inner">
+          <div class="face front" id="front">
+            <div class="head"><span class="mono" id="mono"></span><span id="name"></span><span class="kind" id="kind"></span></div>
+            <div class="extra" id="extra"></div>
+            <div class="num" id="number">•••• ••••</div>
+          </div>
+          <div class="face back" id="back">
+            <div class="head"><span class="mono" id="mono2"></span><span id="name2"></span></div>
+            <div class="code" id="code"></div>
+            <span class="stamp" aria-hidden="true">Verlopen</span>
+          </div>
+        </div>
+      </button>
+      <div class="actions">
+        <a class="btn btn-primary" id="open">Voeg toe aan Pasr</a>
+      </div>
+      <p class="note" id="until"></p>
+      <p class="note">Nog geen Pasr? De app komt binnenkort gratis in de App Store. <a href="/#delen">Zo werkt tijdelijk delen</a></p>
+    </div>
+
+    <div class="state" id="s-end">
+      <div class="big-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M4 4l16 16"/></svg></div>
+      <h1 id="end-title">Deze kaart is verlopen</h1>
+      <p id="end-text">De periode waarin deze kaart werkte is voorbij. Vraag de ander om hem opnieuw te delen als je hem nog nodig hebt.</p>
+      <a class="btn btn-ghost" href="/#delen">Meer over delen in Pasr</a>
+    </div>
+  </main>
+  <script src="/assets/account-config.js"></script>
+  <script src="/assets/vendor/jsbarcode.min.js"></script>
+  <script src="/assets/vendor/qrcode.js"></script>
+  <script>
+  // De code staat na het # (gaat nooit mee naar de webserver). De kaart komt van de Pasr-server, alleen tot de einddatum.
+  (function () {
+    var token = location.hash.slice(1);
+    var cfg = window.PASR_ACCOUNT || {};
+    function show(id) {
+      document.querySelectorAll('.state').forEach(function (s) { s.classList.toggle('on', s.id === id); });
+    }
+    function end(title, text) {
+      document.getElementById('end-title').textContent = title;
+      document.getElementById('end-text').textContent = text;
+      show('s-end');
+    }
+    var fmtDate = function (d) { return d.toLocaleString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); };
+    if (!/^[A-Za-z0-9_-]{16,40}$/.test(token) || !cfg.url || !cfg.key) {
+      return end('Deze link werkt niet', 'De link is niet compleet. Vraag de ander om de kaart opnieuw te delen vanuit Pasr.');
+    }
+    fetch(cfg.url + '/rest/v1/rpc/pasr_temp_share_get', {
+      method: 'POST', headers: { apikey: cfg.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_token: token }), referrerPolicy: 'no-referrer', cache: 'no-store'
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.status === 'ok' && j.card) return render(j.card, new Date(j.expires_at));
+      if (j.status === 'expired') return end('Deze kaart is verlopen', 'De ander deelde hem tot ' + fmtDate(new Date(j.expires_at)) + '. Vraag om hem opnieuw te delen als je hem nog nodig hebt.');
+      if (j.status === 'revoked') return end('Delen is gestopt', 'De ander heeft het delen van deze kaart gestopt.');
+      end('Deze link werkt niet', 'Vraag de ander om de kaart opnieuw te delen vanuit Pasr.');
+    }).catch(function () {
+      end('Kaart niet opgehaald', 'Geen verbinding met Pasr. Controleer je internet en laad de pagina opnieuw.');
+    });
+
+    function luminance(hex) {
+      var v = parseInt(hex.replace('#', ''), 16);
+      var ch = [(v >> 16) & 255, (v >> 8) & 255, v & 255].map(function (x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+      return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+    }
+    function grouped(n) { var c = n.replace(/\s/g, ''); return /^\d{9,}$/.test(c) ? c.match(/.{1,4}/g).join(' ') : n; }
+
+    function render(card, until) {
+      show('s-ok');
+      var color = /^#[0-9a-f]{6}$/i.test(card.colorHex) ? card.colorHex : '#6A5CFF';
+      var bg = 'linear-gradient(135deg, color-mix(in srgb, ' + color + ', #fff 16%), ' + color + ' 55%, color-mix(in srgb, ' + color + ', #000 22%))';
+      document.getElementById('front').style.background = bg;
+      document.getElementById('back').style.background = bg;
+      var flip = document.getElementById('flip');
+      if (luminance(color) > 0.45) flip.classList.add('dark');
+      var name = String(card.storeName || '');
+      var mono = name.split(' ').slice(0, 2).map(function (w) { return w[0] || ''; }).join('').toUpperCase();
+      ['mono', 'mono2'].forEach(function (id) { document.getElementById(id).textContent = mono; });
+      ['name', 'name2'].forEach(function (id) { document.getElementById(id).textContent = name; });
+      document.getElementById('kind').textContent = card.kind === 'voucher' ? 'Voucher' : 'Klantenkaart';
+      if (typeof card.balance === 'number') document.getElementById('extra').textContent = card.balance.toLocaleString('nl-NL', { style: 'currency', currency: card.currencyCode || 'EUR' });
+      document.title = name + ' | Tijdelijk gedeeld | Pasr';
+      document.getElementById('until').textContent = 'Werkt tot ' + fmtDate(until) + '.';
+
+      var code = document.getElementById('code');
+      var formats = { ean13: 'EAN13', ean8: 'EAN8', upcA: 'UPC', code128: 'CODE128', code39: 'CODE39', itf: 'ITF' };
+      var number = String(card.number || '');
+      try {
+        if (formats[card.format]) {
+          var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          code.appendChild(svg);
+          JsBarcode(svg, card.format === 'itf' && number.length % 2 ? '0' + number : number, { format: formats[card.format], displayValue: false, margin: 0, height: 100, width: 2 });
+        } else if (card.format === 'qr') {
+          var qr = qrcode(0, 'M'); qr.addData(number); qr.make();
+          code.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+        }
+      } catch (e) {}
+      var small = document.createElement('small'); small.textContent = grouped(number); code.appendChild(small);
+      card = null; number = null;
+
+      flip.addEventListener('click', function () { flip.classList.toggle('turned'); });
+      setTimeout(function () { flip.classList.add('turned'); }, 700);
+      document.getElementById('open').href = 'pasr://tijdelijk#' + token;
+
+      // aftellen; op het einde verdwijnt de code uit de pagina
+      var total = Math.max(1, until - Date.now()), fg = document.getElementById('ringfg'), timer = document.getElementById('timer');
+      function tick() {
+        var left = until - Date.now();
+        if (left <= 0) {
+          flip.classList.add('expired', 'turned');
+          document.getElementById('tlabel').textContent = 'Verlopen';
+          document.getElementById('tleft').textContent = '';
+          timer.classList.add('soon');
+          fg.setAttribute('stroke-dashoffset', '56.55');
+          setTimeout(function () { code.replaceChildren(); }, 700);
+          document.getElementById('open').remove();
+          document.getElementById('until').textContent = 'Deze kaart werkt niet meer.';
+          return;
+        }
+        var s = Math.floor(left / 1000), d = Math.floor(s / 86400);
+        var hms = [Math.floor(s / 3600) % 24, Math.floor(s / 60) % 60, s % 60].map(function (n) { return String(n).padStart(2, '0'); }).join(':');
+        document.getElementById('tleft').textContent = d > 0 ? d + (d === 1 ? ' dag ' : ' dagen ') + hms : hms;
+        fg.setAttribute('stroke-dashoffset', String(56.55 * (1 - left / total)));
+        timer.classList.toggle('soon', left < 3600 * 1000);
+        setTimeout(tick, 1000);
+      }
+      tick();
+    }
+  })();
+  </script>
+</body>
+</html>

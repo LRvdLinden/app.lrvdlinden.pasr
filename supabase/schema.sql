@@ -870,6 +870,7 @@ begin
   get diagnostics n = row_count;
   update public.pasr_temp_shares set payload = null where expires_at < now() and payload is not null;
   delete from public.pasr_temp_share_rate where day < (now() at time zone 'utc')::date - 2;
+  delete from public.pasr_group_invites where expires_at < now();   -- uitnodigingen hoogstens 14 dagen
   return n;
 end $$;
 

@@ -5,7 +5,7 @@
   <url>
     <loc>https://pasr.nl/</loc>
     <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/"/>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -25,14 +25,14 @@
   <url>
     <loc>https://pasr.nl/support/</loc>
     <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/support/"/>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://pasr.nl/privacy/</loc>
     <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/privacy/"/>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>

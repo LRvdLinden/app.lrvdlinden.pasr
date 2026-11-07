@@ -116,3 +116,49 @@
     }, 2600);
   }
 })();
+
+// Delen: start de animaties als de sectie in beeld komt; de tijdelijke kaart telt 24 uur af in 6 seconden,
+// verloopt (code vervaagt, stempel "Verlopen"), en begint daarna opnieuw.
+(function () {
+  const section = document.getElementById('delen');
+  if (!section) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const phone = section.querySelector('.tp-phone');
+  const meter = section.querySelector('.tp-meter i');
+  const time = section.querySelector('.tp-time');
+  const label = section.querySelector('.tp-label');
+  const DAY = 24 * 3600, RUN = 6000, HOLD = 2600;
+  const fmt = s => [Math.floor(s / 3600), Math.floor(s / 60) % 60, Math.floor(s) % 60].map(n => String(n).padStart(2, '0')).join(':');
+  let started = false;
+
+  function countdown() {
+    phone.classList.remove('expired');
+    label.textContent = 'Nog geldig';
+    const t0 = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now - t0) / RUN);
+      const eased = p < 0.8 ? p / 0.8 * 0.6 : 0.6 + (p - 0.8) / 0.2 * 0.4;   // het laatste stuk gaat sneller
+      meter.style.transform = `scaleX(${1 - eased})`;
+      time.textContent = fmt(DAY * (1 - eased));
+      if (p < 1) return requestAnimationFrame(step);
+      phone.classList.add('expired');
+      label.textContent = 'Verlopen';
+      time.textContent = '00:00:00';
+      setTimeout(countdown, HOLD);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function play() {
+    if (started) return;
+    started = true;
+    section.classList.add('play');
+    if (!reduce && phone) setTimeout(countdown, 1600);
+  }
+
+  if (reduce || !('IntersectionObserver' in window)) return play();
+  const io = new IntersectionObserver(entries => {
+    if (entries.some(e => e.isIntersecting)) { io.disconnect(); play(); }
+  }, { threshold: 0.25 });
+  io.observe(section.querySelector('.share-grid'));
+})();

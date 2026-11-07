@@ -84,7 +84,7 @@ struct RootView: View {
                 openCardID = id
             } else if let token = TempShare.token(from: url) {
                 incomingTemp = IncomingTempShare(token: token)
-            } else if url.host() == "pasr.nl" && url.path().hasPrefix("/uitnodiging") {
+            } else if (url.host() == "pasr.nl" && url.path().hasPrefix("/uitnodiging")) || (url.scheme == "pasr" && url.host() == "uitnodiging") {
                 Task { await GroupService.shared.sync(in: context) }   // de uitnodiging verschijnt hieronder
             } else if let shared = CardShare.decode(url) {
                 incoming = IncomingShare(card: shared)

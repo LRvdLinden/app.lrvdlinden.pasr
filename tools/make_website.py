@@ -120,7 +120,7 @@ FEATURES = [
     ("lock", "#17162A", "Versleuteld en met Face ID", "Je kaartnummers staan versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID, of scherm alleen de code van een cadeaukaart af."),
     ("watch", "#2ED3A6", "Op je pols en je beginscherm", "Je kaarten staan als pasjes op je Apple Watch. Met de widgets heb je je favorieten, of één kaart met barcode, direct op je beginscherm."),
     ("cloud", "#0A84FF", "Via je eigen iCloud", "Je kaarten staan op je iPhone, iPad en Watch tegelijk, via je eigen iCloud of je gratis Pasr-account."),
-    ("share", "#FF375F", "Kaarten delen", "Stuur een kaart naar je partner of huisgenoot. Die opent hem met één tik in zijn eigen Pasr, of scant de QR-code."),
+    ("share", "#FF375F", "Kaarten delen", "Stuur een kaart blijvend of tijdelijk via WhatsApp of mail, of maak een gedeelde Pasr met je gezin. Zie hieronder hoe dat werkt."),
     ("store", "#AF52DE", "Ruim 300 Nederlandse kaarten", "Van supermarkt tot tankstation, van sportschool tot dierentuin en van drogist tot cadeaukaart: kies je kaart en de kleur en het soort barcode staan goed."),
 ]
 
@@ -135,8 +135,70 @@ FAQ = [
     ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
     ("Wat gebeurt er als ik mijn telefoon kwijtraak?", "Je kaarten staan in je iCloud. Log op je nieuwe iPhone in met hetzelfde Apple-account en open Pasr: je kaarten komen vanzelf terug."),
     ("Kan ik een kaart delen met mijn partner?", "Ja. Tik op Deel bij een kaart en stuur de link, of laat de ander de QR-code scannen. Wie Pasr heeft, voegt de kaart met één tik toe. Wie Pasr nog niet heeft, ziet de kaart met barcode gewoon in de browser."),
+    ("Wat is een gedeelde Pasr?", "Een gedeelde Pasr is een verzameling kaarten die je samen met maximaal vijf anderen gebruikt, bijvoorbeeld je gezin. Iedereen heeft een eigen gratis Pasr-account en nodigt anderen uit met hun e-mailadres. Kaarten in de gedeelde Pasr ziet en gebruikt iedereen; je privékaarten blijven van jou. Je kunt in maximaal twee gedeelde Pasrs zitten."),
+    ("Hoe werkt tijdelijk delen?", "Tik op Deel, kies Tijdelijk en hoe lang: een uur, een dag, een week of een eigen datum tot 90 dagen. De ander krijgt via WhatsApp of mail een afbeelding van de pas met een link en voegt de kaart toe aan Pasr. Na het einde verdwijnt de barcode en werkt de link niet meer. Je kunt ook eerder stoppen. Een tijdelijke kaart kan niet in Apple Wallet en niet verder worden gedeeld."),
     ("Is Pasr ook in België te gebruiken?", "Pasr is gemaakt voor Nederland. De app is Nederlandstalig en de winkellijst bestaat uit Nederlandse winkels."),
 ]
+
+def mini_pass(domain, name, cls="", body=""):
+    color = _card_colours().get(domain, "#2B2F3A")
+    ink = " ink-dark" if _is_light(color) else ""
+    return (f'<div class="mini-pass{ink} {cls}" style="background:{color}">'
+            f'<img src="/assets/logos/{domain}.png" alt="" height="18">{body}</div>')
+
+def share_section():
+    """Delen: een gedeelde Pasr (gezin) en tijdelijk delen (met een aftellende kaart die op het einde verloopt)."""
+    import shutil
+    out = ROOT / "assets" / "logos"
+    for d in ("ah.nl", "hema.nl", "ikea.com"):
+        shutil.copy(ROOT.parent / "Shared" / "StoreLogos" / f"{d}.png", out / f"{d}.png")
+    number, svg = bars("871234567890")
+    grouped = " ".join(number[k:k+4] for k in range(0, 13, 4))
+    stack = "".join(mini_pass(d, n, f"sp-card c{i}") for i, (d, n) in enumerate([("ikea.com", "IKEA"), ("hema.nl", "HEMA"), ("ah.nl", "Albert Heijn")]))
+    temp_card = mini_pass("ah.nl", "Albert Heijn", "tp-card",
+                          f'<span class="tp-code">{svg}<small>{grouped}</small></span>'
+                          '<span class="tp-stamp" aria-hidden="true">Verlopen</span>')
+    chat_card = mini_pass("ah.nl", "Albert Heijn", "tp-thumb", '<span class="tp-lock">•••• ••••</span>')
+    check = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    li = lambda items: "".join(f"<li>{check}<span>{t}</span></li>" for t in items)
+    return f'''    <section class="wrap share" id="delen" aria-labelledby="delen-title">
+      <div class="section-head">
+        <h2 id="delen-title">Delen zonder je pas uit handen te geven</h2>
+        <p>Samen één Pasr met je gezin, of een kaart even uitlenen. Jij bepaalt wie wat ziet, en hoe lang.</p>
+      </div>
+      <div class="share-grid">
+        <article class="share-panel">
+          <div class="sp-stage" aria-hidden="true">
+            <svg class="sp-lines" viewBox="0 0 400 240" preserveAspectRatio="none">
+              <path d="M70 60 C 130 70, 160 100, 200 120"/><path d="M330 60 C 270 70, 240 100, 200 120"/><path d="M200 222 C 200 190, 200 160, 200 140"/>
+            </svg>
+            <span class="sp-avatar a1">L</span><span class="sp-avatar a2">S</span><span class="sp-avatar a3">M</span>
+            <span class="sp-invite">+ uitnodiging verstuurd</span>
+            <div class="sp-stack">{stack}</div>
+          </div>
+          <span class="pill">Gedeelde Pasr</span>
+          <h3>Eén Pasr voor het hele gezin</h3>
+          <p>Nodig je partner, kinderen of huisgenoten uit met hun e-mailadres. Kaarten in de gedeelde Pasr zien en gebruiken jullie allemaal, op elke iPhone.</p>
+          <ul class="ticks">{li(["Tot 6 personen, elk met een eigen gratis account", "Iedereen voegt toe, wijzigt en nodigt uit", "Je privékaarten blijven van jou", "Bestaande kaarten zet je er met Wijzig in"])}</ul>
+        </article>
+        <article class="share-panel">
+          <div class="tp-stage" aria-hidden="true">
+            <div class="tp-chat">
+              <div class="tp-bubble">{chat_card}<span class="tp-text">Je mag mijn AH-kaart gebruiken tot zondag 18:00</span><span class="tp-link">pasr.nl/tijdelijk/…</span></div>
+            </div>
+            <div class="tp-phone">
+              {temp_card}
+              <div class="tp-meter"><i></i></div>
+              <div class="tp-left"><span class="tp-label">Nog geldig</span> <b class="tp-time">23:59:59</b></div>
+            </div>
+          </div>
+          <span class="pill coral">Tijdelijk delen</span>
+          <h3>Een kaart even uitlenen</h3>
+          <p>Stuur een afbeelding van de pas met een link via WhatsApp of mail. De ander zet hem in Pasr. Na de einddatum verdwijnt de barcode vanzelf.</p>
+          <ul class="ticks">{li(["Een uur, een dag, een week of een eigen datum", "Na het einde werkt de code en de link niet meer", "Eerder stoppen kan altijd", "Niet in Apple Wallet en niet verder te delen"])}</ul>
+        </article>
+      </div>
+    </section>'''
 
 APPLE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.7c1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.7 1.3-2.7s-2.4-1-2.4-4zM14 5.4c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/></svg>'
 
@@ -198,7 +260,7 @@ def page():
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl"}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
-    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna of Stocard via screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen"],"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
+    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna of Stocard via screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum"],"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
   ]}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
 </head>
@@ -208,6 +270,7 @@ def page():
     <nav aria-label="Hoofdmenu">
       <ul>
         <li><a href="#functies">Functies</a></li>
+        <li><a href="#delen">Delen</a></li>
         <li><a href="#overstappen">Overstappen</a></li>
         <li><a href="#faq">Vragen</a></li>
         <li><a href="/support/">Support</a></li>
@@ -282,6 +345,8 @@ def page():
 {features}
       </div>
     </section>
+
+{share_section()}
 
     <section class="wrap" id="overstappen" aria-labelledby="overstappen-title">
       <div class="section-head">
