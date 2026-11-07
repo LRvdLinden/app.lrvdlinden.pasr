@@ -27,6 +27,7 @@ struct CardEditorView: View {
     @State private var readingPhoto = false
     @State private var photoMessage: String?
     @State private var confirmDelete = false
+    @State private var pickingPlace = false
     @FocusState private var numberFocused: Bool
 
     struct Draft {
@@ -140,6 +141,8 @@ struct CardEditorView: View {
         return true
     }
 
+    private var placesStoreName: String { StoreTemplates.template(id: draft.templateID)?.name ?? draft.storeName }
+
     private var canSave: Bool { !draft.storeName.trimmingCharacters(in: .whitespaces).isEmpty && codeIsValid }
 
     var body: some View {
@@ -162,8 +165,7 @@ struct CardEditorView: View {
             logoSection
             extrasSection
             if existing?.isTemporary != true {
-                CardPlacesSection(places: $draft.places,
-                                  storeName: StoreTemplates.template(id: draft.templateID)?.name ?? draft.storeName)
+                CardPlacesSection(places: $draft.places, storeName: placesStoreName) { pickingPlace = true }
             }
 
             if existing != nil {
@@ -223,6 +225,12 @@ struct CardEditorView: View {
                 cropper
             } else {
                 Text("Deze afbeelding kan niet worden geopend.").padding()
+            }
+        }
+        .sheet(isPresented: $pickingPlace) {
+            PlacePickerView(storeName: placesStoreName) { place in
+                if let place, draft.places.count < CardPlace.maxPerCard { draft.places.append(place) }
+                pickingPlace = false
             }
         }
         .onChange(of: frontItem) { _, item in Task { draft.frontPhoto = await loadImage(item, maxSide: 1600) } }

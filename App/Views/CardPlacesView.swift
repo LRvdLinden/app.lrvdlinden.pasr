@@ -8,8 +8,10 @@ import CoreLocation
 struct CardPlacesSection: View {
     @Binding var places: [CardPlace]
     let storeName: String
+    /// Opent de kaartkiezer. Het sheet hangt aan het formulier zelf (niet aan deze sectie): een sheet in een
+    /// Form-rij verliest zijn plek als de rij verandert, en dan sluit ook het bewerkscherm.
+    var onPickOnMap: () -> Void
     @State private var locating = false
-    @State private var picking = false
     @State private var message: String?
 
     var body: some View {
@@ -37,17 +39,12 @@ struct CardPlacesSection: View {
                     }
                 }
                 .disabled(locating)
-                Button { picking = true } label: { Label("Kies op de kaart", systemImage: "map") }
+                Button { onPickOnMap() } label: { Label("Kies op de kaart", systemImage: "map") }
             }
         } header: {
             Text("Locaties")
         } footer: {
             Text(message ?? String(localized: "Sta je bij je vaste filiaal? Zet het vast, dan verschijnt je kaart daar altijd. Tot \(CardPlace.maxPerCard) locaties; je locatie blijft op je iPhone."))
-        }
-        .sheet(isPresented: $picking) {
-            PlacePickerView(storeName: storeName) { place in
-                places.append(place)
-            }
         }
     }
 
@@ -74,10 +71,10 @@ struct CardPlacesSection: View {
 /// Een filiaal of plek kiezen op de kaart: tik op een filiaal, of ergens op de kaart voor een speld.
 struct PlacePickerView: View {
     let storeName: String
-    var onPick: (CardPlace) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var position: MapCameraPosition = .userLocation(fallback: .region(
-        MKCoordinateRegion(center: .init(latitude: 52.2, longitude: 5.4), latitudinalMeters: 250_000, longitudinalMeters: 250_000)))
+    /// Gekozen plek, of nil bij Annuleer. De ouder sluit het sheet.
+    var onDone: (CardPlace?) -> Void
+    @State private var position: MapCameraPosition = .region(
+        MKCoordinateRegion(center: .init(latitude: 52.2, longitude: 5.4), latitudinalMeters: 250_000, longitudinalMeters: 250_000))
     @State private var branches: [NearbyStores.Branch] = []
     @State private var selected: NearbyStores.Branch?
     @State private var pin: CLLocationCoordinate2D?
@@ -116,13 +113,14 @@ struct PlacePickerView: View {
             .searchable(text: $query, prompt: Text("Zoek een plaats of adres"))
             .onSubmit(of: .search) { Task { await searchPlace() } }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { onDone(nil) } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Voeg toe") { add() }.disabled(selected == nil && pin == nil)
                 }
             }
             .task {
                 if let here = await NearbyStores.shared.currentLocation(maxAge: 600) {
+                    position = .region(MKCoordinateRegion(center: here.coordinate, latitudinalMeters: 3_000, longitudinalMeters: 3_000))
                     center = here.coordinate
                     await findBranches(around: here.coordinate)
                 }
@@ -173,11 +171,12 @@ struct PlacePickerView: View {
 
     private func add() {
         if let selected {
-            onPick(CardPlace(name: [selected.name, selected.address].compactMap { $0 }.joined(separator: " · "),
+            onDone(CardPlace(name: [selected.name, selected.address].compactMap { $0 }.joined(separator: " · "),
                              latitude: selected.latitude, longitude: selected.longitude))
         } else if let pin {
-            onPick(CardPlace(name: storeName, latitude: pin.latitude, longitude: pin.longitude))
+            onDone(CardPlace(name: storeName, latitude: pin.latitude, longitude: pin.longitude))
+        } else {
+            onDone(nil)
         }
-        dismiss()
     }
 }
