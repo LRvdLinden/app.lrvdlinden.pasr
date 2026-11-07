@@ -213,3 +213,23 @@ export function cleanBalancePage(v: unknown): { ok: true; value: { store_id: str
   }
   return { ok: true, value: { store_id, url: url.href } };
 }
+
+// ---- aanvragen bij publiceren ----
+
+const squash = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]/g, "");
+
+/** Hoort een open aanvraag bij deze winkel? Zelfde website (domein), of de naam is de winkelnaam of een alias. */
+export function requestMatches(store: { name: string; domain?: string | null; aliases?: string[] | null },
+                               req: { name: string; website?: string | null }): boolean {
+  const dom = (store.domain ?? "").replace(/^www\./, "").toLowerCase();
+  if (dom && req.website) {
+    const rd = domainOf(req.website);
+    if (rd && (rd === dom || rd.endsWith("." + dom))) return true;
+  }
+  const n = squash(req.name);
+  if (n.length < 2) return false;
+  return [store.name, ...(store.aliases ?? [])].some((a) => {
+    const s = squash(a);
+    return s.length >= 2 && (s === n || n === s + "cadeaukaart" || n === s + "klantenkaart" || n === s + "pas");
+  });
+}
