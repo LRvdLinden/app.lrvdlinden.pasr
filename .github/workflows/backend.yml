@@ -168,7 +168,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -x ~/.deno/bin/deno ]; then
-            ~/.deno/bin/deno test --no-check supabase/functions/group-invite/ || { echo "::error::Tests of the group-invite function failed"; exit 1; }
+            ~/.deno/bin/deno test --no-check --allow-env supabase/functions/group-invite/ || { echo "::error::Tests of the group-invite function failed"; exit 1; }
           fi
           # De database controleert het token (pasr_group_invite met de JWT van de gebruiker)
           supabase functions deploy group-invite --yes --project-ref "$REF" --no-verify-jwt --use-api
