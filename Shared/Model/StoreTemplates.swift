@@ -1,7 +1,7 @@
 import Foundation
 
 /// A known Dutch store: name, website (for its logo), card colour and usual barcode type.
-/// Colours approximate the store's house colour. Logos live in Shared/StoreLogos/<domain>.png
+/// Colours approximate the store's house colour. Logos live in App/StoreLogos/<domain>.png
 /// (see tools/fetch_logos.py and LogoService).
 struct StoreTemplate: Identifiable, Hashable {
     let id: String

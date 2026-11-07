@@ -1,6 +1,6 @@
 name: Logos
 
-# Fetches the logo of every store in StoreTemplates.swift into Shared/StoreLogos/ and commits them,
+# Fetches the logo of every store in StoreTemplates.swift into App/StoreLogos/ and commits them,
 # so the app shows logos straight away. Runs when the store list changes, or by hand
 # (Actions › Logos › Run workflow; tick "all" to fetch every logo again).
 on:
@@ -43,7 +43,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add Shared/StoreLogos Shared/Model/StoreLogoStyles.swift Shared/Model/StoreColourHistory.swift tools/logos-missing.txt tools/logo-styles.json tools/colour-history.json
+          git add App/StoreLogos Shared/Model/StoreLogoStyles.swift Shared/Model/StoreColourHistory.swift tools/logos-missing.txt tools/logo-styles.json tools/colour-history.json
           if git diff --cached --quiet; then echo "No new logos."; exit 0; fi
           git commit -m "Winkellogo's bijgewerkt"
           git pull --rebase -q

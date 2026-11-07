@@ -26,3 +26,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
             | tee /tmp/build.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
           grep -q "BUILD SUCCEEDED" /tmp/build.log
+      - name: App-grootte (Release, iPhone)
+        continue-on-error: true
+        run: |
+          xcodebuild build -project Pasr.xcodeproj -scheme Pasr -configuration Release -destination "generic/platform=iOS" \
+            -derivedDataPath /tmp/dd CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO > /tmp/rel.log 2>&1 || { tail -20 /tmp/rel.log; exit 1; }
+          app=$(find /tmp/dd/Build/Products -maxdepth 2 -name Pasr.app | head -1)
+          (cd "$(dirname "$app")" && ditto -c -k --keepParent Pasr.app /tmp/Pasr.zip)
+          echo "::notice::Pasr.app $(du -sh "$app" | cut -f1) op schijf, gecomprimeerd ca. $(du -h /tmp/Pasr.zip | cut -f1) (download in de App Store ligt daar meestal dichtbij)"
+          du -sh "$app"/* "$app"/PlugIns/* "$app"/Watch/* 2>/dev/null | sort -h | tail -8

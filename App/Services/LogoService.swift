@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// Store logos. Known stores have their logo in the app (Shared/StoreLogos, filled by
+/// Store logos. Known stores have their logo in the app (App/StoreLogos, filled by
 /// tools/fetch_logos.py), so it shows at once, offline too. For other websites the device fetches
 /// the icon the store publishes (apple-touch-icon or site icon). Users can switch logos off in Settings.
 enum LogoService {

@@ -23,7 +23,7 @@ def bars(digits12):
     svg = f'<svg viewBox="0 0 115 1" preserveAspectRatio="none" aria-hidden="true"><path fill="#000" d="{d}"/></svg>'
     return number, svg
 
-# Real cards in the demo, with the logos and colours the app uses (Shared/StoreLogos, StoreLogoStyles.swift).
+# Real cards in the demo, with the logos and colours the app uses (App/StoreLogos, StoreLogoStyles.swift).
 CARDS = [
     # (name, domain, kind, digits)
     ("Jumbo", "jumbo.com", "Klantenkaart", "871932700441"),
@@ -47,7 +47,7 @@ def copy_logos():
     out = ROOT / "assets" / "logos"
     out.mkdir(parents=True, exist_ok=True)
     for _, domain, _, _ in CARDS:
-        shutil.copy(ROOT.parent / "Shared" / "StoreLogos" / f"{domain}.png", out / f"{domain}.png")
+        shutil.copy(ROOT.parent / "App" / "StoreLogos" / f"{domain}.png", out / f"{domain}.png")
 
 # The band of store logos under the hero ("Ruim 300 winkels"): two rows that drift past.
 MARQUEE = [
@@ -66,7 +66,7 @@ def marquee_html():
     for r, row in enumerate(MARQUEE):
         tiles = []
         for domain in row:
-            src = ROOT.parent / "Shared" / "StoreLogos" / f"{domain}.png"
+            src = ROOT.parent / "App" / "StoreLogos" / f"{domain}.png"
             if not src.exists():
                 continue
             shutil.copy(src, out / f"{domain}.png")
@@ -185,7 +185,7 @@ def share_section():
     import shutil
     out = ROOT / "assets" / "logos"
     for d in ("ah.nl", "hema.nl", "ikea.com"):
-        shutil.copy(ROOT.parent / "Shared" / "StoreLogos" / f"{d}.png", out / f"{d}.png")
+        shutil.copy(ROOT.parent / "App" / "StoreLogos" / f"{d}.png", out / f"{d}.png")
     number, svg = bars("871234567890")
     grouped = " ".join(number[k:k+4] for k in range(0, 13, 4))
     stack = "".join(mini_pass(d, n, f"sp-card c{i}") for i, (d, n) in enumerate([("ikea.com", "IKEA"), ("hema.nl", "HEMA"), ("ah.nl", "Albert Heijn")]))
