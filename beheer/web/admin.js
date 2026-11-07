@@ -40,7 +40,17 @@
       case "unauthorized": return "Je sessie is verlopen. Log opnieuw in.";
       case "already_confirmed": return "Dit account is al bevestigd.";
       case "rate_limited": return "Even wachten: te veel verzoeken.";
-      case "not_found": return "Dit account bestaat niet meer.";
+      case "not_found": return "Niet gevonden.";
+      case "bad_name": return "Vul een naam in.";
+      case "bad_color": return "Kies een kaartkleur.";
+      case "bad_domain": return "Dit is geen geldige website.";
+      case "bad_logo": return "Dit logo kan niet worden gebruikt (PNG, JPEG of WebP, kleiner dan 300 kB).";
+      case "too_large": return "Het logo is te groot. Kies een kleiner bestand.";
+      case "bad_email": return "Dit is geen geldig e-mailadres.";
+      case "weak_password": return "Kies een wachtwoord van minimaal 10 tekens met letters en cijfers.";
+      case "exists": return "Dit account bestaat al. Vink aan dat je het wachtwoord wilt vervangen.";
+      case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs.";
+      case "create_failed": case "update_failed": case "seed_failed": return "Het review-account kon niet worden gemaakt. Probeer het opnieuw.";
       default: return `Er ging iets mis op de server (${code}).`;
     }
   }
@@ -110,6 +120,7 @@
     if (t === "overview" || t === "insights") { skeleton(); if (stats) renderAll(); else loadStats(); }
     if (t === "accounts") loadUsers(true);
     if (t === "settings") showSettings();
+    if (t === "stores") loadStores();
     try { history.replaceState(null, "", "#" + t); } catch {}
   }
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -122,6 +133,9 @@
     { key: "deleted", label: "Verwijderd", detail: "door de gebruiker zelf", kind: "bar", color: "#FF6B57" },
     { key: "cards", label: "Kaarten in accounts", detail: "totaal (elk uur gemeten)", kind: "line", color: "#FF8A78" },
     { key: "wallet", label: "Wallet-passen", detail: "gemaakt", kind: "bar", color: "#4FB3FF" },
+    { key: "groups", label: "Gedeelde Pasrs", detail: "nieuw gemaakt", kind: "bar", color: "#2ED3A6" },
+    { key: "temp_shares", label: "Tijdelijk gedeeld", detail: "kaarten tijdelijk gedeeld", kind: "bar", color: "#C77DFF" },
+    { key: "store_requests", label: "Winkels aangevraagd", detail: "aanvragen uit de app", kind: "bar", color: "#FFB547" },
     { key: "bots", label: "Bots tegengehouden", detail: "aanmeldingen geweigerd", kind: "bar", color: "#FFB547" },
   ];
   const RANGES = [[7, "Week"], [30, "Maand"], [90, "Kwartaal"], [365, "Jaar"]];
@@ -187,12 +201,14 @@
       kpi("Actief", num(t.active_30d), txt("ingelogd, 30 dagen"), "#8A7FFF"),
       kpi("Wallet-passen", num(s.wallet_total), txt("gemaakt, totaal"), "#4FB3FF"),
       kpi("Landen", num(Object.keys(s.countries || {}).filter((c) => c !== "?").length), txt("waar accounts vandaan komen"), "#FFB547"),
+      kpi("Gedeelde Pasrs", num(s.shared?.groups), txt(`${num(s.shared?.people)} personen · ${num(s.shared?.cards)} kaarten`), "#2ED3A6"),
+      kpi("Tijdelijk gedeeld", num(s.temp?.active), txt(`nu geldig · +${num(s.temp?.new_7d)} deze week`), "#C77DFF"),
     );
   }
   function skeleton() {
     const box = $("kpis");
     if (box.children.length) return;
-    for (let i = 0; i < 6; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
+    for (let i = 0; i < 8; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
   }
 
   const fmtDay = (d, opts) => new Date(d + "T00:00:00Z").toLocaleDateString("nl-NL", { timeZone: "UTC", ...opts });
@@ -435,6 +451,16 @@
       requestAnimationFrame(() => { fill.style.width = (n / max) * 100 + "%"; });
     }
   }
+  // losse aantallen onder elkaar (geen percentages: het zijn verschillende dingen)
+  function facts(box, entries, emptyText) {
+    box.replaceChildren();
+    if (!entries.some(([, n]) => n > 0)) { box.append(el("p", "empty", emptyText)); return; }
+    for (const [label, n] of entries) {
+      const row = el("div", "row fact");
+      row.append(el("span", null, label), el("span", "n", num(n)));
+      box.append(row);
+    }
+  }
   function renderDists() {
     const b = stats.bots_7d || {};
     dist($("bots"), Object.entries(b).sort((x, y) => y[1] - x[1]).map(([k, n]) => [REASONS[k] || k, n]), "#FFB547",
@@ -443,6 +469,15 @@
     dist($("perAccount"), order.filter((k) => c[k]).map((k) => [k === "0" ? "Nog geen kaarten" : `${k} kaarten`, c[k]]), "#6A5CFF", "Nog geen accounts.");
     const co = Object.entries(stats.countries || {}).sort((x, y) => (x[0] === "?") - (y[0] === "?") || y[1] - x[1]);
     dist($("countries"), co.slice(0, 12).map(([k, n]) => [`${flag(k)}  ${countryName(k)}`, n]), "#2ED3A6", "Nog geen accounts.");
+    const sh = stats.shared || {}, tp = stats.temp || {};
+    facts($("sharing"), [
+      ["Gedeelde Pasrs", sh.groups || 0], ["Personen in een gedeelde Pasr", sh.people || 0],
+      ["Gedeelde kaarten", sh.cards || 0], ["Openstaande uitnodigingen", sh.invites || 0],
+      ["Tijdelijk gedeeld, nu geldig", tp.active || 0], ["Tijdelijk: keren geopend (30 dagen)", tp.opens || 0],
+      ["Tijdelijk: eerder gestopt (30 dagen)", tp.revoked_30d || 0],
+      ["Winkelaanvragen open", stats.stores?.requests_open || 0], ["Winkels toegevoegd zonder update", stats.stores?.added || 0],
+      ["Toestellen met pushmeldingen", stats.stores?.push_devices || 0], ["Waarvan 'Nieuwe winkels' aan", stats.stores?.new_store_push || 0],
+    ], "Nog niets gedeeld.");
   }
 
   // ---- accounts ----
@@ -486,6 +521,7 @@
     meta.append(badge);
     if (u.first_name) meta.append(el("span", null, u.first_name));
     if (u.country) meta.append(el("span", null, `${flag(u.country)} ${countryName(u.country)}`));
+    if (u.groups) meta.append(el("span", null, `${num(u.groups)} gedeelde ${u.groups === 1 ? "Pasr" : "Pasrs"}`));
     meta.append(el("span", null, `${num(u.cards)} ${u.cards === 1 ? "kaart" : "kaarten"}`),
       el("span", null, "Aangemaakt " + ago(u.created_at)), el("span", null, "Ingelogd " + ago(u.last_sign_in_at)));
     if (u.synced_at) meta.append(el("span", null, "Sync " + ago(u.synced_at)));
@@ -519,6 +555,39 @@
   document.querySelectorAll("#accFilter button").forEach((b) => b.addEventListener("click", () => { acc.filter = b.dataset.filter; loadUsers(true); }));
   $("accMore").addEventListener("click", () => loadUsers(false));
 
+  // ---- Review-account voor Apple ----
+  $("revOpen").addEventListener("click", () => { $("revCard").classList.remove("hidden"); $("revPass").focus(); });
+  $("revClose").addEventListener("click", () => { $("revCard").classList.add("hidden"); $("revPass").value = ""; $("revMsg").textContent = ""; });
+  $("revShow").addEventListener("click", () => {
+    const p = $("revPass"); p.type = p.type === "password" ? "text" : "password";
+    $("revShow").textContent = p.type === "password" ? "Toon" : "Verberg";
+  });
+  $("revGen").addEventListener("click", () => {
+    // 16 tekens zonder verwarrende tekens, altijd met hoofdletter, kleine letter en cijfer
+    const sets = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789"];
+    const all = sets.join(""), r = new Uint32Array(16);
+    crypto.getRandomValues(r);
+    const chars = [...r].map((x, i) => (i < 3 ? sets[i] : all)[x % (i < 3 ? sets[i] : all).length]);
+    for (let i = chars.length - 1; i > 0; i--) { const k = r[i] % (i + 1); [chars[i], chars[k]] = [chars[k], chars[i]]; }
+    $("revPass").value = chars.join(""); $("revPass").type = "text"; $("revShow").textContent = "Verberg";
+  });
+  $("revCopy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText($("revPass").value); toast("Wachtwoord gekopieerd"); } catch { toast("Kopiëren lukt niet in deze browser"); }
+  });
+  $("revForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("revMsg"); msg.className = "err"; msg.textContent = "";
+    const btn = $("revGo"); btn.disabled = true;
+    try {
+      const r = await api("review_account", { email: $("revEmail").value, password: $("revPass").value,
+        first_name: $("revName").value, reset: $("revReset").checked });
+      msg.className = "err ok";
+      msg.textContent = `${r.created ? "Account gemaakt" : "Wachtwoord vervangen"}: ${r.email}, met ${r.cards} kaarten en een gedeelde Pasr met ${r.group_cards} kaarten. Zet e-mail en wachtwoord nu in App Store Connect.`;
+      loadUsers(true);
+    } catch (err) { msg.textContent = err.message; }
+    finally { btn.disabled = false; }
+  });
+
   // ---- instellingen ----
   function showSettings() {
     $("sessionInfo").textContent = expires ? `Ingelogd tot ${new Date(expires).toLocaleString("nl-NL", { weekday: "short", hour: "2-digit", minute: "2-digit" })}.` : "";
@@ -535,12 +604,226 @@
     catch (err) { $("setMsg").textContent = err.message; }
   });
 
+  // ---- winkels: aanvragen, kaart maken, publiceren ----
+  const CATEGORIES = ["Supermarkt", "Drogist en beauty", "Warenhuis en wonen", "Mode en schoenen", "Elektronica", "Doe-het-zelf en tuin",
+    "Sport en vrije tijd", "Tanken en reizen", "Eten en drinken", "Boeken en cadeaus", "Dieren", "Cadeaukaarten", "Overig"];
+  const FORMATS = [["ean13", "EAN-13"], ["ean8", "EAN-8"], ["upcA", "UPC-A"], ["code128", "Code 128"], ["code39", "Code 39"], ["itf", "ITF"], ["qr", "QR"], ["pdf417", "PDF417"], ["aztec", "Aztec"]];
+  let storeFilter = "open", editing = null;
+  CATEGORIES.forEach((c) => $("seCategory").append(Object.assign(el("option", null, c), { value: c })));
+  FORMATS.forEach(([v, l]) => $("seFormat").append(Object.assign(el("option", null, l), { value: v })));
+  function badge(n) { const b = $("reqBadge"); b.textContent = n; b.classList.toggle("hidden", !n); }
+  document.querySelectorAll("#reqFilter button").forEach((b) => b.addEventListener("click", () => { storeFilter = b.dataset.status; loadStores(); }));
+
+  async function loadStores() {
+    document.querySelectorAll("#reqFilter button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.status === storeFilter)));
+    const list = $("reqList");
+    list.setAttribute("aria-busy", "true");
+    $("storeErr").classList.add("hidden");
+    try {
+      list.replaceChildren();
+      if (storeFilter === "stores") {
+        const r = await api("stores");
+        if (!(r.stores || []).length) list.append(el("p", "empty", "Nog geen winkels toegevoegd via het beheer."));
+        for (const s of r.stores || []) list.append(storeRow(s));
+      } else {
+        const r = await api("store_requests", { status: storeFilter });
+        if (storeFilter === "open") badge((r.groups || []).length);
+        if (!(r.groups || []).length) list.append(el("p", "empty", storeFilter === "open" ? "Geen open aanvragen. Mooi zo." : "Niets afgewezen."));
+        for (const g of r.groups || []) list.append(requestRow(g));
+      }
+    } catch (err) {
+      if (err.status === 401) return;
+      $("storeErr").textContent = err.message; $("storeErr").classList.remove("hidden");
+    } finally { list.removeAttribute("aria-busy"); }
+  }
+
+  function requestRow(g) {
+    const row = el("div", "acc req");
+    const av = el("div", "av", String(g.count));
+    av.title = g.count === 1 ? "1 aanvraag" : `${g.count} aanvragen`;
+    const who = el("div", "who"), meta = el("div", "meta");
+    who.append(el("div", "mail", g.name));
+    if (g.kind === "voucher") meta.append(el("span", "badge wait", "Cadeaukaart / voucher"));
+    if (g.website) meta.append(el("span", null, g.website));
+    meta.append(el("span", null, g.count === 1 ? "1 aanvraag" : `${num(g.count)} aanvragen`), el("span", null, "Laatste " + ago(g.last)));
+    who.append(meta);
+    if (g.notes.length) who.append(el("div", "note", "“" + g.notes.slice(0, 2).join("” · “") + "”"));
+    const acts = el("div", "acts");
+    if (storeFilter === "open") {
+      const make = el("button", "btn sm", "Kaart maken");
+      make.addEventListener("click", () => openEditor({ name: g.name, domain: g.website || "", kind: g.kind,
+        category: g.kind === "voucher" ? "Cadeaukaarten" : undefined, format: g.kind === "voucher" ? "code128" : undefined }, g.ids, true));
+      acts.append(make);
+    }
+    row.append(av, who, acts);
+    return row;
+  }
+
+  function storeRow(s) {
+    const row = el("div", "acc");
+    const av = el("div", "av logo");
+    av.style.background = s.card_hex;
+    if (s.logo) { const img = el("img"); img.src = "data:image/png;base64," + s.logo; img.alt = ""; av.append(img); } else av.textContent = s.name.charAt(0);
+    const who = el("div", "who"), meta = el("div", "meta");
+    who.append(el("div", "mail", s.name));
+    meta.append(el("span", "badge " + (s.published ? "ok" : "wait"), s.published ? "Gepubliceerd" : "Concept"));
+    if (s.domain) meta.append(el("span", null, s.domain));
+    meta.append(el("span", null, s.category), el("span", null, "Gewijzigd " + ago(s.updated_at)));
+    who.append(meta);
+    const acts = el("div", "acts");
+    const edit = el("button", "btn ghost sm", "Wijzig");
+    edit.addEventListener("click", () => openEditor(s, [], false));
+    acts.append(edit);
+    row.append(av, who, acts);
+    return row;
+  }
+
+  function openEditor(s, requestIds, fromRequest) {
+    editing = { id: s.id || null, requestIds, logo: s.logo || null, published: !!s.published };
+    $("seTitle").textContent = s.id ? s.name : (fromRequest ? "Kaart maken voor aanvraag" : "Nieuwe winkel");
+    $("seDomain").value = s.domain || "";
+    $("seName").value = s.name || "";
+    $("seCategory").value = s.category || "Overig";
+    $("seFormat").value = s.format || "ean13";
+    $("seKind").value = s.kind || "loyalty";
+    $("seColor").value = s.card_hex || "#2B2F3A";
+    $("seAliases").value = (s.aliases || []).join(", ");
+    $("seSwatches").replaceChildren();
+    $("seRequests").textContent = requestIds.length ? `Na publiceren worden ${requestIds.length === 1 ? "1 aanvraag" : requestIds.length + " aanvragen"} gesloten als toegevoegd.` : "";
+    $("seReject").classList.toggle("hidden", !requestIds.length);
+    $("seUnpublish").classList.toggle("hidden", !editing.published);
+    $("sePublish").textContent = editing.published ? "Opslaan en bijwerken" : "Toevoegen en publiceren";
+    $("seMsg").textContent = "";
+    $("storeEditor").classList.remove("hidden");
+    $("storeEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+    preview();
+    if (fromRequest && s.domain && !s.logo) lookup();
+  }
+  $("storeNew").addEventListener("click", () => openEditor({}, [], false));
+  new MutationObserver(() => $("storeEditor").parentElement.classList.toggle("editing", !$("storeEditor").classList.contains("hidden")))
+    .observe($("storeEditor"), { attributes: true, attributeFilter: ["class"] });
+  $("seClose").addEventListener("click", () => { $("storeEditor").classList.add("hidden"); editing = null; });
+  ["seName", "seColor", "seKind"].forEach((id) => $(id).addEventListener("input", preview));
+
+  function preview() {
+    if (!editing) return;
+    const p = $("sePreview"), color = $("seColor").value;
+    p.style.background = color;
+    p.classList.toggle("light", luminance(color) > 0.45);
+    $("sePreviewName").textContent = editing.logo ? "" : ($("seName").value || "Winkel");
+    $("sePreviewLogo").classList.toggle("hidden", !editing.logo);
+    if (editing.logo) $("sePreviewLogo").src = "data:image/png;base64," + editing.logo;
+    p.querySelector("small").textContent = $("seKind").value === "voucher" ? "Cadeaukaart" : "Klantenkaart";
+  }
+  function luminance(hex) {
+    const v = parseInt(hex.slice(1), 16), c = [(v >> 16) & 255, (v >> 8) & 255, v & 255].map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function swatches(colors) {
+    const box = $("seSwatches");
+    box.replaceChildren();
+    for (const c of [...new Set(colors)].slice(0, 6)) {
+      const b = el("button", "sw"); b.type = "button"; b.style.background = c; b.title = c; b.setAttribute("aria-label", "Kleur " + c);
+      b.addEventListener("click", () => { $("seColor").value = c; preview(); });
+      box.append(b);
+    }
+  }
+  /** Merkkleur uit het logo: gemiddelde van de duidelijk gekleurde pixels (niet wit, zwart of doorzichtig). */
+  function logoColor(b64) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas"), n = 64; c.width = c.height = n;
+        const x = c.getContext("2d"); x.drawImage(img, 0, 0, n, n);
+        const d = x.getImageData(0, 0, n, n).data; let r = 0, g = 0, b = 0, k = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const [R, G, B, A] = [d[i], d[i + 1], d[i + 2], d[i + 3]];
+          const max = Math.max(R, G, B), min = Math.min(R, G, B);
+          if (A < 200 || max > 240 && min > 240 || max < 20 || max - min < 25) continue;
+          r += R; g += G; b += B; k++;
+        }
+        resolve(k ? "#" + [r, g, b].map((v) => Math.round(v / k).toString(16).padStart(2, "0")).join("").toUpperCase() : null);
+      };
+      img.onerror = () => resolve(null);
+      img.src = "data:image/png;base64," + b64;
+    });
+  }
+  async function lookup() {
+    const url = $("seDomain").value.trim();
+    if (!url) return;
+    $("seLookup").disabled = true; $("seMsg").textContent = "Website opzoeken…";
+    try {
+      const r = await api("store_lookup", { url });
+      $("seDomain").value = r.domain;
+      if (!$("seName").value && r.name) $("seName").value = r.name;
+      if (r.logo) editing.logo = r.logo;
+      const fromLogo = r.logo ? await logoColor(r.logo) : null;
+      const colors = [fromLogo, ...(r.colors || [])].filter(Boolean);
+      swatches(colors);
+      if (colors[0] && $("seColor").value.toUpperCase() === "#2B2F3A") $("seColor").value = colors[0];
+      $("seMsg").textContent = r.logo ? "Logo en kleuren gevonden. Controleer de kaart." : "Geen bruikbaar logo gevonden; upload er zelf een.";
+      preview();
+    } catch (err) { $("seMsg").textContent = err.code === "not_found" ? "Deze website kon niet worden geopend." : err.message; }
+    finally { $("seLookup").disabled = false; }
+  }
+  $("seLookup").addEventListener("click", lookup);
+  $("seLogoFile").addEventListener("change", () => {
+    const f = $("seLogoFile").files[0];
+    if (!f) return;
+    if (f.size > 290_000) { $("seMsg").textContent = "Dit logo is groter dan 300 kB. Kies een kleiner bestand."; return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      editing.logo = String(reader.result).split(",")[1];
+      const c = await logoColor(editing.logo);
+      if (c) swatches([c]);
+      preview();
+    };
+    reader.readAsDataURL(f);
+  });
+  $("seLogoClear").addEventListener("click", () => { editing.logo = null; $("seLogoFile").value = ""; preview(); });
+
+  function storeBody() {
+    return {
+      id: editing.id || undefined, name: $("seName").value.trim(), domain: $("seDomain").value.trim(),
+      category: $("seCategory").value, card_hex: $("seColor").value, format: $("seFormat").value, kind: $("seKind").value,
+      aliases: $("seAliases").value.split(",").map((a) => a.trim()).filter(Boolean), logo: editing.logo,
+    };
+  }
+  async function saveStore(publish) {
+    $("seMsg").textContent = "";
+    if (publish && !editing.published && !(await ask("Winkel publiceren?", `${$("seName").value} komt meteen in Pasr, zonder app-update.` + ($("sePush").checked ? " De aanvragers en wie 'Nieuwe winkels' aan heeft, krijgen een pushmelding." : ""), "Publiceren"))) return;
+    try {
+      const r = await api("store_save", { store: storeBody() });
+      editing.id = r.store.id;
+      if (publish) {
+        const p = await api("store_publish", { id: editing.id, request_ids: editing.requestIds, push: $("sePush").checked && !editing.published });
+        toast(p.push_ready === false ? "Gepubliceerd. Pushmeldingen staan nog uit (APNs-sleutel ontbreekt)."
+          : `Gepubliceerd${p.closed ? `, ${p.closed} ${p.closed === 1 ? "aanvraag" : "aanvragen"} gesloten` : ""}${p.sent ? `, ${p.sent} ${p.sent === 1 ? "melding" : "meldingen"} verstuurd` : ""}.`);
+        $("storeEditor").classList.add("hidden"); editing = null;
+      } else { toast("Opgeslagen als concept."); }
+      loadStores();
+    } catch (err) { $("seMsg").textContent = err.message; }
+  }
+  $("sePublish").addEventListener("click", () => saveStore(true));
+  $("seSave").addEventListener("click", () => saveStore(false));
+  $("seReject").addEventListener("click", async () => {
+    if (!(await ask("Aanvraag afwijzen?", "De aanvraag wordt gesloten; in de app ziet de aanvrager 'Niet toegevoegd'.", "Afwijzen"))) return;
+    try { await api("store_reject", { request_ids: editing.requestIds }); toast("Afgewezen."); $("storeEditor").classList.add("hidden"); editing = null; loadStores(); }
+    catch (err) { $("seMsg").textContent = err.message; }
+  });
+  $("seUnpublish").addEventListener("click", async () => {
+    if (!(await ask("Offline halen?", "De winkel verdwijnt uit de lijst in Pasr. Kaarten die mensen al hebben blijven gewoon werken.", "Offline halen"))) return;
+    try { await api("store_unpublish", { id: editing.id }); toast("Offline gehaald."); $("storeEditor").classList.add("hidden"); editing = null; loadStores(); }
+    catch (err) { $("seMsg").textContent = err.message; }
+  });
+
   // ---- start ----
   function start() {
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
     const want = (location.hash || "").slice(1);
-    setTab(["overview", "insights", "accounts", "settings"].includes(want) ? want : "overview");
+    setTab(["overview", "insights", "accounts", "stores", "settings"].includes(want) ? want : "overview");
+    api("store_requests", { status: "open" }).then((r) => badge((r.groups || []).length)).catch(() => {});
   }
   if (token && expires > Date.now() && URL_ADMIN) start(); else signOut();
   // sessie verloopt: terug naar inloggen

@@ -47,6 +47,8 @@
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 4 4-7 5 6"/><path d="M3 21h18"/></svg><span>Insights</span></button>
         <button role="tab" id="tab-accounts" data-tab="accounts" aria-controls="view-accounts" aria-selected="false">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg><span>Accounts</span></button>
+        <button role="tab" id="tab-stores" data-tab="stores" aria-controls="view-stores" aria-selected="false">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/></svg><span>Winkels</span><b id="reqBadge" class="tab-badge hidden"></b></button>
         <button role="tab" id="tab-settings" data-tab="settings" aria-controls="view-settings" aria-selected="false">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Instellingen</span></button>
       </nav>
@@ -76,6 +78,7 @@
         <article class="card"><header class="card-h"><h2>Tegengehouden aanmeldingen</h2><span class="muted sm">laatste 7 dagen</span></header><div id="bots" class="dist"></div></article>
         <article class="card"><header class="card-h"><h2>Kaarten per account</h2><span class="muted sm">alle accounts</span></header><div id="perAccount" class="dist"></div></article>
         <article class="card"><header class="card-h"><h2>Landen</h2><span class="muted sm">regio van het apparaat</span></header><div id="countries" class="dist"></div></article>
+        <article class="card"><header class="card-h"><h2>Delen</h2><span class="muted sm">gedeelde Pasrs en tijdelijk delen</span></header><div id="sharing" class="dist"></div></article>
       </div>
       <p class="foot-note muted sm">Alleen tellingen en accountgegevens. De inhoud van kaarten staat versleuteld op de server en is hier niet te zien. Dagen in UTC.</p>
     </section>
@@ -114,7 +117,24 @@
     <section id="view-accounts" class="view hidden" role="tabpanel" aria-labelledby="tab-accounts">
       <div class="head">
         <div><h1>Accounts</h1><p class="muted" id="accCount"></p></div>
+        <button id="revOpen" class="btn ghost sm" type="button">Review-account maken</button>
       </div>
+      <article id="revCard" class="card review-card hidden" aria-label="Review-account maken">
+        <header class="card-h"><h2>Review-account voor Apple</h2><button id="revClose" class="btn ghost sm" type="button">Sluiten</button></header>
+        <p class="muted sm">Maakt een bevestigd account met drie voorbeeldkaarten en een gedeelde Pasr &ldquo;Gezin&rdquo; met twee kaarten. Vul daarna e-mail en wachtwoord in bij App Store Connect &rsaquo; App Review &rsaquo; Sign-in information. Het wachtwoord wordt nergens bewaard.</p>
+        <form id="revForm" class="se-grid" novalidate autocomplete="off">
+          <label>E-mailadres<input id="revEmail" type="text" inputmode="email" autocomplete="off" spellcheck="false" value="review@pasr.nl"></label>
+          <label>Voornaam<input id="revName" type="text" maxlength="40" value="App Review" autocomplete="off"></label>
+          <label class="se-wide">Wachtwoord (minimaal 10 tekens, letters en cijfers)
+            <span class="se-row"><input id="revPass" type="password" autocomplete="new-password" spellcheck="false">
+              <button id="revShow" class="btn ghost sm" type="button">Toon</button>
+              <button id="revGen" class="btn ghost sm" type="button">Maak sterk wachtwoord</button>
+              <button id="revCopy" class="btn ghost sm" type="button">Kopieer</button></span></label>
+          <label class="se-check se-wide"><input id="revReset" type="checkbox"> Bestaat het account al? Wachtwoord vervangen en voorbeeldkaarten terugzetten</label>
+          <div class="row-btns se-wide"><button id="revGo" class="btn" type="submit">Review-account maken</button></div>
+        </form>
+        <div id="revMsg" class="err" role="status"></div>
+      </article>
       <div class="acc-tools">
         <input id="accSearch" type="search" placeholder="Zoek op e-mail of naam" autocomplete="off" spellcheck="false" aria-label="Zoek accounts">
         <div id="accFilter" class="seg" role="group" aria-label="Filter">
@@ -127,6 +147,51 @@
       <div id="accErr" class="banner hidden" role="alert"></div>
       <div id="accList" class="acc-list" aria-busy="true"></div>
       <div class="pager"><button id="accMore" class="btn ghost sm hidden" type="button">Meer laden</button></div>
+    </section>
+
+    <!-- Winkels: aanvragen uit de app, kaarten maken en publiceren (zonder app-update) -->
+    <section id="view-stores" class="view hidden" role="tabpanel" aria-labelledby="tab-stores">
+      <div class="head">
+        <div><h1>Winkels</h1><p class="muted" id="storeCount">Aanvragen uit de app. Maak de kaart, publiceer hem en de aanvragers krijgen een pushmelding.</p></div>
+        <button id="storeNew" class="btn" type="button">Nieuwe winkel</button>
+      </div>
+      <div class="acc-tools">
+        <div id="reqFilter" class="seg" role="group" aria-label="Filter">
+          <button type="button" data-status="open">Open aanvragen</button>
+          <button type="button" data-status="stores">Toegevoegd</button>
+          <button type="button" data-status="rejected">Afgewezen</button>
+        </div>
+      </div>
+      <div id="storeErr" class="banner hidden" role="alert"></div>
+      <div class="stores-layout">
+        <div id="reqList" class="acc-list" aria-busy="true"></div>
+        <article id="storeEditor" class="card store-editor hidden" aria-label="Winkel maken">
+          <header class="card-h"><h2 id="seTitle">Nieuwe winkel</h2><button id="seClose" class="btn ghost sm" type="button">Sluiten</button></header>
+          <div id="sePreview" class="se-preview"><img id="sePreviewLogo" alt=""><span id="sePreviewName"></span><small>Klantenkaart</small></div>
+          <div class="se-grid">
+            <label class="se-wide">Website
+              <span class="se-row"><input id="seDomain" type="text" placeholder="winkel.nl" autocomplete="off" spellcheck="false"><button id="seLookup" class="btn ghost sm" type="button">Opzoeken</button></span></label>
+            <label>Naam<input id="seName" type="text" maxlength="40" autocomplete="off"></label>
+            <label>Categorie<select id="seCategory"></select></label>
+            <label>Soort code<select id="seFormat"></select></label>
+            <label>Soort kaart<select id="seKind"><option value="loyalty">Klantenkaart</option><option value="voucher">Cadeaukaart</option></select></label>
+            <label class="se-wide">Kaartkleur
+              <span class="se-row"><input id="seColor" type="color" value="#2B2F3A"><span id="seSwatches" class="se-swatches"></span></span></label>
+            <label class="se-wide">Logo
+              <span class="se-row"><input id="seLogoFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="seLogoClear" class="btn ghost sm" type="button">Geen logo</button></span></label>
+            <label class="se-wide">Andere namen (komma's)<input id="seAliases" type="text" placeholder="bijv. kwantum wonen" autocomplete="off"></label>
+          </div>
+          <p class="muted sm" id="seRequests"></p>
+          <label class="se-check"><input id="sePush" type="checkbox" checked> Pushmelding sturen (aan de aanvragers en wie "Nieuwe winkels" aan heeft)</label>
+          <div class="row-btns">
+            <button id="sePublish" class="btn" type="button">Toevoegen en publiceren</button>
+            <button id="seSave" class="btn ghost" type="button">Opslaan als concept</button>
+            <button id="seReject" class="btn danger hidden" type="button">Aanvraag afwijzen</button>
+            <button id="seUnpublish" class="btn danger hidden" type="button">Offline halen</button>
+          </div>
+          <div id="seMsg" class="err" role="status"></div>
+        </article>
+      </div>
     </section>
 
     <!-- Instellingen -->
