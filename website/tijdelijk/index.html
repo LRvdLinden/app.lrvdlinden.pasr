@@ -53,6 +53,8 @@
     .timer.soon .ring .fg { stroke: var(--coral); }
     .timer.soon b { color: #B83A27; }
     .face .code { transition: filter .6s, opacity .6s; }
+    .face .code.locked { color: #4B4966; gap: 8px; font-weight: 600; font-size: 15px; }
+    .face .code.locked svg { width: 34px; height: 34px; flex: none; }
     .expired .face .code { filter: blur(6px) grayscale(1); opacity: .35; }
     .stamp { position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%) rotate(-12deg) scale(1.8); opacity: 0;
       font: 800 26px var(--display); letter-spacing: .05em; text-transform: uppercase; color: var(--coral); border: 4px solid var(--coral);
@@ -76,7 +78,7 @@
 
     <div class="state" id="s-ok">
       <h1>Er is tijdelijk een kaart met je gedeeld</h1>
-      <p>Tik op de kaart om de barcode te zien. Voeg hem toe aan Pasr, of laat hem zo scannen tot de einddatum.</p>
+      <p>Voeg de kaart toe aan Pasr. De barcode staat alleen in de app, tot de einddatum.</p>
       <div class="timer" id="timer" aria-live="polite">
         <svg class="ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="bg" cx="12" cy="12" r="9"/><circle class="fg" id="ringfg" cx="12" cy="12" r="9" stroke-dasharray="56.55" stroke-dashoffset="0"/></svg>
         <span id="tlabel">Nog geldig</span> <b id="tleft">…</b>
@@ -90,7 +92,7 @@
           </div>
           <div class="face back" id="back">
             <div class="head"><span class="mono" id="mono2"></span><span id="name2"></span></div>
-            <div class="code" id="code"></div>
+            <div class="code locked" id="code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>De code staat alleen in de app</span></div>
             <span class="stamp" aria-hidden="true">Verlopen</span>
           </div>
         </div>
@@ -99,6 +101,7 @@
         <a class="btn btn-primary" id="open">Voeg toe aan Pasr</a>
       </div>
       <p class="note" id="until"></p>
+      <p class="note">Een tijdelijke kaart werkt alleen in Pasr, zodat hij na de einddatum echt niet meer werkt.</p>
       <p class="note">Nog geen Pasr? De app komt binnenkort gratis in de App Store. <a href="/#delen">Zo werkt tijdelijk delen</a></p>
     </div>
 
@@ -110,8 +113,6 @@
     </div>
   </main>
   <script src="/assets/account-config.js"></script>
-  <script src="/assets/vendor/jsbarcode.min.js"></script>
-  <script src="/assets/vendor/qrcode.js"></script>
   <script>
   // De code staat na het # (gaat nooit mee naar de webserver). De kaart komt van de Pasr-server, alleen tot de einddatum.
   (function () {
@@ -166,20 +167,7 @@
       document.getElementById('until').textContent = 'Werkt tot ' + fmtDate(until) + '.';
 
       var code = document.getElementById('code');
-      var formats = { ean13: 'EAN13', ean8: 'EAN8', upcA: 'UPC', code128: 'CODE128', code39: 'CODE39', itf: 'ITF' };
-      var number = String(card.number || '');
-      try {
-        if (formats[card.format]) {
-          var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          code.appendChild(svg);
-          JsBarcode(svg, card.format === 'itf' && number.length % 2 ? '0' + number : number, { format: formats[card.format], displayValue: false, margin: 0, height: 100, width: 2 });
-        } else if (card.format === 'qr') {
-          var qr = qrcode(0, 'M'); qr.addData(number); qr.make();
-          code.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
-        }
-      } catch (e) {}
-      var small = document.createElement('small'); small.textContent = grouped(number); code.appendChild(small);
-      card = null; number = null;
+      card = null;   // de code zelf wordt hier nooit getekend
 
       flip.addEventListener('click', function () { flip.classList.toggle('turned'); });
       setTimeout(function () { flip.classList.add('turned'); }, 700);
@@ -195,7 +183,6 @@
           document.getElementById('tleft').textContent = '';
           timer.classList.add('soon');
           fg.setAttribute('stroke-dashoffset', '56.55');
-          setTimeout(function () { code.replaceChildren(); }, 700);
           document.getElementById('open').remove();
           document.getElementById('until').textContent = 'Deze kaart werkt niet meer.';
           return;

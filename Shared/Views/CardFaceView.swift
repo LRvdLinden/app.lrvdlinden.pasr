@@ -23,6 +23,8 @@ struct CardAppearance: Equatable {
     var tempRevoked = false
     /// Voorbij het einde: de code wordt niet meer getoond.
     var tempExpired: Bool { tempUntil.map { tempRevoked || $0 <= .now } ?? false }
+    /// Code beschermen tegen schermafbeeldingen (tijdelijke kaarten altijd, eigen kaarten met de instelling).
+    var protectCode = false
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
@@ -54,6 +56,7 @@ struct CardAppearance: Equatable {
             tempUntil = card.sharedUntil ?? .distantPast
             tempRevoked = card.shareRevoked
         }
+        protectCode = card.isTemporary || UserDefaults.standard.bool(forKey: "pasr.screenshotShield")
     }
 
     var displayName: String { storeName.isEmpty ? String(localized: "Nieuwe kaart") : storeName }
@@ -82,7 +85,20 @@ struct CardAppearance: Equatable {
 
 /// A card drawn like a pass in Apple Wallet. With `showsCode` it is the back, with the barcode or QR code;
 /// without it, the front with logo, name and number.
+/// De app zet hier de bescherming tegen schermafbeeldingen in (ScreenShield); Watch en widgets niet.
+private struct CodeShieldKey: EnvironmentKey {
+    static let defaultValue: ((AnyView) -> AnyView)? = nil
+}
+
+extension EnvironmentValues {
+    var codeShield: ((AnyView) -> AnyView)? {
+        get { self[CodeShieldKey.self] }
+        set { self[CodeShieldKey.self] = newValue }
+    }
+}
+
 struct CardFaceView: View {
+    @Environment(\.codeShield) private var codeShield
     let appearance: CardAppearance
     /// Off for tiny previews where a code would be unreadable anyway.
     var showsCode = true
@@ -108,7 +124,11 @@ struct CardFaceView: View {
                 } else if showsCode && appearance.isLocked && !revealed {
                     lockedPanel
                 } else if showsCode {
-                    codePanel
+                    if appearance.protectCode, let codeShield {
+                        codeShield(AnyView(codePanel))
+                    } else {
+                        codePanel
+                    }
                 } else {
                     Spacer(minLength: 0)
                     frontFooter

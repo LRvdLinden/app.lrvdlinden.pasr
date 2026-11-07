@@ -16,6 +16,7 @@ struct PasrApp: App {
         WindowGroup {
             RootView()
                 .preferredColorScheme(.dark)
+                .environment(\.codeShield, ScreenShield.wrapper)
                 .task {
                     PasrStore.purgeOldDeletions(in: container.mainContext)
                     await LogoService.fillMissing(in: container.mainContext)

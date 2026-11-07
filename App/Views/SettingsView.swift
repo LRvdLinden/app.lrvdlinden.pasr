@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var iCloudStatus: CKAccountStatus?
     @AppStorage(LogoService.settingKey) private var fetchLogos = true
     @AppStorage(Biometrics.appLockKey) private var appLock = false
+    @AppStorage(ScreenShield.settingKey) private var blockScreenshots = false
     @State private var exportDoc: BackupDocument?
     @State private var showExporter = false
     @State private var showImporter = false
@@ -60,7 +61,7 @@ struct SettingsView: View {
 
                 RemindersSettingsSection()
 
-                Section("Privacy en beveiliging") {
+                Section {
                     Toggle(isOn: Binding(get: { appLock }, set: { newValue in
                         // Confirm with Face ID before switching the lock on or off.
                         Task {
@@ -70,6 +71,9 @@ struct SettingsView: View {
                         }
                     })) {
                         SettingsLabel("Vergrendelen met \(Biometrics.methodName)", symbol: Biometrics.symbolName, color: Brand.mint)
+                    }
+                    Toggle(isOn: $blockScreenshots) {
+                        SettingsLabel("Screenshots van codes blokkeren", symbol: "eye.slash.fill", color: .indigo)
                     }
                     Toggle(isOn: $fetchLogos) {
                         SettingsLabel("Logo's van websites ophalen", symbol: "photo", color: .orange)
@@ -81,6 +85,10 @@ struct SettingsView: View {
                             LogoService.removeWebsiteLogos(in: context)
                         }
                     }
+                } header: {
+                    Text("Privacy en beveiliging")
+                } footer: {
+                    Text("Met Screenshots van codes blokkeren is de barcode zwart in een screenshot of schermopname. Tijdelijk met jou gedeelde kaarten zijn altijd zo beschermd.")
                 }
 
                 Section {

@@ -132,11 +132,12 @@ FAQ = [
     ("Op welke apparaten werkt Pasr?", "Op iPhone en iPad met iOS en iPadOS 17 of nieuwer en op de Apple Watch met watchOS 10 of nieuwer."),
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Een logo kun je uitknippen uit een foto van je pas."),
     ("Waar komen de logo's vandaan?", "De logo's van ruim 230 bekende winkels zitten in de app, in de juiste merkkleur. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
+    ("Kan ik screenshots van mijn codes blokkeren?", "Ja. Zet in Instellingen › Privacy en beveiliging Screenshots van codes blokkeren aan; dan is de barcode zwart in een screenshot of schermopname. Bij tijdelijk gedeelde kaarten staat dit altijd aan."),
     ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
     ("Wat gebeurt er als ik mijn telefoon kwijtraak?", "Je kaarten staan in je iCloud. Log op je nieuwe iPhone in met hetzelfde Apple-account en open Pasr: je kaarten komen vanzelf terug."),
     ("Kan ik een kaart delen met mijn partner?", "Ja. Tik op Deel bij een kaart en stuur de link, of laat de ander de QR-code scannen. Wie Pasr heeft, voegt de kaart met één tik toe. Wie Pasr nog niet heeft, ziet de kaart met barcode gewoon in de browser."),
     ("Wat is een gedeelde Pasr?", "Een gedeelde Pasr is een verzameling kaarten die je samen met maximaal vijf anderen gebruikt, bijvoorbeeld je gezin. Iedereen heeft een eigen gratis Pasr-account en nodigt anderen uit met hun e-mailadres. Kaarten in de gedeelde Pasr ziet en gebruikt iedereen; je privékaarten blijven van jou. Je kunt in maximaal twee gedeelde Pasrs zitten."),
-    ("Hoe werkt tijdelijk delen?", "Tik op Deel, kies Tijdelijk en hoe lang: een uur, een dag, een week of een eigen datum tot 90 dagen. De ander krijgt via WhatsApp of mail een afbeelding van de pas met een link en voegt de kaart toe aan Pasr. Na het einde verdwijnt de barcode en werkt de link niet meer. Je kunt ook eerder stoppen. Een tijdelijke kaart kan niet in Apple Wallet en niet verder worden gedeeld."),
+    ("Hoe werkt tijdelijk delen?", "Tik op Deel, kies Tijdelijk en hoe lang: een uur, een dag, een week of een eigen datum tot 90 dagen. De ander krijgt via WhatsApp of mail een afbeelding van de pas met een link en voegt de kaart toe aan Pasr. Na het einde verdwijnt de barcode en werkt de link niet meer. Je kunt ook eerder stoppen. Een tijdelijke kaart kan niet in Apple Wallet en niet verder worden gedeeld, en een screenshot van de code is zwart."),
     ("Is Pasr ook in België te gebruiken?", "Pasr is gemaakt voor Nederland. De app is Nederlandstalig en de winkellijst bestaat uit Nederlandse winkels."),
 ]
 
@@ -195,7 +196,7 @@ def share_section():
           <span class="pill coral">Tijdelijk delen</span>
           <h3>Een kaart even uitlenen</h3>
           <p>Stuur een afbeelding van de pas met een link via WhatsApp of mail. De ander zet hem in Pasr. Na de einddatum verdwijnt de barcode vanzelf.</p>
-          <ul class="ticks">{li(["Een uur, een dag, een week of een eigen datum", "Na het einde werkt de code en de link niet meer", "Eerder stoppen kan altijd", "Niet in Apple Wallet en niet verder te delen"])}</ul>
+          <ul class="ticks">{li(["Een uur, een dag, een week of een eigen datum", "Na het einde werkt de code en de link niet meer", "Eerder stoppen kan altijd; een screenshot van de code is zwart", "Niet in Apple Wallet en niet verder te delen"])}</ul>
         </article>
       </div>
     </section>'''
