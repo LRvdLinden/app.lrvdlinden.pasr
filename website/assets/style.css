@@ -700,3 +700,7 @@ footer a:hover { color: var(--ink); }
   .fv-near .fv-note { animation: none; transform: none; opacity: 1; }
   .fv-near .fv-pulse { animation: none; }
 }
+/* Nooit zijwaarts schuiven op telefoons (iOS Safari telt geanimeerde of uitstekende elementen anders mee). */
+html, body { overflow-x: clip; max-width: 100%; }
+@supports not (overflow: clip) { html, body { overflow-x: hidden; } body { position: relative; } }
+.stores, .marquee-row, .hero, .share, .compare { max-width: 100%; }
