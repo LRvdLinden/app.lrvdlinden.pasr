@@ -175,3 +175,38 @@
   const io = new IntersectionObserver(e => { if (e[0].isIntersecting) { t.classList.add('in'); io.disconnect(); } }, { threshold: 0.2 });
   io.observe(t);
 })();
+
+// Overstappen: kaarten komen voorbij in de schermopname, worden gescand en landen in Pasr; daarna opnieuw
+(function () {
+  const demo = document.querySelector('.im-demo');
+  if (!demo) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const src = Array.from(demo.querySelectorAll('.im-src'));
+  const rows = Array.from(demo.querySelectorAll('.im-row'));
+  const scan = demo.querySelector('.im-scan');
+  const count = demo.querySelector('.im-count b');
+  if (reduce) { count.textContent = rows.length; return; }
+  let k = 0, timer = null;
+  function reset() {
+    src.forEach(s => s.classList.remove('on', 'off'));
+    rows.forEach(r => r.classList.remove('in'));
+    count.textContent = '0';
+    k = 0;
+  }
+  function step() {
+    if (k > 0) { src[k - 1].classList.remove('on'); src[k - 1].classList.add('off'); }
+    if (k >= src.length) { timer = setTimeout(() => { reset(); timer = setTimeout(step, 500); }, 2600); return; }
+    src[k].classList.add('on');
+    const i = k;
+    setTimeout(() => {
+      scan.classList.remove('hit'); void scan.offsetWidth; scan.classList.add('hit');
+      setTimeout(() => { rows[i].classList.add('in'); count.textContent = String(i + 1); }, 350);
+    }, 450);
+    k++;
+    timer = setTimeout(step, 1400);
+  }
+  const io = new IntersectionObserver(e => {
+    if (e[0].isIntersecting && !timer) step();
+  }, { threshold: 0.3 });
+  io.observe(demo);
+})();
