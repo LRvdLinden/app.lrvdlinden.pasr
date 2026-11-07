@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Builds website/index.html with real EAN-13 bars for the demo cards. Run after editing the copy here."""
+import re
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -174,7 +175,7 @@ def feature_table():
         f'            <tr style="--r:{i}"><th scope="row">{row[0]}</th>'
         + "".join(f'<td{" class=\"ft-pasr\"" if k == 0 else ""}>{cell(v)}</td>' for k, v in enumerate(row[1:])) + "</tr>"
         for i, row in enumerate(TABLE))
-    return f'''        <div class="ft-wrap">
+    return f'''        <div class="ft-wrap" id="vergelijking">
           <h3 class="ft-title">Functies naast elkaar</h3>
           <table class="ft">
             <thead><tr><th scope="col"><span class="sr-only">Functie</span></th>{head}</tr></thead>
@@ -209,6 +210,12 @@ def import_demo():
         </div>
       </div>'''
 
+def anchor(text):
+    """Leesbaar #-adres voor een vraag of kop: "Kost Pasr geld?" -> "kost-pasr-geld"."""
+    import unicodedata
+    t = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:60]
+
 def mini_pass(domain, name, cls="", body=""):
     color = _card_colours().get(domain, "#2B2F3A")
     ink = " ink-dark" if _is_light(color) else ""
@@ -236,7 +243,7 @@ def share_section():
         <p>Samen één Pasr met je gezin, of een kaart even uitlenen. Jij bepaalt wie wat ziet, en hoe lang.</p>
       </div>
       <div class="share-grid">
-        <article class="share-panel">
+        <article class="share-panel" id="gedeelde-pasr">
           <div class="sp-stage" aria-hidden="true">
             <svg class="sp-lines" viewBox="0 0 400 240" preserveAspectRatio="none">
               <path d="M70 60 C 130 70, 160 100, 200 120"/><path d="M330 60 C 270 70, 240 100, 200 120"/><path d="M200 222 C 200 190, 200 160, 200 140"/>
@@ -250,7 +257,7 @@ def share_section():
           <p>Nodig je partner, kinderen of huisgenoten uit met hun e-mailadres. Kaarten in de gedeelde Pasr zien en gebruiken jullie allemaal, op elke iPhone.</p>
           <ul class="ticks">{li(["Tot 6 personen, elk met een eigen gratis account", "Iedereen voegt toe, wijzigt en nodigt uit", "Je privékaarten blijven van jou", "Bestaande kaarten zet je er met Wijzig in"])}</ul>
         </article>
-        <article class="share-panel">
+        <article class="share-panel" id="tijdelijk-delen">
           <div class="tp-stage" aria-hidden="true">
             <div class="tp-chat">
               <div class="tp-bubble">{chat_card}<span class="tp-text">Je mag mijn AH-kaart gebruiken tot zondag 18:00</span><span class="tp-link">pasr.nl/tijdelijk/…</span></div>
@@ -282,7 +289,7 @@ def page():
         <h3>{title}</h3>
         <p>{text}</p>
       </article>''' for name, color, title, text in FEATURES)
-    faq = "\n".join(f'''      <details>
+    faq = "\n".join(f'''      <details id="{anchor(q)}">
         <summary>{q}</summary>
         <p>{a}</p>
       </details>''' for q, a in FAQ)
@@ -348,7 +355,7 @@ def page():
   </header>
 
   <main>
-    <div class="wrap hero">
+    <div class="wrap hero" id="top">
       <div>
         <h1 class="enter" style="--d:0"><span>Al je pasjes.</span> <span>Zonder gedoe.</span></h1>
         <p class="lead enter" style="--d:1">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
@@ -381,13 +388,13 @@ def page():
       </div>
     </div>
 
-    <section class="stores" aria-label="Winkels in Pasr">
+    <section class="stores" id="winkels" aria-label="Winkels in Pasr">
       <p class="stores-title"><span class="count" data-to="300">300</span>+ Nederlandse winkels, met hun eigen logo en kleur</p>
 {marquee}
     </section>
 
     <div class="wrap">
-      <section class="why" aria-labelledby="why-title">
+      <section class="why" id="waarom" aria-labelledby="why-title">
         <div class="section-head">
           <h2 id="why-title">Een kaartenapp die alleen een kaartenapp is</h2>
           <p>Klantenkaarten zitten steeds vaker in een betaal- of winkelapp. Pasr doet het andersom: alleen je kaarten, snel bij de kassa.</p>
@@ -441,7 +448,7 @@ def page():
       </div>
     </section>
 
-    <section class="wrap cta" aria-labelledby="cta-title">
+    <section class="wrap cta" id="download" aria-labelledby="cta-title">
       <h2 id="cta-title">Je portemonnee wordt een stuk dunner</h2>
       <p>Pasr komt binnenkort gratis in de App Store.</p>
       <div class="actions">
@@ -512,7 +519,7 @@ MOVES = {
 def move_page(slug, m):
     import json
     gains = "".join(f"<li>{g}</li>" for g in m["gains"])
-    faq = "".join(f"<details><summary>{q}</summary><p>{a}</p></details>" for q, a in m["faq"])
+    faq = "".join(f"<details id=\"{anchor(q)}\"><summary>{q}</summary><p>{a}</p></details>" for q, a in m["faq"])
     faq_ld = ",".join('{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (json.dumps(q), json.dumps(a)) for q, a in m["faq"])
     steps = [("Neem je scherm op", "Zet Schermopname aan in het Bedieningspaneel en open " + m["app"] + "."),
              ("Tik je kaarten langs", "Open je kaarten één voor één, zodat elke barcode even in beeld is. Stop de opname."),
@@ -569,20 +576,20 @@ def move_page(slug, m):
       <h1>{m["title"]}</h1>
       <p class="lead">{m["intro"]}</p>
     </div>
-    <section class="wrap" aria-label="Zo werkt het">
+    <section class="wrap" id="zo-werkt-het" aria-label="Zo werkt het">
 {import_demo()}
       <ol class="steps">{steps_html}</ol>
     </section>
-    <section class="wrap move-gains" aria-labelledby="gains">
+    <section class="wrap move-gains" id="wat-je-krijgt" aria-labelledby="gains">
       <div class="section-head"><h2 id="gains">Wat je in Pasr krijgt</h2></div>
       <ul class="ticks big">{gains}</ul>
-      <p class="moves"><a href="/#why-title">Bekijk alle functies naast elkaar</a></p>
+      <p class="moves"><a href="/#vergelijking">Bekijk alle functies naast elkaar</a></p>
     </section>
     <section class="wrap" id="faq" aria-labelledby="faq-title">
       <div class="section-head"><h2 id="faq-title">Vragen</h2></div>
       <div class="faq">{faq}</div>
     </section>
-    <section class="wrap cta" aria-labelledby="cta-title">
+    <section class="wrap cta" id="download" aria-labelledby="cta-title">
       <h2 id="cta-title">Klaar in een minuut</h2>
       <p>Pasr komt binnenkort gratis in de App Store.</p>
       <div class="actions"><a class="btn btn-primary" aria-disabled="true" role="link">{APPLE}Binnenkort in de App Store</a></div>

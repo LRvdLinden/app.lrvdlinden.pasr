@@ -210,3 +210,41 @@
   }, { threshold: 0.3 });
   io.observe(demo);
 })();
+
+// Deelbare #-links: een linkje naast elke kop (tik = adres gekopieerd), en een gedeelde vraag gaat vanzelf open
+(function () {
+  const targets = document.querySelectorAll('section[id] h2, article[id] h3, .ft-wrap[id] h3, details[id] summary, main h2[id]');
+  targets.forEach(h => {
+    const holder = h.closest('[id]');
+    const id = holder && holder.id;
+    if (!id || h.querySelector('.anchor')) return;
+    const a = document.createElement('a');
+    a.className = 'anchor';
+    a.href = '#' + id;
+    a.setAttribute('aria-label', 'Link naar dit deel kopiëren');
+    a.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const url = location.origin + location.pathname + '#' + id;
+      history.replaceState(null, '', '#' + id);
+      const done = () => { a.classList.add('copied'); setTimeout(() => a.classList.remove('copied'), 1600); };
+      if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+        navigator.share({ url, title: document.title }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(done, done);
+      } else { done(); }
+    });
+    h.appendChild(a);
+  });
+  function openFromHash() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const el = id && document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'DETAILS') el.open = true;
+    el.classList.add('in');   // niet onzichtbaar blijven door de inschuif-animatie
+    el.querySelectorAll('.reveal').forEach(r => r.classList.add('in'));
+  }
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
+})();
