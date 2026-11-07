@@ -60,7 +60,7 @@
   } else {
     const io = new IntersectionObserver(entries => entries.forEach(e => {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-    }), { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    }), { threshold: 0, rootMargin: '0px 0px -40px 0px' });
     items.forEach(el => io.observe(el));
   }
 
@@ -185,7 +185,7 @@
   const rows = Array.from(demo.querySelectorAll('.im-row'));
   const scan = demo.querySelector('.im-scan');
   const count = demo.querySelector('.im-count b');
-  if (reduce) { count.textContent = rows.length; return; }
+  if (reduce || !('IntersectionObserver' in window)) { count.textContent = rows.length; return; }
   let k = 0, timer = null;
   function reset() {
     src.forEach(s => s.classList.remove('on', 'off'));
