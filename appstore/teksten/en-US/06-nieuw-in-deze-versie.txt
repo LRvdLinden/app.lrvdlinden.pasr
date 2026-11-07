@@ -5,3 +5,6 @@
 • Filter by card type.
 • Light, dark or automatic, and now on Mac and Apple Vision Pro.
 • Block screenshots of your codes.
+• Your card shows up more reliably at the store: also when Pasr is closed, with your own locations per card.
+• Nearest first and pull to refresh.
+• Choose which branches go on your Wallet pass.

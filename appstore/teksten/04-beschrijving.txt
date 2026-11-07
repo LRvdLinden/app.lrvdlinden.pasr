@@ -21,7 +21,7 @@ SAMEN OF EVEN DELEN
 
 APPLE WALLET EN MELDINGEN
 • Zet een kaart in Apple Wallet. iOS toont hem op je toegangsscherm als je bij die winkel bent.
-• Of laat Pasr je een seintje geven als je in de buurt van een filiaal bent.
+• Of laat Pasr je kaart tonen zodra je een winkel binnenloopt, ook als de app dicht is. Zet je vaste filiaal zelf vast.
 • Een herinnering voordat een voucher of cadeaukaart verloopt.
 
 CADEAUKAARTEN EN VOUCHERS
