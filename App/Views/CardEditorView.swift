@@ -51,6 +51,8 @@ struct CardEditorView: View {
         var backPhoto: Data?
         /// Privé (nil) of een gedeelde Pasr.
         var groupID: UUID?
+        /// Eigen locaties (Ik sta hier / speld op de kaart).
+        var places: [CardPlace] = []
 
         var balance: Double? {
             let cleaned = balanceText.replacingOccurrences(of: ",", with: ".")
@@ -96,6 +98,7 @@ struct CardEditorView: View {
         d.frontPhoto = card.frontPhoto
         d.backPhoto = card.backPhoto
         d.groupID = card.groupID
+        d.places = card.places
         _draft = State(initialValue: d)
     }
 
@@ -158,6 +161,10 @@ struct CardEditorView: View {
             if draft.kind == .voucher { voucherSection }
             logoSection
             extrasSection
+            if existing?.isTemporary != true {
+                CardPlacesSection(places: $draft.places,
+                                  storeName: StoreTemplates.template(id: draft.templateID)?.name ?? draft.storeName)
+            }
 
             if existing != nil {
                 Section {
@@ -478,6 +485,7 @@ struct CardEditorView: View {
         card.website = StoreTemplates.normalizedDomain(draft.website)
         card.frontPhoto = draft.frontPhoto
         card.backPhoto = draft.backPhoto
+        if !card.isTemporary { card.places = draft.places }
         card.updatedAt = .now
         card.refreshCodeImage()
         if existing == nil {

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CoreLocation
 
 /// The home screen: cards stacked like Apple Wallet. Tapping one brings it forward, larger and
 /// fully bright, and turns it over to show the barcode or QR code on the back.
@@ -17,6 +18,10 @@ struct WalletView: View {
     /// Filter naast de plusknop (blijft bewaard): alle, favorieten, klantenkaarten, cadeaukaarten, privé, gedeeld, tijdelijk.
     @AppStorage("pasr.walletFilter") private var filterRaw = WalletFilter.all.rawValue
     private var groups = GroupService.shared
+    /// Volgorde: "az" (A tot Z) of "near" (dichtstbijzijnde winkel eerst; zonder bekende afstand daarna A tot Z).
+    @AppStorage("pasr.walletOrder") private var order = "az"
+    @State private var distances: [UUID: CLLocationDistance] = [:]
+    @Environment(\.scenePhase) private var scenePhase
     @State private var search = ""
     @State private var sheet: Sheet?
     @State private var deleting: Card?
@@ -42,7 +47,18 @@ struct WalletView: View {
     private var filter: WalletFilter { WalletFilter(rawValue: filterRaw) ?? .all }
 
     private var visibleCards: [Card] {
-        let sorted = cards.alphabetical().filter { filter.matches($0) }
+        var sorted = cards.alphabetical().filter { filter.matches($0) }
+        if order == "near", !distances.isEmpty {
+            let d = distances
+            sorted = sorted.enumerated().sorted { a, b in
+                switch (d[a.element.id], d[b.element.id]) {
+                case let (x?, y?) where x != y: return x < y
+                case (.some, nil): return true
+                case (nil, .some): return false
+                default: return a.offset < b.offset
+                }
+            }.map(\.element)
+        }
         let query = search.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return sorted }
         return sorted.filter {
@@ -101,8 +117,30 @@ struct WalletView: View {
         }
         .onDisappear { ScreenBrightness.restore() }
         .task(id: WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
+        .task(id: "\(order)|\(scenePhase == .active)|\(cards.count)") { await updateDistances(search: false) }
         .onChange(of: openCardID, initial: true) { _, id in openRequestedCard(id) }
         .onChange(of: cards.count) { _, _ in openRequestedCard(openCardID) }
+    }
+
+    /// Afstanden voor "Dichtstbij eerst" (uit wat Pasr al weet; met `search` ook filialen opzoeken).
+    private func updateDistances(search: Bool) async {
+        guard order == "near" else { distances = [:]; return }
+        let stores = NearbyStores.shared
+        var here = await stores.currentLocation(maxAge: 300)
+        if let h = here { distances = stores.knownDistances(for: cards, from: h) }
+        if search || (here != nil && distances.count < min(cards.count, 3)) {
+            here = await stores.updateBranches(cards: cards) ?? here
+            if let h = here { distances = stores.knownDistances(for: cards, from: h) }
+        }
+    }
+
+    /// Omlaag trekken: account en gedeelde Pasrs synchroniseren en de winkels om je heen opnieuw zoeken.
+    private func pullToRefresh() async {
+        if order == "near" { await updateDistances(search: true) } else { await NearbyStores.shared.refresh(cards: cards, force: true) }
+        if AccountService.shared.isSignedIn {
+            await CardSync.sync(in: context)
+            await GroupService.shared.sync(in: context)
+        }
     }
 
     private func openRequestedCard(_ id: UUID?) {
@@ -142,6 +180,7 @@ struct WalletView: View {
             .padding(.top, 8)
         }
         .scrollIndicators(.hidden)
+        .refreshable { await pullToRefresh() }
     }
 
     @ViewBuilder private func cardMenu(_ card: Card) -> some View {
@@ -309,6 +348,13 @@ struct WalletView: View {
                 ForEach(WalletFilter.basic, id: \.self) { f in
                     Label(f.title, systemImage: f.symbol).tag(f.rawValue)
                 }
+            }
+            Picker("Volgorde", selection: Binding(get: { order }, set: { new in
+                withAnimation(.snappy) { order = new }
+                if new == "near" { Task { _ = await NearbyStores.shared.locationForPin(); await updateDistances(search: true) } }
+            })) {
+                Label("A tot Z", systemImage: "textformat").tag("az")
+                Label("Dichtstbij eerst", systemImage: "location").tag("near")
             }
             let shared = cards.contains { $0.groupID != nil }
             let temporary = cards.contains(where: \.isTemporary)

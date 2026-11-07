@@ -9,6 +9,10 @@ import MapKit
 enum WalletPass {
     static let passTypeID = "pass.nl.lrvdlinden.pasr"
 
+    static let maxLocations = 10
+
+    static func storeName(_ card: Card) -> String { StoreTemplates.template(id: card.templateID)?.name ?? card.storeName }
+
     static var isAvailable: Bool { PKAddPassesViewController.canAddPasses() && AccountConfig.isConfigured }
 
     /// Already in Wallet? (Same serial number = the card's id.)
@@ -21,8 +25,10 @@ enum WalletPass {
         var errorDescription: String? { message }
     }
 
+    /// `locations`: de plekken waar iOS de pas laat zien (hoogstens 10). Nil = vanzelf: eigen locaties, dan de
+    /// dichtstbijzijnde filialen.
     @MainActor
-    static func make(for card: Card) async throws -> PKPass {
+    static func make(for card: Card, locations: [CLLocationCoordinate2D]? = nil) async throws -> PKPass {
         guard !card.isTemporary else {
             throw Failure(message: String(localized: "Een tijdelijk gedeelde kaart kan niet in Apple Wallet."))
         }
@@ -37,9 +43,13 @@ enum WalletPass {
         if let balance = card.balance { body["balance"] = balance; body["currency"] = card.currencyCode ?? "EUR" }
         if let expires = card.expiresAt { body["expiresAt"] = ISO8601DateFormatter().string(from: expires) }
         if let logo = logoPNG(for: card) { body["logo"] = logo.base64EncodedString() }
-        let branches = await NearbyStores.shared.branchesNearby(of: StoreTemplates.template(id: card.templateID)?.name ?? card.storeName)
-        if !branches.isEmpty {
-            body["locations"] = branches.map { ["latitude": $0.latitude, "longitude": $0.longitude] }
+        var spots = locations ?? card.places.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        if locations == nil, spots.count < maxLocations {
+            let branches = await NearbyStores.shared.branchesNearby(of: storeName(card))
+            spots += branches.map(\.coordinate).prefix(maxLocations - spots.count)
+        }
+        if !spots.isEmpty {
+            body["locations"] = spots.prefix(maxLocations).map { ["latitude": $0.latitude, "longitude": $0.longitude] }
         }
 
         var request = URLRequest(url: url, timeoutInterval: 30)
@@ -72,12 +82,10 @@ enum WalletPass {
     }
 }
 
-/// Apple's own "Add to Apple Wallet" button, then the system sheet to add the pass.
+/// Apple's own "Add to Apple Wallet" button. Eerst kies je waar de pas op je toegangsscherm verschijnt.
 struct AddToWalletButton: View {
     let card: Card
-    @State private var pass: PKPass?
-    @State private var busy = false
-    @State private var error: String?
+    @State private var picking = false
     @State private var inWallet = false
 
     var body: some View {
@@ -86,35 +94,17 @@ struct AddToWalletButton: View {
                 Label("Staat in Apple Wallet", systemImage: "checkmark.circle.fill")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Brand.mint)
+                Button("Locaties op de Wallet-pas wijzigen") { picking = true }
+                    .font(.footnote)
             } else {
-                ZStack {
-                    WalletButton { Task { await add() } }
-                        .frame(height: 44)
-                        .opacity(busy ? 0.4 : 1)
-                        .disabled(busy)
-                    if busy { ProgressView() }
-                }
-                .frame(maxWidth: 280)
-            }
-            if let error {
-                Text(error).font(.footnote).foregroundStyle(Brand.coral).multilineTextAlignment(.center)
+                WalletButton { picking = true }
+                    .frame(height: 44)
+                    .frame(maxWidth: 280)
             }
         }
         .onAppear { inWallet = WalletPass.isInWallet(card) }
-        .sheet(item: Binding(get: { pass.map(IdentifiedPass.init) }, set: { if $0 == nil { pass = nil } })) { item in
-            AddPassSheet(pass: item.pass) { inWallet = WalletPass.isInWallet(card) }
-                .ignoresSafeArea()
-        }
-    }
-
-    private func add() async {
-        busy = true
-        error = nil
-        defer { busy = false }
-        do {
-            pass = try await WalletPass.make(for: card)
-        } catch {
-            self.error = error.localizedDescription
+        .sheet(isPresented: $picking, onDismiss: { inWallet = WalletPass.isInWallet(card) }) {
+            WalletPlacesSheet(card: card)
         }
     }
 }
@@ -122,42 +112,142 @@ struct AddToWalletButton: View {
 /// Wallet-knop in het rijtje onder een kaart (zelfde glazen knop als de andere acties).
 struct WalletActionButton: View {
     let card: Card
-    @State private var pass: PKPass?
-    @State private var busy = false
-    @State private var error: String?
+    @State private var picking = false
 
     var body: some View {
         Button {
-            Task { await add() }
+            picking = true
         } label: {
-            ZStack {
-                Label("Voeg toe aan Apple Wallet", systemImage: "wallet.pass")
-                    .labelStyle(.iconOnly)
-                    .opacity(busy ? 0 : 1)
-                if busy { ProgressView().controlSize(.small) }
-            }
-            .font(.title3)
-            .frame(width: 30, height: 30)
+            Label("Voeg toe aan Apple Wallet", systemImage: "wallet.pass")
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .frame(width: 30, height: 30)
         }
         .pasrGlassButton()
-        .disabled(busy)
         .accessibilityLabel(Text("Voeg toe aan Apple Wallet"))
-        .sheet(item: Binding(get: { pass.map(IdentifiedPass.init) }, set: { if $0 == nil { pass = nil } })) { item in
-            AddPassSheet(pass: item.pass) {}
-                .ignoresSafeArea()
+        .sheet(isPresented: $picking) { WalletPlacesSheet(card: card) }
+    }
+}
+
+/// Waar moet de pas verschijnen? Eigen locaties en filialen in de buurt, hoogstens 10 (de grens van Apple Wallet).
+/// iOS laat de pas op je toegangsscherm zien als je bij een van die plekken bent.
+struct WalletPlacesSheet: View {
+    let card: Card
+    @Environment(\.dismiss) private var dismiss
+    @State private var branches: [NearbyStores.Branch] = []
+    @State private var chosen: Set<String> = []
+    @State private var loading = true
+    @State private var busy = false
+    @State private var pass: PKPass?
+    @State private var error: String?
+    @State private var here: CLLocation?
+    private var stores: NearbyStores { .shared }
+
+    private struct Spot: Identifiable, Hashable {
+        var id: String
+        var title: String
+        var detail: String?
+        var coordinate: CLLocationCoordinate2D
+        var own: Bool
+        static func == (a: Spot, b: Spot) -> Bool { a.id == b.id }
+        func hash(into h: inout Hasher) { h.combine(id) }
+    }
+
+    private var ownSpots: [Spot] {
+        card.places.map { Spot(id: "own-\($0.id)", title: $0.name.isEmpty ? card.storeName : $0.name, detail: String(localized: "Eigen locatie"),
+                               coordinate: .init(latitude: $0.latitude, longitude: $0.longitude), own: true) }
+    }
+
+    private var branchSpots: [Spot] {
+        branches.filter { b in
+            !card.places.contains { CLLocation(latitude: $0.latitude, longitude: $0.longitude)
+                .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude)) < NearbyStores.radius }
         }
-        .alert("Apple Wallet", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(error ?? "")
+        .map { Spot(id: "map-\($0.id)", title: $0.name, detail: $0.address, coordinate: $0.coordinate, own: false) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !ownSpots.isEmpty {
+                    Section("Eigen locaties") { ForEach(ownSpots) { row($0) } }
+                }
+                Section {
+                    if loading {
+                        HStack { ProgressView(); Text("Filialen zoeken…").foregroundStyle(.secondary) }
+                    } else if branchSpots.isEmpty {
+                        Text(stores.hasLocation
+                             ? String(localized: "Geen filialen van \(WalletPass.storeName(card)) in de buurt gevonden.")
+                             : String(localized: "Geef Pasr toegang tot je locatie om filialen in de buurt te vinden, of zet bij de kaart zelf een locatie vast."))
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(branchSpots) { row($0) }
+                } header: {
+                    Text("Filialen in de buurt")
+                } footer: {
+                    Text("\(chosen.count) van \(WalletPass.maxLocations) gekozen. iOS toont de pas op je toegangsscherm als je bij een van deze plekken bent; dat bepaalt iOS zelf.")
+                }
+                if let error {
+                    Section { Text(error).foregroundStyle(Brand.coral) }
+                }
+            }
+            .navigationTitle("Wallet-pas")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    if busy { ProgressView() } else { Button("Maak pas") { Task { await make() } } }
+                }
+            }
+            .task { await load() }
+            .sheet(item: Binding(get: { pass.map(IdentifiedPass.init) }, set: { if $0 == nil { pass = nil } })) { item in
+                AddPassSheet(pass: item.pass) { dismiss() }
+                    .ignoresSafeArea()
+            }
         }
     }
 
-    private func add() async {
+    private func row(_ spot: Spot) -> some View {
+        Button {
+            if chosen.contains(spot.id) { chosen.remove(spot.id) }
+            else if chosen.count < WalletPass.maxLocations { chosen.insert(spot.id) }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: chosen.contains(spot.id) ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(chosen.contains(spot.id) ? Brand.iris : .secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(spot.title).foregroundStyle(.primary)
+                    if let detail = spot.detail { Text(detail).font(.footnote).foregroundStyle(.secondary).lineLimit(1) }
+                }
+                Spacer()
+                if let here {
+                    Text(NearbyPlacesView.distance(here.distance(from: CLLocation(latitude: spot.coordinate.latitude, longitude: spot.coordinate.longitude))))
+                        .font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .disabled(!chosen.contains(spot.id) && chosen.count >= WalletPass.maxLocations)
+    }
+
+    private func load() async {
+        defer { loading = false }
+        chosen = Set(ownSpots.prefix(WalletPass.maxLocations).map(\.id))
+        here = await stores.currentLocation(maxAge: 600)
+        branches = await stores.branchesNearby(of: WalletPass.storeName(card))
+        for spot in branchSpots where chosen.count < WalletPass.maxLocations { chosen.insert(spot.id) }
+    }
+
+    private func make() async {
         busy = true
+        error = nil
         defer { busy = false }
+        let all = ownSpots + branchSpots
+        let picked = all.filter { chosen.contains($0.id) }.map(\.coordinate)
         do {
-            pass = try await WalletPass.make(for: card)
+            pass = try await WalletPass.make(for: card, locations: picked)
         } catch {
             self.error = error.localizedDescription
         }

@@ -116,6 +116,12 @@ enum UserPush {
 #if canImport(UIKit)
 /// Ontvangt het APNs-token van iOS.
 final class PasrAppDelegate: NSObject, UIApplicationDelegate {
+    /// Ook bij een start op de achtergrond na een verplaatsing (locatie): weer meeluisteren en opnieuw plannen.
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        MainActor.assumeIsolated { NearbyStores.shared.resume() }
+        return true
+    }
+
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         Task { @MainActor in UserPush.didRegister(token: deviceToken) }
     }

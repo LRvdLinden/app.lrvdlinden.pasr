@@ -124,6 +124,10 @@ enum CardSync {
         card.pin = f["pin"] as? String
         card.expiresAt = (f["expiresAt"] as? String).flatMap(date)
         card.website = f["website"] as? String
+        card.places = (f["places"] as? [[String: Any]] ?? []).compactMap { p in
+            guard let lat = p["lat"] as? Double, let lon = p["lon"] as? Double else { return nil }
+            return CardPlace(name: p["name"] as? String ?? "", latitude: lat, longitude: lon)
+        }
         if let logo = (f["logo"] as? String).flatMap({ Data(base64Encoded: $0) }) {
             card.logoData = logo
             card.logoFromWebsite = false
@@ -148,6 +152,10 @@ enum CardSync {
         p["pin"] = c.pin
         p["expiresAt"] = c.expiresAt.map(iso)
         p["website"] = c.website
+        let places = c.places
+        if !places.isEmpty {
+            p["places"] = places.map { ["name": $0.name, "lat": $0.latitude, "lon": $0.longitude] }
+        }
         if let logo = c.logoData, !c.logoFromWebsite {
             p["ownLogo"] = true
             if logo.count < 150_000 { p["logo"] = logo.base64EncodedString() }

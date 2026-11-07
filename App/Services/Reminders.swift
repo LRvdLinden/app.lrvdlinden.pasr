@@ -68,163 +68,6 @@ enum Reminders {
     }
 }
 
-/// Finds the branches of your stores around you (Apple Maps, on the device) and lets iOS show a notification
-/// when you walk in. iOS allows 20 places per app, so the nearest 20 are used and refreshed when you open Pasr.
-@MainActor
-@Observable
-final class NearbyStores: NSObject, CLLocationManagerDelegate {
-    static let shared = NearbyStores()
-
-    private let manager = CLLocationManager()
-    private var continuation: CheckedContinuation<CLLocation?, Never>?
-    private(set) var lastRefresh: Date?
-    private(set) var placesWatched = 0
-
-    override init() {
-        super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-    }
-
-    var authorization: CLAuthorizationStatus { manager.authorizationStatus }
-
-    /// Switches the feature on: asks for location and notifications, then plans the places.
-    func enable(cards: [Card]) async -> Bool {
-        UserDefaults.standard.set(true, forKey: Reminders.nearbyKey)
-        guard await Reminders.requestPermission() else { return false }
-        if manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization() }
-        await refresh(cards: cards, force: true)
-        return manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways
-    }
-
-    func disable() async {
-        UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
-        await removeAll()
-    }
-
-    private func removeAll() async {
-        let center = UNUserNotificationCenter.current()
-        let ids = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix("nearby-") }
-        center.removePendingNotificationRequests(withIdentifiers: ids)
-        placesWatched = 0
-    }
-
-    /// Looks up the nearest branches again (at most once an hour unless forced).
-    func refresh(cards: [Card], force: Bool = false) async {
-        guard Reminders.nearbyEnabled else { return }
-        if !force, let last = lastRefresh, Date.now.timeIntervalSince(last) < 3600 { return }
-        guard manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways,
-              let here = await currentLocation() else { return }
-        lastRefresh = .now
-
-        // One entry per store you have a card for (the card that opens when you arrive).
-        var stores: [(name: String, cardID: UUID)] = []
-        var seen = Set<String>()
-        for card in cards.alphabetical() where card.deletedAt == nil {
-            let name = StoreTemplates.template(id: card.templateID)?.name ?? card.storeName
-            let key = name.lowercased()
-            guard !name.isEmpty, !name.contains("eigen kaart"), seen.insert(key).inserted else { continue }
-            stores.append((name, card.id))
-        }
-
-        var places: [(distance: CLLocationDistance, store: String, cardID: UUID, coordinate: CLLocationCoordinate2D)] = []
-        for store in stores.prefix(40) {
-            let request = MKLocalSearch.Request()
-            request.naturalLanguageQuery = store.name
-            request.resultTypes = .pointOfInterest
-            request.region = MKCoordinateRegion(center: here.coordinate, latitudinalMeters: 15_000, longitudinalMeters: 15_000)
-            guard let response = try? await MKLocalSearch(request: request).start() else { continue }
-            let wanted = Self.squash(store.name)
-            for item in response.mapItems.prefix(10) {
-                // Only real branches of that store (Maps also returns things that merely mention the name).
-                guard let name = item.name, Self.squash(name).contains(wanted) || wanted.contains(Self.squash(name)) else { continue }
-                let coordinate = item.placemark.coordinate
-                let distance = here.distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
-                places.append((distance, store.name, store.cardID, coordinate))
-            }
-        }
-        // Nearest 20, at most 3 per store so one chain doesn't take every place.
-        var perStore: [String: Int] = [:]
-        let chosen = places.sorted { $0.distance < $1.distance }.filter { place in
-            perStore[place.store, default: 0] += 1
-            return perStore[place.store]! <= 3
-        }.prefix(20)
-
-        await removeAll()
-        let center = UNUserNotificationCenter.current()
-        for (index, place) in chosen.enumerated() {
-            let region = CLCircularRegion(center: place.coordinate, radius: 120, identifier: "nearby-\(index)")
-            region.notifyOnEntry = true
-            region.notifyOnExit = false
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "Je bent bij \(place.store)")
-            content.body = String(localized: "Tik om je kaart te tonen.")
-            content.userInfo = ["cardID": place.cardID.uuidString]
-            content.threadIdentifier = "nearby"
-            content.interruptionLevel = .active
-            content.relevanceScore = 1
-            let trigger = UNLocationNotificationTrigger(region: region, repeats: true)
-            try? await center.add(UNNotificationRequest(identifier: "nearby-\(index)", content: content, trigger: trigger))
-        }
-        placesWatched = chosen.count
-    }
-
-    /// Up to 10 branches of one store around you, nearest first (for the locations of an Apple Wallet pass).
-    /// Empty without location access; it never asks for it.
-    func branchesNearby(of store: String) async -> [CLLocationCoordinate2D] {
-        guard !store.isEmpty, manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways,
-              let here = await currentLocation() else { return [] }
-        let request = MKLocalSearch.Request()
-        request.naturalLanguageQuery = store
-        request.resultTypes = .pointOfInterest
-        request.region = MKCoordinateRegion(center: here.coordinate, latitudinalMeters: 25_000, longitudinalMeters: 25_000)
-        guard let response = try? await MKLocalSearch(request: request).start() else { return [] }
-        let wanted = Self.squash(store)
-        return response.mapItems
-            .filter { item in
-                guard let name = item.name else { return false }
-                return Self.squash(name).contains(wanted) || wanted.contains(Self.squash(name))
-            }
-            .map(\.placemark.coordinate)
-            .sorted {
-                here.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude))
-                    < here.distance(from: CLLocation(latitude: $1.latitude, longitude: $1.longitude))
-            }
-            .prefix(10)
-            .map { $0 }
-    }
-
-    /// "AH" and "Albert Heijn", "Kruidvat Apeldoorn" → lowercase letters and digits only.
-    private static func squash(_ text: String) -> String {
-        text.lowercased().filter { $0.isLetter || $0.isNumber }
-    }
-
-    private func currentLocation() async -> CLLocation? {
-        if let recent = manager.location, Date.now.timeIntervalSince(recent.timestamp) < 600 { return recent }
-        return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            manager.requestLocation()
-        }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let location = locations.last
-        Task { @MainActor in
-            self.continuation?.resume(returning: location)
-            self.continuation = nil
-        }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        Task { @MainActor in
-            self.continuation?.resume(returning: nil)
-            self.continuation = nil
-        }
-    }
-
-    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {}
-}
-
 /// Opens the card from a tapped notification.
 final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationRouter()
@@ -260,16 +103,24 @@ extension Notification.Name {
 }
 
 
-/// Refreshes the "at the store" places when Pasr comes to the front (iOS keeps watching them afterwards).
+/// Plant de plekken voor "Kaart tonen bij de winkel" als Pasr naar voren komt, en opnieuw als eigen locaties
+/// veranderen. Met de toestemming Altijd doet iOS het daarna zelf bij een verplaatsing (zie NearbyStores).
 struct RemindersModifier: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
+
+    private var placesFingerprint: String {
+        cards.map { "\($0.id)\($0.placesData?.count ?? 0)\($0.storeName)" }.sorted().joined()
+    }
 
     func body(content: Content) -> some View {
         content
             .task { await NearbyStores.shared.refresh(cards: cards) }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await NearbyStores.shared.refresh(cards: cards) } }
+            }
+            .onChange(of: placesFingerprint) { _, _ in
+                Task { await NearbyStores.shared.sourcesChanged(cards: cards) }
             }
     }
 }
@@ -308,6 +159,34 @@ struct RemindersSettingsSection: View {
                 SettingsLabel("Kaart tonen bij de winkel", symbol: "location.fill", color: .blue)
             }
 
+            if nearby {
+                if stores.hasAlways {
+                    LabeledContent {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Brand.mint)
+                    } label: {
+                        SettingsLabel("Ook als Pasr dicht is", symbol: "location.circle.fill", color: .blue)
+                    }
+                } else {
+                    Button { stores.requestAlways() } label: {
+                        HStack {
+                            SettingsLabel("Ook als Pasr dicht is", symbol: "location.circle", color: .blue)
+                            Spacer()
+                            Text("Zet aan").foregroundStyle(Brand.iris)
+                        }
+                    }
+                    .tint(.primary)
+                }
+                NavigationLink {
+                    NearbyPlacesView()
+                } label: {
+                    LabeledContent {
+                        Text("\(stores.placesWatched)")
+                    } label: {
+                        SettingsLabel("Winkels in de buurt", symbol: "mappin.and.ellipse", color: Brand.coral)
+                    }
+                }
+            }
+
             if AccountService.shared.isSignedIn {
                 Toggle(isOn: Binding(get: { newStores }, set: { on in
                     newStores = on
@@ -330,10 +209,73 @@ struct RemindersSettingsSection: View {
     }
 
     private var footer: String {
-        var text = String(localized: "Bij de winkel verschijnt je kaart op je toegangsscherm. Je locatie blijft op je iPhone.")
-        if nearby, stores.placesWatched > 0 {
-            text += " " + String(localized: "Nu actief voor \(stores.placesWatched) winkels in de buurt.")
+        guard nearby else {
+            return String(localized: "Bij de winkel verschijnt je kaart met een melding. Je locatie blijft op je iPhone.")
         }
-        return text
+        if stores.hasAlways {
+            return String(localized: "Pasr zet de winkels om je heen vanzelf klaar als je ergens anders bent, ook als je de app niet opent. Je locatie blijft op je iPhone.")
+        }
+        return String(localized: "Pasr zet de winkels om je heen klaar als je de app opent. Met \u{201C}Ook als Pasr dicht is\u{201D} gebeurt dat ook als je ergens anders bent zonder Pasr te openen. Je locatie blijft op je iPhone.")
+    }
+}
+
+/// Instellingen › Winkels in de buurt: welke plekken iOS nu bewaakt (hoogstens 20), eigen locaties eerst.
+struct NearbyPlacesView: View {
+    @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
+    private var stores: NearbyStores { .shared }
+    @State private var busy = false
+
+    var body: some View {
+        List {
+            Section {
+                if stores.watched.isEmpty {
+                    Text("Nog geen winkels gevonden. Trek omlaag of tik op Zoek opnieuw.").foregroundStyle(.secondary)
+                }
+                ForEach(stores.watched) { place in
+                    HStack(spacing: 12) {
+                        Image(systemName: place.own ? "mappin.circle.fill" : "storefront.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(place.own ? Brand.coral : Brand.iris)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(place.store).font(.body.weight(.semibold))
+                            Text(place.own ? String(localized: "Eigen locatie") + (place.name == place.store ? "" : " · \(place.name)") : place.name)
+                                .font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        Spacer()
+                        if let here = stores.lastLocation {
+                            Text(Self.distance(here.distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude))))
+                                .font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } footer: {
+                Text("iOS laat een app hoogstens 20 plekken tegelijk bewaken. Eigen locaties gaan voor; voeg ze toe bij een kaart onder Wijzig › Locaties.")
+            }
+            if let plan = stores.lastPlan {
+                Section {
+                    LabeledContent("Bijgewerkt", value: plan.formatted(.relative(presentation: .named)))
+                }
+            }
+        }
+        .navigationTitle("Winkels in de buurt")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if busy { ProgressView() } else {
+                    Button("Zoek opnieuw", systemImage: "arrow.clockwise") { Task { await reload() } }
+                }
+            }
+        }
+        .refreshable { await reload() }
+    }
+
+    private func reload() async {
+        busy = true
+        defer { busy = false }
+        await stores.refresh(cards: cards, force: true)
+    }
+
+    static func distance(_ meters: CLLocationDistance) -> String {
+        Measurement(value: meters, unit: UnitLength.meters)
+            .formatted(.measurement(width: .abbreviated, usage: .road, numberFormatStyle: .number.precision(.fractionLength(0...1))))
     }
 }

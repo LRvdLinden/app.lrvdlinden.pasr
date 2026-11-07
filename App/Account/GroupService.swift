@@ -227,6 +227,7 @@ extension Card {
         c.pin = pin
         c.expiresAt = expiresAt
         c.website = website
+        c.placesData = placesData
         c.logoFromWebsite = logoFromWebsite
         c.isLocked = isLocked
         c.logoData = logoData

@@ -43,6 +43,10 @@ final class Card {
     var shareToken: String?
     var shareRevoked: Bool = false
 
+    /// Eigen locaties (JSON van [CardPlace], hoogstens 10): "Ik sta hier" of een speld op de kaart. Gaan voor bij
+    /// "Kaart tonen bij de winkel" en op de Wallet-pas.
+    var placesData: Data?
+
     @Attribute(.externalStorage) var logoData: Data?
     @Attribute(.externalStorage) var frontPhoto: Data?
     @Attribute(.externalStorage) var backPhoto: Data?
@@ -102,5 +106,23 @@ extension Card {
         guard let lastUsed = card.lastUsed else { return 0 }
         let days = max(0, Date.now.timeIntervalSince(lastUsed) / 86_400)
         return Double(card.useCount) * pow(0.5, days / 30)
+    }
+}
+
+
+/// Een eigen locatie van een kaart: een filiaal dat je zelf hebt vastgezet.
+struct CardPlace: Codable, Hashable, Identifiable {
+    var id = UUID()
+    var name: String
+    var latitude: Double
+    var longitude: Double
+
+    static let maxPerCard = 10
+}
+
+extension Card {
+    var places: [CardPlace] {
+        get { placesData.flatMap { try? JSONDecoder().decode([CardPlace].self, from: $0) } ?? [] }
+        set { placesData = newValue.isEmpty ? nil : try? JSONEncoder().encode(Array(newValue.prefix(CardPlace.maxPerCard))) }
     }
 }
