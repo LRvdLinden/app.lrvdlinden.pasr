@@ -92,6 +92,15 @@
       var c = n.replace(/\s/g, '');
       return /^\d{9,}$/.test(c) ? c.match(/.{1,4}/g).join(' ') : n;
     }
+    // kleur mengen met wit (255) of zwart (0); color-mix() werkt niet in oudere browsers
+    function mixHex(hex, to, part) {
+      var out = '#';
+      for (var i = 1; i < 7; i += 2) {
+        var v = Math.round(parseInt(hex.substr(i, 2), 16) * (1 - part) + to * part);
+        out += (v < 16 ? '0' : '') + v.toString(16);
+      }
+      return out;
+    }
     function luminance(hex) {
       var v = parseInt(hex.replace('#', ''), 16);
       var ch = [(v >> 16) & 255, (v >> 8) & 255, v & 255].map(function (x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
@@ -105,7 +114,7 @@
       return;
     }
     var color = /^#[0-9a-f]{6}$/i.test(card.h) ? card.h : '#6A5CFF';
-    var bg = 'linear-gradient(135deg, color-mix(in srgb, ' + color + ', #fff 16%), ' + color + ' 55%, color-mix(in srgb, ' + color + ', #000 22%))';
+    var bg = 'linear-gradient(135deg, ' + mixHex(color, 255, 0.16) + ', ' + color + ' 55%, ' + mixHex(color, 0, 0.22) + ')';
     document.getElementById('front').style.background = bg;
     document.getElementById('back').style.background = bg;
     if (luminance(color) > 0.45) document.getElementById('flip').classList.add('dark');
