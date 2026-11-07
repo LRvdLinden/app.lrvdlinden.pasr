@@ -11,9 +11,12 @@ export type Prefs = Record<PrefKey, boolean>;
 export const DEFAULT_PREFS: Prefs = { signups: true, confirmed: false, deleted: true, bots: true, requests: true };
 /** Bundle-id van PasrBeheer = APNs-topic (function-secret PASR_APNS_TOPIC mag hem vervangen). */
 export const DEFAULT_TOPIC = "nl.lrvdlinden.pasr.beheer";
+/** Beheer-apps die Pasr-meldingen krijgen: de oude PasrBeheer en LRbeheer (de centrale beheer-app). */
+export const ADMIN_TOPICS = [DEFAULT_TOPIC, "app.lrvdlinden.lrbeheer"] as const;
 
 export type RegisterInput = {
   device_id: string; apns_token: string; platform: Platform; sandbox: boolean; app_build: number | null; prefs: Prefs;
+  topic: string | null;
 };
 
 type J = Record<string, unknown>;
@@ -59,7 +62,9 @@ export function cleanRegister(body: unknown): { ok: true; value: RegisterInput }
   }
   const prefs = cleanPrefs(b.prefs);
   if (!prefs) return { ok: false, error: "bad_prefs" };
-  return { ok: true, value: { device_id, apns_token, platform: b.platform as Platform, sandbox: b.sandbox === true, app_build, prefs } };
+  // bundle-id van de app (oudere versies sturen niets: dan zoekt de server het zelf uit)
+  const topic = (ADMIN_TOPICS as readonly unknown[]).includes(b.topic) ? b.topic as string : null;
+  return { ok: true, value: { device_id, apns_token, platform: b.platform as Platform, sandbox: b.sandbox === true, app_build, prefs, topic } };
 }
 
 // ---- meldingen ----
@@ -160,4 +165,10 @@ export function apnsResult(status: number, reason: string): { ok: true } | { ok:
   const r = /^[A-Za-z]{1,40}$/.test(reason) ? reason : "";
   const invalid = status === 410 || ["BadDeviceToken", "Unregistered", "DeviceTokenNotForTopic", "ExpiredToken"].includes(r);
   return { ok: false, invalid, error: `apns_${r || status}` };
+}
+
+/** In welke volgorde de beheer-apps proberen: eerst de bekende, dan de andere. */
+export function topicOrder(known: string | null | undefined): string[] {
+  const first = known && (ADMIN_TOPICS as readonly string[]).includes(known) ? known : DEFAULT_TOPIC;
+  return [first, ...ADMIN_TOPICS.filter((t) => t !== first)];
 }

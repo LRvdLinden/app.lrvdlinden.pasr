@@ -257,6 +257,8 @@ create table if not exists public.admin_push_devices (
   updated_at timestamptz not null default now()
 );
 create index if not exists admin_push_devices_token on public.admin_push_devices (token);
+-- Welke beheer-app (APNs-topic): PasrBeheer of LRbeheer. Leeg = de server zoekt het uit bij de eerste melding.
+alter table public.admin_push_devices add column if not exists topic text;
 -- Wanneer een soort melding het laatst ging (bots: hoogstens één melding per uur).
 create table if not exists public.admin_push_state (kind text primary key, last_at timestamptz not null);
 

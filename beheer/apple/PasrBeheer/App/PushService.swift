@@ -212,6 +212,8 @@ final class PushService {
             try await session.call("push_register", [
                 "device_id": deviceID, "apns_token": token, "platform": Self.platform, "sandbox": Self.sandbox,
                 "app_build": Self.appBuild, "prefs": prefs.params,
+                // welke beheer-app (APNs-topic), zodat de server de melding naar de juiste app stuurt
+                "topic": Bundle.main.bundleIdentifier ?? "",
             ])
             defaults.set(sig, forKey: K.registration)
             rememberPrefs()
