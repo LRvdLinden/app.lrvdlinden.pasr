@@ -14,6 +14,9 @@ struct WalletView: View {
     }
 
     @State private var selectedID: UUID?
+    /// Filter naast de plusknop (blijft bewaard): alle, favorieten, klantenkaarten, cadeaukaarten, privé, gedeeld, tijdelijk.
+    @AppStorage("pasr.walletFilter") private var filterRaw = WalletFilter.all.rawValue
+    private var groups = GroupService.shared
     @State private var search = ""
     @State private var sheet: Sheet?
     @State private var deleting: Card?
@@ -36,8 +39,10 @@ struct WalletView: View {
         }
     }
 
+    private var filter: WalletFilter { WalletFilter(rawValue: filterRaw) ?? .all }
+
     private var visibleCards: [Card] {
-        let sorted = cards.alphabetical()
+        let sorted = cards.alphabetical().filter { filter.matches($0) }
         let query = search.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return sorted }
         return sorted.filter {
@@ -55,6 +60,8 @@ struct WalletView: View {
                 ZStack {
                     if cards.isEmpty {
                         emptyState
+                    } else if visibleCards.isEmpty && filter != .all {
+                        filteredEmpty
                     } else {
                         stack(width: width)
                             .blur(radius: selectedID == nil ? 0 : 14)
@@ -67,7 +74,7 @@ struct WalletView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Brand.ink.ignoresSafeArea())
-            .navigationTitle(selectedID == nil ? String(localized: "Kaarten") : "")
+            .navigationTitle(selectedID == nil ? (filter == .all ? String(localized: "Kaarten") : filter.title(groups: groups)) : "")
             .toolbar { toolbar }
             .searchable(text: $search, prompt: Text("Zoek kaarten"))
         }
@@ -295,6 +302,45 @@ struct WalletView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Filterknop naast de plus: gevuld icoon als er een filter aanstaat.
+    private var filterMenu: some View {
+        Menu {
+            Picker("Filter", selection: Binding(get: { filterRaw }, set: { new in withAnimation(.snappy) { filterRaw = new } })) {
+                ForEach(WalletFilter.basic, id: \.self) { f in
+                    Label(f.title, systemImage: f.symbol).tag(f.rawValue)
+                }
+            }
+            let shared = cards.contains { $0.groupID != nil }
+            let temporary = cards.contains(where: \.isTemporary)
+            if shared || temporary {
+                Picker("Delen", selection: Binding(get: { filterRaw }, set: { new in withAnimation(.snappy) { filterRaw = new } })) {
+                    Label(WalletFilter.personal.title, systemImage: WalletFilter.personal.symbol).tag(WalletFilter.personal.rawValue)
+                    if shared {
+                        ForEach(groups.groups) { g in
+                            Label(g.name, systemImage: "person.2.fill").tag(WalletFilter.group(g.id).rawValue)
+                        }
+                    }
+                    if temporary {
+                        Label(WalletFilter.temporary.title, systemImage: WalletFilter.temporary.symbol).tag(WalletFilter.temporary.rawValue)
+                    }
+                }
+            }
+        } label: {
+            Label("Filter", systemImage: filter == .all ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+        }
+        .accessibilityValue(Text(filter.title(groups: groups)))
+    }
+
+    private var filteredEmpty: some View {
+        VStack(spacing: 14) {
+            Image(systemName: filter.symbol).font(.system(size: 40, weight: .semibold)).foregroundStyle(.secondary)
+            Text("Geen kaarten bij \(filter.title(groups: groups))").font(.headline)
+            Button("Toon alle kaarten") { withAnimation(.snappy) { filterRaw = WalletFilter.all.rawValue } }
+                .pasrGlassButton()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             if selectedID != nil {
@@ -302,6 +348,9 @@ struct WalletView: View {
             } else {
                 Button { sheet = .settings } label: { Label("Instellingen", systemImage: "gearshape") }
             }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            if selectedID == nil, !cards.isEmpty { filterMenu }
         }
         ToolbarItem(placement: .primaryAction) {
             Menu {
@@ -340,4 +389,79 @@ enum ScreenBrightness {
     static func boost() {}
     static func restore() {}
     #endif
+}
+
+/// Filter van de kaartenstapel.
+enum WalletFilter: Hashable {
+    case all, favorites, loyalty, voucher, personal, temporary
+    case group(UUID)
+
+    static let basic: [WalletFilter] = [.all, .favorites, .loyalty, .voucher]
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "all": self = .all
+        case "favorites": self = .favorites
+        case "loyalty": self = .loyalty
+        case "voucher": self = .voucher
+        case "personal": self = .personal
+        case "temporary": self = .temporary
+        default:
+            guard rawValue.hasPrefix("group:"), let id = UUID(uuidString: String(rawValue.dropFirst(6))) else { return nil }
+            self = .group(id)
+        }
+    }
+
+    var rawValue: String {
+        switch self {
+        case .all: "all"
+        case .favorites: "favorites"
+        case .loyalty: "loyalty"
+        case .voucher: "voucher"
+        case .personal: "personal"
+        case .temporary: "temporary"
+        case .group(let id): "group:\(id.uuidString)"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .all: String(localized: "Alle kaarten")
+        case .favorites: String(localized: "Favorieten")
+        case .loyalty: String(localized: "Klantenkaarten")
+        case .voucher: String(localized: "Cadeaukaarten en vouchers")
+        case .personal: String(localized: "Alleen privé")
+        case .temporary: String(localized: "Tijdelijk met mij gedeeld")
+        case .group: String(localized: "Gedeelde Pasr")
+        }
+    }
+
+    @MainActor func title(groups: GroupService) -> String {
+        if case .group(let id) = self { return groups.group(id)?.name ?? title }
+        return title
+    }
+
+    var symbol: String {
+        switch self {
+        case .all: "rectangle.stack"
+        case .favorites: "star.fill"
+        case .loyalty: "creditcard"
+        case .voucher: "giftcard"
+        case .personal: "person.fill"
+        case .temporary: "clock.fill"
+        case .group: "person.2.fill"
+        }
+    }
+
+    func matches(_ card: Card) -> Bool {
+        switch self {
+        case .all: true
+        case .favorites: card.isFavorite
+        case .loyalty: card.kind == .loyalty
+        case .voucher: card.kind == .voucher
+        case .personal: card.groupID == nil && !card.isTemporary
+        case .temporary: card.isTemporary
+        case .group(let id): card.groupID == id
+        }
+    }
 }
