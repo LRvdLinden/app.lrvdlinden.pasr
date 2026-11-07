@@ -35,6 +35,8 @@ final class Card {
     var logoFromWebsite: Bool = false
     /// The code stays hidden until Face ID confirms it's you (handy for vouchers with a balance).
     var isLocked: Bool = false
+    /// Gedeelde Pasr waarin deze kaart staat; nil = privé. Een kaart verhuizen maakt een kopie met een nieuw id.
+    var groupID: UUID?
 
     @Attribute(.externalStorage) var logoData: Data?
     @Attribute(.externalStorage) var frontPhoto: Data?

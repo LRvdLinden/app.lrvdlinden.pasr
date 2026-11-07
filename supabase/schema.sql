@@ -318,7 +318,7 @@ revoke all on public.admin_token_state, public.admin_audit, public.admin_push_de
 create or replace function public.pasr_daily_bump(col text, n int default 1) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if col not in ('signups', 'confirmed', 'deleted', 'expired', 'wallet', 'bots', 'groups') then return; end if;
+  if col not in ('signups', 'confirmed', 'deleted', 'expired', 'wallet', 'bots', 'groups', 'temp_shares') then return; end if;
   execute format('insert into public.pasr_daily as d (day, %1$I) values ((now() at time zone ''utc'')::date, $1)
                   on conflict (day) do update set %1$I = d.%1$I + $1', col) using n;
 end $$;
@@ -442,7 +442,7 @@ begin
         'day', d.day, 'signups', coalesce(x.signups, 0), 'confirmed', coalesce(x.confirmed, 0),
         'deleted', coalesce(x.deleted, 0), 'expired', coalesce(x.expired, 0), 'wallet', coalesce(x.wallet, 0),
         'bots', coalesce(x.bots, 0), 'accounts', greatest(t.accounts, 0), 'cards', x.cards_total,
-        'groups', coalesce(x.groups, 0)) order by d.day), '[]'::jsonb)
+        'groups', coalesce(x.groups, 0), 'temp_shares', coalesce(x.temp_shares, 0)) order by d.day), '[]'::jsonb)
       from days d left join public.pasr_daily x on x.day = d.day left join totals_per_day t on t.day = d.day),
     'countries', (select coalesce(jsonb_object_agg(c, n), '{}'::jsonb) from (
         select coalesce(u.raw_user_meta_data->>'country', '?') as c, count(*) as n from auth.users u group by 1) cc),
@@ -461,7 +461,12 @@ begin
       'people', (select count(distinct user_id) from public.pasr_group_members),
       'cards', (select count(*) from public.pasr_group_cards where not deleted),
       'invites', (select count(*) from public.pasr_group_invites where expires_at > now()),
-      'new_7d', (select count(*) from public.pasr_groups where created_at > now() - interval '7 days'))
+      'new_7d', (select count(*) from public.pasr_groups where created_at > now() - interval '7 days')),
+    'temp', case when to_regclass('public.pasr_temp_shares') is null then null else jsonb_build_object(
+      'active', (select count(*) from public.pasr_temp_shares where not revoked and expires_at > now()),
+      'opens', (select coalesce(sum(opens), 0) from public.pasr_temp_shares where expires_at > now() - interval '30 days'),
+      'revoked_30d', (select count(*) from public.pasr_temp_shares where revoked and created_at > now() - interval '30 days'),
+      'new_7d', (select count(*) from public.pasr_temp_shares where created_at > now() - interval '7 days')) end
   ) into result;
   return result;
 end $$;
@@ -764,3 +769,119 @@ grant execute on function public.pasr_groups(), public.pasr_group_create(text), 
   public.pasr_group_cancel_invite(uuid), public.pasr_invite_respond(uuid, boolean),
   public.pasr_group_remove(uuid, uuid), public.pasr_group_sync(uuid, jsonb, timestamptz),
   public.pasr_group_invite(uuid, text) to authenticated;
+
+-- ============================================================================================================
+-- Tijdelijk delen: een kaart delen tot een einddatum (via WhatsApp of mail). De kaart staat versleuteld op de
+-- server onder een willekeurige code (token, 128 bit); de link is https://pasr.nl/tijdelijk/#<token>. Na het einde
+-- (of als de deler eerder stopt) geeft de server de kaart niet meer uit en toont de app van de ontvanger de code
+-- niet meer. Delen kan zonder account; per internetadres maximaal 50 per dag. 7 dagen na het einde opgeruimd.
+-- ============================================================================================================
+create table if not exists public.pasr_temp_shares (
+  token text primary key,
+  payload bytea,
+  key_hash bytea not null,
+  expires_at timestamptz not null,
+  created_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now(),
+  opens int not null default 0,
+  revoked boolean not null default false
+);
+create index if not exists pasr_temp_shares_expires on public.pasr_temp_shares (expires_at);
+create table if not exists public.pasr_temp_share_rate (
+  ip_hash text not null,
+  day date not null default (now() at time zone 'utc')::date,
+  n int not null default 0,
+  primary key (ip_hash, day)
+);
+alter table public.pasr_temp_shares enable row level security;
+alter table public.pasr_temp_share_rate enable row level security;
+revoke all on public.pasr_temp_shares, public.pasr_temp_share_rate from anon, authenticated;
+alter table public.pasr_daily add column if not exists temp_shares int not null default 0;
+
+
+create or replace function public.pasr_temp_share_create(p_card jsonb, p_expires timestamptz) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare k text; tok text; owner text; ip text; used int; today date := (now() at time zone 'utc')::date;
+begin
+  if jsonb_typeof(p_card) <> 'object' or coalesce(p_card->>'storeName', '') = '' or coalesce(p_card->>'number', '') = ''
+     or octet_length(p_card::text) > 6000 then
+    raise exception 'bad_card' using errcode = '22023';
+  end if;
+  if p_expires is null or p_expires < now() + interval '5 minutes' or p_expires > now() + interval '91 days' then
+    raise exception 'bad_expiry' using errcode = '22023';
+  end if;
+  -- per internetadres (gehasht, nooit bewaard als adres) en een algemene rem
+  ip := split_part(coalesce(current_setting('request.headers', true)::json->>'x-forwarded-for', 'unknown'), ',', 1);
+  ip := encode(digest(ip || coalesce((select hook_secret from public.pasr_secret where id = 1), ''), 'sha256'), 'hex');
+  insert into public.pasr_temp_share_rate as r (ip_hash, day, n) values (ip, today, 1)
+    on conflict (ip_hash, day) do update set n = r.n + 1 returning n into used;
+  if used > 50 or (select coalesce(sum(n), 0) from public.pasr_temp_share_rate where day = today) > 20000 then
+    raise exception 'rate_limited' using errcode = '22023';
+  end if;
+  select card_key into k from public.pasr_secret where id = 1;
+  tok := translate(rtrim(encode(gen_random_bytes(16), 'base64'), '='), '+/', '-_');
+  owner := encode(gen_random_bytes(16), 'hex');
+  insert into public.pasr_temp_shares (token, payload, key_hash, expires_at, created_by)
+  values (tok, pgp_sym_encrypt(p_card::text, k, 'cipher-algo=aes256'), digest(owner, 'sha256'), p_expires, auth.uid());
+  perform public.pasr_daily_bump('temp_shares');
+  return jsonb_build_object('token', tok, 'key', owner, 'expires_at', p_expires);
+end $$;
+
+-- De kaart ophalen (app van de ontvanger en pasr.nl/tijdelijk). Na het einde: alleen de status.
+create or replace function public.pasr_temp_share_get(p_token text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare s public.pasr_temp_shares; k text;
+begin
+  select * into s from public.pasr_temp_shares where token = left(coalesce(p_token, ''), 40);
+  if not found then return jsonb_build_object('status', 'not_found'); end if;
+  if s.revoked then return jsonb_build_object('status', 'revoked', 'expires_at', s.expires_at); end if;
+  if s.expires_at <= now() then return jsonb_build_object('status', 'expired', 'expires_at', s.expires_at); end if;
+  update public.pasr_temp_shares set opens = opens + 1 where token = s.token;
+  select card_key into k from public.pasr_secret where id = 1;
+  return jsonb_build_object('status', 'ok', 'expires_at', s.expires_at, 'card', pgp_sym_decrypt(s.payload, k)::jsonb);
+end $$;
+
+-- Status van meerdere tijdelijke kaarten tegelijk (de app van de ontvanger controleert of er eerder is gestopt).
+create or replace function public.pasr_temp_share_status(p_tokens text[]) returns jsonb
+language sql security definer set search_path = public as $$
+  select coalesce(jsonb_object_agg(t.tok, case
+           when s.token is null then 'not_found'
+           when s.revoked then 'revoked'
+           when s.expires_at <= now() then 'expired'
+           else 'ok' end), '{}'::jsonb)
+  from (select distinct left(x, 40) as tok from unnest((coalesce(p_tokens, '{}'))[1:200]) x) t
+  left join public.pasr_temp_shares s on s.token = t.tok;
+$$;
+
+-- Eerder stoppen: alleen met de sleutel die de deler bij het maken kreeg.
+create or replace function public.pasr_temp_share_revoke(p_token text, p_key text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  update public.pasr_temp_shares set revoked = true, payload = null
+   where token = p_token and key_hash = digest(coalesce(p_key, ''), 'sha256');
+  return jsonb_build_object('ok', found);
+end $$;
+
+create or replace function public.pasr_temp_share_cleanup() returns int
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  delete from public.pasr_temp_shares where expires_at < now() - interval '7 days';
+  get diagnostics n = row_count;
+  update public.pasr_temp_shares set payload = null where expires_at < now() and payload is not null;
+  delete from public.pasr_temp_share_rate where day < (now() at time zone 'utc')::date - 2;
+  return n;
+end $$;
+
+revoke all on function public.pasr_temp_share_create(jsonb, timestamptz), public.pasr_temp_share_get(text),
+  public.pasr_temp_share_status(text[]), public.pasr_temp_share_revoke(text, text), public.pasr_temp_share_cleanup() from public;
+grant execute on function public.pasr_temp_share_create(jsonb, timestamptz), public.pasr_temp_share_get(text),
+  public.pasr_temp_share_status(text[]), public.pasr_temp_share_revoke(text, text) to anon, authenticated;
+do $$
+begin
+  create extension if not exists pg_cron;
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-temp-share-cleanup';
+  perform cron.schedule('pasr-temp-share-cleanup', '23 3 * * *', 'select public.pasr_temp_share_cleanup()');
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;

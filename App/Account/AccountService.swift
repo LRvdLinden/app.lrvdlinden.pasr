@@ -91,6 +91,7 @@ final class AccountService {
     func clear() {
         if let id = session?.userID { CardSync.forget(userID: id) }
         session = nil
+        GroupService.shared.reset()
         Keychain.delete()
     }
 
@@ -100,6 +101,12 @@ final class AccountService {
     func rpc(_ name: String, body: [String: Any]) async throws -> Any {
         let token = try await validAccessToken()
         return try await requestAny("rest/v1/rpc/\(name)", body: body, token: token)
+    }
+
+    /// Calls an edge function (POST /functions/v1/<name>) as the signed-in user.
+    func function(_ name: String, body: [String: Any]) async throws -> [String: Any] {
+        let token = try await validAccessToken()
+        return (try await requestAny("functions/v1/\(name)", body: body, token: token) as? [String: Any]) ?? [:]
     }
 
     private func validAccessToken() async throws -> String {
@@ -185,13 +192,28 @@ final class AccountService {
         case (429, _), (_, "over_email_send_rate_limit"), (_, "over_request_rate_limit"):
             text = String(localized: "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.")
         default:
-            if f.message.contains("permanent email") {
+            if let group = groupMessage(f.code + " " + f.message) {
+                text = group
+            } else if f.message.contains("permanent email") {
                 text = String(localized: "Gebruik een vast e-mailadres; tijdelijke adressen werken niet.")
             } else {
                 text = String(localized: "Er ging iets mis. Probeer het opnieuw.")
             }
         }
         return AccountError(message: text, status: f.status)
+    }
+
+    /// Meldingen van de gedeelde Pasr (database en functie group-invite).
+    private static func groupMessage(_ s: String) -> String? {
+        if s.contains("group_limit") { return String(localized: "Je zit al in 2 gedeelde Pasrs. Verlaat er eerst één.") }
+        if s.contains("member_limit") { return String(localized: "Een gedeelde Pasr heeft maximaal 6 leden. Openstaande uitnodigingen tellen mee.") }
+        if s.contains("already_member") { return String(localized: "Deze persoon zit al in deze gedeelde Pasr.") }
+        if s.contains("bad_email") { return String(localized: "Dit e-mailadres klopt niet.") }
+        if s.contains("rate_limited") { return String(localized: "Je hebt vandaag al veel uitnodigingen gestuurd. Probeer het morgen opnieuw.") }
+        if s.contains("invite_not_found") { return String(localized: "Deze uitnodiging bestaat niet meer.") }
+        if s.contains("not_confirmed") { return String(localized: "Bevestig eerst je e-mailadres. Daarna kun je de uitnodiging accepteren.") }
+        if s.contains("not a member") || s.contains("not_a_member") { return String(localized: "Je bent geen lid meer van deze gedeelde Pasr.") }
+        return nil
     }
 
     /// Regio-instelling van het apparaat ("NL"), alleen voor de landentelling in het beheer. Geen locatie.

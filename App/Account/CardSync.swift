@@ -34,18 +34,14 @@ enum CardSync {
         let started = Date.now
         let all = (try? context.fetch(FetchDescriptor<Card>())) ?? []
         let pushed = lastSync(for: user) ?? .distantPast
-        let changes: [[String: Any]] = all.filter { changedAt($0) > pushed }.map { card in
-            var row: [String: Any] = ["id": card.id.uuidString, "updated_at": iso(changedAt(card)),
-                                      "deleted": card.deletedAt != nil]
-            if card.deletedAt == nil { row["card"] = payload(card) }
-            return row
-        }
+        // alleen privékaarten; kaarten in een gedeelde Pasr gaan via GroupService
+        let changes = rows(all.filter { $0.groupID == nil && changedAt($0) > pushed })
         let since = UserDefaults.standard.string(forKey: sinceKey(user))
         var body: [String: Any] = ["changes": changes]
         if let since { body["since"] = since } else { body["since"] = NSNull() }
         do {
             guard let result = try await account.rpc("pasr_sync", body: body) as? [String: Any] else { return }
-            apply(result["cards"] as? [[String: Any]] ?? [], to: all, in: context)
+            apply(result["cards"] as? [[String: Any]] ?? [], to: all, in: context, group: nil)
             if let now = result["now"] as? String { UserDefaults.standard.set(now, forKey: sinceKey(user)) }
             UserDefaults.standard.set(started.timeIntervalSince1970, forKey: pushedKey(user))
             lastError = nil
@@ -55,6 +51,7 @@ enum CardSync {
                (try? await account.rpc("pasr_set_country", body: ["p_country": country])) != nil {
                 UserDefaults.standard.set(true, forKey: countryKey)
             }
+            await GroupService.shared.sync(in: context)
             await LogoService.fillMissing(in: context)
         } catch {
             lastError = error.localizedDescription
@@ -63,13 +60,25 @@ enum CardSync {
 
     // MARK: Down
 
-    private static func apply(_ rows: [[String: Any]], to existing: [Card], in context: ModelContext) {
+    /// Changes to send: id, moment and (unless deleted) the card itself.
+    static func rows(_ cards: [Card]) -> [[String: Any]] {
+        cards.map { card in
+            var row: [String: Any] = ["id": card.id.uuidString, "updated_at": iso(changedAt(card)),
+                                      "deleted": card.deletedAt != nil]
+            if card.deletedAt == nil { row["card"] = payload(card) }
+            return row
+        }
+    }
+
+    /// `group`: the shared Pasr these rows come from (nil = the private cards).
+    static func apply(_ rows: [[String: Any]], to existing: [Card], in context: ModelContext, group: UUID?) {
         var byID = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         var changed = false
         for row in rows {
             guard let idText = row["id"] as? String, let id = UUID(uuidString: idText),
                   let stamp = (row["updated_at"] as? String).flatMap(date) else { continue }
             let local = byID[id]
+            if let local, local.groupID != group { continue }   // belongs to another place (private or another group)
             if let local, changedAt(local) >= stamp { continue }   // this device has the newer version
             if row["deleted"] as? Bool == true {
                 if let local, local.deletedAt == nil {
@@ -82,6 +91,7 @@ enum CardSync {
             let card = local ?? {
                 let new = Card()
                 new.id = id
+                new.groupID = group
                 context.insert(new)
                 byID[id] = new
                 return new

@@ -16,6 +16,8 @@ struct CardAppearance: Equatable {
     var isLocked = false
     /// How to draw a store logo that came with the app or from the website (nil for own logos).
     var logoStyle: StoreLogoStyle?
+    /// In een gedeelde Pasr: klein personen-icoon in de kop.
+    var isShared = false
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
@@ -42,6 +44,7 @@ struct CardAppearance: Equatable {
                   balance: card.balance, currencyCode: card.currencyCode, expiresAt: card.expiresAt,
                   isLocked: card.isLocked,
                   logoStyle: card.logoFromWebsite ? StoreLogoStyles.style(for: card.logoDomain) : nil)
+        isShared = card.groupID != nil
     }
 
     var displayName: String { storeName.isEmpty ? String(localized: "Nieuwe kaart") : storeName }
@@ -182,6 +185,10 @@ struct CardFaceView: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
+            if appearance.isShared {
+                Image(systemName: "person.2.fill").font(.caption).opacity(0.85)
+                    .accessibilityLabel(Text("Gedeeld"))
+            }
             if appearance.isFavorite {
                 Image(systemName: "star.fill").font(.caption).opacity(0.85)
             }
