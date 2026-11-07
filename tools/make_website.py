@@ -141,6 +141,39 @@ FAQ = [
     ("Is Pasr ook in België te gebruiken?", "Pasr is gemaakt voor Nederland. De app is Nederlandstalig en de winkellijst bestaat uit Nederlandse winkels."),
 ]
 
+# Functies naast elkaar. Klarna alleen ingevuld waar het openbaar en controleerbaar is (account met e-mail en
+# telefoonnummer verplicht; Klarna is een betaal- en winkelapp). "-" = niet aanwezig of niet bekend.
+TABLE = [
+    ("Gratis", "y", "y", "soms"),
+    ("Werkt zonder account", "y", "n", "soms"),
+    ("Alleen kaarten, geen betalen of lenen", "y", "n", "soms"),
+    ("Geen reclame en geen tracking", "y", "-", "soms"),
+    ("Apple Watch-app", "y", "-", "soms"),
+    ("Widgets op je beginscherm", "y", "-", "soms"),
+    ("Naar Apple Wallet", "y", "-", "soms"),
+    ("Overzetten met screenshots", "y", "-", "-"),
+    ("Gedeelde Pasr, tot 6 personen", "y", "-", "-"),
+    ("Tijdelijk delen met einddatum", "y", "-", "-"),
+    ("Face ID en screenshots van codes blokkeren", "y", "-", "soms"),
+]
+
+def feature_table():
+    yes = '<span class="ft-y" aria-label="Ja"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+    no = '<span class="ft-n" aria-label="Nee"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>'
+    cell = {"y": yes, "n": no, "-": '<span class="ft-d" aria-label="Niet aanwezig of niet bekend">–</span>', "soms": '<span class="ft-s">Soms</span>'}
+    rows = "\n".join(f'            <tr style="--r:{i}"><th scope="row">{name}</th><td class="ft-pasr">{cell[a]}</td><td>{cell[b]}</td><td>{cell[c]}</td></tr>'
+                     for i, (name, a, b, c) in enumerate(TABLE))
+    return f'''        <div class="ft-wrap">
+          <h3 class="ft-title">Functies naast elkaar</h3>
+          <table class="ft">
+            <thead><tr><th scope="col"><span class="sr-only">Functie</span></th><th scope="col" class="ft-pasr">Pasr</th><th scope="col">Klarna</th><th scope="col">Andere apps</th></tr></thead>
+            <tbody>
+{rows}
+            </tbody>
+          </table>
+          <p class="ft-note">– betekent niet aanwezig of niet bekend. Op basis van openbare informatie, november 2026. Klarna is een merk van Klarna Bank AB; Pasr is niet aan Klarna verbonden.</p>
+        </div>'''
+
 def mini_pass(domain, name, cls="", body=""):
     color = _card_colours().get(domain, "#2B2F3A")
     ink = " ink-dark" if _is_light(color) else ""
@@ -333,7 +366,10 @@ def page():
           <div><strong>Alleen je kaarten</strong>Geen reclame, geen deals, geen betaalfuncties.</div>
           <div><strong>Gegevens verzamelen</strong>Inzicht in waar en wat je koopt.</div>
           <div><strong>Niets verzameld</strong>Geen tracking en geen analyse. Wat je bewaart, blijft van jou.</div>
+          <div><strong>Delen is alles of niets</strong>Samen kaarten gebruiken betekent vaak je hele account of wachtwoord delen.</div>
+          <div><strong>Samen of even delen</strong>Een gedeelde Pasr met je gezin, elk met een eigen account. Of leen een kaart tijdelijk uit met een einddatum.</div>
         </div>
+{feature_table()}
       </section>
     </div>
 

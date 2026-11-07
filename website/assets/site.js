@@ -162,3 +162,16 @@
   }, { threshold: 0.25 });
   io.observe(section.querySelector('.share-grid'));
 })();
+
+// Functies naast elkaar: rijen schuiven in, vinkjes ploppen als de tabel in beeld komt
+(function () {
+  const t = document.querySelector('.ft');
+  if (!t) return;
+  t.querySelectorAll('tbody tr').forEach(tr => {
+    const y = tr.querySelector('.ft-y');
+    if (y) y.style.setProperty('--r', tr.style.getPropertyValue('--r'));
+  });
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return t.classList.add('in');
+  const io = new IntersectionObserver(e => { if (e[0].isIntersecting) { t.classList.add('in'); io.disconnect(); } }, { threshold: 0.2 });
+  io.observe(t);
+})();

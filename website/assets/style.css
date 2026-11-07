@@ -199,6 +199,13 @@ footer a:hover { color: var(--ink); }
   .features, .steps, .compare { grid-template-columns: 1fr; }
   .compare div:nth-child(even) { padding-left: 0; border-left: 0; }
   .compare div:nth-child(odd) { padding-bottom: 6px; border-bottom: 0; }
+  /* op een telefoon: per regel een label, en Pasr in een eigen vlak */
+  .compare .compare-head { display: none; }
+  .compare div:not(.compare-head)::before { display: block; font: 700 12px var(--body); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+  .compare div:nth-child(odd):not(.compare-head)::before { content: "Wat je vaak ziet"; color: #8A86B3; }
+  .compare div:nth-child(even):not(.compare-head)::before { content: "Pasr"; color: var(--mint); }
+  .compare div:nth-child(odd):not(.compare-head) { padding-top: 26px; }
+  .compare div:nth-child(even):not(.compare-head) { background: rgba(255,255,255,.06); border-radius: 16px; padding: 14px 16px 16px; margin-bottom: 4px; border-bottom: 0; }
   .phone { width: 290px; }
   .watch { right: -2px; width: 112px; height: 136px; }
   .watch .face svg { width: 76px; height: 40px; }
@@ -407,3 +414,38 @@ footer a:hover { color: var(--ink); }
   .js .share .sp-card.c1 { transform: translate(34px, -12px) rotate(9deg) scale(.9); }
   .js .share .sp-lines path { stroke-dashoffset: 0; opacity: .8; animation: none; }
 }
+
+/* Functies naast elkaar (in het donkere blok) */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ft-wrap { margin-top: 56px; }
+.ft-title { font-family: var(--display); font-size: 26px; letter-spacing: -0.02em; margin: 0 0 18px; color: #fff; }
+.ft { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 16px; }
+.ft th, .ft td { padding: 14px 10px; border-bottom: 1px solid rgba(255,255,255,.12); text-align: center; }
+.ft tbody th { text-align: left; font-weight: 500; color: #E7E5FA; padding-left: 0; }
+.ft thead th { font: 700 14px var(--body); color: #9D99C4; border-bottom-color: rgba(255,255,255,.22); }
+.ft thead th.ft-pasr { color: #fff; font-family: var(--display); font-size: 17px; }
+.ft td.ft-pasr, .ft th.ft-pasr { background: rgba(106,92,255,.16); width: 18%; }
+.ft thead th.ft-pasr { border-radius: 16px 16px 0 0; }
+.ft tbody tr:last-child td.ft-pasr { border-radius: 0 0 16px 16px; }
+.ft td:not(.ft-pasr) { width: 18%; }
+.ft-y, .ft-n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; }
+.ft-y { background: var(--mint); color: #0B3D2F; }
+.ft-n { background: rgba(255,107,87,.18); color: #FF8A78; }
+.ft-y svg, .ft-n svg { width: 17px; height: 17px; }
+.ft-d { color: #6E6A96; font-weight: 700; }
+.ft-s { color: #B9B5DC; font-size: 14px; }
+.ft-note { color: #8A86B3; font-size: 13px; margin: 14px 0 0; }
+.js .ft tbody tr { opacity: 0; transform: translateX(-14px); transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--r) * 60ms); }
+.js .ft.in tbody tr { opacity: 1; transform: none; }
+.js .ft.in .ft-y { animation: tickPop .45s cubic-bezier(.3,1.6,.5,1) both; animation-delay: calc(var(--r, 0) * 60ms + 200ms); }
+@keyframes tickPop { from { transform: scale(0); } to { transform: scale(1); } }
+@media (max-width: 620px) {
+  .ft { font-size: 14px; }
+  .ft th, .ft td { padding: 12px 4px; }
+  .ft thead th { font-size: 12px; }
+  .ft thead th.ft-pasr { font-size: 14px; }
+  .ft td.ft-pasr, .ft th.ft-pasr, .ft td:not(.ft-pasr) { width: 17%; }
+  .ft-y, .ft-n { width: 24px; height: 24px; }
+  .ft-s { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .js .ft tbody tr { opacity: 1; transform: none; transition: none; } .js .ft.in .ft-y { animation: none; } }
