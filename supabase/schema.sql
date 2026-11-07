@@ -84,6 +84,12 @@ language plpgsql security definer set search_path = public, auth as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  -- gedeelde Pasrs waarin je het laatste lid bent verdwijnen mee (met hun kaarten)
+  if to_regclass('public.pasr_group_members') is not null then
+    delete from public.pasr_groups g
+     where exists (select 1 from public.pasr_group_members m where m.group_id = g.id and m.user_id = uid)
+       and not exists (select 1 from public.pasr_group_members m where m.group_id = g.id and m.user_id <> uid);
+  end if;
   delete from auth.users where id = uid;
   return jsonb_build_object('ok', true);
 end $$;
