@@ -13,6 +13,7 @@ enum Theme {
     static let mint = Color(hex: 0x2ED3A6)
     static let amber = Color(hex: 0xFFB547)
     static let sky = Color(hex: 0x4FB3FF)
+    static let violet = Color(hex: 0xC77DFF)
 
     static func color(_ m: Metric) -> Color {
         switch m {
@@ -22,6 +23,8 @@ enum Theme {
         case .deleted: coral
         case .cards: Color(hex: 0xFF8A78)
         case .wallet: sky
+        case .groups: mint
+        case .tempShares: violet
         case .bots: amber
         }
     }

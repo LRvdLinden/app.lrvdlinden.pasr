@@ -122,6 +122,8 @@
     { key: "deleted", label: "Verwijderd", detail: "door de gebruiker zelf", kind: "bar", color: "#FF6B57" },
     { key: "cards", label: "Kaarten in accounts", detail: "totaal (elk uur gemeten)", kind: "line", color: "#FF8A78" },
     { key: "wallet", label: "Wallet-passen", detail: "gemaakt", kind: "bar", color: "#4FB3FF" },
+    { key: "groups", label: "Gedeelde Pasrs", detail: "nieuw gemaakt", kind: "bar", color: "#2ED3A6" },
+    { key: "temp_shares", label: "Tijdelijk gedeeld", detail: "kaarten tijdelijk gedeeld", kind: "bar", color: "#C77DFF" },
     { key: "bots", label: "Bots tegengehouden", detail: "aanmeldingen geweigerd", kind: "bar", color: "#FFB547" },
   ];
   const RANGES = [[7, "Week"], [30, "Maand"], [90, "Kwartaal"], [365, "Jaar"]];
@@ -187,12 +189,14 @@
       kpi("Actief", num(t.active_30d), txt("ingelogd, 30 dagen"), "#8A7FFF"),
       kpi("Wallet-passen", num(s.wallet_total), txt("gemaakt, totaal"), "#4FB3FF"),
       kpi("Landen", num(Object.keys(s.countries || {}).filter((c) => c !== "?").length), txt("waar accounts vandaan komen"), "#FFB547"),
+      kpi("Gedeelde Pasrs", num(s.shared?.groups), txt(`${num(s.shared?.people)} personen · ${num(s.shared?.cards)} kaarten`), "#2ED3A6"),
+      kpi("Tijdelijk gedeeld", num(s.temp?.active), txt(`nu geldig · +${num(s.temp?.new_7d)} deze week`), "#C77DFF"),
     );
   }
   function skeleton() {
     const box = $("kpis");
     if (box.children.length) return;
-    for (let i = 0; i < 6; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
+    for (let i = 0; i < 8; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
   }
 
   const fmtDay = (d, opts) => new Date(d + "T00:00:00Z").toLocaleDateString("nl-NL", { timeZone: "UTC", ...opts });
@@ -435,6 +439,16 @@
       requestAnimationFrame(() => { fill.style.width = (n / max) * 100 + "%"; });
     }
   }
+  // losse aantallen onder elkaar (geen percentages: het zijn verschillende dingen)
+  function facts(box, entries, emptyText) {
+    box.replaceChildren();
+    if (!entries.some(([, n]) => n > 0)) { box.append(el("p", "empty", emptyText)); return; }
+    for (const [label, n] of entries) {
+      const row = el("div", "row fact");
+      row.append(el("span", null, label), el("span", "n", num(n)));
+      box.append(row);
+    }
+  }
   function renderDists() {
     const b = stats.bots_7d || {};
     dist($("bots"), Object.entries(b).sort((x, y) => y[1] - x[1]).map(([k, n]) => [REASONS[k] || k, n]), "#FFB547",
@@ -443,6 +457,13 @@
     dist($("perAccount"), order.filter((k) => c[k]).map((k) => [k === "0" ? "Nog geen kaarten" : `${k} kaarten`, c[k]]), "#6A5CFF", "Nog geen accounts.");
     const co = Object.entries(stats.countries || {}).sort((x, y) => (x[0] === "?") - (y[0] === "?") || y[1] - x[1]);
     dist($("countries"), co.slice(0, 12).map(([k, n]) => [`${flag(k)}  ${countryName(k)}`, n]), "#2ED3A6", "Nog geen accounts.");
+    const sh = stats.shared || {}, tp = stats.temp || {};
+    facts($("sharing"), [
+      ["Gedeelde Pasrs", sh.groups || 0], ["Personen in een gedeelde Pasr", sh.people || 0],
+      ["Gedeelde kaarten", sh.cards || 0], ["Openstaande uitnodigingen", sh.invites || 0],
+      ["Tijdelijk gedeeld, nu geldig", tp.active || 0], ["Tijdelijk: keren geopend (30 dagen)", tp.opens || 0],
+      ["Tijdelijk: eerder gestopt (30 dagen)", tp.revoked_30d || 0],
+    ], "Nog niets gedeeld.");
   }
 
   // ---- accounts ----
@@ -486,6 +507,7 @@
     meta.append(badge);
     if (u.first_name) meta.append(el("span", null, u.first_name));
     if (u.country) meta.append(el("span", null, `${flag(u.country)} ${countryName(u.country)}`));
+    if (u.groups) meta.append(el("span", null, `${num(u.groups)} gedeelde ${u.groups === 1 ? "Pasr" : "Pasrs"}`));
     meta.append(el("span", null, `${num(u.cards)} ${u.cards === 1 ? "kaart" : "kaarten"}`),
       el("span", null, "Aangemaakt " + ago(u.created_at)), el("span", null, "Ingelogd " + ago(u.last_sign_in_at)));
     if (u.synced_at) meta.append(el("span", null, "Sync " + ago(u.synced_at)));

@@ -246,3 +246,6 @@ h2 { font: 700 16px/1.3 var(--display); margin: 0; }
   .panel-sum { gap: 12px; }
   .panel-sum b { font-size: 15px; }
 }
+
+.dist .row.fact { padding-bottom: 9px; border-bottom: 1px solid var(--line); margin-bottom: 9px; }
+.dist .row.fact:last-child { border-bottom: 0; }

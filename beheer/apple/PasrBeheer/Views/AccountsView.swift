@@ -206,6 +206,7 @@ struct UserDetailView: View {
             }
             Section("Gegevens") {
                 LabeledContent("Kaarten op de server", value: Fmt.n(user.cards))
+                LabeledContent("Gedeelde Pasrs", value: Fmt.n(user.groups ?? 0))
                 LabeledContent("Land", value: user.country.map { "\(Fmt.flag($0)) \(Fmt.country($0))" } ?? "onbekend")
                 LabeledContent("Aangemaakt", value: Fmt.ago(user.created_at))
                 LabeledContent("Bevestigd", value: user.isConfirmed ? Fmt.ago(user.email_confirmed_at) : "nog niet")

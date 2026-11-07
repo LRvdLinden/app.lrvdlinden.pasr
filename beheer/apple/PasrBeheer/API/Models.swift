@@ -24,6 +24,8 @@ struct Stats: Decodable {
     struct Day: Decodable, Identifiable {
         let day: String
         var signups = 0, confirmed = 0, deleted = 0, expired = 0, wallet = 0, bots = 0
+        var groups: Int? = nil
+        var temp_shares: Int? = nil
         var accounts: Int? = nil
         var cards: Int? = nil
         var id: String { day }
@@ -38,8 +40,19 @@ struct Stats: Decodable {
             case .cards: cards
             case .wallet: wallet
             case .bots: bots
+            case .groups: groups ?? 0
+            case .tempShares: temp_shares ?? 0
             }
         }
+    }
+
+    /// Gedeelde Pasrs (groepen van maximaal 6 accounts).
+    struct Shared: Decodable {
+        var groups = 0, members = 0, people = 0, cards = 0, invites = 0, new_7d = 0
+    }
+    /// Tijdelijk gedeelde kaarten.
+    struct Temp: Decodable {
+        var active = 0, opens = 0, revoked_30d = 0, new_7d = 0
     }
 
     let generated: String?
@@ -53,11 +66,13 @@ struct Stats: Decodable {
     let push_devices: Int
     let push_ready: Bool?
     var countries: [String: Int]? = nil
+    var shared: Shared? = nil
+    var temp: Temp? = nil
 }
 
 /// Bronnen in Insights (zoals Homey Insights): lijnen voor totalen, staven voor aantallen per dag.
 enum Metric: String, CaseIterable, Identifiable, Codable {
-    case accounts, signups, confirmed, deleted, cards, wallet, bots
+    case accounts, signups, confirmed, deleted, cards, wallet, groups, tempShares, bots
     var id: String { rawValue }
 
     var title: String {
@@ -68,6 +83,8 @@ enum Metric: String, CaseIterable, Identifiable, Codable {
         case .deleted: "Verwijderd"
         case .cards: "Kaarten in accounts"
         case .wallet: "Wallet-passen"
+        case .groups: "Gedeelde Pasrs"
+        case .tempShares: "Tijdelijk gedeeld"
         case .bots: "Bots tegengehouden"
         }
     }
@@ -80,6 +97,8 @@ enum Metric: String, CaseIterable, Identifiable, Codable {
         case .deleted: "door de gebruiker zelf"
         case .cards: "totaal (elk uur gemeten)"
         case .wallet: "gemaakt"
+        case .groups: "nieuw gemaakt"
+        case .tempShares: "kaarten tijdelijk gedeeld"
         case .bots: "aanmeldingen geweigerd"
         }
     }
@@ -101,6 +120,7 @@ struct User: Decodable, Identifiable, Hashable {
     let email_confirmed_at: String?
     let last_sign_in_at: String?
     let cards: Int
+    var groups: Int? = nil
     let synced_at: String?
 
     var isConfirmed: Bool { email_confirmed_at != nil }
