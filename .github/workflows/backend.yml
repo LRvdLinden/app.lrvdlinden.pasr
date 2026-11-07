@@ -127,6 +127,7 @@ jobs:
           A_PASS: ${{ secrets.PASR_ADMIN_PASSWORD }}
           APNS_P8: ${{ secrets.PASR_APNS_KEY_P8 }}
           APNS_ID: ${{ secrets.PASR_APNS_KEY_ID }}
+          APNS_TEAM: ${{ secrets.PASR_APNS_TEAM_ID }}
         run: |
           set -euo pipefail
           deno_ok=1
@@ -151,9 +152,9 @@ jobs:
             echo "::warning::PASR_ADMIN_USER / PASR_ADMIN_PASSWORD missing: you can't log in to Pasr Beheer yet."
           fi
           if [ -n "$APNS_P8" ] && [ -n "$APNS_ID" ]; then
-            args+=("APNS_KEY_P8=$APNS_P8" "APNS_KEY_ID=$APNS_ID" "APNS_TEAM_ID=EU3UY476T6")
+            args+=("APNS_KEY_P8=$APNS_P8" "APNS_KEY_ID=$APNS_ID" "APNS_TEAM_ID=${APNS_TEAM:-EU3UY476T6}")
           else
-            echo "::warning::PASR_APNS_KEY_P8 / PASR_APNS_KEY_ID missing: no push notifications for Pasr Beheer yet."
+            echo "::warning::PASR_APNS_KEY_P8 / PASR_APNS_KEY_ID missing: no push notifications yet (run Pasr push in app.lrvdlinden.secrets)."
           fi
           if [ ${#args[@]} -gt 0 ]; then supabase secrets set --yes --project-ref "$REF" "${args[@]}" >/dev/null; fi
           echo "::notice::Admin function deployed."

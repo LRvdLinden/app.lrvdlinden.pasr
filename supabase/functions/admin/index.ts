@@ -13,12 +13,20 @@
 //   push_unregister  {device_id}                    -> {ok}
 //   push_prefs       {device_id, prefs}             -> {ok} | 404 not_registered
 //   push_test        {device_id}                    -> {ok} | 503 apns_not_configured | 404 not_registered
-//   notify           {kind, reason?}  + kop x-pasr-hook (alleen de database, via pg_net) -> {sent}
+//   notify           {kind, reason?|name?}  + kop x-pasr-hook (alleen de database, via pg_net) -> {sent}
+//   store_requests   {status?: open|added|rejected} -> {groups:[{key,name,website,kind,count,vouchers,ids,notes,first,last}]}
+//   store_lookup     {url}                          -> {domain,name,colors,logo,logo_type} | 404 not_found
+//   stores           {}                             -> {stores:[…]} (toegevoegde winkels, met logo)
+//   store_save       {store:{id?,name,domain,category,card_hex,format,kind,aliases,logo}} -> {store}
+//   store_publish    {id, request_ids?, push?}      -> {ok, sent, closed}  (aanvragen dicht als "toegevoegd")
+//   store_unpublish  {id}                           -> {ok}
+//   store_reject     {request_ids}                  -> {ok, closed}
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
 import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, wants } from "./push.ts";
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
+import { cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 
 const env = (k: string) => (Deno.env.get(k) ?? "").trim();
 const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
@@ -118,7 +126,7 @@ async function apnsBearer(): Promise<string> {
   apnsAuth = { jwt, at: iat * 1000, kid };
   return jwt;
 }
-async function apnsSend(token: string, sandbox: boolean, payload: unknown) {
+async function apnsSend(token: string, sandbox: boolean, payload: unknown, topic = env("PASR_APNS_TOPIC") || DEFAULT_TOPIC) {
   let auth: string;
   try { auth = await apnsBearer(); } catch (e) {
     console.error("admin", "apns_key", e instanceof Error ? e.name : "?");
@@ -130,7 +138,7 @@ async function apnsSend(token: string, sandbox: boolean, payload: unknown) {
       method: "POST",
       headers: {
         authorization: `bearer ${auth}`,
-        "apns-topic": env("PASR_APNS_TOPIC") || DEFAULT_TOPIC,
+        "apns-topic": topic,
         "apns-push-type": "alert",
         "apns-priority": "10",
         "apns-expiration": String(Math.floor(Date.now() / 1000) + 3600),
@@ -179,6 +187,20 @@ async function notify(kind: Kind, reason: unknown): Promise<number> {
   return pushAll(kind, message(kind, await counts(), reason));
 }
 
+/** Melding aan gebruikers van Pasr over een nieuwe winkel: wie hem aanvroeg plus wie "Nieuwe winkels" aan heeft. */
+async function pushNewStore(id: string, name: string, requesters: string[]): Promise<number> {
+  if (!apnsConfigured()) return 0;
+  const { data, error } = await db.from("pasr_user_push").select("device_id, token, sandbox, user_id, new_stores");
+  if (error) throw new Error(error.message);
+  const want = new Set(requesters);
+  const targets = (data ?? []).filter((d) => d.new_stores || want.has(d.user_id));
+  const payload = newStorePayload(name, id);
+  const results = await Promise.all(targets.map(async (d) => ({ d, r: await apnsSend(d.token, d.sandbox, payload, USER_TOPIC) })));
+  const invalid = results.filter((x) => !x.r.ok && x.r.invalid).map((x) => x.d.device_id);
+  if (invalid.length) await db.from("pasr_user_push").delete().in("device_id", invalid);
+  return results.filter((x) => x.r.ok).length;
+}
+
 Deno.serve(async (req) => {
   const cors = corsFor(req);
   const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
@@ -191,9 +213,11 @@ Deno.serve(async (req) => {
   let body: Record<string, unknown>;
   try {
     const text = await req.text();
-    if (text.length > 8192) return json({ error: "too_large" }, 413);
+    // een winkel met logo mag groter zijn
+    if (text.length > 450_000) return json({ error: "too_large" }, 413);
     const b = JSON.parse(text || "{}");
     if (!b || typeof b !== "object" || Array.isArray(b)) return json({ error: "bad_json" }, 400);
+    if (text.length > 8192 && b.action !== "store_save") return json({ error: "too_large" }, 413);
     body = b;
   } catch { return json({ error: "bad_json" }, 400); }
   const action = typeof body.action === "string" ? body.action : "";
@@ -203,7 +227,7 @@ Deno.serve(async (req) => {
     if (action === "notify") {
       if (!(await hookOk(req.headers.get("x-pasr-hook")))) return json({ error: "forbidden" }, 403);
       if (!(KINDS as readonly unknown[]).includes(body.kind)) return json({ error: "bad_kind" }, 400);
-      return json({ sent: await notify(body.kind as Kind, body.reason) });
+      return json({ sent: await notify(body.kind as Kind, body.kind === "store_request" ? body.name : body.reason) });
     }
 
     if (!configured()) return json({ error: "not_configured" }, 503);
@@ -326,6 +350,78 @@ Deno.serve(async (req) => {
           return json({ error: r.invalid ? "apns_invalid" : r.error }, r.invalid ? 410 : 502);
         }
         return json({ ok: true });
+      }
+      case "store_requests": {
+        const status = ["open", "added", "rejected"].includes(String(body.status)) ? String(body.status) : "open";
+        const { data, error } = await db.from("pasr_store_requests").select("id, name, website, note, kind, status, store_id, created_at, closed_at")
+          .eq("status", status).order("created_at", { ascending: false }).limit(500);
+        if (error) throw new Error(error.message);
+        // zelfde winkel (op website, anders op naam) = één regel met het aantal aanvragen
+        const groups = new Map<string, { key: string; name: string; website: string | null; kind: string; count: number; vouchers: number; ids: string[]; notes: string[]; first: string; last: string; store_id: string | null }>();
+        for (const r of data ?? []) {
+          const key = domainOf(r.website) ?? r.name.toLowerCase().replace(/\s+/g, " ").trim();
+          const g = groups.get(key) ?? { key, name: r.name, website: domainOf(r.website), kind: "loyalty", count: 0, vouchers: 0, ids: [], notes: [], first: r.created_at, last: r.created_at, store_id: r.store_id };
+          g.count++; g.ids.push(r.id); if (r.note) g.notes.push(r.note);
+          if (r.kind === "voucher") g.vouchers++;
+          g.kind = g.vouchers * 2 > g.count ? "voucher" : "loyalty";   // wat de meeste aanvragers bedoelen
+          if (r.created_at < g.first) g.first = r.created_at;
+          if (!g.website && domainOf(r.website)) g.website = domainOf(r.website);
+          groups.set(key, g);
+        }
+        return json({ groups: [...groups.values()].sort((a, b) => b.count - a.count || b.last.localeCompare(a.last)) });
+      }
+      case "store_lookup": {
+        const r = await lookupSite(body.url);
+        if (!r) return json({ error: "not_found" }, 404);
+        await audit("store_lookup", ipHash, r.domain);
+        return json(r);
+      }
+      case "stores": {
+        const { data, error } = await db.from("pasr_stores").select("*").order("updated_at", { ascending: false }).limit(500);
+        if (error) throw new Error(error.message);
+        return json({ stores: data ?? [] });
+      }
+      case "store_save": {
+        const v = cleanStore(body.store);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { data, error } = await db.from("pasr_stores").upsert({ ...v.value, updated_at: new Date().toISOString() }).select("*").single();
+        if (error) throw new Error(error.message);
+        await audit("store_save", ipHash, v.value.id);
+        return json({ store: data });
+      }
+      case "store_publish": {
+        const id = typeof body.id === "string" ? body.id : "";
+        const { data: store } = await db.from("pasr_stores").select("id, name").eq("id", id).maybeSingle();
+        if (!store) return json({ error: "not_found" }, 404);
+        const now = new Date().toISOString();
+        const { error } = await db.from("pasr_stores").update({ published: true, published_at: now, updated_at: now }).eq("id", id);
+        if (error) throw new Error(error.message);
+        const ids = (Array.isArray(body.request_ids) ? body.request_ids : []).filter(isUuid).slice(0, 500);
+        let requesters: string[] = [];
+        if (ids.length) {
+          const { data: closed, error: ce } = await db.from("pasr_store_requests")
+            .update({ status: "added", store_id: id, closed_at: now }).in("id", ids).select("user_id");
+          if (ce) throw new Error(ce.message);
+          requesters = [...new Set((closed ?? []).map((r) => r.user_id).filter(Boolean))];
+        }
+        const sent = body.push === false ? 0 : await pushNewStore(id, store.name, requesters);
+        await audit("store_publish", ipHash, `${id} closed=${ids.length} sent=${sent}`);
+        return json({ ok: true, sent, closed: ids.length, push_ready: apnsConfigured() });
+      }
+      case "store_unpublish": {
+        const id = typeof body.id === "string" ? body.id : "";
+        const { error } = await db.from("pasr_stores").update({ published: false, updated_at: new Date().toISOString() }).eq("id", id);
+        if (error) throw new Error(error.message);
+        await audit("store_unpublish", ipHash, id);
+        return json({ ok: true });
+      }
+      case "store_reject": {
+        const ids = (Array.isArray(body.request_ids) ? body.request_ids : []).filter(isUuid).slice(0, 500);
+        if (!ids.length) return json({ error: "bad_request" }, 400);
+        const { error } = await db.from("pasr_store_requests").update({ status: "rejected", closed_at: new Date().toISOString() }).in("id", ids);
+        if (error) throw new Error(error.message);
+        await audit("store_reject", ipHash, String(ids.length));
+        return json({ ok: true, closed: ids.length });
       }
       default:
         return json({ error: "unknown_action" }, 400);

@@ -5,10 +5,10 @@
 export const PLATFORMS = ["ios", "ipados", "macos"] as const;
 export type Platform = typeof PLATFORMS[number];
 /** Soorten meldingen die je per apparaat aan of uit zet. */
-export const PREF_KEYS = ["signups", "confirmed", "deleted", "bots"] as const;
+export const PREF_KEYS = ["signups", "confirmed", "deleted", "bots", "requests"] as const;
 export type PrefKey = typeof PREF_KEYS[number];
 export type Prefs = Record<PrefKey, boolean>;
-export const DEFAULT_PREFS: Prefs = { signups: true, confirmed: false, deleted: true, bots: true };
+export const DEFAULT_PREFS: Prefs = { signups: true, confirmed: false, deleted: true, bots: true, requests: true };
 /** Bundle-id van PasrBeheer = APNs-topic (function-secret PASR_APNS_TOPIC mag hem vervangen). */
 export const DEFAULT_TOPIC = "nl.lrvdlinden.pasr.beheer";
 
@@ -65,9 +65,9 @@ export function cleanRegister(body: unknown): { ok: true; value: RegisterInput }
 // ---- meldingen ----
 
 /** Seintjes van de database (pasr_admin_notify). */
-export const KINDS = ["signup", "confirmed", "deleted", "bot"] as const;
+export const KINDS = ["signup", "confirmed", "deleted", "bot", "store_request"] as const;
 export type Kind = typeof KINDS[number];
-export const prefFor: Record<Kind, PrefKey> = { signup: "signups", confirmed: "confirmed", deleted: "deleted", bot: "bots" };
+export const prefFor: Record<Kind, PrefKey> = { signup: "signups", confirmed: "confirmed", deleted: "deleted", bot: "bots", store_request: "requests" };
 /** Bots: hoogstens één melding per uur (de rest staat in het overzicht). */
 export const BOT_QUIET_MS = 3600_000;
 
@@ -103,6 +103,14 @@ export function message(kind: Kind, c: Counts, reason?: unknown) {
         ? `${n(c.bots_hour)} aanmeldingen tegengehouden in het afgelopen uur (laatste: ${reasonText(reason)}).`
         : `Een aanmelding is tegengehouden (${reasonText(reason)}).`;
       break;
+    case "store_request": {
+      // reason = naam van de winkel (geen persoonsgegevens)
+      const store = typeof reason === "string" ? reason.replace(/[\r\n]+/g, " ").slice(0, 60) : "";
+      title = "Winkel aangevraagd";
+      body = store ? `Iemand mist ${store} in Pasr.` : "Iemand mist een winkel in Pasr.";
+      url = "pasrbeheer://stores";
+      break;
+    }
   }
   return { aps: { alert: { title, body }, sound: "default", "thread-id": kind }, kind, url };
 }
