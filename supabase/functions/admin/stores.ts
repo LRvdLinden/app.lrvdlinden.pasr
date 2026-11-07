@@ -194,3 +194,22 @@ export function newStorePayload(name: string, id: string) {
     store: id,
   };
 }
+
+// ---- saldo-pagina's ----
+
+/** Saldo-pagina van een winkel: een https-adres, hoogstens 300 tekens, geen interne adressen. */
+export function cleanBalancePage(v: unknown): { ok: true; value: { store_id: string; url: string } } | { ok: false; error: string } {
+  const b = (v && typeof v === "object" && !Array.isArray(v) ? v : {}) as Record<string, unknown>;
+  const store_id = String(b.store_id ?? "").trim().toLowerCase();
+  if (!/^[a-z0-9-]{2,40}$/.test(store_id)) return { ok: false, error: "bad_id" };
+  let url: URL;
+  try {
+    url = new URL(String(b.url ?? "").trim());
+  } catch {
+    return { ok: false, error: "bad_url" };
+  }
+  if (url.protocol !== "https:" || !domainOf(url.hostname) || url.href.length > 300 || url.username || url.password) {
+    return { ok: false, error: "bad_url" };
+  }
+  return { ok: true, value: { store_id, url: url.href } };
+}

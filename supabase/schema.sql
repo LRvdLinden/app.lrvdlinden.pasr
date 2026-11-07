@@ -1005,9 +1005,20 @@ $$;
 
 -- Gepubliceerde winkels die sinds p_since zijn gewijzigd (de app bewaart ze en vraagt alleen wat nieuw is).
 -- Een winkel die weer offline gaat komt mee met removed = true.
+-- Saldo-pagina's per winkel (ook voor winkels die in de app zitten): de knop "Saldo checken" bij een voucher.
+create table if not exists public.pasr_balance_pages (
+  store_id text primary key check (store_id ~ '^[a-z0-9-]{2,40}$'),
+  url text not null check (url ~ '^https://' and char_length(url) <= 300),
+  updated_at timestamptz not null default now()
+);
+alter table public.pasr_balance_pages enable row level security;
+revoke all on public.pasr_balance_pages from anon, authenticated;
+
 create or replace function public.pasr_store_catalog(p_since timestamptz default null) returns jsonb
 language sql security definer set search_path = public as $$
-  select jsonb_build_object('now', now(), 'stores', coalesce(jsonb_agg(
+  select jsonb_build_object('now', now(),
+    'balance_pages', (select coalesce(jsonb_object_agg(b.store_id, b.url), '{}'::jsonb) from public.pasr_balance_pages b),
+    'stores', coalesce(jsonb_agg(
     case when s.published then jsonb_build_object('id', s.id, 'name', s.name, 'domain', s.domain, 'category', s.category,
            'card_hex', s.card_hex, 'format', s.format, 'kind', s.kind, 'aliases', to_jsonb(s.aliases), 'logo', s.logo,
            'updated_at', s.updated_at)

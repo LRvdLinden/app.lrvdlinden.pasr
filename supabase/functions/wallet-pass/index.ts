@@ -38,6 +38,7 @@ type Card = {
   note?: string;
   logo?: string;              // PNG, base64 (white or brand-coloured logo, transparent background)
   locations?: { latitude: number; longitude: number; name?: string }[];
+  history?: string[];         // laatste regels uit Pasr ("8 nov · −€ 11,07 · PLUS Apeldoorn"), voor de achterkant
 };
 
 Deno.serve(async (req) => {
@@ -97,6 +98,15 @@ function json(body: unknown, status = 200) {
 
 // ---------------------------------------------------------------------------------------------------------------
 
+/** Hoogstens 8 regels van 120 tekens, zonder vreemde tekens. */
+export function history(card: Card): string[] {
+  return (Array.isArray(card.history) ? card.history : [])
+    .filter((l) => typeof l === "string")
+    .map((l) => l.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 120))
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
 async function buildPass(card: Card): Promise<Uint8Array> {
   const passTypeIdentifier = Deno.env.get("PASS_TYPE_ID") ?? "pass.nl.lrvdlinden.pasr";
   const teamIdentifier = Deno.env.get("PASS_TEAM_ID") ?? "EU3UY476T6";
@@ -127,7 +137,8 @@ async function buildPass(card: Card): Promise<Uint8Array> {
       // Rechtsboven: het tegoed van een cadeaukaart en altijd het merk Pasr (Wallet staat daar alleen tekst toe).
       headerFields: [
         ...(voucher && card.balance != null
-          ? [{ key: "balance", label: "TEGOED", value: card.balance, currencyCode: card.currency ?? "EUR" }]
+          ? [{ key: "balance", label: "TEGOED", value: card.balance, currencyCode: card.currency ?? "EUR",
+               changeMessage: "Tegoed nu %@" }]
           : []),
         { key: "brand", label: " ", value: "pasr" },
       ],
@@ -137,6 +148,7 @@ async function buildPass(card: Card): Promise<Uint8Array> {
         : [],
       backFields: [
         ...(card.note ? [{ key: "note", label: "Notitie", value: card.note }] : []),
+        ...(history(card).length ? [{ key: "history", label: voucher ? "Laatste uitgaven" : "Laatst gebruikt", value: history(card).join("\n") }] : []),
         { key: "pasr", label: "Pasr", value: "Deze pas komt uit Pasr, de gratis app voor je klantenkaarten. pasr.nl" },
       ],
     },

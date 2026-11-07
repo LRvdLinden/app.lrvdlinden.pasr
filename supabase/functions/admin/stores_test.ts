@@ -36,3 +36,13 @@ Deno.test("melding winkel aangevraagd", () => {
   const m = message("store_request", { accounts: 1, confirmed: 1, bots_hour: 0 }, "Kwantum\nX");
   ok(m.aps.alert.body === "Iemand mist Kwantum X in Pasr." && m.url === "pasrbeheer://stores", m.aps.alert.body);
 });
+
+Deno.test("saldo-pagina", async () => {
+  const { cleanBalancePage } = await import("./stores.ts");
+  const r = cleanBalancePage({ store_id: "VVV", url: "https://www.vvvcadeaukaarten.nl/saldo" });
+  ok(r.ok && r.value.store_id === "vvv" && r.value.url === "https://www.vvvcadeaukaarten.nl/saldo", JSON.stringify(r));
+  ok(!cleanBalancePage({ store_id: "vvv", url: "http://vvv.nl" }).ok, "alleen https");
+  ok(!cleanBalancePage({ store_id: "vvv", url: "https://127.0.0.1/x" }).ok, "geen interne adressen");
+  ok(!cleanBalancePage({ store_id: "v v", url: "https://vvv.nl" }).ok, "id");
+  ok(!cleanBalancePage({ store_id: "vvv", url: "https://a:b@vvv.nl" }).ok, "geen inlog in adres");
+});

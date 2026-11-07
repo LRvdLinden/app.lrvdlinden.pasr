@@ -26,7 +26,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
 import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, wants } from "./push.ts";
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
-import { cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
+import { cleanBalancePage, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
 
 const env = (k: string) => (Deno.env.get(k) ?? "").trim();
@@ -423,6 +423,26 @@ Deno.serve(async (req) => {
         if (error) throw new Error(error.message);
         await audit("store_reject", ipHash, String(ids.length));
         return json({ ok: true, closed: ids.length });
+      }
+      case "balance_pages": {
+        const { data, error } = await db.from("pasr_balance_pages").select("store_id, url, updated_at").order("store_id");
+        if (error) throw new Error(error.message);
+        return json({ pages: data ?? [] });
+      }
+      case "balance_page_save": {
+        const v = cleanBalancePage(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { error } = await db.from("pasr_balance_pages").upsert({ ...v.value, updated_at: new Date().toISOString() });
+        if (error) throw new Error(error.message);
+        await audit("balance_page_save", ipHash, v.value.store_id);
+        return json({ ok: true, ...v.value });
+      }
+      case "balance_page_delete": {
+        const id = typeof body.store_id === "string" ? body.store_id : "";
+        const { error } = await db.from("pasr_balance_pages").delete().eq("store_id", id);
+        if (error) throw new Error(error.message);
+        await audit("balance_page_delete", ipHash, id);
+        return json({ ok: true });
       }
       case "review_account": {
         // Account voor Apple App Review met voorbeeldkaarten en een gedeelde Pasr. Het wachtwoord kiest de beheerder;
