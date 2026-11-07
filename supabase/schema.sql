@@ -318,7 +318,7 @@ revoke all on public.admin_token_state, public.admin_audit, public.admin_push_de
 create or replace function public.pasr_daily_bump(col text, n int default 1) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if col not in ('signups', 'confirmed', 'deleted', 'expired', 'wallet', 'bots', 'groups', 'temp_shares') then return; end if;
+  if col not in ('signups', 'confirmed', 'deleted', 'expired', 'wallet', 'bots', 'groups', 'temp_shares', 'store_requests') then return; end if;
   execute format('insert into public.pasr_daily as d (day, %1$I) values ((now() at time zone ''utc'')::date, $1)
                   on conflict (day) do update set %1$I = d.%1$I + $1', col) using n;
 end $$;
@@ -442,7 +442,8 @@ begin
         'day', d.day, 'signups', coalesce(x.signups, 0), 'confirmed', coalesce(x.confirmed, 0),
         'deleted', coalesce(x.deleted, 0), 'expired', coalesce(x.expired, 0), 'wallet', coalesce(x.wallet, 0),
         'bots', coalesce(x.bots, 0), 'accounts', greatest(t.accounts, 0), 'cards', x.cards_total,
-        'groups', coalesce(x.groups, 0), 'temp_shares', coalesce(x.temp_shares, 0)) order by d.day), '[]'::jsonb)
+        'groups', coalesce(x.groups, 0), 'temp_shares', coalesce(x.temp_shares, 0),
+        'store_requests', coalesce(x.store_requests, 0)) order by d.day), '[]'::jsonb)
       from days d left join public.pasr_daily x on x.day = d.day left join totals_per_day t on t.day = d.day),
     'countries', (select coalesce(jsonb_object_agg(c, n), '{}'::jsonb) from (
         select coalesce(u.raw_user_meta_data->>'country', '?') as c, count(*) as n from auth.users u group by 1) cc),
@@ -466,7 +467,13 @@ begin
       'active', (select count(*) from public.pasr_temp_shares where not revoked and expires_at > now()),
       'opens', (select coalesce(sum(opens), 0) from public.pasr_temp_shares where expires_at > now() - interval '30 days'),
       'revoked_30d', (select count(*) from public.pasr_temp_shares where revoked and created_at > now() - interval '30 days'),
-      'new_7d', (select count(*) from public.pasr_temp_shares where created_at > now() - interval '7 days')) end
+      'new_7d', (select count(*) from public.pasr_temp_shares where created_at > now() - interval '7 days')) end,
+    'stores', case when to_regclass('public.pasr_stores') is null then null else jsonb_build_object(
+      'requests_open', (select count(*) from public.pasr_store_requests where status = 'open'),
+      'requests_7d', (select count(*) from public.pasr_store_requests where created_at > now() - interval '7 days'),
+      'added', (select count(*) from public.pasr_stores where published),
+      'push_devices', (select count(*) from public.pasr_user_push),
+      'new_store_push', (select count(*) from public.pasr_user_push where new_stores)) end
   ) into result;
   return result;
 end $$;
@@ -915,3 +922,119 @@ begin
 exception when others then
   raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
 end $$;
+
+-- ============================================================================================================
+-- Winkels aanvragen en zonder app-update toevoegen. Gebruikers (met account) vragen een winkel aan met naam en
+-- website; in het beheer maak je de kaart (logo, kleur, soort code), publiceer je hem en sluit je de aanvragen.
+-- De apps halen gepubliceerde winkels op via pasr_store_catalog; wie de winkel vroeg (en wie "Nieuwe winkels"
+-- aanzet) krijgt een pushmelding.
+-- ============================================================================================================
+create table if not exists public.pasr_stores (
+  id text primary key check (id ~ '^[a-z0-9-]{2,40}$'),
+  name text not null check (char_length(name) between 1 and 40),
+  domain text not null default '',
+  category text not null default 'Overig',
+  card_hex text not null default '#2B2F3A' check (card_hex ~ '^#[0-9A-Fa-f]{6}$'),
+  format text not null default 'code128',
+  kind text not null default 'loyalty',
+  aliases text[] not null default '{}',
+  logo text,                                   -- PNG, base64 (hoogstens ~200 kB)
+  published boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  published_at timestamptz
+);
+create index if not exists pasr_stores_updated on public.pasr_stores (updated_at);
+create table if not exists public.pasr_store_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 60),
+  website text check (website is null or char_length(website) <= 200),
+  note text check (note is null or char_length(note) <= 300),
+  status text not null default 'open' check (status in ('open', 'added', 'rejected')),
+  store_id text references public.pasr_stores (id) on delete set null,
+  created_at timestamptz not null default now(),
+  closed_at timestamptz
+);
+create index if not exists pasr_store_requests_status on public.pasr_store_requests (status, created_at);
+create table if not exists public.pasr_user_push (
+  device_id text primary key check (char_length(device_id) between 8 and 80),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  token text not null check (token ~ '^[0-9a-f]{32,200}$'),
+  sandbox boolean not null default false,
+  new_stores boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+alter table public.pasr_stores enable row level security;
+alter table public.pasr_store_requests enable row level security;
+alter table public.pasr_user_push enable row level security;
+revoke all on public.pasr_stores, public.pasr_store_requests, public.pasr_user_push from anon, authenticated;
+alter table public.pasr_daily add column if not exists store_requests int not null default 0;
+
+create or replace function public.pasr_store_request(p_name text, p_website text default null, p_note text default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); n text; w text; existing uuid; today int;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  n := left(regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g'), 60);
+  if n = '' then raise exception 'bad_name' using errcode = '22023'; end if;
+  w := nullif(left(trim(coalesce(p_website, '')), 200), '');
+  select id into existing from public.pasr_store_requests
+   where user_id = uid and status = 'open' and lower(name) = lower(n) limit 1;
+  if existing is not null then return jsonb_build_object('id', existing, 'duplicate', true); end if;
+  select count(*) into today from public.pasr_store_requests where user_id = uid and created_at > now() - interval '1 day';
+  if today >= 10 then raise exception 'rate_limited' using errcode = '22023'; end if;
+  insert into public.pasr_store_requests (user_id, name, website, note)
+  values (uid, n, w, nullif(left(trim(coalesce(p_note, '')), 300), '')) returning id into existing;
+  perform public.pasr_daily_bump('store_requests');
+  perform public.pasr_admin_notify('store_request', jsonb_build_object('name', n));
+  return jsonb_build_object('id', existing, 'duplicate', false);
+end $$;
+
+create or replace function public.pasr_my_store_requests() returns jsonb
+language sql security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'name', r.name, 'website', r.website, 'status', r.status,
+           'store_id', r.store_id, 'created_at', r.created_at, 'closed_at', r.closed_at) order by r.created_at desc), '[]'::jsonb)
+  from public.pasr_store_requests r where r.user_id = auth.uid();
+$$;
+
+-- Gepubliceerde winkels die sinds p_since zijn gewijzigd (de app bewaart ze en vraagt alleen wat nieuw is).
+-- Een winkel die weer offline gaat komt mee met removed = true.
+create or replace function public.pasr_store_catalog(p_since timestamptz default null) returns jsonb
+language sql security definer set search_path = public as $$
+  select jsonb_build_object('now', now(), 'stores', coalesce(jsonb_agg(
+    case when s.published then jsonb_build_object('id', s.id, 'name', s.name, 'domain', s.domain, 'category', s.category,
+           'card_hex', s.card_hex, 'format', s.format, 'kind', s.kind, 'aliases', to_jsonb(s.aliases), 'logo', s.logo,
+           'updated_at', s.updated_at)
+         else jsonb_build_object('id', s.id, 'removed', true, 'updated_at', s.updated_at) end), '[]'::jsonb))
+  from public.pasr_stores s
+  where (p_since is null and s.published) or (p_since is not null and s.updated_at > p_since);
+$$;
+
+create or replace function public.pasr_push_register(p_device text, p_token text, p_sandbox boolean default false,
+                                                     p_new_stores boolean default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  insert into public.pasr_user_push as p (device_id, user_id, token, sandbox, new_stores)
+  values (p_device, uid, lower(p_token), coalesce(p_sandbox, false), coalesce(p_new_stores, false))
+  on conflict (device_id) do update set user_id = uid, token = excluded.token, sandbox = excluded.sandbox,
+    new_stores = coalesce(p_new_stores, p.new_stores), updated_at = now();
+  -- één token hoort bij één apparaat
+  delete from public.pasr_user_push where token = lower(p_token) and device_id <> p_device;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function public.pasr_push_unregister(p_device text) returns jsonb
+language sql security definer set search_path = public as $$
+  delete from public.pasr_user_push where device_id = p_device and user_id = auth.uid();
+  select jsonb_build_object('ok', true);
+$$;
+
+revoke all on function public.pasr_store_request(text, text, text), public.pasr_my_store_requests(),
+  public.pasr_store_catalog(timestamptz), public.pasr_push_register(text, text, boolean, boolean),
+  public.pasr_push_unregister(text) from public;
+grant execute on function public.pasr_store_request(text, text, text), public.pasr_my_store_requests(),
+  public.pasr_push_register(text, text, boolean, boolean), public.pasr_push_unregister(text) to authenticated;
+grant execute on function public.pasr_store_catalog(timestamptz) to anon, authenticated;
