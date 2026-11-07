@@ -68,54 +68,91 @@ struct CardPlacesSection: View {
     }
 }
 
-/// Een filiaal of plek kiezen op de kaart: tik op een filiaal, of ergens op de kaart voor een speld.
+/// Filialen of plekken kiezen op de kaart, meerdere tegelijk: tik filialen aan (nog eens tikken = uit), of tik
+/// ergens op de kaart voor een speld. "Alle" kiest de dichtstbijzijnde filialen tot het maximum.
 struct PlacePickerView: View {
     let storeName: String
-    /// Gekozen plek, of nil bij Annuleer. De ouder sluit het sheet.
-    var onDone: (CardPlace?) -> Void
+    /// Locaties die de kaart al heeft (staan op de kaart, tellen mee voor het maximum).
+    var existing: [CardPlace] = []
+    /// Gekozen plekken (leeg bij Annuleer). De ouder sluit het sheet.
+    var onDone: ([CardPlace]) -> Void
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(center: .init(latitude: 52.2, longitude: 5.4), latitudinalMeters: 250_000, longitudinalMeters: 250_000))
     @State private var branches: [NearbyStores.Branch] = []
-    @State private var selected: NearbyStores.Branch?
-    @State private var pin: CLLocationCoordinate2D?
+    @State private var selected: [NearbyStores.Branch] = []
+    @State private var pins: [Pin] = []
     @State private var query = ""
     @State private var center: CLLocationCoordinate2D?
     @State private var searching = false
+
+    private struct Pin: Identifiable {
+        let id = UUID()
+        let coordinate: CLLocationCoordinate2D
+    }
+
+    private var room: Int { max(0, CardPlace.maxPerCard - existing.count) }
+    private var count: Int { selected.count + pins.count }
+    private var full: Bool { count >= room }
+
+    /// Filialen die de kaart al heeft, niet nog eens aanbieden.
+    private var offered: [NearbyStores.Branch] {
+        branches.filter { b in
+            !existing.contains { CLLocation(latitude: $0.latitude, longitude: $0.longitude)
+                .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude)) < NearbyStores.radius }
+        }
+    }
 
     var body: some View {
         NavigationStack {
             MapReader { proxy in
                 Map(position: $position) {
                     UserAnnotation()
-                    ForEach(branches) { b in
-                        Annotation(b.name, coordinate: b.coordinate) {
-                            Image(systemName: "storefront.circle.fill")
-                                .font(selected == b ? .largeTitle : .title)
-                                .foregroundStyle(.white, selected == b ? Brand.coral : Brand.iris)
-                                .onTapGesture { selected = b; pin = nil }
+                    ForEach(existing) { place in
+                        Annotation(place.name, coordinate: .init(latitude: place.latitude, longitude: place.longitude)) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.title)
+                                .foregroundStyle(.white, Brand.mint)
                         }
                     }
-                    if let pin {
-                        Marker(storeName, systemImage: "mappin", coordinate: pin).tint(Brand.coral)
+                    ForEach(offered) { b in
+                        let on = selected.contains(b)
+                        Annotation(b.name, coordinate: b.coordinate) {
+                            Image(systemName: on ? "checkmark.circle.fill" : "storefront.circle.fill")
+                                .font(on ? .largeTitle : .title)
+                                .foregroundStyle(.white, on ? Brand.coral : Brand.iris)
+                                .opacity(!on && full ? 0.45 : 1)
+                                .onTapGesture { toggle(b) }
+                                .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+                        }
+                    }
+                    ForEach(pins) { pin in
+                        Annotation(storeName, coordinate: pin.coordinate) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.largeTitle)
+                                .foregroundStyle(.white, Brand.coral)
+                                .onTapGesture { pins.removeAll { $0.id == pin.id } }
+                        }
                     }
                 }
                 .mapControls { MapUserLocationButton(); MapCompass() }
                 .onTapGesture { point in
-                    if let c = proxy.convert(point, from: .local) { pin = c; selected = nil }
+                    guard !full, let c = proxy.convert(point, from: .local) else { return }
+                    pins.append(Pin(coordinate: c))
                 }
                 .onMapCameraChange(frequency: .onEnd) { context in center = context.region.center }
             }
             .safeAreaInset(edge: .bottom) { bottomBar }
-            .navigationTitle("Kies een locatie")
+            .navigationTitle("Kies locaties")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .searchable(text: $query, prompt: Text("Zoek een plaats of adres"))
             .onSubmit(of: .search) { Task { await searchPlace() } }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { onDone(nil) } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { onDone([]) } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Voeg toe") { add() }.disabled(selected == nil && pin == nil)
+                    Button(count > 1 ? String(localized: "Voeg \(count) toe") : String(localized: "Voeg toe")) { add() }
+                        .disabled(count == 0)
                 }
             }
             .task {
@@ -130,33 +167,62 @@ struct PlacePickerView: View {
 
     private var bottomBar: some View {
         VStack(spacing: 8) {
-            if let selected {
-                Text([selected.name, selected.address].compactMap { $0 }.joined(separator: " · ")).font(.subheadline.weight(.semibold))
-            } else if pin != nil {
-                Text("Speld gezet. Tik op Voeg toe.").font(.subheadline.weight(.semibold))
+            if room == 0 {
+                Text("Deze kaart heeft al \(CardPlace.maxPerCard) locaties.").font(.subheadline.weight(.semibold))
+            } else if count == 0 {
+                Text("Tik filialen aan, of ergens op de kaart voor een speld.").font(.subheadline).foregroundStyle(.secondary)
             } else {
-                Text("Tik op een filiaal of ergens op de kaart.").font(.subheadline).foregroundStyle(.secondary)
+                Text("\(count) van \(room) gekozen").font(.subheadline.weight(.semibold))
+                    .contentTransition(.numericText())
             }
-            Button {
-                Task { if let center { await findBranches(around: center) } }
-            } label: {
-                HStack {
-                    if searching { ProgressView().controlSize(.small) }
-                    Text("Zoek \(storeName) hier")
+            HStack(spacing: 8) {
+                Button {
+                    Task { if let center { await findBranches(around: center) } }
+                } label: {
+                    HStack {
+                        if searching { ProgressView().controlSize(.small) }
+                        Text("Zoek \(storeName) hier")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(center == nil || searching)
+                if !offered.isEmpty {
+                    if selected.isEmpty {
+                        Button("Alle") { selectNearest() }
+                            .buttonStyle(.bordered)
+                            .disabled(full)
+                    } else {
+                        Button("Wis keuze") { selected = []; pins = [] }
+                            .buttonStyle(.bordered)
+                    }
                 }
             }
-            .buttonStyle(.bordered)
-            .disabled(center == nil || searching)
         }
         .frame(maxWidth: .infinity)
         .padding(12)
         .background(.regularMaterial)
+        .animation(.snappy, value: count)
+    }
+
+    private func toggle(_ b: NearbyStores.Branch) {
+        if let i = selected.firstIndex(of: b) { selected.remove(at: i) }
+        else if !full { selected.append(b) }
+    }
+
+    /// De dichtstbijzijnde filialen (vanaf het midden van de kaart) tot het maximum.
+    private func selectNearest() {
+        let from = CLLocation(latitude: center?.latitude ?? 0, longitude: center?.longitude ?? 0)
+        for b in offered.sorted(by: { $0.distance(from: from) < $1.distance(from: from) }) where !full && !selected.contains(b) {
+            selected.append(b)
+        }
     }
 
     private func findBranches(around c: CLLocationCoordinate2D) async {
         searching = true
         defer { searching = false }
-        branches = Array(await NearbyStores.shared.search(storeName, around: c, span: 12_000).prefix(25))
+        let found = await NearbyStores.shared.search(storeName, around: c, span: 12_000).prefix(25)
+        // gekozen filialen blijven staan, ook als je verder schuift en opnieuw zoekt
+        branches = selected + found.filter { !selected.contains($0) }
     }
 
     private func searchPlace() async {
@@ -170,13 +236,10 @@ struct PlacePickerView: View {
     }
 
     private func add() {
-        if let selected {
-            onDone(CardPlace(name: [selected.name, selected.address].compactMap { $0 }.joined(separator: " · "),
-                             latitude: selected.latitude, longitude: selected.longitude))
-        } else if let pin {
-            onDone(CardPlace(name: storeName, latitude: pin.latitude, longitude: pin.longitude))
-        } else {
-            onDone(nil)
+        let fromBranches = selected.map {
+            CardPlace(name: [$0.name, $0.address].compactMap { $0 }.joined(separator: " · "), latitude: $0.latitude, longitude: $0.longitude)
         }
+        let fromPins = pins.map { CardPlace(name: storeName, latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude) }
+        onDone(Array((fromBranches + fromPins).prefix(room)))
     }
 }

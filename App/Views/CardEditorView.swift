@@ -228,8 +228,8 @@ struct CardEditorView: View {
             }
         }
         .sheet(isPresented: $pickingPlace) {
-            PlacePickerView(storeName: placesStoreName) { place in
-                if let place, draft.places.count < CardPlace.maxPerCard { draft.places.append(place) }
+            PlacePickerView(storeName: placesStoreName, existing: draft.places) { picked in
+                draft.places = Array((draft.places + picked).prefix(CardPlace.maxPerCard))
                 pickingPlace = false
             }
         }
