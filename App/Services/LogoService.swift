@@ -99,10 +99,10 @@ enum LogoService {
 
     /// The logo that ships with the app for a known store, e.g. "ah.nl".
     static func bundledLogo(for domain: String) -> Data? {
-        guard !domain.isEmpty,
-              let url = Bundle.main.url(forResource: domain, withExtension: "png")
+        guard !domain.isEmpty else { return nil }
+        guard let url = Bundle.main.url(forResource: domain, withExtension: "png")
                 ?? Bundle.main.url(forResource: domain, withExtension: "png", subdirectory: "StoreLogos")
-        else { return nil }
+        else { return RemoteStores.logo(for: domain) }   // later toegevoegde winkel
         return try? Data(contentsOf: url)
     }
 

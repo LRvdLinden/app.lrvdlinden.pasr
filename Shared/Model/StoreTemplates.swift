@@ -21,7 +21,15 @@ struct StoreTemplate: Identifiable, Hashable {
 }
 
 enum StoreTemplates {
-    static let all: [StoreTemplate] = [
+    /// Alle winkels: die in de app plus die later in het beheer zijn toegevoegd (RemoteStores).
+    static var all: [StoreTemplate] {
+        let remote = RemoteStores.templates
+        guard !remote.isEmpty else { return builtIn }
+        let ids = Set(builtIn.map(\.id))
+        return builtIn + remote.filter { !ids.contains($0.id) }
+    }
+
+    static let builtIn: [StoreTemplate] = [
         // Supermarkt
         .init(id: "ah", name: "Albert Heijn", domain: "ah.nl", category: "Supermarkt", colorHex: "#00A0E2", format: .ean13, aliases: ["bonuskaart", "ah bonus"]),
         .init(id: "jumbo", name: "Jumbo", domain: "jumbo.com", category: "Supermarkt", colorHex: "#FFC917", format: .ean13, aliases: ["jumbo extra's"]),
@@ -363,11 +371,11 @@ enum StoreTemplates {
     ]
 
     /// Category names in display order.
-    static let categories: [String] = {
+    static var categories: [String] {
         var seen: [String] = []
         for t in all where !seen.contains(t.category) { seen.append(t.category) }
         return seen.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-    }()
+    }
 
     static func template(id: String?) -> StoreTemplate? {
         guard let id else { return nil }

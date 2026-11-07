@@ -4,7 +4,14 @@ import SwiftUI
 struct AddCardView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
-    @State private var path: [Choice] = []
+    @State private var path: [Choice]
+    @State private var requesting = false
+    private var catalog = StoreCatalog.shared
+
+    /// `store`: meteen naar die winkel (bijvoorbeeld vanuit de melding "nieuwe winkel").
+    init(store: StoreTemplate? = nil) {
+        _path = State(initialValue: store.map { [Choice.template($0)] } ?? [])
+    }
     @State private var showScan = false
     /// A card scanned whose store wasn't recognised: picking a store fills in its number.
     @State private var scanned: ScannedCode?
@@ -19,7 +26,30 @@ struct AddCardView: View {
         case custom(String)
     }
 
+    /// Onderaan (en als zoeken niets oplevert): een winkel aanvragen.
+    private var missingStore: some View {
+        Button { requesting = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "storefront")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 46, height: 46)
+                    .background(Brand.gradient, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(search.isEmpty ? "Mis je een winkel?" : "\(search) staat er niet tussen?").font(.headline)
+                    Text("Vraag hem aan. Is hij toegevoegd, dan krijg je een melding.").font(.subheadline).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var templates: [StoreTemplate] {
+        _ = catalog.version   // opnieuw tekenen als er winkels bij zijn gekomen
         let query = search.trimmingCharacters(in: .whitespaces)
         let list = StoreTemplates.all.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         guard !query.isEmpty else { return list }
@@ -70,6 +100,10 @@ struct AddCardView: View {
                     }
                 }
                 .padding(16)
+
+                missingStore
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 28)
             }
             .background(Brand.ink.ignoresSafeArea())
             .navigationTitle("Kaart toevoegen")
@@ -89,6 +123,8 @@ struct AddCardView: View {
                 }
             }
         }
+        .sheet(isPresented: $requesting) { StoreRequestSheet(name: search) }
+        .task { await catalog.refresh() }
         .fullScreenCover(isPresented: $showScan) {
             CardScanView(onAdded: { _ in dismiss() },
                          onUnknownStore: { number, format in

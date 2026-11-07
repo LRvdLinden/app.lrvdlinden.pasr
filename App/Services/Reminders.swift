@@ -232,12 +232,19 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     @MainActor static var pendingCardID: UUID? {
         didSet { NotificationCenter.default.post(name: .pasrOpenCard, object: nil) }
     }
+    /// Pushmelding "nieuwe winkel": RootView opent Kaart toevoegen bij die winkel.
+    @MainActor static var pendingStoreID: String? {
+        didSet { NotificationCenter.default.post(name: .pasrOpenStore, object: nil) }
+    }
 
     func activate() { UNUserNotificationCenter.current().delegate = self }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        if let id = (response.notification.request.content.userInfo["cardID"] as? String).flatMap(UUID.init) {
+        let info = response.notification.request.content.userInfo
+        if let id = (info["cardID"] as? String).flatMap(UUID.init) {
             await MainActor.run { Self.pendingCardID = id }
+        } else if info["kind"] as? String == "store", let store = info["store"] as? String {
+            await MainActor.run { Self.pendingStoreID = store }
         }
     }
 
@@ -249,6 +256,7 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
 
 extension Notification.Name {
     static let pasrOpenCard = Notification.Name("pasrOpenCard")
+    static let pasrOpenStore = Notification.Name("pasrOpenStore")
 }
 
 
@@ -275,6 +283,7 @@ struct RemindersSettingsSection: View {
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
     @AppStorage(Reminders.voucherKey) private var vouchers = true
     @AppStorage(Reminders.nearbyKey) private var nearby = false
+    @AppStorage(UserPush.newStoresKey) private var newStores = false
     @State private var note: String?
     private var stores: NearbyStores { .shared }
 
@@ -297,6 +306,21 @@ struct RemindersSettingsSection: View {
                 }
             })) {
                 SettingsLabel("Kaart tonen bij de winkel", symbol: "location.fill", color: .blue)
+            }
+
+            if AccountService.shared.isSignedIn {
+                Toggle(isOn: Binding(get: { newStores }, set: { on in
+                    newStores = on
+                    Task {
+                        if on, !(await UserPush.enable()) {
+                            newStores = false
+                            note = String(localized: "Sta meldingen voor Pasr toe in de Instellingen van je iPhone.")
+                        }
+                        await UserPush.sync()
+                    }
+                })) {
+                    SettingsLabel("Nieuwe winkels in Pasr", symbol: "storefront.fill", color: Brand.mint)
+                }
             }
         } header: {
             Text("Meldingen")

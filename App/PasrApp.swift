@@ -4,6 +4,9 @@ import SwiftData
 @main
 struct PasrApp: App {
     let container = PasrStore.makeContainer()
+    #if canImport(UIKit)
+    @UIApplicationDelegateAdaptor(PasrAppDelegate.self) private var appDelegate
+    #endif
     @AppStorage(AppAppearance.key) private var appearance = AppAppearance.auto.rawValue
 
     init() {
@@ -20,6 +23,8 @@ struct PasrApp: App {
                 .environment(\.codeShield, ScreenShield.wrapper)
                 .task {
                     PasrStore.purgeOldDeletions(in: container.mainContext)
+                    await StoreCatalog.shared.refresh()
+                    await UserPush.refreshIfAllowed()
                     await LogoService.fillMissing(in: container.mainContext)
                 }
         }
@@ -37,6 +42,7 @@ struct RootView: View {
     @State private var openCardID: UUID?
     @State private var incoming: IncomingShare?
     @State private var incomingTemp: IncomingTempShare?
+    @State private var newStore: NewStore?
     @State private var invite: GroupService.Invite?
     @State private var seenInvites: Set<String> = []
     @Environment(\.modelContext) private var context
@@ -95,6 +101,10 @@ struct RootView: View {
         .sheet(item: $incoming) { share in
             ReceiveCardSheet(shared: share.card)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrOpenStore)) { _ in openStoreFromNotification() }
+        .sheet(item: $newStore) { item in
+            AddCardView(store: item.template)
+        }
         .sheet(item: $incomingTemp) { share in
             ReceiveTempCardSheet(token: share.token)
         }
@@ -109,6 +119,7 @@ struct RootView: View {
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             TempShare.scrubExpired(in: context)
+            await StoreCatalog.shared.refresh()
             await TempShare.refreshStatuses(in: context)
         }
         .onChange(of: scenePhase) { _, phase in
@@ -127,7 +138,22 @@ struct RootView: View {
     }
 }
 
+/// Een winkel uit een pushmelding, voor `.sheet(item:)`.
+struct NewStore: Identifiable {
+    let template: StoreTemplate
+    var id: String { template.id }
+}
+
 extension RootView {
+    fileprivate func openStoreFromNotification() {
+        guard let id = NotificationRouter.pendingStoreID else { return }
+        NotificationRouter.pendingStoreID = nil
+        Task {
+            if StoreTemplates.template(id: id) == nil { await StoreCatalog.shared.refresh(force: true) }
+            if let template = StoreTemplates.template(id: id) { newStore = NewStore(template: template) }
+        }
+    }
+
     fileprivate func offerInvite() {
         guard invite == nil, !showSplash, onboarded, !locked, incoming == nil, incomingTemp == nil,
               let next = groups.invites.first(where: { !seenInvites.contains($0.id) }) else { return }

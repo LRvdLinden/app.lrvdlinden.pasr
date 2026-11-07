@@ -52,6 +52,7 @@ enum CardSync {
                 UserDefaults.standard.set(true, forKey: countryKey)
             }
             await GroupService.shared.sync(in: context)
+            await UserPush.syncOnce()
             await LogoService.fillMissing(in: context)
         } catch {
             lastError = error.localizedDescription
