@@ -157,6 +157,30 @@ jobs:
           fi
           if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$REF" "${args[@]}" >/dev/null; fi
           echo "::notice::Admin function deployed."
+      - name: Gedeelde Pasr function (group-invite)
+        if: steps.check.outputs.skip != '1'
+        env:
+          S_HOST: ${{ secrets.PASR_SMTP_HOST }}
+          S_PORT: ${{ secrets.PASR_SMTP_PORT }}
+          S_USER: ${{ secrets.PASR_SMTP_USER }}
+          S_PASS: ${{ secrets.PASR_SMTP_PASSWORD }}
+          S_FROM: ${{ secrets.PASR_SMTP_FROM }}
+        run: |
+          set -euo pipefail
+          if [ -x ~/.deno/bin/deno ]; then
+            ~/.deno/bin/deno test --no-check supabase/functions/group-invite/ || { echo "::error::Tests of the group-invite function failed"; exit 1; }
+          fi
+          # De database controleert het token (pasr_group_invite met de JWT van de gebruiker)
+          supabase functions deploy group-invite --project-ref "$REF" --no-verify-jwt --use-api
+          if [ -n "$S_HOST" ] && [ -n "$S_USER" ] && [ -n "$S_PASS" ] && [ -n "$S_FROM" ]; then
+            supabase secrets set --project-ref "$REF" PASR_SMTP_HOST="$S_HOST" PASR_SMTP_PORT="${S_PORT:-465}" \
+              PASR_SMTP_USER="$S_USER" PASR_SMTP_PASSWORD="$S_PASS" PASR_SMTP_FROM="$S_FROM" >/dev/null
+            echo "::notice::group-invite deployed; invitation mails go out as $S_FROM."
+          else
+            echo "::warning::No PASR_SMTP_* secrets: invitations are made but no mail is sent (they still show up in the app)."
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/group-invite" -H "Content-Type: application/json" -d '{}')
+          [ "$code" = 401 ] && echo "::notice::group-invite is up and asks for a login." || echo "::warning::group-invite: unexpected HTTP $code"
       - name: Smoke test (Wallet pass and admin)
         if: steps.check.outputs.skip != '1'
         env:
