@@ -23,6 +23,9 @@ enum WalletPass {
 
     @MainActor
     static func make(for card: Card) async throws -> PKPass {
+        guard !card.isTemporary else {
+            throw Failure(message: String(localized: "Een tijdelijk gedeelde kaart kan niet in Apple Wallet."))
+        }
         guard AccountConfig.isConfigured, let url = URL(string: "\(AccountConfig.url)/functions/v1/wallet-pass") else {
             throw Failure(message: String(localized: "Apple Wallet is in deze versie nog niet beschikbaar."))
         }

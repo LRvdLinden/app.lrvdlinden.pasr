@@ -103,6 +103,12 @@ final class AccountService {
         return try await requestAny("rest/v1/rpc/\(name)", body: body, token: token)
     }
 
+    /// Calls a database function that also works without an account (tijdelijk delen). Signed in: as that user.
+    func publicRPC(_ name: String, body: [String: Any]) async throws -> Any {
+        let token = isSignedIn ? try? await validAccessToken() : nil
+        return try await requestAny("rest/v1/rpc/\(name)", body: body, token: token)
+    }
+
     /// Calls an edge function (POST /functions/v1/<name>) as the signed-in user.
     func function(_ name: String, body: [String: Any]) async throws -> [String: Any] {
         let token = try await validAccessToken()
@@ -205,11 +211,13 @@ final class AccountService {
 
     /// Meldingen van de gedeelde Pasr (database en functie group-invite).
     private static func groupMessage(_ s: String) -> String? {
+        if s.contains("bad_expiry") { return String(localized: "Kies een einde tussen 5 minuten en 90 dagen vanaf nu.") }
+        if s.contains("bad_card") { return String(localized: "Deze kaart kan niet tijdelijk worden gedeeld.") }
         if s.contains("group_limit") { return String(localized: "Je zit al in 2 gedeelde Pasrs. Verlaat er eerst één.") }
         if s.contains("member_limit") { return String(localized: "Een gedeelde Pasr heeft maximaal 6 leden. Openstaande uitnodigingen tellen mee.") }
         if s.contains("already_member") { return String(localized: "Deze persoon zit al in deze gedeelde Pasr.") }
         if s.contains("bad_email") { return String(localized: "Dit e-mailadres klopt niet.") }
-        if s.contains("rate_limited") { return String(localized: "Je hebt vandaag al veel uitnodigingen gestuurd. Probeer het morgen opnieuw.") }
+        if s.contains("rate_limited") { return String(localized: "Je hebt vandaag al veel gedeeld of uitgenodigd. Probeer het morgen opnieuw.") }
         if s.contains("invite_not_found") { return String(localized: "Deze uitnodiging bestaat niet meer.") }
         if s.contains("not_confirmed") { return String(localized: "Bevestig eerst je e-mailadres. Daarna kun je de uitnodiging accepteren.") }
         if s.contains("not a member") || s.contains("not_a_member") { return String(localized: "Je bent geen lid meer van deze gedeelde Pasr.") }

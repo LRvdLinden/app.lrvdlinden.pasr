@@ -38,6 +38,11 @@ final class Card {
     /// Gedeelde Pasr waarin deze kaart staat; nil = privé. Een kaart verhuizen maakt een kopie met een nieuw id.
     var groupID: UUID?
 
+    // Tijdelijk met mij gedeeld (zie TempShare): tot wanneer, de code op de server en of de deler eerder stopte.
+    var sharedUntil: Date?
+    var shareToken: String?
+    var shareRevoked: Bool = false
+
     @Attribute(.externalStorage) var logoData: Data?
     @Attribute(.externalStorage) var frontPhoto: Data?
     @Attribute(.externalStorage) var backPhoto: Data?
@@ -67,6 +72,12 @@ final class Card {
         guard let expiresAt else { return false }
         return expiresAt < Calendar.current.startOfDay(for: .now)
     }
+
+    /// Een tijdelijk met mij gedeelde kaart: niet naar Wallet, niet verder delen, niet naar Watch of widgets.
+    var isTemporary: Bool { shareToken != nil }
+
+    /// Tijdelijke kaart voorbij het einde (of gestopt door de deler): de code wordt nergens meer getoond.
+    var isShareExpired: Bool { isTemporary && (shareRevoked || (sharedUntil ?? .distantPast) <= .now) }
 
     func markUsed() {
         useCount += 1

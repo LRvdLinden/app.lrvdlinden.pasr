@@ -37,6 +37,27 @@ struct SettingsView: View {
 
                 AccountSettingsSection()
 
+                if AccountConfig.isConfigured {
+                    Section {
+                        NavigationLink { SharedPasrView() } label: {
+                            HStack {
+                                SettingsLabel("Gedeelde Pasr", symbol: "person.2.fill", color: Brand.mint)
+                                Spacer()
+                                if !GroupService.shared.invites.isEmpty {
+                                    Text("\(GroupService.shared.invites.count)")
+                                        .font(.caption.weight(.bold)).foregroundStyle(.white)
+                                        .padding(.horizontal, 7).padding(.vertical, 2)
+                                        .background(Brand.coral, in: Capsule())
+                                } else if !GroupService.shared.groups.isEmpty {
+                                    Text("\(GroupService.shared.groups.count)").foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    } footer: {
+                        Text("Deel kaarten met je gezin of huisgenoten, elk met een eigen account.")
+                    }
+                }
+
                 RemindersSettingsSection()
 
                 Section("Privacy en beveiliging") {
@@ -127,7 +148,7 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $askBackupPassword) {
                 BackupPasswordSheet { password in
-                    if let doc = try? BackupDocument(backup: PasrBackup(cards: active), password: password) {
+                    if let doc = try? BackupDocument(backup: PasrBackup(cards: active.filter { !$0.isTemporary }), password: password) {
                         exportDoc = doc
                         Task { @MainActor in
                             try? await Task.sleep(for: .milliseconds(400))

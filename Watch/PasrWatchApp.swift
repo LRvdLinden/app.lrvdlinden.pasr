@@ -102,7 +102,7 @@ final class PhoneLink: NSObject, WCSessionDelegate {
 struct WatchWalletView: View {
     @Environment(PhoneLink.self) private var phone
     @Environment(\.scenePhase) private var scenePhase
-    @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var stored: [Card]
+    @Query(filter: #Predicate<Card> { $0.deletedAt == nil && $0.shareToken == nil }) private var stored: [Card]
 
     private var cards: [WatchCard] {
         let fromCloud = stored.alphabetical().map(WatchCard.init)

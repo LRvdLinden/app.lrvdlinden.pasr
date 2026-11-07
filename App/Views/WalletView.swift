@@ -139,7 +139,9 @@ struct WalletView: View {
 
     @ViewBuilder private func cardMenu(_ card: Card) -> some View {
         Button { sheet = .edit(card) } label: { Label("Wijzig", systemImage: "pencil") }
-        Button { share(card) } label: { Label("Deel", systemImage: "square.and.arrow.up") }
+        if !card.isTemporary {
+            Button { share(card) } label: { Label("Deel", systemImage: "square.and.arrow.up") }
+        }
         Button {
             card.isFavorite.toggle()
             card.updatedAt = .now
@@ -161,7 +163,10 @@ struct WalletView: View {
                 .transition(.opacity)
 
             VStack(spacing: 22) {
-                FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
+                // tijdelijke kaart: elke 15 seconden opnieuw tekenen, zodat de code op het einde verdwijnt
+                TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in
+                    FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
+                }
                     .frame(width: width, height: width / Brand.cardAspect)
                     .matchedGeometryEffect(id: card.id, in: namespace)
                     .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
@@ -174,8 +179,11 @@ struct WalletView: View {
                         card.updatedAt = .now
                     }
                     actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
-                    actionButton("square.and.arrow.up", label: "Deel") { sheet = .share(card) }
-                    if WalletPass.isAvailable, !card.number.isEmpty {
+                    if !card.isTemporary {
+                        actionButton("square.and.arrow.up", label: "Deel") { share(card) }
+                    }
+                    // tijdelijk gedeelde kaarten mogen niet in Apple Wallet
+                    if WalletPass.isAvailable, !card.number.isEmpty, !card.isTemporary {
                         WalletActionButton(card: card).id(card.id)
                     }
                     actionButton("trash", label: "Verwijder", role: .destructive) { deleting = card }

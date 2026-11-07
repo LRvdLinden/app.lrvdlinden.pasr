@@ -49,6 +49,8 @@ struct CardEditorView: View {
         var website = ""
         var frontPhoto: Data?
         var backPhoto: Data?
+        /// Privé (nil) of een gedeelde Pasr.
+        var groupID: UUID?
 
         var balance: Double? {
             let cleaned = balanceText.replacingOccurrences(of: ",", with: ".")
@@ -93,6 +95,7 @@ struct CardEditorView: View {
         d.website = card.website ?? ""
         d.frontPhoto = card.frontPhoto
         d.backPhoto = card.backPhoto
+        d.groupID = card.groupID
         _draft = State(initialValue: d)
     }
 
@@ -149,6 +152,8 @@ struct CardEditorView: View {
             .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
 
             codeSection
+                .disabled(existing?.isTemporary == true)
+            if showsPlacePicker { placeSection }
             cardSection
             if draft.kind == .voucher { voucherSection }
             logoSection
@@ -303,6 +308,37 @@ struct CardEditorView: View {
         }
     }
 
+    // MARK: Bewaren in (privé of een gedeelde Pasr)
+
+    private var showsPlacePicker: Bool {
+        guard AccountService.shared.isSignedIn, existing?.isTemporary != true else { return false }
+        return !GroupService.shared.groups.isEmpty || draft.groupID != nil
+    }
+
+    private var placeSection: some View {
+        Section {
+            Picker(selection: $draft.groupID) {
+                Label("Privé", systemImage: "person.fill").tag(UUID?.none)
+                ForEach(GroupService.shared.groups) { group in
+                    Label(group.name, systemImage: "person.2.fill").tag(UUID?.some(group.id))
+                }
+                if let id = draft.groupID, GroupService.shared.group(id) == nil {
+                    Label("Gedeelde Pasr", systemImage: "person.2.fill").tag(UUID?.some(id))
+                }
+            } label: {
+                Label("Bewaren in", systemImage: "tray.full")
+            }
+        } footer: {
+            if let id = draft.groupID {
+                Text("Iedereen in \(GroupService.shared.group(id)?.name ?? String(localized: "deze gedeelde Pasr")) ziet en gebruikt deze kaart.")
+            } else if existing?.groupID != nil {
+                Text("De kaart gaat uit de gedeelde Pasr en wordt alleen van jou.")
+            } else {
+                Text("Alleen jij ziet deze kaart.")
+            }
+        }
+    }
+
     private var voucherSection: some View {
         Section("Voucher") {
             HStack {
@@ -442,8 +478,16 @@ struct CardEditorView: View {
         card.backPhoto = draft.backPhoto
         card.updatedAt = .now
         card.refreshCodeImage()
-        if existing == nil { context.insert(card) }
-        try? context.save()
+        if existing == nil {
+            card.groupID = draft.groupID
+            context.insert(card)
+            try? context.save()
+        } else if card.groupID != draft.groupID, !card.isTemporary {
+            // naar een andere plek: kopie op de nieuwe plek, het origineel gaat weg op de oude
+            GroupService.move(card, to: draft.groupID, in: context)
+        } else {
+            try? context.save()
+        }
         if card.logoData == nil {
             let context = context
             Task { await LogoService.fillMissing(in: context) }

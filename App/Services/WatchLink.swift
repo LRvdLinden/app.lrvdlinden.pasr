@@ -20,7 +20,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// Call with the current cards; sends only when something the Watch shows has changed.
     @MainActor
     func send(_ cards: [Card]) {
-        let list = cards.filter { $0.deletedAt == nil }.alphabetical().map(WatchCard.init)
+        let list = cards.filter { $0.deletedAt == nil && !$0.isTemporary }.alphabetical().map(WatchCard.init)
         guard let data = WatchPayload.encode(list) else { return }
         try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
         try? data.write(to: lastFile, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])

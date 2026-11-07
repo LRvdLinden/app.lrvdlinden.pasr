@@ -23,7 +23,9 @@ struct OnboardingView: View {
              text: "Kies de winkel en scan de barcode. Of zet je kaarten uit Klarna of Stocard over met een paar screenshots."),
         Page(id: 2, symbol: "applewatch", title: "Altijd bij de hand",
              text: "Bij de kassa tik je de kaart aan en draait hij om naar de barcode. Ook op je Apple Watch en in widgets."),
-        Page(id: 3, symbol: "lock.shield", title: "Veilig en privé",
+        Page(id: 3, symbol: "person.2.fill", title: "Samen of even delen",
+             text: "Maak een gedeelde Pasr met je gezin: iedereen ziet dezelfde kaarten. Of leen een kaart tijdelijk uit via WhatsApp; na de einddatum werkt hij niet meer."),
+        Page(id: 4, symbol: "lock.shield", title: "Veilig en privé",
              text: "Kaartnummers staan versleuteld. Vergrendel Pasr of losse kaarten met Face ID. Geen reclame, geen tracking."),
     ]
 
@@ -183,6 +185,10 @@ struct OnboardingView: View {
                     }
                 }
             }
+        } else if p.id == 3 {
+            SharedStackArt()
+                .scaleEffect(1.7)
+                .id(page == 3)   // animatie opnieuw als je op deze pagina komt
         } else {
             RoundedRectangle(cornerRadius: 44, style: .continuous)
                 .fill(LinearGradient(colors: [Brand.iris, Brand.iris.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -220,7 +226,7 @@ struct OnboardingView: View {
                 Text("Bewaar je kaarten in een account")
                     .font(.system(size: 30, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
-                Text("Gratis en optioneel. Je kaarten staan dan versleuteld op één plek en zijn er meteen weer op een nieuwe telefoon.")
+                Text("Gratis en optioneel. Je kaarten staan dan versleuteld op één plek en zijn er meteen weer op een nieuwe telefoon. Uitgenodigd voor een gedeelde Pasr? Gebruik het e-mailadres waarop je de uitnodiging kreeg.")
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)

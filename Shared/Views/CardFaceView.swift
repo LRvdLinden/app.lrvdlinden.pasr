@@ -18,6 +18,11 @@ struct CardAppearance: Equatable {
     var logoStyle: StoreLogoStyle?
     /// In een gedeelde Pasr: klein personen-icoon in de kop.
     var isShared = false
+    /// Tijdelijk met mij gedeeld: tot wanneer (nil = gewone kaart) en of de deler eerder stopte.
+    var tempUntil: Date?
+    var tempRevoked = false
+    /// Voorbij het einde: de code wordt niet meer getoond.
+    var tempExpired: Bool { tempUntil.map { tempRevoked || $0 <= .now } ?? false }
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
@@ -45,6 +50,10 @@ struct CardAppearance: Equatable {
                   isLocked: card.isLocked,
                   logoStyle: card.logoFromWebsite ? StoreLogoStyles.style(for: card.logoDomain) : nil)
         isShared = card.groupID != nil
+        if card.isTemporary {
+            tempUntil = card.sharedUntil ?? .distantPast
+            tempRevoked = card.shareRevoked
+        }
     }
 
     var displayName: String { storeName.isEmpty ? String(localized: "Nieuwe kaart") : storeName }
@@ -94,7 +103,9 @@ struct CardFaceView: View {
                         .opacity(0.85)
                         .lineLimit(1)
                 }
-                if showsCode && appearance.isLocked && !revealed {
+                if showsCode && appearance.tempExpired {
+                    expiredPanel
+                } else if showsCode && appearance.isLocked && !revealed {
                     lockedPanel
                 } else if showsCode {
                     codePanel
@@ -111,8 +122,13 @@ struct CardFaceView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// "€ 25,00 · geldig tot 10 dec 2026"
+    /// "€ 25,00 · geldig tot 10 dec 2026"; bij een tijdelijke kaart "Gedeeld tot …" of "Verlopen".
     private var voucherInfo: String? {
+        if let until = appearance.tempUntil {
+            if appearance.tempRevoked { return String(localized: "Delen gestopt") }
+            if appearance.tempExpired { return String(localized: "Verlopen op \(until.formatted(date: .abbreviated, time: .shortened))") }
+            return String(localized: "Gedeeld tot \(until.formatted(date: .abbreviated, time: .shortened))")
+        }
         guard appearance.kind == .voucher else { return nil }
         var parts: [String] = []
         if let balance = appearance.balanceText { parts.append(balance) }
@@ -131,16 +147,33 @@ struct CardFaceView: View {
                     .textCase(.uppercase)
                     .tracking(0.6)
                     .opacity(0.7)
-                Text(appearance.isLocked ? "•••• ••••" : appearance.groupedNumber)
+                Text(appearance.isLocked || appearance.tempExpired ? "•••• ••••" : appearance.groupedNumber)
                     .font(.system(.subheadline, design: .monospaced).weight(.medium))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
             Spacer()
-            Image(systemName: appearance.isLocked ? "lock.fill" : "arrow.triangle.2.circlepath")
+            Image(systemName: appearance.tempUntil != nil ? "clock.fill" : appearance.isLocked ? "lock.fill" : "arrow.triangle.2.circlepath")
                 .font(.footnote.weight(.semibold))
                 .opacity(0.6)
         }
+    }
+
+    /// Tijdelijke kaart voorbij het einde: geen code meer, alleen de melding.
+    private var expiredPanel: some View {
+        VStack(spacing: 6) {
+            Image(systemName: appearance.tempRevoked ? "hand.raised.fill" : "clock.badge.xmark").font(.title3)
+            Text(appearance.tempRevoked ? "Delen gestopt" : "Verlopen")
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+            Text("Deze tijdelijk gedeelde kaart werkt niet meer.")
+                .font(.system(size: 10, design: .rounded))
+                .opacity(0.8)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 8)
+        .opacity(0.85)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var lockedPanel: some View {
@@ -185,6 +218,10 @@ struct CardFaceView: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
+            if appearance.tempUntil != nil {
+                Image(systemName: "clock.fill").font(.caption).opacity(0.85)
+                    .accessibilityLabel(Text("Tijdelijk gedeeld"))
+            }
             if appearance.isShared {
                 Image(systemName: "person.2.fill").font(.caption).opacity(0.85)
                     .accessibilityLabel(Text("Gedeeld"))

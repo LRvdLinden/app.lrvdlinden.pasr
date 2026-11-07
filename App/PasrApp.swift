@@ -34,6 +34,11 @@ struct RootView: View {
     @State private var covered = false
     @State private var openCardID: UUID?
     @State private var incoming: IncomingShare?
+    @State private var incomingTemp: IncomingTempShare?
+    @State private var invite: GroupService.Invite?
+    @State private var seenInvites: Set<String> = []
+    @Environment(\.modelContext) private var context
+    private var groups = GroupService.shared
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
 
     var body: some View {
@@ -69,19 +74,40 @@ struct RootView: View {
         }
         .background(Brand.ink.ignoresSafeArea())
         // "Vind je Pasr leuk?": eerst een paar uur na het eerste gebruik, daarna hoogstens 1 keer per week
-        .reviewPrompt(ready: !showSplash && onboarded && !locked && !covered && !cards.isEmpty && incoming == nil)
+        .reviewPrompt(ready: !showSplash && onboarded && !locked && !covered && !cards.isEmpty && incoming == nil
+                       && incomingTemp == nil && invite == nil)
         // A tapped notification (voucher reminder or "you're at the store") opens its card.
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenCard)) { _ in openFromNotification() }
         .onAppear { openFromNotification() }
         .onOpenURL { url in
             if let id = DeepLink.cardID(from: url) {
                 openCardID = id
+            } else if let token = TempShare.token(from: url) {
+                incomingTemp = IncomingTempShare(token: token)
+            } else if url.host() == "pasr.nl" && url.path().hasPrefix("/uitnodiging") {
+                Task { await GroupService.shared.sync(in: context) }   // de uitnodiging verschijnt hieronder
             } else if let shared = CardShare.decode(url) {
                 incoming = IncomingShare(card: shared)
             }
         }
         .sheet(item: $incoming) { share in
             ReceiveCardSheet(shared: share.card)
+        }
+        .sheet(item: $incomingTemp) { share in
+            ReceiveTempCardSheet(token: share.token)
+        }
+        // Uitnodiging voor een gedeelde Pasr: na inloggen of synchroniseren, op een rustig moment
+        .sheet(item: $invite) { item in
+            GroupInviteSheet(invite: item)
+        }
+        .onChange(of: groups.invites, initial: true) { _, _ in offerInvite() }
+        .onChange(of: showSplash) { _, _ in offerInvite() }
+        .onChange(of: onboarded) { _, _ in offerInvite() }
+        .onChange(of: locked) { _, _ in offerInvite() }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            TempShare.scrubExpired(in: context)
+            await TempShare.refreshStatuses(in: context)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -100,6 +126,13 @@ struct RootView: View {
 }
 
 extension RootView {
+    fileprivate func offerInvite() {
+        guard invite == nil, !showSplash, onboarded, !locked, incoming == nil, incomingTemp == nil,
+              let next = groups.invites.first(where: { !seenInvites.contains($0.id) }) else { return }
+        seenInvites.insert(next.id)
+        invite = next
+    }
+
     fileprivate func openFromNotification() {
         guard let id = NotificationRouter.pendingCardID else { return }
         NotificationRouter.pendingCardID = nil

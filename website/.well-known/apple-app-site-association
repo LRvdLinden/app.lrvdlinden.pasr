@@ -2,10 +2,34 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["EU3UY476T6.nl.lrvdlinden.pasr"],
+        "appIDs": [
+          "EU3UY476T6.nl.lrvdlinden.pasr"
+        ],
         "components": [
-          { "/": "/kaart/*", "comment": "Gedeelde kaarten openen in Pasr" },
-          { "/": "/kaart", "comment": "Gedeelde kaarten openen in Pasr" }
+          {
+            "/": "/kaart/*",
+            "comment": "Gedeelde kaarten openen in Pasr"
+          },
+          {
+            "/": "/kaart",
+            "comment": "Gedeelde kaarten openen in Pasr"
+          },
+          {
+            "/": "/tijdelijk/*",
+            "comment": "Tijdelijk gedeelde kaarten openen in Pasr"
+          },
+          {
+            "/": "/tijdelijk",
+            "comment": "Tijdelijk gedeelde kaarten openen in Pasr"
+          },
+          {
+            "/": "/uitnodiging/*",
+            "comment": "Uitnodiging voor een gedeelde Pasr"
+          },
+          {
+            "/": "/uitnodiging",
+            "comment": "Uitnodiging voor een gedeelde Pasr"
+          }
         ]
       }
     ]
