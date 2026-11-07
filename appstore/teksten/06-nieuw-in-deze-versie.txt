@@ -5,3 +5,6 @@
 • Filter op soort kaart: klantenkaarten, cadeaukaarten, favorieten of een gedeelde Pasr.
 • Licht, donker of automatisch, en nu ook op Mac en Apple Vision Pro.
 • Blokkeer screenshots van je codes.
+• Je kaart verschijnt betrouwbaarder bij de winkel: ook als Pasr dicht is, met eigen locaties per kaart.
+• Dichtstbij eerst en omlaag trekken om te verversen.
+• Kies zelf welke filialen op je Wallet-pas komen.

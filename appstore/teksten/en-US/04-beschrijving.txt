@@ -21,7 +21,7 @@ SHARE TOGETHER OR FOR A WHILE
 
 APPLE WALLET AND NOTIFICATIONS
 • Add a card to Apple Wallet. iOS shows it on your Lock Screen when you are at that store.
-• Or let Pasr notify you near a branch.
+• Or let Pasr show your card as soon as you walk into a store, even when the app is closed. Pin your usual branch yourself.
 • A reminder before a voucher or gift card expires.
 
 GIFT CARDS AND VOUCHERS

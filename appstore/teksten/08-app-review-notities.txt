@@ -15,7 +15,8 @@ Demo account (sign-in fields in App Store Connect): already contains three cards
 Permissions:
 - Camera: scanning barcodes (asked when scanning).
 - Photos: only the photos or screen recording the user picks for import or a logo.
-- Location: only when the user turns on "Kaart tonen bij de winkel"; used for a local notification near a store and for branch locations on a Wallet pass. The location never leaves the device.
+- Location (When In Use): only when the user turns on "Kaart tonen bij de winkel", sorts by "Dichtstbij eerst", taps "Ik sta hier" or picks Wallet branches. Used to find nearby branches in Apple Maps and to set local location notifications (UNLocationNotificationTrigger).
+- Location (Always, optional): Settings > Meldingen > "Ook als Pasr dicht is". With it, significant-location-change monitoring wakes Pasr after the user has moved about a kilometre, so it can replace the 20 monitored stores with the ones around the new position (iOS allows 20 per app). No continuous tracking, no background location mode. The location never leaves the device.
 - Notifications: local reminders, and push notifications only for "your requested store was added" and (opt-in) "new stores".
 - Face ID: optional lock for the app or single cards.
 

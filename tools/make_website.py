@@ -109,6 +109,7 @@ ICONS = {
     "share": '<path d="M12 4v11M8 8l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
     "record": '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/>',
     "devices": '<path d="M3 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v8H3zM1 17h18M19 9h3v10h-5"/>',
+    "pin": '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
     "store": '<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/>',
 }
 
@@ -124,9 +125,10 @@ FEATURES = [
     ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 2, "watch"),
     ("lock", "#17162A", "Versleuteld en met Face ID", "Kaartnummers versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID en blokkeer screenshots van je codes.", 3, "lock"),
     ("share", "#6A5CFF", "Samen of even delen", "Een gedeelde Pasr met je gezin, of een kaart tijdelijk uitlenen met een einddatum. <a href=\"#delen\">Zo werkt het</a>", 3, "share"),
+    ("pin", "#FF6B57", "Je kaart verschijnt bij de winkel", "Loop je een winkel binnen, dan staat je kaart klaar met een melding. Zet je vaste filiaal zelf vast, kies welke filialen op je Wallet-pas komen, en met “Ook als Pasr dicht is” zet Pasr de winkels om je heen vanzelf klaar als je ergens anders bent. <a href=\"#waarom-verschijnt-mijn-kaart-niet-altijd-bij-de-winkel\">Zo werkt het</a>", 4, "near"),
     ("logo", "#1F9E6A", "Met het logo van je winkel", "Ruim 300 Nederlandse kaarten met hun eigen logo en kleur. Mis je er een? Vraag hem aan in de app, ook cadeaukaarten; hij komt erbij zonder update.", 2, "logos"),
-    ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 2, "cloud"),
-    ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 2, "theme"),
+    ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 3, "cloud"),
+    ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 3, "theme"),
 ]
 
 FAQ = [
@@ -137,6 +139,7 @@ FAQ = [
     ("Op welke apparaten werkt Pasr?", "Op iPhone en iPad met iOS en iPadOS 17 of nieuwer en op de Apple Watch met watchOS 10 of nieuwer."),
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Je kunt de winkel ook aanvragen in de app: tik op + › Kaart toevoegen › Mis je een winkel? (met een gratis Pasr-account). Dat kan ook voor cadeaukaarten en vouchers. Wij maken de kaart met het juiste logo en de juiste kleur en voegen hem toe zonder app-update; je krijgt een melding zodra hij erin staat."),
     ("Waar komen de logo's vandaan?", "De logo's van ruim 230 bekende winkels zitten in de app, in de juiste merkkleur. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
+    ("Waarom verschijnt mijn kaart niet altijd bij de winkel?", "iOS laat een app hoogstens 20 plekken tegelijk in de gaten houden. Pasr kiest de 20 beste plekken rond waar je bent: eerst je eigen locaties, dan de dichtstbijzijnde filialen van je kaarten. Zet in Instellingen › Meldingen “Ook als Pasr dicht is” aan (locatie: Altijd); dan zet Pasr de winkels opnieuw klaar zodra je ergens anders bent, ook als je de app niet opent. Bij je vaste filiaal helpt het om bij de kaart onder Wijzig › Locaties op “Ik sta hier” te tikken. Voor Apple Wallet kies je zelf tot 10 filialen; of de pas op je toegangsscherm verschijnt, bepaalt iOS. Je locatie blijft altijd op je iPhone."),
     ("Kan ik screenshots van mijn codes blokkeren?", "Ja. Zet in Instellingen › Privacy en beveiliging Screenshots van codes blokkeren aan; dan is de barcode zwart in een screenshot of schermopname. Bij tijdelijk gedeelde kaarten staat dit altijd aan."),
     ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
     ("Wat gebeurt er als ik mijn telefoon kwijtraak?", "Je kaarten staan in je iCloud. Log op je nieuwe iPhone in met hetzelfde Apple-account en open Pasr: je kaarten komen vanzelf terug."),
@@ -158,6 +161,8 @@ TABLE = [
     ("Apple Watch-app", "y", "Via Wallet", "n", "soms"),
     ("Widgets op je beginscherm", "y", "y", "-", "soms"),
     ("Naar Apple Wallet", "y", "y", "-", "soms"),
+    ("Kaart bij de winkel, ook als de app dicht is", "y", "-", "-", "soms"),
+    ("Eigen locaties en Wallet-filialen kiezen", "y", "-", "-", "soms"),
     ("Overzetten met een schermopname", "y", "y", "-", "-"),
     ("Gedeelde Pasr, tot 6 personen", "y", "-", "-", "-"),
     ("Tijdelijk delen met einddatum", "y", "-", "-", "-"),
@@ -243,6 +248,14 @@ def feature_visual(kind):
         return '<div class="fv fv-watch"><span class="fv-band"></span><span class="fv-wcase"><span class="fv-wcard"></span><span class="fv-wcard c2"></span></span></div>'
     if kind == "cloud":
         return '<div class="fv fv-cloud"><span class="d phone"></span><span class="d pad"></span><span class="d watch2"></span><i></i><i></i></div>'
+    if kind == "near":
+        return ('<div class="fv fv-near" aria-hidden="true">'
+                '<span class="fv-pin p1"><img src="/assets/logos/ah.nl.png" alt=""></span>'
+                '<span class="fv-pin p2"><img src="/assets/logos/hema.nl.png" alt=""></span>'
+                '<span class="fv-pin p3"><img src="/assets/logos/kruidvat.nl.png" alt=""></span>'
+                '<span class="fv-pulse"></span><span class="fv-me"></span>'
+                '<span class="fv-note"><img src="/assets/icon.png" alt=""><span><b>Je bent bij Albert Heijn</b>Tik om je kaart te tonen.</span></span>'
+                '</div>')
     if kind == "theme":
         return '<div class="fv fv-theme"><span class="fv-toggle"><b></b></span></div>'
     return ""
