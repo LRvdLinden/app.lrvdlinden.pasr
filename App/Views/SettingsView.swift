@@ -54,8 +54,19 @@ struct SettingsView: View {
                                 }
                             }
                         }
+                        NavigationLink { TempSharesView() } label: {
+                            HStack {
+                                HStack(spacing: 12) {
+                                    FanIcon()
+                                    Text("Tijdelijk gedeeld").foregroundStyle(.primary)
+                                }
+                                Spacer()
+                                let active = TempShare.allSent().filter(\.isActive).count
+                                if active > 0 { Text("\(active)").foregroundStyle(.secondary) }
+                            }
+                        }
                     } footer: {
-                        Text("Deel kaarten met je gezin of huisgenoten, elk met een eigen account.")
+                        Text("Deel kaarten met je gezin of huisgenoten, elk met een eigen account, of leen een kaart tijdelijk uit.")
                     }
                 }
 
