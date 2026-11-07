@@ -26,7 +26,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
 import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, topicOrder, wants } from "./push.ts";
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
-import { cleanBalancePage, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
+import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
 
 const env = (k: string) => (Deno.env.get(k) ?? "").trim();
@@ -205,6 +205,16 @@ async function notify(kind: Kind, reason: unknown): Promise<number> {
   return pushAll(kind, message(kind, await counts(), reason));
 }
 
+/** Naar een Pasr-gebruiker. Klopt de omgeving niet (een ontwikkelversie meldt zich als productie of andersom:
+ *  BadDeviceToken), dan de andere omgeving proberen en dat onthouden. */
+async function userSend(d: { device_id: string; token: string; sandbox: boolean }, payload: unknown) {
+  const r = await apnsSend(d.token, d.sandbox, payload, USER_TOPIC);
+  if (r.ok || r.error !== "apns_BadDeviceToken") return r;
+  const other = await apnsSend(d.token, !d.sandbox, payload, USER_TOPIC);
+  if (other.ok) await db.from("pasr_user_push").update({ sandbox: !d.sandbox }).eq("device_id", d.device_id);
+  return other.ok ? other : r;
+}
+
 /** Melding aan gebruikers van Pasr over een nieuwe winkel: wie hem aanvroeg plus wie "Nieuwe winkels" aan heeft. */
 async function pushNewStore(id: string, name: string, requesters: string[]): Promise<number> {
   if (!apnsConfigured()) return 0;
@@ -213,9 +223,11 @@ async function pushNewStore(id: string, name: string, requesters: string[]): Pro
   const want = new Set(requesters);
   const targets = (data ?? []).filter((d) => d.new_stores || want.has(d.user_id));
   const payload = newStorePayload(name, id);
-  const results = await Promise.all(targets.map(async (d) => ({ d, r: await apnsSend(d.token, d.sandbox, payload, USER_TOPIC) })));
+  const results = await Promise.all(targets.map(async (d) => ({ d, r: await userSend(d, payload) })));
   const invalid = results.filter((x) => !x.r.ok && x.r.invalid).map((x) => x.d.device_id);
   if (invalid.length) await db.from("pasr_user_push").delete().in("device_id", invalid);
+  const failed = results.filter((x) => !x.r.ok && !x.r.invalid);
+  if (failed.length) console.error("admin", "user_push", (failed[0].r as { error: string }).error, failed.length);
   return results.filter((x) => x.r.ok).length;
 }
 
@@ -409,12 +421,16 @@ Deno.serve(async (req) => {
       }
       case "store_publish": {
         const id = typeof body.id === "string" ? body.id : "";
-        const { data: store } = await db.from("pasr_stores").select("id, name").eq("id", id).maybeSingle();
+        const { data: store } = await db.from("pasr_stores").select("id, name, domain, aliases").eq("id", id).maybeSingle();
         if (!store) return json({ error: "not_found" }, 404);
         const now = new Date().toISOString();
         const { error } = await db.from("pasr_stores").update({ published: true, published_at: now, updated_at: now }).eq("id", id);
         if (error) throw new Error(error.message);
-        const ids = (Array.isArray(body.request_ids) ? body.request_ids : []).filter(isUuid).slice(0, 500);
+        const given = (Array.isArray(body.request_ids) ? body.request_ids : []).filter(isUuid).slice(0, 500);
+        // ook open aanvragen voor deze winkel die niet zijn meegegeven (zelfde website of naam): die vragers horen het ook
+        const { data: open } = await db.from("pasr_store_requests").select("id, name, website").eq("status", "open").limit(1000);
+        const matched = (open ?? []).filter((r) => requestMatches(store, r)).map((r) => r.id as string);
+        const ids = [...new Set([...given, ...matched])].slice(0, 500);
         let requesters: string[] = [];
         if (ids.length) {
           const { data: closed, error: ce } = await db.from("pasr_store_requests")

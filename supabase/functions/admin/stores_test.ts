@@ -46,3 +46,13 @@ Deno.test("saldo-pagina", async () => {
   ok(!cleanBalancePage({ store_id: "v v", url: "https://vvv.nl" }).ok, "id");
   ok(!cleanBalancePage({ store_id: "vvv", url: "https://a:b@vvv.nl" }).ok, "geen inlog in adres");
 });
+
+Deno.test("aanvraag hoort bij winkel", async () => {
+  const { requestMatches } = await import("./stores.ts");
+  const store = { name: "Bakkers Cadeau", domain: "bakkerscadeaukaart.nl", aliases: ["bakkerscadeaukaart"] };
+  ok(requestMatches(store, { name: "iets", website: "https://www.bakkerscadeaukaart.nl/saldo" }), "domein");
+  ok(requestMatches(store, { name: "bakkers cadeau" }), "naam");
+  ok(requestMatches(store, { name: "Bakkerscadeaukaart" }), "alias");
+  ok(!requestMatches(store, { name: "Bakker Bart" }), "andere winkel");
+  ok(!requestMatches({ name: "AH" }, { name: "a" }), "te kort");
+});

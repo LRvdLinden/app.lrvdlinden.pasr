@@ -102,16 +102,32 @@ enum UserPush {
     /// Token en voorkeur naar het account (na inloggen en bij wijzigen van de schakelaar).
     static func sync() async {
         guard AccountService.shared.isSignedIn, let token = UserDefaults.standard.string(forKey: tokenKey) else { return }
-        #if DEBUG
-        let sandbox = true
-        #else
-        let sandbox = false
-        #endif
+        // Ontwikkelversie (Xcode) of productie (TestFlight/App Store): uit het ingebedde profiel, niet uit DEBUG,
+        // want ook een Release-build vanuit Xcode krijgt een sandbox-token.
+        let sandbox = PushEnvironment.isSandbox
         _ = try? await AccountService.shared.rpc("pasr_push_register", body: [
             "p_device": deviceID, "p_token": token, "p_sandbox": sandbox,
             "p_new_stores": UserDefaults.standard.bool(forKey: newStoresKey),
         ])
     }
+}
+
+/// `aps-environment` uit het ingebedde provisioning-profiel. Geen profiel (App Store, TestFlight) = productie.
+enum PushEnvironment {
+    static let isSandbox: Bool = {
+        guard let data = try? Data(contentsOf: Bundle.main.bundleURL.appendingPathComponent("embedded.mobileprovision")),
+              let start = data.range(of: Data("<?xml".utf8)),
+              let end = data.range(of: Data("</plist>".utf8), in: start.lowerBound..<data.endIndex),
+              let dict = (try? PropertyListSerialization.propertyList(from: data.subdata(in: start.lowerBound..<end.upperBound), format: nil)) as? [String: Any],
+              let ent = dict["Entitlements"] as? [String: Any] else {
+            #if DEBUG
+            return true
+            #else
+            return false
+            #endif
+        }
+        return (ent["aps-environment"] as? String) == "development"
+    }()
 }
 
 #if canImport(UIKit)
