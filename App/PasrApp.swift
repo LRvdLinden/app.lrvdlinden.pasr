@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct PasrApp: App {
     let container = PasrStore.makeContainer()
+    @AppStorage(AppAppearance.key) private var appearance = AppAppearance.auto.rawValue
 
     init() {
         #if os(iOS)
@@ -15,7 +16,7 @@ struct PasrApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
                 .environment(\.codeShield, ScreenShield.wrapper)
                 .task {
                     PasrStore.purgeOldDeletions(in: container.mainContext)

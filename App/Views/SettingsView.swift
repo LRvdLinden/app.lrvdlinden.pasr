@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage(LogoService.settingKey) private var fetchLogos = true
     @AppStorage(Biometrics.appLockKey) private var appLock = false
     @AppStorage(ScreenShield.settingKey) private var blockScreenshots = false
+    @AppStorage(AppAppearance.key) private var appearance = AppAppearance.auto.rawValue
     @State private var exportDoc: BackupDocument?
     @State private var showExporter = false
     @State private var showImporter = false
@@ -71,6 +72,18 @@ struct SettingsView: View {
                 }
 
                 RemindersSettingsSection()
+
+                Section {
+                    Picker(selection: $appearance) {
+                        Text("Automatisch").tag(AppAppearance.auto.rawValue)
+                        Text("Licht").tag(AppAppearance.light.rawValue)
+                        Text("Donker").tag(AppAppearance.dark.rawValue)
+                    } label: {
+                        SettingsLabel("Weergave", symbol: "circle.lefthalf.filled", color: .gray)
+                    }
+                } footer: {
+                    Text("Automatisch volgt de instelling van je iPhone of iPad. Kaarten houden altijd hun eigen kleur.")
+                }
 
                 Section {
                     Toggle(isOn: Binding(get: { appLock }, set: { newValue in

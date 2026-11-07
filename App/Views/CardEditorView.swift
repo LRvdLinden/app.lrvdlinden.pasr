@@ -188,7 +188,7 @@ struct CardEditorView: View {
             }
         }
         .onAppear {
-            // New card from a store: open the scanner straight away, like Stocard did.
+            // New card from a store: open the scanner straight away, like the old card apps did.
             if existing == nil && draft.number.isEmpty && ScannerView.isAvailable { showScanner = true }
         }
         #endif
@@ -252,10 +252,12 @@ struct CardEditorView: View {
 
             HStack(spacing: 10) {
                 #if os(iOS)
-                Button { showScanner = true } label: {
-                    Label("Scan", systemImage: "barcode.viewfinder").frame(maxWidth: .infinity)
+                if ScannerView.isAvailable {   // niet op de Mac of Vision Pro
+                    Button { showScanner = true } label: {
+                        Label("Scan", systemImage: "barcode.viewfinder").frame(maxWidth: .infinity)
+                    }
+                    .pasrGlassButton()
                 }
-                .pasrGlassButton()
                 #endif
                 PhotosPicker(selection: $codePhoto, matching: .images) {
                     Label(readingPhoto ? "Lezen…" : "Uit foto", systemImage: "photo").frame(maxWidth: .infinity)

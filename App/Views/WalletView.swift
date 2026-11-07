@@ -281,7 +281,7 @@ struct WalletView: View {
                 .pasrGlassButton(prominent: true)
                 .tint(Brand.iris)
                 Button { sheet = .importScreenshots } label: {
-                    Label("Screenshots importeren", systemImage: "photo.stack").frame(maxWidth: 260).padding(.vertical, 6)
+                    Label("Importeren uit andere app", systemImage: "square.and.arrow.down.on.square").frame(maxWidth: 260).padding(.vertical, 6)
                 }
                 .pasrGlassButton()
                 #if DEBUG
@@ -306,7 +306,7 @@ struct WalletView: View {
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button { sheet = .add } label: { Label("Kaart toevoegen", systemImage: "plus.rectangle.on.rectangle") }
-                Button { sheet = .importScreenshots } label: { Label("Screenshots importeren", systemImage: "photo.stack") }
+                Button { sheet = .importScreenshots } label: { Label("Importeren uit andere app", systemImage: "square.and.arrow.down.on.square") }
             } label: {
                 Label("Toevoegen", systemImage: "plus")
             }

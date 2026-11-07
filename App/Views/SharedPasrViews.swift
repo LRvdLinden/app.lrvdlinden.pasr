@@ -175,7 +175,7 @@ struct GroupDetailView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "envelope.badge")
                                 .frame(width: 34, height: 34)
-                                .background(.white.opacity(0.08), in: Circle())
+                                .background(Color.primary.opacity(0.08), in: Circle())
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(invite.email)
                                 Text("Uitgenodigd").font(.footnote).foregroundStyle(.secondary)

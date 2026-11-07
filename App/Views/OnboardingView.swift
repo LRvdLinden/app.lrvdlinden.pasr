@@ -20,7 +20,7 @@ struct OnboardingView: View {
         Page(id: 0, symbol: "wallet.pass", title: "Al je pasjes op één plek",
              text: "Klantenkaarten, spaarpassen en cadeaukaarten van ruim 300 Nederlandse winkels, met hun echte logo en kleur."),
         Page(id: 1, symbol: "barcode.viewfinder", title: "Scannen en klaar",
-             text: "Kies de winkel en scan de barcode. Of zet je kaarten uit Klarna of Stocard over met een paar screenshots."),
+             text: "Kies de winkel en scan de barcode. Of zet je kaarten uit Klarna over met één schermopname."),
         Page(id: 2, symbol: "applewatch", title: "Altijd bij de hand",
              text: "Bij de kassa tik je de kaart aan en draait hij om naar de barcode. Ook op je Apple Watch en in widgets."),
         Page(id: 3, symbol: "person.2.fill", title: "Samen of even delen",

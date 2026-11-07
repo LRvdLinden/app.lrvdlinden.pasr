@@ -18,7 +18,21 @@ enum ImageCodeReader {
 
     static func read(_ data: Data) async -> Result? {
         guard let cgImage = cgImage(from: data) else { return nil }
-        return await Task.detached(priority: .userInitiated) { () -> Result? in
+        return await read(cgImage)
+    }
+
+    /// Alleen de barcodes (snel), voor elk beeld uit een schermopname.
+    nonisolated static func barcodes(in cgImage: CGImage) -> [(payload: String, format: BarcodeFormat)] {
+        let request = VNDetectBarcodesRequest()
+        try? VNImageRequestHandler(cgImage: cgImage).perform([request])
+        return (request.results ?? [])
+            .filter { $0.payloadStringValue?.isEmpty == false }
+            .sorted { area($0.boundingBox) > area($1.boundingBox) }
+            .map { ($0.payloadStringValue!, format(for: $0.symbology, payload: $0.payloadStringValue!)) }
+    }
+
+    static func read(_ cgImage: CGImage) async -> Result? {
+        await Task.detached(priority: .userInitiated) { () -> Result? in
             let barcodes = VNDetectBarcodesRequest()
             let text = VNRecognizeTextRequest()
             text.recognitionLevel = .accurate
@@ -53,7 +67,7 @@ enum ImageCodeReader {
         }
     }
 
-    private static func area(_ rect: CGRect) -> CGFloat { rect.width * rect.height }
+    nonisolated private static func area(_ rect: CGRect) -> CGFloat { rect.width * rect.height }
 
     private static func cgImage(from data: Data) -> CGImage? {
         #if canImport(UIKit)

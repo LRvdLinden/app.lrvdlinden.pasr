@@ -37,7 +37,7 @@ struct FavoritesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "nl.lrvdlinden.pasr.favorites", provider: FavoritesProvider()) { entry in
             FavoritesView(entry: entry)
-                .containerBackground(Brand.ink, for: .widget)
+                .containerBackground(Brand.night, for: .widget)
         }
         .configurationDisplayName("Favorieten")
         .description("Je favoriete kaarten. Tik op een kaart om de code te tonen.")
@@ -145,7 +145,7 @@ struct MostUsedWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "nl.lrvdlinden.pasr.mostused", provider: MostUsedProvider()) { entry in
             FavoritesView(entry: entry)
-                .containerBackground(Brand.ink, for: .widget)
+                .containerBackground(Brand.night, for: .widget)
         }
         .configurationDisplayName("Meest gebruikt")
         .description("De kaarten die je het vaakst gebruikt, vanzelf bijgewerkt.")
@@ -242,7 +242,7 @@ struct CardWidgetView: View {
             Text("Kies een kaart")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .containerBackground(Brand.ink, for: .widget)
+                .containerBackground(Brand.night, for: .widget)
         }
     }
 

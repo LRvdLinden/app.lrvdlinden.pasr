@@ -114,8 +114,8 @@ struct AddCardView: View {
                 .buttonStyle(.plain)
             }
             .padding(16)
-            .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        } else {
+            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else if ScannerView.isAvailable {   // geen camera-scanner op de Mac of Vision Pro
             Button { showScan = true } label: {
                 HStack(spacing: 14) {
                     Image(systemName: "camera.viewfinder")
