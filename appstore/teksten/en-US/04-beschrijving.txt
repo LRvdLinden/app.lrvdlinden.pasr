@@ -25,7 +25,8 @@ APPLE WALLET AND NOTIFICATIONS
 • A reminder before a voucher or gift card expires.
 
 GIFT CARDS AND VOUCHERS
-• Keep track of balance, PIN and expiry date.
+• Keep track of balance, PIN and expiry date. After showing a card, Pasr asks what you spent, so the balance goes down.
+• History per card: when and where you used it, like in Apple Wallet.
 
 IPHONE, IPAD, APPLE WATCH AND MAC
 • Your cards on your Apple Watch.

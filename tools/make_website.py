@@ -110,6 +110,7 @@ ICONS = {
     "record": '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/>',
     "devices": '<path d="M3 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v8H3zM1 17h18M19 9h3v10h-5"/>',
     "pin": '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+    "history": '<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4M12 8v4l3 2"/>',
     "store": '<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/>',
 }
 
@@ -120,9 +121,10 @@ def icon(name):
 FEATURES = [
     ("flip", "#6A5CFF", "Kaarten die omdraaien", "Tik op een kaart: hij komt naar voren, draait om en toont de barcode of QR-code. Je scherm gaat vanzelf op volle helderheid.", 4, "flip"),
     ("scan", "#FF6B57", "Toevoegen in seconden", "Kies je winkel en scan de barcode met de camera. Een foto of screenshot van je pas werkt ook.", 2, "scan"),
-    ("record", "#FF375F", "Overstappen met één opname", "Neem je scherm op terwijl je in je oude app je kaarten langsgaat. Pasr vindt ze allemaal.", 2, "record"),
-    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand, met een herinnering voordat hij verloopt.", 2, "gift"),
-    ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 2, "watch"),
+    ("record", "#FF375F", "Overstappen met één opname", "Neem je scherm op terwijl je in je oude app je kaarten langsgaat. Pasr vindt ze allemaal.", 3, "record"),
+    ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 3, "watch"),
+    ("history", "#0A84FF", "Je gebruik en uitgaven, zoals in Wallet", "Zie wanneer en bij welk filiaal je een kaart liet zien. Bij een cadeaukaart vraagt Pasr na het tonen wat je uitgaf: je ziet het tegoed afnemen, met elke uitgave in de lijst. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar vanzelf bij.", 4, "history"),
+    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand. Met Saldo checken kijk je het tegoed na bij de uitgever, je kaartnummer staat klaar om te plakken.", 2, "gift"),
     ("lock", "#17162A", "Versleuteld en met Face ID", "Kaartnummers versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID en blokkeer screenshots van je codes.", 3, "lock"),
     ("share", "#6A5CFF", "Samen of even delen", "Een gedeelde Pasr met je gezin, of een kaart tijdelijk uitlenen met een einddatum. <a href=\"#delen\">Zo werkt het</a>", 3, "share"),
     ("pin", "#FF6B57", "Je kaart verschijnt bij de winkel", "Loop je een winkel binnen, dan staat je kaart klaar met een melding. Zet je vaste filiaal zelf vast, kies welke filialen op je Wallet-pas komen, en met “Ook als Pasr dicht is” zet Pasr de winkels om je heen vanzelf klaar als je ergens anders bent. <a href=\"#waarom-verschijnt-mijn-kaart-niet-altijd-bij-de-winkel\">Zo werkt het</a>", 4, "near"),
@@ -140,6 +142,8 @@ FAQ = [
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Je kunt de winkel ook aanvragen in de app: tik op + › Kaart toevoegen › Mis je een winkel? (met een gratis Pasr-account). Dat kan ook voor cadeaukaarten en vouchers. Wij maken de kaart met het juiste logo en de juiste kleur en voegen hem toe zonder app-update; je krijgt een melding zodra hij erin staat."),
     ("Waar komen de logo's vandaan?", "De logo's van ruim 230 bekende winkels zitten in de app, in de juiste merkkleur. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
     ("Waarom verschijnt mijn kaart niet altijd bij de winkel?", "iOS laat een app hoogstens 20 plekken tegelijk in de gaten houden. Pasr kiest de 20 beste plekken rond waar je bent: eerst je eigen locaties, dan de dichtstbijzijnde filialen van je kaarten. Zet in Instellingen › Meldingen “Ook als Pasr dicht is” aan (locatie: Altijd); dan zet Pasr de winkels opnieuw klaar zodra je ergens anders bent, ook als je de app niet opent. Bij je vaste filiaal helpt het om bij de kaart onder Wijzig › Locaties op “Ik sta hier” te tikken. Voor Apple Wallet kies je zelf tot 10 filialen; of de pas op je toegangsscherm verschijnt, bepaalt iOS. Je locatie blijft altijd op je iPhone."),
+    ("Haalt Pasr het tegoed van mijn cadeaukaart vanzelf op?", "Nee, dat kan helaas niet: winkels en uitgevers van cadeaukaarten geven het tegoed niet door aan andere apps, en hun saldo-pagina's vragen om je pincode en een controle. Pasr houdt het daarom samen met jou bij: na het tonen van een cadeaukaart vraagt Pasr hoeveel je uitgaf, en het tegoed gaat omlaag met een regel in de geschiedenis. Met Saldo checken open je de saldo-pagina van de uitgever met je kaartnummer klaar om te plakken, en pas je het tegoed met één tik aan. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar bij."),
+    ("Ziet Pasr wanneer ik een kaart heb gebruikt?", "Pasr ziet wanneer je een kaart laat zien, en bij welk filiaal als je locatie aanstaat. Dat staat in de geschiedenis van de kaart, met de laatste 30 dagen bovenaan. Of de kassa hem echt heeft gescand, weet Pasr niet. De geschiedenis blijft op je iPhone; uitgaven van cadeaukaarten gaan mee naar je andere apparaten."),
     ("Kan ik screenshots van mijn codes blokkeren?", "Ja. Zet in Instellingen › Privacy en beveiliging Screenshots van codes blokkeren aan; dan is de barcode zwart in een screenshot of schermopname. Bij tijdelijk gedeelde kaarten staat dit altijd aan."),
     ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
     ("Wat gebeurt er als ik mijn telefoon kwijtraak?", "Je kaarten staan in je iCloud. Log op je nieuwe iPhone in met hetzelfde Apple-account en open Pasr: je kaarten komen vanzelf terug."),
@@ -164,6 +168,10 @@ TABLE = [
     ("Kaart bij de winkel, ook als de app dicht is", "y", "-", "-", "soms"),
     ("Eigen locaties en Wallet-filialen kiezen", "y", "-", "-", "soms"),
     ("Overzetten met een schermopname", "y", "y", "-", "-"),
+    ("Tegoed bijhouden met uitgaven", "y", "-", "-", "soms"),
+    ("Geschiedenis: wanneer en waar gebruikt", "y", "-", "-", "-"),
+    ("Saldo checken bij de uitgever", "y", "-", "-", "soms"),
+    ("Wallet-pas werkt zichzelf bij", "y", "-", "-", "-"),
     ("Gedeelde Pasr, tot 6 personen", "y", "-", "-", "-"),
     ("Tijdelijk delen met einddatum", "y", "-", "-", "-"),
     ("Vergrendelen met Face ID", "y", "y", "-", "soms"),
@@ -248,6 +256,15 @@ def feature_visual(kind):
         return '<div class="fv fv-watch"><span class="fv-band"></span><span class="fv-wcase"><span class="fv-wcard"></span><span class="fv-wcard c2"></span></span></div>'
     if kind == "cloud":
         return '<div class="fv fv-cloud"><span class="d phone"></span><span class="d pad"></span><span class="d watch2"></span><i></i><i></i></div>'
+    if kind == "history":
+        rows = [("#00A0E2", "ah.nl", "Albert Heijn", "Apeldoorn · zojuist", "−€ 11,07"),
+                ("#E30613", "hema.nl", "HEMA", "Apeldoorn · gisteren", "−€ 8,50"),
+                ("#2ED3A6", "", "Opgewaardeerd", "vrijdag", "+€ 25,00")]
+        items = "".join(f'<li style="--i:{i}"><span class="ic" style="background:{c}">'
+                        + (f'<img src="/assets/logos/{d}.png" alt="">' if d else "+") + f'</span><span class="t"><b>{n}</b>{w}</span><span class="a">{a}</span></li>'
+                        for i, (c, d, n, w, a) in enumerate(rows))
+        return (f'<div class="fv fv-history" aria-hidden="true"><div class="fv-bal"><small>Tegoed</small><b><span class="n1">€ 36,50</span><span class="n2">€ 25,43</span></b></div>'
+                f'<ul>{items}</ul></div>')
     if kind == "near":
         return ('<div class="fv fv-near" aria-hidden="true">'
                 '<span class="fv-pin p1"><img src="/assets/logos/ah.nl.png" alt=""></span>'
