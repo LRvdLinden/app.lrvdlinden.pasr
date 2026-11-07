@@ -127,7 +127,7 @@ FEATURES = [
 FAQ = [
     ("Kost Pasr geld?", "Nee. Pasr is gratis, zonder reclame en zonder abonnement."),
     ("Moet ik een account aanmaken?", "Nee, dat is optioneel. Zonder account staan je kaarten op je eigen apparaten en in je eigen iCloud. Met een gratis Pasr-account staan ze versleuteld op één plek en heb je ze meteen terug op een nieuwe telefoon."),
-    ("Kan ik mijn kaarten uit Klarna of Stocard overzetten?", "Ja. Maak in Klarna van elke kaart een screenshot met de barcode en kies die screenshots in Pasr, tot 50 tegelijk. Pasr leest de barcode en herkent de winkel, op je eigen telefoon."),
+    ("Kan ik mijn kaarten uit Klarna overzetten?", "Ja. Neem je scherm op terwijl je in Klarna je kaarten één voor één opent, en kies die opname in Pasr. Pasr leest elke barcode die voorbijkomt en herkent de winkel, op je eigen telefoon. Screenshots kiezen kan ook, tot 50 tegelijk. Hetzelfde werkt voor andere kaarten-apps."),
     ("Werkt een gescande kaart echt aan de kassa?", "Ja. Pasr tekent de barcode opnieuw in hetzelfde formaat als op je pas, zoals EAN-13, Code 128 of een QR-code, en zet je scherm op volle helderheid."),
     ("Op welke apparaten werkt Pasr?", "Op iPhone en iPad met iOS en iPadOS 17 of nieuwer en op de Apple Watch met watchOS 10 of nieuwer."),
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Een logo kun je uitknippen uit een foto van je pas."),
@@ -141,38 +141,73 @@ FAQ = [
     ("Is Pasr ook in België te gebruiken?", "Pasr is gemaakt voor Nederland. De app is Nederlandstalig en de winkellijst bestaat uit Nederlandse winkels."),
 ]
 
-# Functies naast elkaar. Klarna alleen ingevuld waar het openbaar en controleerbaar is (account met e-mail en
-# telefoonnummer verplicht; Klarna is een betaal- en winkelapp). "-" = niet aanwezig of niet bekend.
+# Functies naast elkaar. Andere apps alleen ingevuld waar het openbaar en controleerbaar is (App Store-pagina's en
+# bijdehandapp.nl, november 2026). "-" = niet aanwezig of niet bekend; tekst = staat letterlijk in de cel.
+COLUMNS = ["Pasr", "Bijdehand", "Klarna", "Andere apps"]
 TABLE = [
-    ("Gratis", "y", "y", "soms"),
-    ("Werkt zonder account", "y", "n", "soms"),
-    ("Alleen kaarten, geen betalen of lenen", "y", "n", "soms"),
-    ("Geen reclame en geen tracking", "y", "-", "soms"),
-    ("Apple Watch-app", "y", "-", "soms"),
-    ("Widgets op je beginscherm", "y", "-", "soms"),
-    ("Naar Apple Wallet", "y", "-", "soms"),
-    ("Overzetten met screenshots", "y", "-", "-"),
-    ("Gedeelde Pasr, tot 6 personen", "y", "-", "-"),
-    ("Tijdelijk delen met einddatum", "y", "-", "-"),
-    ("Face ID en screenshots van codes blokkeren", "y", "-", "soms"),
+    ("Gratis", "y", "y", "y", "soms"),
+    ("Werkt zonder account", "y", "y", "n", "soms"),
+    ("Alleen kaarten, geen betalen of lenen", "y", "y", "n", "soms"),
+    ("Geen reclame", "y", "y", "-", "soms"),
+    ("Geen gebruiksstatistieken", "y", "Optioneel", "-", "soms"),
+    ("Apple Watch-app", "y", "Via Wallet", "n", "soms"),
+    ("Widgets op je beginscherm", "y", "y", "-", "soms"),
+    ("Naar Apple Wallet", "y", "y", "-", "soms"),
+    ("Overzetten met een schermopname", "y", "y", "-", "-"),
+    ("Gedeelde Pasr, tot 6 personen", "y", "-", "-", "-"),
+    ("Tijdelijk delen met einddatum", "y", "-", "-", "-"),
+    ("Vergrendelen met Face ID", "y", "y", "-", "soms"),
+    ("Screenshots van codes blokkeren", "y", "-", "-", "-"),
+    ("Ook op Mac en Vision Pro", "y", "y", "Vision Pro", "soms"),
+    ("Licht en donker", "y", "y", "-", "soms"),
+    ("App-grootte", "ca. 17 MB", "22 MB", "288 MB", "Wisselend"),
 ]
 
 def feature_table():
     yes = '<span class="ft-y" aria-label="Ja"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
     no = '<span class="ft-n" aria-label="Nee"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>'
-    cell = {"y": yes, "n": no, "-": '<span class="ft-d" aria-label="Niet aanwezig of niet bekend">–</span>', "soms": '<span class="ft-s">Soms</span>'}
-    rows = "\n".join(f'            <tr style="--r:{i}"><th scope="row">{name}</th><td class="ft-pasr">{cell[a]}</td><td>{cell[b]}</td><td>{cell[c]}</td></tr>'
-                     for i, (name, a, b, c) in enumerate(TABLE))
+    def cell(v):
+        return {"y": yes, "n": no, "-": '<span class="ft-d" aria-label="Niet aanwezig of niet bekend">–</span>',
+                "soms": '<span class="ft-s">Soms</span>'}.get(v, f'<span class="ft-s">{v}</span>')
+    head = "".join(f'<th scope="col"{" class=\"ft-pasr\"" if i == 0 else ""}>{c}</th>' for i, c in enumerate(COLUMNS))
+    rows = "\n".join(
+        f'            <tr style="--r:{i}"><th scope="row">{row[0]}</th>'
+        + "".join(f'<td{" class=\"ft-pasr\"" if k == 0 else ""}>{cell(v)}</td>' for k, v in enumerate(row[1:])) + "</tr>"
+        for i, row in enumerate(TABLE))
     return f'''        <div class="ft-wrap">
           <h3 class="ft-title">Functies naast elkaar</h3>
           <table class="ft">
-            <thead><tr><th scope="col"><span class="sr-only">Functie</span></th><th scope="col" class="ft-pasr">Pasr</th><th scope="col">Klarna</th><th scope="col">Andere apps</th></tr></thead>
+            <thead><tr><th scope="col"><span class="sr-only">Functie</span></th>{head}</tr></thead>
             <tbody>
 {rows}
             </tbody>
           </table>
-          <p class="ft-note">– betekent niet aanwezig of niet bekend. Op basis van openbare informatie, november 2026. Klarna is een merk van Klarna Bank AB; Pasr is niet aan Klarna verbonden.</p>
+          <p class="ft-note">– betekent niet aanwezig of niet bekend. Op basis van de App Store en de websites van de makers, november 2026; de grootte is zoals de App Store hem toont. Merknamen zijn van hun eigenaars; Pasr is niet aan hen verbonden.</p>
         </div>'''
+
+def import_demo():
+    """Animatie: een telefoon neemt op (rode stip) terwijl kaarten voorbij komen; elke barcode vliegt naar Pasr,
+    waar de kaart in de lijst landt en de teller oploopt."""
+    import shutil
+    out = ROOT / "assets" / "logos"
+    picks = [("ah.nl", "Albert Heijn"), ("kruidvat.nl", "Kruidvat"), ("ikea.com", "IKEA"), ("hema.nl", "HEMA"), ("jumbo.com", "Jumbo")]
+    for d, _ in picks:
+        shutil.copy(ROOT.parent / "App" / "StoreLogos" / f"{d}.png", out / f"{d}.png")
+    _, svg = bars("871234567890")
+    src = "".join(mini_pass(d, n, f"im-src s{i}", f'<span class="im-bar">{svg}</span>') for i, (d, n) in enumerate(picks))
+    dst = "".join(f'<li class="im-row r{i}">{mini_pass(d, n, "im-thumb")}<span>{n}</span><i aria-hidden="true">✓</i></li>' for i, (d, n) in enumerate(picks))
+    return f'''      <div class="im-demo" aria-hidden="true">
+        <div class="im-phone im-old">
+          <div class="im-top"><span class="im-rec"></span> Schermopname</div>
+          <div class="im-feed">{src}</div>
+          <div class="im-scan"></div>
+        </div>
+        <div class="im-flow"><span></span><span></span><span></span></div>
+        <div class="im-phone im-pasr">
+          <div class="im-top"><b>pasr</b> <span class="im-count"><b>0</b> gevonden</span></div>
+          <ul class="im-list">{dst}</ul>
+        </div>
+      </div>'''
 
 def mini_pass(domain, name, cls="", body=""):
     color = _card_colours().get(domain, "#2B2F3A")
@@ -257,9 +292,9 @@ def page():
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pasr: klantenkaarten app voor iPhone en Apple Watch | Gratis Stocard-alternatief</title>
-  <meta name="description" content="Pasr bewaart al je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Zet je kaarten in een paar minuten over uit Klarna of Stocard.">
-  <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, Stocard alternatief, Klarna klantenkaarten overzetten, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
+  <title>Pasr: klantenkaarten app voor iPhone en Apple Watch | Gratis en zonder reclame</title>
+  <meta name="description" content="Pasr bewaart al je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Zet je kaarten met één schermopname over uit Klarna of een andere kaarten-app.">
+  <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, Klarna klantenkaarten overzetten, alternatief voor Klarna klantenkaarten, Supercards alternatief, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="author" content="Pasr">
   <meta name="application-name" content="Pasr">
@@ -294,7 +329,7 @@ def page():
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl"}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
-    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna of Stocard via screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum"],"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
+    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum"],"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
   ]}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
 </head>
@@ -355,7 +390,7 @@ def page():
       <section class="why" aria-labelledby="why-title">
         <div class="section-head">
           <h2 id="why-title">Een kaartenapp die alleen een kaartenapp is</h2>
-          <p>Stocard is gestopt en je kaarten moesten naar een betaalapp. Pasr doet het andersom: alleen je kaarten, snel bij de kassa.</p>
+          <p>Klantenkaarten zitten steeds vaker in een betaal- of winkelapp. Pasr doet het andersom: alleen je kaarten, snel bij de kassa.</p>
         </div>
         <div class="compare">
           <div class="compare-head">Wat je vaak ziet</div>
@@ -387,14 +422,16 @@ def page():
 
     <section class="wrap" id="overstappen" aria-labelledby="overstappen-title">
       <div class="section-head">
-        <h2 id="overstappen-title">Overstappen uit Klarna of Stocard</h2>
-        <p>Een export van je kaarten bestaat daar niet. Met screenshots ben je in een paar minuten klaar.</p>
+        <h2 id="overstappen-title">Overstappen in één minuut</h2>
+        <p>Een export van je kaarten bestaat in andere apps meestal niet. Met één schermopname neem je ze toch allemaal mee.</p>
       </div>
+{import_demo()}
       <ol class="steps">
-        <li><h3>Maak screenshots</h3><p>Open in Klarna elke kaart en maak een screenshot waarop de barcode staat.</p></li>
-        <li><h3>Kies ze in Pasr</h3><p>Tik op Screenshots importeren en kies ze allemaal tegelijk, tot 50 per keer.</p></li>
-        <li><h3>Controleer en klaar</h3><p>Pasr vindt de barcode en de winkel. Kijk de lijst na, pas aan wat niet klopt en importeer.</p></li>
+        <li><h3>Neem je scherm op</h3><p>Zet Schermopname aan in het Bedieningspaneel en open Klarna of je andere kaarten-app.</p></li>
+        <li><h3>Tik je kaarten langs</h3><p>Open je kaarten één voor één, zodat elke barcode even in beeld is. Stop de opname.</p></li>
+        <li><h3>Kies de opname in Pasr</h3><p>Pasr vindt de barcodes en de winkels. Kijk de lijst na en importeer. Screenshots kan ook.</p></li>
       </ol>
+      <p class="moves">Meer uitleg: <a href="/overstappen/klarna/">overstappen van Klarna</a> · <a href="/overstappen/supercards/">overstappen van Supercards</a></p>
     </section>
 
     <section class="wrap" id="faq" aria-labelledby="faq-title">
@@ -415,7 +452,7 @@ def page():
 
   <footer>
     <div class="wrap">
-      <span>&copy; 2026 Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels; Pasr is niet aan hen verbonden.</span>
+      <span>&copy; 2026 Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels; Pasr is niet aan hen verbonden. Winkel en wil je je logo anders of niet in Pasr? Mail <a href="mailto:support@pasr.nl?subject=Logo%20in%20Pasr">support@pasr.nl</a>.</span>
       <nav aria-label="Voettekst">
         <a href="/privacy/">Privacy</a>
         <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
@@ -428,6 +465,149 @@ def page():
 </html>
 '''
 
+
+# Overstap-pagina's (goed vindbaar in Google). Alleen controleerbare verschillen noemen.
+MOVES = {
+    "klarna": dict(
+        name="Klarna",
+        title="Klantenkaarten overzetten van Klarna naar Pasr",
+        desc="Zet je klantenkaarten met één schermopname over van de Klarna-app naar Pasr: gratis, zonder account en met een Apple Watch-app.",
+        intro="Je klantenkaarten staan in de Klarna-app, tussen betalen en winkelen. Wil je een app met alleen je kaarten, zonder account? Zo neem je ze in één minuut mee.",
+        app="Klarna",
+        gains=[
+            "Geen account nodig: open Pasr en je kaarten staan er (Klarna vraagt een e-mailadres en telefoonnummer).",
+            "Een echte Apple Watch-app, plus widgets op je beginscherm.",
+            "Alleen je kaarten: geen betalen, lenen of winkelen in de app.",
+            "Klein: ca. 17 MB, tegen 288 MB voor de Klarna-app (App Store, november 2026).",
+            "Delen met je gezin in een gedeelde Pasr, of een kaart tijdelijk uitlenen.",
+        ],
+        faq=[
+            ("Blijven mijn kaarten in Klarna staan?", "Ja. Pasr leest alleen wat er in je schermopname staat. Je kaarten in Klarna veranderen niet; je kunt Klarna daarna houden of verwijderen."),
+            ("Moet ik een Klarna-export maken?", "Nee, die bestaat niet. Een schermopname waarin je je kaarten één voor één opent is genoeg."),
+            ("Gaat mijn schermopname naar een server?", "Nee. Pasr leest de opname op je eigen iPhone en verwijdert de kopie daarna. Er wordt niets geüpload."),
+            ("Wat als een kaart niet wordt gevonden?", "Open die kaart in Klarna nog eens wat langer in beeld, of maak er een screenshot van en kies die in Pasr. Je kunt een kaart ook scannen met de camera."),
+        ],
+    ),
+    "supercards": dict(
+        name="Supercards",
+        title="Klantenkaarten overzetten van Supercards naar Pasr",
+        desc="Neem je klantenkaarten met één schermopname mee van Supercards naar Pasr: gratis, zonder reclame en met Apple Watch, widgets en gedeelde Pasr.",
+        intro="Wil je je kaarten uit Supercards in Pasr? Een export is niet nodig: met één schermopname neem je ze allemaal mee, in ongeveer een minuut.",
+        app="Supercards",
+        gains=[
+            "Gratis, zonder reclame en zonder account.",
+            "Apple Watch-app, widgets en Apple Wallet.",
+            "Een gedeelde Pasr met tot 6 personen, en kaarten tijdelijk uitlenen met een einddatum.",
+            "Screenshots van codes blokkeren en vergrendelen met Face ID.",
+            "Klein: ca. 17 MB.",
+        ],
+        faq=[
+            ("Blijven mijn kaarten in Supercards staan?", "Ja. Pasr leest alleen wat er in je schermopname staat; in Supercards verandert niets."),
+            ("Gaat mijn schermopname naar een server?", "Nee. Pasr leest de opname op je eigen iPhone en verwijdert de kopie daarna."),
+            ("Kan ik ook screenshots gebruiken?", "Ja. Kies in Pasr tot 50 screenshots tegelijk; elke screenshot met een barcode wordt een kaart."),
+        ],
+    ),
+}
+
+def move_page(slug, m):
+    import json
+    gains = "".join(f"<li>{g}</li>" for g in m["gains"])
+    faq = "".join(f"<details><summary>{q}</summary><p>{a}</p></details>" for q, a in m["faq"])
+    faq_ld = ",".join('{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (json.dumps(q), json.dumps(a)) for q, a in m["faq"])
+    steps = [("Neem je scherm op", "Zet Schermopname aan in het Bedieningspaneel en open " + m["app"] + "."),
+             ("Tik je kaarten langs", "Open je kaarten één voor één, zodat elke barcode even in beeld is. Stop de opname."),
+             ("Kies de opname in Pasr", "Tik op + › Importeren uit andere app › Kies schermopname. Controleer de lijst en importeer.")]
+    howto = ",".join('{"@type":"HowToStep","name":%s,"text":%s}' % (json.dumps(a), json.dumps(b)) for a, b in steps)
+    steps_html = "".join(f"<li><h3>{a}</h3><p>{b}</p></li>" for a, b in steps)
+    url = f"https://pasr.nl/overstappen/{slug}/"
+    return f"""<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{m["title"]} | Pasr</title>
+  <meta name="description" content="{m["desc"]}">
+  <link rel="canonical" href="{url}">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Pasr">
+  <meta property="og:url" content="{url}">
+  <meta property="og:title" content="{m["title"]}">
+  <meta property="og:description" content="{m["desc"]}">
+  <meta property="og:image" content="https://pasr.nl/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="nl_NL">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#F4F3FF">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <script src="/assets/consent.js" defer></script>
+  <link rel="stylesheet" href="/assets/style.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
+    {{"@type":"HowTo","name":{json.dumps(m["title"])},"totalTime":"PT2M","step":[{howto}]}},
+    {{"@type":"FAQPage","mainEntity":[{faq_ld}]}},
+    {{"@type":"BreadcrumbList","itemListElement":[{{"@type":"ListItem","position":1,"name":"Pasr","item":"https://pasr.nl/"}},{{"@type":"ListItem","position":2,"name":"Overstappen van {m["name"]}","item":"{url}"}}]}}
+  ]}}</script>
+</head>
+<body>
+  <header class="wrap nav">
+    <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span></a>
+    <nav aria-label="Hoofdmenu">
+      <ul>
+        <li><a href="/#functies">Functies</a></li>
+        <li><a href="/#delen">Delen</a></li>
+        <li><a href="/#faq">Vragen</a></li>
+        <li><a href="/support/">Support</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main class="move">
+    <div class="wrap move-hero">
+      <p class="pill">Overstappen van {m["name"]}</p>
+      <h1>{m["title"]}</h1>
+      <p class="lead">{m["intro"]}</p>
+    </div>
+    <section class="wrap" aria-label="Zo werkt het">
+{import_demo()}
+      <ol class="steps">{steps_html}</ol>
+    </section>
+    <section class="wrap move-gains" aria-labelledby="gains">
+      <div class="section-head"><h2 id="gains">Wat je in Pasr krijgt</h2></div>
+      <ul class="ticks big">{gains}</ul>
+      <p class="moves"><a href="/#why-title">Bekijk alle functies naast elkaar</a></p>
+    </section>
+    <section class="wrap" id="faq" aria-labelledby="faq-title">
+      <div class="section-head"><h2 id="faq-title">Vragen</h2></div>
+      <div class="faq">{faq}</div>
+    </section>
+    <section class="wrap cta" aria-labelledby="cta-title">
+      <h2 id="cta-title">Klaar in een minuut</h2>
+      <p>Pasr komt binnenkort gratis in de App Store.</p>
+      <div class="actions"><a class="btn btn-primary" aria-disabled="true" role="link">{APPLE}Binnenkort in de App Store</a></div>
+    </section>
+  </main>
+  <footer>
+    <div class="wrap">
+      <span>&copy; 2026 Pasr · {m["name"]} is een merk van de eigenaar; Pasr is er niet aan verbonden.</span>
+      <nav aria-label="Voettekst">
+        <a href="/privacy/">Privacy</a>
+        <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
+        <a href="/support/">Support</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>
+"""
+
 if __name__ == "__main__":
     (ROOT / "index.html").write_text(page())
     print("Wrote", ROOT / "index.html")
+    for slug, m in MOVES.items():
+        out = ROOT / "overstappen" / slug
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "index.html").write_text(move_page(slug, m))
+        print("Wrote", out / "index.html")
