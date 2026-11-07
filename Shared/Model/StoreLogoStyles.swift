@@ -106,6 +106,7 @@ enum StoreLogoStyles {
         "flyingblue.com": .init(card: "#000099", tint: nil, plate: nil, opaque: true),
         "flyingtiger.com": .init(card: "#1A1A1A", tint: nil, plate: nil, opaque: false),
         "formido.nl": .init(card: "#FDDB02", tint: nil, plate: nil, opaque: false),
+        "fun.nl": .init(card: "#E6007E", tint: nil, plate: nil, opaque: false),
         "funzone.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "g-star.com": .init(card: "#000000", tint: nil, plate: nil, opaque: false),
         "gall.nl": .init(card: "#312F2F", tint: nil, plate: nil, opaque: false),
