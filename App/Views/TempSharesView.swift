@@ -11,6 +11,7 @@ struct TempSharesView: View {
     @State private var stopping: TempShare.Sent?
     @State private var error: String?
     @State private var activity: ActivityItems?
+    @State private var editing: TempShare.Sent?
 
     private var active: [TempShare.Sent] { sent.filter(\.isActive).sorted { $0.until < $1.until } }
     private var ended: [TempShare.Sent] { sent.filter { !$0.isActive }.sorted { $0.until > $1.until } }
@@ -36,7 +37,8 @@ struct TempSharesView: View {
                         Text("Je deelt nu niets tijdelijk.").foregroundStyle(.secondary)
                     }
                     ForEach(active) { item in
-                        sentRow(item)
+                        Button { editing = item } label: { sentRow(item) }
+                            .foregroundStyle(.primary)
                             .swipeActions {
                                 Button("Stop", role: .destructive) { stopping = item }
                                 Button("Verstuur") { resend(item) }.tint(Brand.iris)
@@ -45,13 +47,27 @@ struct TempSharesView: View {
                 } header: {
                     Text("Door jou gedeeld")
                 } footer: {
-                    Text(error ?? String(localized: "Veeg naar links om te stoppen of de link opnieuw te versturen. Stop je, dan werkt de kaart bij de ander direct niet meer."))
+                    Text(error ?? String(localized: "Tik op een kaart om hem langer te delen, korter te maken of nu te laten verlopen. Veeg naar links om te stoppen of de link opnieuw te versturen."))
                         .foregroundStyle(error == nil ? Color.secondary : Brand.coral)
                 }
 
                 if !ended.isEmpty {
-                    Section("Afgelopen") {
-                        ForEach(ended) { item in sentRow(item) }
+                    Section {
+                        ForEach(ended) { item in
+                            Button { editing = item } label: { sentRow(item) }
+                                .foregroundStyle(.primary)
+                                .disabled(item.revoked)
+                                .swipeActions {
+                                    Button("Verwijder", role: .destructive) {
+                                        TempShare.forget(item)
+                                        sent = TempShare.allSent()
+                                    }
+                                }
+                        }
+                    } header: {
+                        Text("Afgelopen")
+                    } footer: {
+                        Text("Een verlopen kaart kun je kort na het einde nog opnieuw geldig maken. Veeg naar links om hem uit dit overzicht te halen.")
                     }
                 }
 
@@ -99,6 +115,9 @@ struct TempSharesView: View {
             }
         } message: {
             Text("De kaart werkt bij de ander direct niet meer.")
+        }
+        .sheet(item: $editing) { item in
+            TempShareEditSheet(item: item, card: cards.first { $0.id == item.cardID }) { sent = TempShare.allSent() }
         }
         #if canImport(UIKit)
         .sheet(item: $activity) { items in
@@ -150,6 +169,139 @@ struct TempSharesView: View {
         let date = item.until.formatted(date: .abbreviated, time: .shortened)
         let text = String(localized: "Je mag mijn \(item.storeName)-kaart gebruiken tot \(date). Open de link om hem aan Pasr toe te voegen:") + "\n" + item.url.absoluteString
         activity = ActivityItems(items: [text])
+    }
+}
+
+/// Einddatum van een tijdelijk gedeelde kaart wijzigen: langer, korter, nu laten verlopen of stoppen.
+struct TempShareEditSheet: View {
+    let item: TempShare.Sent
+    let card: Card?
+    var onChange: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var current: TempShare.Sent
+    @State private var custom: Date
+    @State private var busy = false
+    @State private var error: String?
+    @State private var confirmStop = false
+
+    init(item: TempShare.Sent, card: Card?, onChange: @escaping () -> Void) {
+        self.item = item
+        self.card = card
+        self.onChange = onChange
+        _current = State(initialValue: item)
+        _custom = State(initialValue: max(item.until, .now.addingTimeInterval(86_400)))
+    }
+
+    private var base: Date { max(current.until, .now) }
+    private var maxDate: Date { .now.addingTimeInterval(Double(TempShare.maxDays) * 86_400) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    VStack(spacing: 12) {
+                        if let card {
+                            CardFaceView(appearance: {
+                                var a = CardAppearance(card)
+                                a.tempUntil = current.until
+                                a.isLocked = true
+                                return a
+                            }(), showsCode: false)
+                            .aspectRatio(Brand.cardAspect, contentMode: .fit)
+                            .frame(maxWidth: 280)
+                        }
+                        Label {
+                            Text(current.isActive
+                                 ? String(localized: "Geldig tot \(current.until.formatted(date: .abbreviated, time: .shortened))")
+                                 : String(localized: "Verlopen op \(current.until.formatted(date: .abbreviated, time: .shortened))"))
+                        } icon: { Image(systemName: current.isActive ? "clock" : "clock.badge.xmark") }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(current.isActive ? Brand.mint : Brand.coral)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .listRowBackground(Color.clear)
+
+                Section {
+                    HStack(spacing: 10) {
+                        quick("+1 uur", 3600)
+                        quick("+1 dag", 86_400)
+                        quick("+1 week", 7 * 86_400)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                    DatePicker("Tot", selection: $custom, in: Date.now.addingTimeInterval(300)...maxDate)
+                    Button {
+                        Task { await set(custom) }
+                    } label: {
+                        HStack {
+                            Label("Bewaar nieuwe einddatum", systemImage: "checkmark.circle")
+                            Spacer()
+                            if busy { ProgressView() }
+                        }
+                    }
+                    .disabled(busy)
+                } header: {
+                    Text(current.isActive ? "Langer of korter delen" : "Opnieuw geldig maken")
+                } footer: {
+                    Text(error ?? String(localized: "De ander ziet de nieuwe einddatum de volgende keer dat Pasr opent. Maximaal 90 dagen vanaf nu."))
+                        .foregroundStyle(error == nil ? Color.secondary : Brand.coral)
+                }
+
+                Section {
+                    if current.isActive {
+                        Button(role: .destructive) { Task { await set(.now.addingTimeInterval(-1)) } } label: {
+                            Label("Nu laten verlopen", systemImage: "clock.badge.xmark")
+                        }
+                    }
+                    Button(role: .destructive) { confirmStop = true } label: {
+                        Label("Stop met delen", systemImage: "hand.raised")
+                    }
+                } footer: {
+                    Text("Nu laten verlopen kun je nog terugdraaien door hem opnieuw geldig te maken. Stoppen is definitief.")
+                }
+            }
+            .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .background(Brand.ink.ignoresSafeArea())
+            .navigationTitle(item.storeName)
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
+            .confirmationDialog("Delen stoppen?", isPresented: $confirmStop, titleVisibility: .visible) {
+                Button("Stop met delen", role: .destructive) {
+                    Task {
+                        do { try await TempShare.stop(current); onChange(); dismiss() }
+                        catch { self.error = error.localizedDescription }
+                    }
+                }
+            } message: {
+                Text("De kaart werkt bij de ander direct niet meer. Dit kun je niet terugdraaien.")
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    private func quick(_ title: LocalizedStringKey, _ seconds: TimeInterval) -> some View {
+        Button { Task { await set(min(base.addingTimeInterval(seconds), maxDate)) } } label: {
+            Text(title).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 4)
+        }
+        .pasrGlassButton()
+        .disabled(busy)
+    }
+
+    private func set(_ date: Date) async {
+        busy = true
+        defer { busy = false }
+        do {
+            current = try await TempShare.update(current, until: date)
+            custom = max(current.until, .now.addingTimeInterval(3600))
+            error = nil
+            onChange()
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 }
 

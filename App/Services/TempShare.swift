@@ -73,6 +73,29 @@ enum TempShare {
         save(sent: list)
     }
 
+    /// Einddatum wijzigen: langer delen, korter, of (met een datum in het verleden) nu laten verlopen. Kan zolang de
+    /// kaart nog op de server staat (tot het nachtelijk opruimen na het einde).
+    static func update(_ sent: Sent, until: Date) async throws -> Sent {
+        guard let json = try await AccountService.shared.publicRPC(
+            "pasr_temp_share_update",
+            body: ["p_token": sent.token, "p_key": sent.key, "p_expires": ISO8601DateFormatter().string(from: until)]) as? [String: Any]
+        else { throw Failure(message: String(localized: "Er ging iets mis. Probeer het opnieuw.")) }
+        guard json["ok"] as? Bool == true else {
+            throw Failure(message: String(localized: "Deze kaart staat niet meer op de server. Deel hem opnieuw."))
+        }
+        var updated = sent
+        updated.until = (json["expires_at"] as? String).flatMap(parse) ?? until
+        var list = allSent()
+        if let i = list.firstIndex(where: { $0.token == sent.token }) { list[i] = updated }
+        save(sent: list)
+        return updated
+    }
+
+    /// Alleen uit het overzicht op dit apparaat halen (verandert niets bij de ander).
+    static func forget(_ sent: Sent) {
+        save(sent: allSent().filter { $0.token != sent.token })
+    }
+
     private static let sentKey = "pasr.tempshare.sent"
 
     static func allSent() -> [Sent] {
@@ -131,24 +154,45 @@ enum TempShare {
         return card
     }
 
-    /// Kijkt of de deler eerder is gestopt; zo ja, dan toont de kaart de code niet meer.
+    /// Volgt wat de deler doet: verlengd, korter gemaakt, nu laten verlopen of gestopt. Een verlengde kaart waarvan de
+    /// code al was gewist, wordt opnieuw opgehaald.
     static func refreshStatuses(in context: ModelContext) async {
-        let all = (try? context.fetch(FetchDescriptor<Card>(predicate: #Predicate { $0.shareToken != nil }))) ?? []
-        let open = all.filter { !$0.isShareExpired }
-        guard !open.isEmpty else { return }
-        guard let json = try? await AccountService.shared.publicRPC("pasr_temp_share_status",
-                                                                  body: ["p_tokens": open.compactMap(\.shareToken)]) as? [String: String]
+        let all = (try? context.fetch(FetchDescriptor<Card>(predicate: #Predicate { $0.shareToken != nil && $0.deletedAt == nil }))) ?? []
+        // gestopte kaarten blijven gestopt; verlopen kaarten tot 8 dagen terug kunnen nog verlengd zijn
+        let watch = all.filter { !$0.shareRevoked && ($0.sharedUntil ?? .distantPast) > .now.addingTimeInterval(-8 * 86_400) }
+        guard !watch.isEmpty,
+              let json = try? await AccountService.shared.publicRPC("pasr_temp_share_info",
+                                                                  body: ["p_tokens": watch.compactMap(\.shareToken)]) as? [String: Any]
         else { return }
         var changed = false
-        for card in open {
-            guard let token = card.shareToken, let status = json[token] else { continue }
-            if status == "revoked" || status == "not_found" {
+        for card in watch {
+            guard let token = card.shareToken, let info = json[token] as? [String: Any], let status = info["status"] as? String else { continue }
+            let until = (info["expires_at"] as? String).flatMap(parse)
+            switch status {
+            case "ok":
+                if let until, until != card.sharedUntil { card.sharedUntil = until; changed = true }
+                if card.number.isEmpty, case .ok(let fields, let serverUntil)? = try? await fetch(token) {
+                    let fresh = makeCard(token: token, fields: fields, until: serverUntil)
+                    card.number = fresh.number
+                    card.formatRaw = fresh.formatRaw
+                    card.pin = fresh.pin
+                    card.balance = fresh.balance
+                    card.sharedUntil = serverUntil
+                    card.refreshCodeImage()
+                    changed = true
+                }
+            case "expired":
+                if let until, until < (card.sharedUntil ?? .distantFuture) { card.sharedUntil = until; changed = true }
+            default:   // revoked of niet meer op de server
                 card.shareRevoked = true
                 card.codeImage = nil
                 changed = true
             }
         }
-        if changed { try? context.save() }
+        if changed {
+            try? context.save()
+            scrubExpired(in: context)
+        }
     }
 
     /// Verlopen tijdelijke kaarten: de opgeslagen QR-afbeelding weg, zodat de code ook niet meer in de app zit.

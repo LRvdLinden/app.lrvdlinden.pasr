@@ -21,6 +21,7 @@ struct ShareCardSheet: View {
     @State private var activity: ActivityItems?
     @State private var sent: [TempShare.Sent] = []
     @State private var lastTemp: TempShare.Sent?
+    @State private var editing: TempShare.Sent?
 
     private var until: Date {
         switch period {
@@ -63,6 +64,9 @@ struct ShareCardSheet: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
             }
             .onAppear { sent = TempShare.sent(for: card).filter(\.isActive) }
+            .sheet(item: $editing) { item in
+                TempShareEditSheet(item: item, card: card) { sent = TempShare.sent(for: card).filter(\.isActive) }
+            }
             #if canImport(UIKit)
             .sheet(item: $activity) { items in
                 ActivityView(items: items.items).ignoresSafeArea().presentationDetents([.medium, .large])
@@ -129,6 +133,8 @@ struct ShareCardSheet: View {
                             Text(item.until, format: .relative(presentation: .named)).font(.footnote).foregroundStyle(.secondary)
                         }
                         Spacer()
+                        Button("Wijzig") { editing = item }
+                            .buttonStyle(.borderless)
                         Button("Stop", role: .destructive) { Task { await stop(item) } }
                             .buttonStyle(.borderless)
                     }
