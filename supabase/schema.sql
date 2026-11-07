@@ -862,6 +862,35 @@ begin
   return jsonb_build_object('ok', found);
 end $$;
 
+-- Einddatum wijzigen (langer delen, korter, of nu laten verlopen), alleen met de sleutel van de deler. Kan zolang de
+-- kaart nog op de server staat: tot het nachtelijk opruimen na het einde. p_expires in het verleden = nu laten verlopen.
+create or replace function public.pasr_temp_share_update(p_token text, p_key text, p_expires timestamptz) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare e timestamptz;
+begin
+  if p_expires is null or p_expires > now() + interval '91 days' then
+    raise exception 'bad_expiry' using errcode = '22023';
+  end if;
+  e := greatest(p_expires, now());
+  update public.pasr_temp_shares set expires_at = e
+   where token = p_token and key_hash = digest(coalesce(p_key, ''), 'sha256') and not revoked and payload is not null;
+  if not found then return jsonb_build_object('ok', false, 'error', 'gone'); end if;
+  return jsonb_build_object('ok', true, 'expires_at', e);
+end $$;
+
+-- Status en einddatum van meerdere tijdelijke kaarten (de app van de ontvanger volgt zo verlengen en stoppen).
+create or replace function public.pasr_temp_share_info(p_tokens text[]) returns jsonb
+language sql security definer set search_path = public as $$
+  select coalesce(jsonb_object_agg(t.tok, jsonb_build_object(
+           'status', case when s.token is null then 'not_found' when s.revoked then 'revoked'
+                          when s.expires_at <= now() then 'expired' else 'ok' end,
+           'expires_at', s.expires_at)), '{}'::jsonb)
+  from (select distinct left(x, 40) as tok from unnest((coalesce(p_tokens, '{}'))[1:200]) x) t
+  left join public.pasr_temp_shares s on s.token = t.tok;
+$$;
+revoke all on function public.pasr_temp_share_update(text, text, timestamptz), public.pasr_temp_share_info(text[]) from public;
+grant execute on function public.pasr_temp_share_update(text, text, timestamptz), public.pasr_temp_share_info(text[]) to anon, authenticated;
+
 create or replace function public.pasr_temp_share_cleanup() returns int
 language plpgsql security definer set search_path = public as $$
 declare n int;
