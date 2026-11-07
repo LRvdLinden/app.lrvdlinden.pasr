@@ -127,6 +127,39 @@ struct User: Decodable, Identifiable, Hashable {
     var initial: String { String((first_name ?? email ?? "?").trimmingCharacters(in: .whitespaces).prefix(1)).uppercased() }
 }
 
+/// Winkelaanvragen uit de app, gebundeld per winkel (store_requests).
+struct StoreRequestGroup: Decodable, Identifiable, Hashable {
+    let key: String
+    let name: String
+    let website: String?
+    let count: Int
+    let ids: [String]
+    let notes: [String]
+    let first: String
+    let last: String
+    var id: String { key }
+}
+struct StoreRequestsResponse: Decodable { let groups: [StoreRequestGroup] }
+
+/// Een winkel die via het beheer is toegevoegd (pasr_stores).
+struct RemoteStore: Decodable, Identifiable, Hashable {
+    var id: String
+    var name: String
+    var domain: String
+    var category: String
+    var card_hex: String
+    var format: String
+    var kind: String
+    var aliases: [String]
+    var logo: String?
+    var published: Bool
+    var updated_at: String?
+}
+struct StoresResponse: Decodable { let stores: [RemoteStore] }
+struct StoreSaveResponse: Decodable { let store: RemoteStore }
+struct StorePublishResponse: Decodable { let ok: Bool; let sent: Int; let closed: Int; let push_ready: Bool? }
+struct StoreLookup: Decodable { let domain: String; let name: String?; let colors: [String]; let logo: String?; let logo_type: String? }
+
 /// Tijdstempels uit Postgres ("2026-11-01T14:28:35.925497+00:00") en dagen ("2026-11-01").
 enum DateParse {
     private static let iso: ISO8601DateFormatter = {

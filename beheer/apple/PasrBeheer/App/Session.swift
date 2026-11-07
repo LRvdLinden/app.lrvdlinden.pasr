@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Onderdelen (tabs op de iPhone, zijbalk op iPad en Mac).
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case overview, insights, accounts, settings
+    case overview, insights, accounts, stores, settings
     var id: String { rawValue }
 
     var title: String {
@@ -12,6 +12,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .overview: "Overzicht"
         case .insights: "Insights"
         case .accounts: "Accounts"
+        case .stores: "Winkels"
         case .settings: "Instellingen"
         }
     }
@@ -21,6 +22,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .overview: "square.grid.2x2"
         case .insights: "chart.xyaxis.line"
         case .accounts: "person.2"
+        case .stores: "storefront"
         case .settings: "gearshape"
         }
     }
@@ -126,7 +128,7 @@ final class Session: ObservableObject {
         refreshTick &+= 1
     }
 
-    /// pasrbeheer://overview, ://accounts, ://settings (uit een pushmelding).
+    /// pasrbeheer://overview, ://accounts, ://stores, ://settings (uit een pushmelding).
     func open(_ url: URL) {
         guard url.scheme?.lowercased() == "pasrbeheer" else { return }
         if let s = AppSection(rawValue: url.host ?? "") { section = s }

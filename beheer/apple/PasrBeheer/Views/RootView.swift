@@ -117,6 +117,7 @@ struct SectionContent: View {
         case .overview: OverviewView()
         case .insights: InsightsView()
         case .accounts: AccountsView()
+        case .stores: StoresView()
         case .settings: SettingsView()
         }
     }

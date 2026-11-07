@@ -13,8 +13,20 @@ struct PushPrefs: Codable, Equatable {
     var confirmed = false
     var deleted = true
     var bots = true
+    var requests = true
 
-    var params: [String: Bool] { ["signups": signups, "confirmed": confirmed, "deleted": deleted, "bots": bots] }
+    var params: [String: Bool] { ["signups": signups, "confirmed": confirmed, "deleted": deleted, "bots": bots, "requests": requests] }
+
+    init() {}
+    /// Oudere opgeslagen voorkeuren hebben nog geen "requests": dan de standaard.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        signups = try c.decodeIfPresent(Bool.self, forKey: .signups) ?? true
+        confirmed = try c.decodeIfPresent(Bool.self, forKey: .confirmed) ?? false
+        deleted = try c.decodeIfPresent(Bool.self, forKey: .deleted) ?? true
+        bots = try c.decodeIfPresent(Bool.self, forKey: .bots) ?? true
+        requests = try c.decodeIfPresent(Bool.self, forKey: .requests) ?? true
+    }
 }
 
 /// Pushmeldingen van PasrBeheer (APNs, topic nl.lrvdlinden.pasr.beheer) op iPhone, iPad en Mac.
