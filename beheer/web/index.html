@@ -117,7 +117,24 @@
     <section id="view-accounts" class="view hidden" role="tabpanel" aria-labelledby="tab-accounts">
       <div class="head">
         <div><h1>Accounts</h1><p class="muted" id="accCount"></p></div>
+        <button id="revOpen" class="btn ghost sm" type="button">Review-account maken</button>
       </div>
+      <article id="revCard" class="card review-card hidden" aria-label="Review-account maken">
+        <header class="card-h"><h2>Review-account voor Apple</h2><button id="revClose" class="btn ghost sm" type="button">Sluiten</button></header>
+        <p class="muted sm">Maakt een bevestigd account met drie voorbeeldkaarten en een gedeelde Pasr &ldquo;Gezin&rdquo; met twee kaarten. Vul daarna e-mail en wachtwoord in bij App Store Connect &rsaquo; App Review &rsaquo; Sign-in information. Het wachtwoord wordt nergens bewaard.</p>
+        <form id="revForm" class="se-grid" novalidate autocomplete="off">
+          <label>E-mailadres<input id="revEmail" type="text" inputmode="email" autocomplete="off" spellcheck="false" value="review@pasr.nl"></label>
+          <label>Voornaam<input id="revName" type="text" maxlength="40" value="App Review" autocomplete="off"></label>
+          <label class="se-wide">Wachtwoord (minimaal 10 tekens, letters en cijfers)
+            <span class="se-row"><input id="revPass" type="password" autocomplete="new-password" spellcheck="false">
+              <button id="revShow" class="btn ghost sm" type="button">Toon</button>
+              <button id="revGen" class="btn ghost sm" type="button">Maak sterk wachtwoord</button>
+              <button id="revCopy" class="btn ghost sm" type="button">Kopieer</button></span></label>
+          <label class="se-check se-wide"><input id="revReset" type="checkbox"> Bestaat het account al? Wachtwoord vervangen en voorbeeldkaarten terugzetten</label>
+          <div class="row-btns se-wide"><button id="revGo" class="btn" type="submit">Review-account maken</button></div>
+        </form>
+        <div id="revMsg" class="err" role="status"></div>
+      </article>
       <div class="acc-tools">
         <input id="accSearch" type="search" placeholder="Zoek op e-mail of naam" autocomplete="off" spellcheck="false" aria-label="Zoek accounts">
         <div id="accFilter" class="seg" role="group" aria-label="Filter">

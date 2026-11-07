@@ -27,6 +27,7 @@ import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRe
 import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, wants } from "./push.ts";
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
+import { alreadyExists, cleanReview } from "./review.ts";
 
 const env = (k: string) => (Deno.env.get(k) ?? "").trim();
 const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
@@ -422,6 +423,35 @@ Deno.serve(async (req) => {
         if (error) throw new Error(error.message);
         await audit("store_reject", ipHash, String(ids.length));
         return json({ ok: true, closed: ids.length });
+      }
+      case "review_account": {
+        // Account voor Apple App Review met voorbeeldkaarten en een gedeelde Pasr. Het wachtwoord kiest de beheerder;
+        // het gaat alleen naar de auth admin API en komt niet in logboek, audit of antwoord.
+        const v = cleanReview(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { email, password, firstName, reset } = v.value;
+        let userId = "";
+        let created = false;
+        const { data: made, error: ce } = await db.auth.admin.createUser({
+          email, password, email_confirm: true, user_metadata: { first_name: firstName, app: "review" },
+        });
+        if (made?.user?.id) {
+          userId = made.user.id;
+          created = true;
+        } else if (ce && alreadyExists(ce.message, ce.status)) {
+          if (!reset) return json({ error: "exists" }, 409);
+          const { data: id } = await db.rpc("pasr_admin_user_id", { p_email: email });
+          if (typeof id !== "string") return json({ error: "not_found" }, 404);
+          const { error: ue } = await db.auth.admin.updateUserById(id, { password, email_confirm: true });
+          if (ue) return json({ error: /password/i.test(ue.message) ? "weak_password" : "update_failed" }, 400);
+          userId = id;
+        } else {
+          return json({ error: ce && /password/i.test(ce.message) ? "weak_password" : "create_failed" }, ce?.status === 429 ? 429 : 400);
+        }
+        const { data: seed, error: se } = await db.rpc("pasr_admin_review_seed", { p_user: userId });
+        if (se) return json({ error: /group_limit/.test(se.message) ? "group_limit" : "seed_failed", created }, 500);
+        await audit("review_account", ipHash, created ? "created" : "reset");
+        return json({ ok: true, created, email, ...(seed as Record<string, unknown>) });
       }
       default:
         return json({ error: "unknown_action" }, 400);

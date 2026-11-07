@@ -279,3 +279,11 @@ h2 { font: 700 16px/1.3 var(--display); margin: 0; }
 .se-grid select { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; color: var(--text); padding: 10px 12px; font: inherit; }
 .se-grid input[type=file] { border: 0; padding: 6px 0; background: none; }
 .se-check input { width: 17px; height: 17px; accent-color: var(--iris); margin: 0; }
+.review-card { margin: 0 0 16px; }
+.review-card .se-grid input[type=password] { flex: 1; min-width: 0; }
+.review-card .ok { color: var(--mint, #3DD68C); }
+@media (max-width: 620px) { .review-card .se-grid { grid-template-columns: 1fr; } }
+.review-card .se-grid label.se-check { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text); font-weight: 500; }
+.review-card .row-btns { margin-top: 4px; }
+.review-card #revMsg:empty { display: none; }
+@media (max-width: 620px) { .review-card .se-row input[type=password], .review-card .se-row input#revPass { flex: 1 1 100%; } }

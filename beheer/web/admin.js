@@ -46,6 +46,11 @@
       case "bad_domain": return "Dit is geen geldige website.";
       case "bad_logo": return "Dit logo kan niet worden gebruikt (PNG, JPEG of WebP, kleiner dan 300 kB).";
       case "too_large": return "Het logo is te groot. Kies een kleiner bestand.";
+      case "bad_email": return "Dit is geen geldig e-mailadres.";
+      case "weak_password": return "Kies een wachtwoord van minimaal 10 tekens met letters en cijfers.";
+      case "exists": return "Dit account bestaat al. Vink aan dat je het wachtwoord wilt vervangen.";
+      case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs.";
+      case "create_failed": case "update_failed": case "seed_failed": return "Het review-account kon niet worden gemaakt. Probeer het opnieuw.";
       default: return `Er ging iets mis op de server (${code}).`;
     }
   }
@@ -549,6 +554,39 @@
   $("accSearch").addEventListener("input", (e) => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { acc.search = e.target.value.trim(); loadUsers(true); }, 250); });
   document.querySelectorAll("#accFilter button").forEach((b) => b.addEventListener("click", () => { acc.filter = b.dataset.filter; loadUsers(true); }));
   $("accMore").addEventListener("click", () => loadUsers(false));
+
+  // ---- Review-account voor Apple ----
+  $("revOpen").addEventListener("click", () => { $("revCard").classList.remove("hidden"); $("revPass").focus(); });
+  $("revClose").addEventListener("click", () => { $("revCard").classList.add("hidden"); $("revPass").value = ""; $("revMsg").textContent = ""; });
+  $("revShow").addEventListener("click", () => {
+    const p = $("revPass"); p.type = p.type === "password" ? "text" : "password";
+    $("revShow").textContent = p.type === "password" ? "Toon" : "Verberg";
+  });
+  $("revGen").addEventListener("click", () => {
+    // 16 tekens zonder verwarrende tekens, altijd met hoofdletter, kleine letter en cijfer
+    const sets = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789"];
+    const all = sets.join(""), r = new Uint32Array(16);
+    crypto.getRandomValues(r);
+    const chars = [...r].map((x, i) => (i < 3 ? sets[i] : all)[x % (i < 3 ? sets[i] : all).length]);
+    for (let i = chars.length - 1; i > 0; i--) { const k = r[i] % (i + 1); [chars[i], chars[k]] = [chars[k], chars[i]]; }
+    $("revPass").value = chars.join(""); $("revPass").type = "text"; $("revShow").textContent = "Verberg";
+  });
+  $("revCopy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText($("revPass").value); toast("Wachtwoord gekopieerd"); } catch { toast("Kopiëren lukt niet in deze browser"); }
+  });
+  $("revForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("revMsg"); msg.className = "err"; msg.textContent = "";
+    const btn = $("revGo"); btn.disabled = true;
+    try {
+      const r = await api("review_account", { email: $("revEmail").value, password: $("revPass").value,
+        first_name: $("revName").value, reset: $("revReset").checked });
+      msg.className = "err ok";
+      msg.textContent = `${r.created ? "Account gemaakt" : "Wachtwoord vervangen"}: ${r.email}, met ${r.cards} kaarten en een gedeelde Pasr met ${r.group_cards} kaarten. Zet e-mail en wachtwoord nu in App Store Connect.`;
+      loadUsers(true);
+    } catch (err) { msg.textContent = err.message; }
+    finally { btn.disabled = false; }
+  });
 
   // ---- instellingen ----
   function showSettings() {
