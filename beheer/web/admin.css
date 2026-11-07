@@ -292,3 +292,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 html, body { overflow-x: clip; max-width: 100%; }
 @supports not (overflow: clip) { html, body { overflow-x: hidden; } }
+.bp-form { margin: 0 0 16px; }
+.bp-form .se-grid input { width: 100%; }
+.acc .bp-url { word-break: break-all; }

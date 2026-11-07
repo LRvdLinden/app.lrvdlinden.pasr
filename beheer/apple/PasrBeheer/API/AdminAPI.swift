@@ -25,6 +25,8 @@ struct APIError: Error, LocalizedError, Equatable {
         case "apns_invalid": return "Apple kent dit apparaat niet (meer). Zet meldingen uit en weer aan."
         case "decode": return "Onverwacht antwoord van de server."
         case "bad_email": return "Dit is geen geldig e-mailadres."
+        case "bad_url": return "Vul een geldig https-adres in."
+        case "bad_id": return "Dit winkel-id klopt niet (kleine letters, cijfers en streepjes)."
         case "weak_password": return "Kies een wachtwoord van minimaal 10 tekens met letters en cijfers."
         case "exists": return "Dit account bestaat al. Zet \u{201C}wachtwoord vervangen\u{201D} aan."
         case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs."

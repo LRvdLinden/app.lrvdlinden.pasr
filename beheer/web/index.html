@@ -160,9 +160,20 @@
           <button type="button" data-status="open">Open aanvragen</button>
           <button type="button" data-status="stores">Toegevoegd</button>
           <button type="button" data-status="rejected">Afgewezen</button>
+          <button type="button" data-status="balance">Saldo-pagina's</button>
         </div>
       </div>
       <div id="storeErr" class="banner hidden" role="alert"></div>
+      <form id="bpForm" class="card bp-form hidden" novalidate autocomplete="off">
+        <p class="muted sm">De knop &ldquo;Saldo checken&rdquo; bij een cadeaukaart of voucher in de app opent deze pagina, met het kaartnummer klaar om te plakken. Werkt ook voor winkels die al in de app zitten, zonder app-update.</p>
+        <div class="se-grid">
+          <label>Winkel<input id="bpStore" list="bpStores" placeholder="bijv. vvv of VVV Cadeaukaart" spellcheck="false"></label>
+          <label>Saldo-pagina<input id="bpUrl" type="text" inputmode="url" placeholder="https://…" spellcheck="false"></label>
+        </div>
+        <datalist id="bpStores"></datalist>
+        <div class="row-btns"><button id="bpSave" class="btn" type="submit">Opslaan</button></div>
+        <div id="bpMsg" class="err" role="status"></div>
+      </form>
       <div class="stores-layout">
         <div id="reqList" class="acc-list" aria-busy="true"></div>
         <article id="storeEditor" class="card store-editor hidden" aria-label="Winkel maken">

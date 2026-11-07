@@ -47,6 +47,8 @@
       case "bad_logo": return "Dit logo kan niet worden gebruikt (PNG, JPEG of WebP, kleiner dan 300 kB).";
       case "too_large": return "Het logo is te groot. Kies een kleiner bestand.";
       case "bad_email": return "Dit is geen geldig e-mailadres.";
+      case "bad_url": return "Vul een geldig https-adres in.";
+      case "bad_id": return "Kies een winkel uit de lijst (of typ het winkel-id).";
       case "weak_password": return "Kies een wachtwoord van minimaal 10 tekens met letters en cijfers.";
       case "exists": return "Dit account bestaat al. Vink aan dat je het wachtwoord wilt vervangen.";
       case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs.";
@@ -621,7 +623,13 @@
     $("storeErr").classList.add("hidden");
     try {
       list.replaceChildren();
-      if (storeFilter === "stores") {
+      $("bpForm").classList.toggle("hidden", storeFilter !== "balance");
+      if (storeFilter === "balance") {
+        await loadBuiltin();
+        const r = await api("balance_pages");
+        if (!(r.pages || []).length) list.append(el("p", "empty", "Nog geen saldo-pagina's. Voeg er hierboven een toe."));
+        for (const p of r.pages || []) list.append(balanceRow(p));
+      } else if (storeFilter === "stores") {
         const r = await api("stores");
         if (!(r.stores || []).length) list.append(el("p", "empty", "Nog geen winkels toegevoegd via het beheer."));
         for (const s of r.stores || []) list.append(storeRow(s));
@@ -636,6 +644,55 @@
       $("storeErr").textContent = err.message; $("storeErr").classList.remove("hidden");
     } finally { list.removeAttribute("aria-busy"); }
   }
+
+  // ---- Saldo-pagina's ----
+  let builtin = null;
+  async function loadBuiltin() {
+    if (builtin) return;
+    try { builtin = await (await fetch("stores-builtin.json", { cache: "no-cache" })).json(); } catch { builtin = []; }
+    let remote = [];
+    try { remote = ((await api("stores")).stores || []).map((s) => ({ id: s.id, name: s.name, voucher: s.kind === "voucher" })); } catch {}
+    builtin = [...builtin, ...remote.filter((r) => !builtin.some((b) => b.id === r.id))]
+      .sort((a, b) => Number(b.voucher) - Number(a.voucher) || a.name.localeCompare(b.name, "nl"));
+    const dl = $("bpStores");
+    dl.replaceChildren(...builtin.map((s) => { const o = document.createElement("option"); o.value = s.id; o.label = s.name + (s.voucher ? " (cadeaukaart)" : ""); return o; }));
+  }
+  const storeName = (id) => (builtin || []).find((s) => s.id === id)?.name || id;
+  function resolveStore(text) {
+    const t = text.trim().toLowerCase();
+    const hit = (builtin || []).find((s) => s.id === t || s.name.toLowerCase() === t);
+    return hit ? hit.id : t;
+  }
+  function balanceRow(p) {
+    const row = el("div", "acc");
+    const who = el("div", "who"), meta = el("div", "meta");
+    who.append(el("div", "mail", storeName(p.store_id)));
+    meta.append(el("span", null, p.store_id), el("span", "bp-url", p.url));
+    who.append(meta);
+    const btns = el("div", "row-btns");
+    const edit = el("button", "btn ghost sm", "Wijzig"); edit.type = "button";
+    edit.onclick = () => { $("bpStore").value = p.store_id; $("bpUrl").value = p.url; $("bpUrl").focus(); };
+    const del = el("button", "btn danger sm", "Verwijder"); del.type = "button";
+    del.onclick = async () => {
+      if (!(await ask("Saldo-pagina verwijderen?", `${storeName(p.store_id)}: ${p.url}`, "Verwijder"))) return;
+      try { await api("balance_page_delete", { store_id: p.store_id }); row.remove(); toast("Verwijderd"); } catch (e) { toast(e.message); }
+    };
+    btns.append(edit, del);
+    row.append(el("div", "av", "€"), who, btns);
+    return row;
+  }
+  $("bpForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("bpMsg"); msg.textContent = "";
+    let url = $("bpUrl").value.trim();
+    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+    try {
+      const r = await api("balance_page_save", { store_id: resolveStore($("bpStore").value), url });
+      toast(`Saldo-pagina voor ${storeName(r.store_id)} opgeslagen`);
+      $("bpStore").value = ""; $("bpUrl").value = "";
+      loadStores();
+    } catch (err) { msg.textContent = err.message; }
+  });
 
   function requestRow(g) {
     const row = el("div", "acc req");

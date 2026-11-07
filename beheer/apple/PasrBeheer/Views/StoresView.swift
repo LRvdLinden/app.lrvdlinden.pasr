@@ -8,13 +8,14 @@ import UniformTypeIdentifiers
 struct StoresView: View {
     @EnvironmentObject private var session: Session
     enum Filter: String, CaseIterable, Identifiable {
-        case open, stores, rejected
+        case open, stores, rejected, balance
         var id: String { rawValue }
         var title: String {
             switch self {
             case .open: "Open"
             case .stores: "Toegevoegd"
             case .rejected: "Afgewezen"
+            case .balance: "Saldo"
             }
         }
     }
@@ -24,6 +25,9 @@ struct StoresView: View {
     @State private var error: String?
     @State private var loading = false
     @State private var editing: StoreDraft?
+    @State private var pages: [BalancePage] = []
+    @State private var newStore = ""
+    @State private var newURL = ""
 
     var body: some View {
         List {
@@ -40,7 +44,41 @@ struct StoresView: View {
             if let error {
                 Text(error).foregroundStyle(Theme.coral).font(.subheadline)
             }
-            if filter == .stores {
+            if filter == .balance {
+                Section {
+                    TextField("Winkel-id, bijv. vvv", text: $newStore)
+                        .autocorrectionDisabled()
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never)
+                        #endif
+                    TextField("https://…", text: $newURL)
+                        .autocorrectionDisabled()
+                        #if os(iOS)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        #endif
+                    Button("Opslaan") { Task { await savePage() } }
+                        .disabled(newStore.isEmpty || newURL.isEmpty)
+                } header: {
+                    Text("Saldo-pagina toevoegen")
+                } footer: {
+                    Text("De knop Saldo checken bij een cadeaukaart in de app opent deze pagina, met het kaartnummer klaar om te plakken. Werkt ook voor winkels die al in de app zitten.")
+                }
+                Section {
+                    if pages.isEmpty && !loading { Text("Nog geen saldo-pagina's.").foregroundStyle(Theme.muted) }
+                    ForEach(pages) { p in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(p.store_id).font(.body.weight(.semibold))
+                            Text(p.url).font(.caption).foregroundStyle(Theme.muted).lineLimit(2)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { newStore = p.store_id; newURL = p.url }
+                        .swipeActions {
+                            Button(role: .destructive) { Task { await deletePage(p) } } label: { Label("Verwijder", systemImage: "trash") }
+                        }
+                    }
+                }
+            } else if filter == .stores {
                 if stores.isEmpty && !loading { Text("Nog geen winkels toegevoegd via het beheer.").foregroundStyle(Theme.muted) }
                 ForEach(stores) { s in
                     Button { editing = StoreDraft(store: s) } label: { storeRow(s) }
@@ -114,7 +152,9 @@ struct StoresView: View {
         loading = true
         defer { loading = false }
         do {
-            if filter == .stores {
+            if filter == .balance {
+                pages = try await session.call("balance_pages", as: BalancePagesResponse.self).pages
+            } else if filter == .stores {
                 stores = try await session.call("stores", as: StoresResponse.self).stores
             } else {
                 groups = try await session.call("store_requests", ["status": filter.rawValue], as: StoreRequestsResponse.self).groups
@@ -127,6 +167,39 @@ struct StoresView: View {
         }
     }
 }
+
+extension StoresView {
+    fileprivate func savePage() async {
+        var url = newURL.trimmingCharacters(in: .whitespaces)
+        if !url.lowercased().hasPrefix("http") { url = "https://" + url }
+        do {
+            try await session.call("balance_page_save", ["store_id": newStore.trimmingCharacters(in: .whitespaces).lowercased(), "url": url])
+            newStore = ""
+            newURL = ""
+            error = nil
+            await load()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    fileprivate func deletePage(_ p: BalancePage) async {
+        do {
+            try await session.call("balance_page_delete", ["store_id": p.store_id])
+            pages.removeAll { $0.store_id == p.store_id }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+}
+
+struct BalancePage: Decodable, Identifiable, Hashable {
+    let store_id: String
+    let url: String
+    var id: String { store_id }
+}
+
+struct BalancePagesResponse: Decodable { let pages: [BalancePage] }
 
 /// Wat het formulier bewerkt.
 struct StoreDraft: Identifiable {
