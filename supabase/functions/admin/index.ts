@@ -24,7 +24,7 @@
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
-import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, wants } from "./push.ts";
+import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, topicOrder, wants } from "./push.ts";
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
@@ -159,12 +159,29 @@ async function apnsSend(token: string, sandbox: boolean, payload: unknown, topic
 }
 
 /** Melding naar alle apparaten die deze soort willen; ongeldige tokens gaan weg. */
+/** Naar een beheer-apparaat: met het topic van die app. Weet de server nog niet welke app het is (oudere versies,
+ *  of het topic klopt niet: DeviceTokenNotForTopic), dan probeert hij de andere beheer-app en onthoudt het. */
+async function adminSend(d: { device_id: string; token: string; sandbox: boolean; topic?: string | null }, payload: unknown) {
+  let last: Awaited<ReturnType<typeof apnsSend>> = { ok: false as const, invalid: true, error: "apns_none" };
+  for (const topic of topicOrder(d.topic)) {
+    const r = await apnsSend(d.token, d.sandbox, payload, topic);
+    if (r.ok) {
+      if (topic !== d.topic) await db.from("admin_push_devices").update({ topic }).eq("device_id", d.device_id);
+      return r;
+    }
+    last = r;
+    if (r.error !== "apns_DeviceTokenNotForTopic" && r.error !== "apns_BadDeviceToken") return r;
+  }
+  return last;
+}
+
+/** Melding naar alle apparaten die deze soort willen; ongeldige tokens gaan weg. */
 async function pushAll(kind: Kind, payload: unknown): Promise<number> {
   if (!apnsConfigured()) return 0;
-  const { data, error } = await db.from("admin_push_devices").select("device_id, token, sandbox, prefs");
+  const { data, error } = await db.from("admin_push_devices").select("device_id, token, sandbox, prefs, topic");
   if (error) throw new Error(error.message);
   const targets = (data ?? []).filter((d) => wants(d.prefs, kind));
-  const results = await Promise.all(targets.map(async (d) => ({ d, r: await apnsSend(d.token, d.sandbox, payload) })));
+  const results = await Promise.all(targets.map(async (d) => ({ d, r: await adminSend(d, payload) })));
   const invalid = results.filter((x) => !x.r.ok && x.r.invalid).map((x) => x.d.device_id);
   if (invalid.length) await db.from("admin_push_devices").delete().in("device_id", invalid);
   const failed = results.filter((x) => !x.r.ok && !x.r.invalid);
@@ -317,7 +334,7 @@ Deno.serve(async (req) => {
         await db.from("admin_push_devices").delete().eq("token", r.apns_token).neq("device_id", r.device_id);
         const { error } = await db.from("admin_push_devices").upsert({
           device_id: r.device_id, token: r.apns_token, platform: r.platform, sandbox: r.sandbox, app_build: r.app_build,
-          prefs: r.prefs, updated_at: new Date().toISOString(),
+          prefs: r.prefs, updated_at: new Date().toISOString(), ...(r.topic ? { topic: r.topic } : {}),
         });
         if (error) throw new Error(error.message);
         await audit("push_register", ipHash, r.platform);
@@ -343,9 +360,9 @@ Deno.serve(async (req) => {
         const id = cleanDeviceId(body.device_id);
         if (!id) return json({ error: "bad_device_id" }, 400);
         if (!apnsConfigured()) return json({ error: "apns_not_configured" }, 503);
-        const { data } = await db.from("admin_push_devices").select("token, sandbox").eq("device_id", id).maybeSingle();
+        const { data } = await db.from("admin_push_devices").select("device_id, token, sandbox, topic").eq("device_id", id).maybeSingle();
         if (!data) return json({ error: "not_registered" }, 404);
-        const r = await apnsSend(data.token, data.sandbox, testPayload());
+        const r = await adminSend(data, testPayload());
         if (!r.ok) {
           if (r.invalid) await db.from("admin_push_devices").delete().eq("device_id", id);
           return json({ error: r.invalid ? "apns_invalid" : r.error }, r.invalid ? 410 : 502);

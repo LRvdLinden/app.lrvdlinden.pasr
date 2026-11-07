@@ -60,3 +60,15 @@ Deno.test("APNs: JWT met een P-256-sleutel", async () => {
   const sig = Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "=="), (x) => x.charCodeAt(0));
   ok(await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, pair.publicKey, sig, new TextEncoder().encode(`${h}.${c}`)), "handtekening");
 });
+
+Deno.test("beheer-apps: topic", async () => {
+  const { cleanRegister, topicOrder } = await import("./push.ts");
+  const base = { device_id: "abcdefgh-1234", apns_token: "a".repeat(64), platform: "ios" };
+  const a = cleanRegister({ ...base, topic: "app.lrvdlinden.lrbeheer" });
+  if (!a.ok || a.value.topic !== "app.lrvdlinden.lrbeheer") throw new Error("lrbeheer");
+  const b = cleanRegister({ ...base, topic: "com.evil.app" });
+  if (!b.ok || b.value.topic !== null) throw new Error("onbekend topic");
+  const o = topicOrder(null);
+  if (o[0] !== "nl.lrvdlinden.pasr.beheer" || o[1] !== "app.lrvdlinden.lrbeheer") throw new Error(o.join());
+  if (topicOrder("app.lrvdlinden.lrbeheer")[0] !== "app.lrvdlinden.lrbeheer") throw new Error("bekend eerst");
+});
