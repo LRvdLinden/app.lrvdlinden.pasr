@@ -700,6 +700,8 @@
     if (fromRequest && s.domain && !s.logo) lookup();
   }
   $("storeNew").addEventListener("click", () => openEditor({}, [], false));
+  new MutationObserver(() => $("storeEditor").parentElement.classList.toggle("editing", !$("storeEditor").classList.contains("hidden")))
+    .observe($("storeEditor"), { attributes: true, attributeFilter: ["class"] });
   $("seClose").addEventListener("click", () => { $("storeEditor").classList.add("hidden"); editing = null; });
   ["seName", "seColor", "seKind"].forEach((id) => $(id).addEventListener("input", preview));
 
