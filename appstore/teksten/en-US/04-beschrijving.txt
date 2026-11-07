@@ -1,0 +1,46 @@
+Pasr is the free app for all your loyalty cards, gift cards and vouchers from Dutch stores. No more stack of plastic in your wallet: your cards live in one app, in the style of Apple Wallet. No ads, no subscription and nobody looking over your shoulder. The app is available in Dutch.
+
+ADD CARDS IN SECONDS
+• Scan your card with the camera: Pasr reads the barcode or QR code and recognises the store.
+• Choose from more than 300 Dutch stores with the right logo and colour, or make your own card.
+• Missing a store or gift card? Request it in the app; it is added without an update and you get a notification.
+
+SWITCH IN ONE MINUTE
+• Record your screen while you go through the cards in your old app. Pasr finds them all.
+• Or pick screenshots, up to 50 at once. Everything is read on your own iPhone.
+
+AT THE CHECKOUT
+• One tap brings your card forward with the code at full brightness.
+• All common codes: EAN-13, EAN-8, UPC-A, Code 128, Code 39, ITF, QR, PDF417 and Aztec.
+• Alphabetical, with search, favourites and a filter by card type.
+
+SHARE TOGETHER OR FOR A WHILE
+• Shared Pasr: share cards with your family or housemates, up to 6 people, each with their own account.
+• Temporary sharing: lend a card via WhatsApp or email until an end date. After that the code disappears. Extend or stop early at any time.
+• Or share a card for good with a link or QR code.
+
+APPLE WALLET AND NOTIFICATIONS
+• Add a card to Apple Wallet. iOS shows it on your Lock Screen when you are at that store.
+• Or let Pasr notify you near a branch.
+• A reminder before a voucher or gift card expires.
+
+GIFT CARDS AND VOUCHERS
+• Keep track of balance, PIN and expiry date.
+
+IPHONE, IPAD, APPLE WATCH AND MAC
+• Your cards on your Apple Watch.
+• Home Screen widgets with your most used cards.
+• Also runs on Macs with Apple silicon and on Apple Vision Pro.
+• Light, dark or automatic.
+• Syncs through your own iCloud or a free Pasr account.
+
+PRIVATE AND SECURE
+• No ads, no tracking and no selling of data.
+• Lock the app or single cards with Face ID.
+• Block screenshots of your codes; temporarily shared cards are always protected.
+• Optional free Pasr account with your cards stored encrypted (AES-256).
+• Back-ups encrypted with your own password.
+
+Made in the Netherlands, for Dutch stores. Questions? Email support@pasr.nl or visit pasr.nl.
+
+Pasr is not affiliated with the stores in the app. Brand names and logos belong to their owners and are only used to recognise your own cards.

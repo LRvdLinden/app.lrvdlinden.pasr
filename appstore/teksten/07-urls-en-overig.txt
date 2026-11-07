@@ -7,4 +7,7 @@ Secundaire categorie: Lifestyle
 Prijs: Gratis (geen in-app aankopen)
 Leeftijdsclassificatie: 4+ (alle vragen in de vragenlijst: Geen / Nee)
 Beschikbaarheid: Nederland (eventueel ook België)
-Taal: Nederlands
+Talen: Nederlands (app); winkelpagina Nederlands en Engels (teksten in teksten/en-US)
+Toestellen: iPhone, iPad, Apple Watch. Mac (Apple-chip) en Apple Vision Pro als iPad-app:
+  zet in App Store Connect › Prijzen en beschikbaarheid de vinkjes "iPhone- en iPad-apps op Mac met Apple-chip"
+  en "Apple Vision Pro" aan. Die gebruiken de iPad-screenshots; aparte Mac-screenshots zijn niet nodig.

@@ -2,23 +2,23 @@ App Privacy (App Store Connect › App Privacy) — zo invullen
 
 Tracking: Nee, Pasr volgt gebruikers niet (geen gegevens voor advertenties, geen data brokers).
 
-Gegevens die worden verzameld (alleen als iemand een gratis Pasr-account maakt):
-1. Contactgegevens › E-mailadres
-   - Doel: App-functionaliteit
-   - Gekoppeld aan de gebruiker: Ja
-   - Tracking: Nee
-2. Contactgegevens › Naam (alleen de voornaam, voor de aanhef in mails)
-   - Doel: App-functionaliteit
-   - Gekoppeld aan de gebruiker: Ja
-   - Tracking: Nee
-3. Gebruikersinhoud › Overige gebruikersinhoud (de kaarten in het account, versleuteld opgeslagen)
-   - Doel: App-functionaliteit
-   - Gekoppeld aan de gebruiker: Ja
-   - Tracking: Nee
+Gegevens die worden verzameld:
+1. Contactgegevens › E-mailadres (account, en e-mailadres van wie je uitnodigt voor een gedeelde Pasr)
+   - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
+2. Contactgegevens › Naam (alleen de voornaam, voor de aanhef in mails en zichtbaar voor leden van je gedeelde Pasr)
+   - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
+3. Gebruikersinhoud › Overige gebruikersinhoud (kaarten in het account en in een gedeelde Pasr, versleuteld; tijdelijk
+   gedeelde kaarten tot de einddatum; winkelaanvragen)
+   - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
+4. Identificatoren › Apparaat-ID (het push-token, alleen als je meldingen voor winkels aanzet)
+   - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
+5. Overige gegevens (land uit de regio-instelling, geen locatie)
+   - Doel: Analyse · Gekoppeld: Ja · Tracking: Nee
 
 Niet verzameld:
 - Locatie: blijft op het apparaat. (Bij een Wallet-pas gaan plaatsen van filialen mee om de pas te maken; de server bewaart niets.)
-- Gebruiksgegevens, diagnose, crashrapporten, identificatoren, aankopen, financiële gegevens: niet verzameld.
-- Land: het account bewaart de regio-instelling van het apparaat (bijvoorbeeld NL). Dat is geen locatie; valt onder het account (App-functionaliteit / analyse van het aantal accounts per land). Wil je het helemaal zuiver: vink daarnaast "Overige gegevens" aan, doel "Analyse", gekoppeld: Ja, tracking: Nee.
+- Foto's en schermopnames voor importeren: worden alleen op het apparaat gelezen.
+- Gebruiksgegevens, diagnose, crashrapporten, aankopen, financiële gegevens: niet verzameld.
 
-Encryptie (Export compliance): de app gebruikt alleen standaardversleuteling (HTTPS, AES voor back-ups en Keychain) → in App Store Connect: "Uses encryption: Yes" en "Exempt: Yes" (standaard encryptie), of zet ITSAppUsesNonExemptEncryption = NO in de Info.plist.
+Encryptie (Export compliance): de app gebruikt alleen standaardversleuteling (HTTPS, AES voor back-ups en Keychain) →
+"Uses encryption: Yes" en "Exempt: Yes", of ITSAppUsesNonExemptEncryption = NO in de Info.plist.

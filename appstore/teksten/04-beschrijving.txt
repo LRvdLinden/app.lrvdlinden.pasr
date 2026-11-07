@@ -3,12 +3,21 @@ Pasr is de gratis app voor al je klantenkaarten, cadeaukaarten en vouchers. Geen
 TOEVOEGEN IN SECONDEN
 • Scan je kaart met de camera: Pasr leest de barcode of QR-code en herkent de winkel.
 • Kies uit ruim 300 winkels met het juiste logo en de juiste kleur, of maak je eigen kaart.
-• Importeer kaarten uit screenshots, bijvoorbeeld als je overstapt uit een andere app.
+• Mis je een winkel of cadeaukaart? Vraag hem aan in de app; hij komt erbij zonder update en je krijgt een melding.
+
+OVERSTAPPEN IN ÉÉN MINUUT
+• Neem je scherm op terwijl je in je oude kaarten-app je kaarten langsgaat. Pasr vindt ze allemaal.
+• Of kies screenshots, tot 50 tegelijk. Alles wordt op je eigen iPhone gelezen.
 
 AAN DE KASSA
 • Eén tik en je kaart komt naar voren, met de code op volle helderheid.
 • Alle gangbare codes: EAN-13, EAN-8, UPC-A, Code 128, Code 39, ITF, QR, PDF417 en Aztec.
-• Alles op alfabet, met zoeken en favorieten.
+• Alles op alfabet, met zoeken, favorieten en een filter op soort kaart.
+
+SAMEN OF EVEN DELEN
+• Gedeelde Pasr: deel kaarten met je gezin of huisgenoten, tot 6 personen, elk met een eigen account.
+• Tijdelijk delen: leen een kaart uit via WhatsApp of mail tot een einddatum. Daarna verdwijnt de code vanzelf. Verlengen of eerder stoppen kan altijd.
+• Of deel een kaart blijvend met een link of QR-code.
 
 APPLE WALLET EN MELDINGEN
 • Zet een kaart in Apple Wallet. iOS toont hem op je toegangsscherm als je bij die winkel bent.
@@ -19,20 +28,20 @@ CADEAUKAARTEN EN VOUCHERS
 • Houd saldo, pincode en vervaldatum bij.
 • Zie in één oogopslag wat je nog tegoed hebt.
 
-IPHONE, IPAD EN APPLE WATCH
+IPHONE, IPAD, APPLE WATCH EN MAC
 • Je kaarten op je Apple Watch: draai je pols en laat de code scannen.
 • Widgets voor je beginscherm met je meest gebruikte kaarten.
-• Alles synchroniseert via je eigen iCloud.
+• Werkt ook op je Mac met Apple-chip en op Apple Vision Pro.
+• Licht, donker of automatisch.
+• Alles synchroniseert via je eigen iCloud of je gratis Pasr-account.
 
 PRIVÉ EN VEILIG
 • Geen reclame, geen tracking en geen verkoop van gegevens.
 • Vergrendel de app of losse kaarten met Face ID.
+• Blokkeer screenshots van je codes; tijdelijk gedeelde kaarten zijn altijd zo beschermd.
 • Optioneel een gratis Pasr-account, waarin je kaarten versleuteld (AES-256) worden bewaard.
 • Maak een back-up, versleuteld met je eigen wachtwoord.
 
-DELEN
-• Deel een kaart met je partner of huisgenoot via een link.
-
-Pasr is gemaakt in Nederland, voor Nederlandse winkels. Vragen of een winkel die je mist? Mail naar support@pasr.nl of kijk op pasr.nl.
+Pasr is gemaakt in Nederland, voor Nederlandse winkels. Vragen? Mail naar support@pasr.nl of kijk op pasr.nl.
 
 Pasr is niet verbonden aan de winkels in de app. Merknamen en logo's zijn van hun eigenaren en worden alleen gebruikt om je eigen kaarten te herkennen.
