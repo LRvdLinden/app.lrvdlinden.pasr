@@ -627,8 +627,13 @@
       if (storeFilter === "balance") {
         await loadBuiltin();
         const r = await api("balance_pages");
-        if (!(r.pages || []).length) list.append(el("p", "empty", "Nog geen saldo-pagina's. Voeg er hierboven een toe."));
-        for (const p of r.pages || []) list.append(balanceRow(p));
+        const pages = new Map((r.pages || []).map((p) => [p.store_id, p.url]));
+        // alle cadeaukaarten en vouchers (ingevulde eerst onderaan per groep), daarna andere winkels met een adres
+        const vouchers = (builtin || []).filter((s) => s.voucher);
+        const todo = vouchers.filter((s) => !pages.has(s.id)).length;
+        list.append(el("p", "muted sm", todo ? `${todo} van ${vouchers.length} cadeaukaarten hebben nog geen saldo-pagina.` : "Alle cadeaukaarten hebben een saldo-pagina."));
+        for (const s of vouchers) list.append(balanceRow({ store_id: s.id, url: pages.get(s.id) || "" }));
+        for (const [id, url] of pages) if (!vouchers.some((s) => s.id === id)) list.append(balanceRow({ store_id: id, url }));
       } else if (storeFilter === "stores") {
         const r = await api("stores");
         if (!(r.stores || []).length) list.append(el("p", "empty", "Nog geen winkels toegevoegd via het beheer."));
@@ -664,21 +669,40 @@
     return hit ? hit.id : t;
   }
   function balanceRow(p) {
-    const row = el("div", "acc");
-    const who = el("div", "who"), meta = el("div", "meta");
+    const row = el("form", "acc bp-row");
+    row.noValidate = true;
+    const who = el("div", "who");
     who.append(el("div", "mail", storeName(p.store_id)));
-    meta.append(el("span", null, p.store_id), el("span", "bp-url", p.url));
-    who.append(meta);
+    const input = document.createElement("input");
+    input.type = "text"; input.inputMode = "url"; input.placeholder = "https://… (saldo-pagina)"; input.value = p.url; input.spellcheck = false;
+    input.setAttribute("aria-label", `Saldo-pagina ${storeName(p.store_id)}`);
+    who.append(input);
     const btns = el("div", "row-btns");
-    const edit = el("button", "btn ghost sm", "Wijzig"); edit.type = "button";
-    edit.onclick = () => { $("bpStore").value = p.store_id; $("bpUrl").value = p.url; $("bpUrl").focus(); };
-    const del = el("button", "btn danger sm", "Verwijder"); del.type = "button";
-    del.onclick = async () => {
-      if (!(await ask("Saldo-pagina verwijderen?", `${storeName(p.store_id)}: ${p.url}`, "Verwijder"))) return;
-      try { await api("balance_page_delete", { store_id: p.store_id }); row.remove(); toast("Verwijderd"); } catch (e) { toast(e.message); }
-    };
-    btns.append(edit, del);
-    row.append(el("div", "av", "€"), who, btns);
+    const find = document.createElement("a");
+    find.className = "btn ghost sm"; find.textContent = "Zoek"; find.target = "_blank"; find.rel = "noopener";
+    find.href = "https://www.google.com/search?q=" + encodeURIComponent(storeName(p.store_id) + " saldo checken");
+    const save = el("button", "btn sm", "Opslaan"); save.type = "submit";
+    btns.append(find, save);
+    if (p.url) {
+      const del = el("button", "btn danger sm", "Wis"); del.type = "button";
+      del.onclick = async () => {
+        if (!(await ask("Saldo-pagina wissen?", `${storeName(p.store_id)}: ${p.url}`, "Wis"))) return;
+        try { await api("balance_page_delete", { store_id: p.store_id }); input.value = ""; p.url = ""; del.remove(); row.classList.remove("done"); toast("Gewist"); } catch (e) { toast(e.message); }
+      };
+      btns.append(del);
+      row.classList.add("done");
+    }
+    row.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      let url = input.value.trim();
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      save.disabled = true;
+      try { const r = await api("balance_page_save", { store_id: p.store_id, url }); input.value = r.url; row.classList.add("done"); toast(`${storeName(p.store_id)} opgeslagen`); }
+      catch (err) { toast(err.message); }
+      finally { save.disabled = false; }
+    });
+    row.append(el("div", "av", p.url ? "✓" : "€"), who, btns);
     return row;
   }
   $("bpForm").addEventListener("submit", async (e) => {

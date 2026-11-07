@@ -45,8 +45,22 @@ struct StoresView: View {
                 Text(error).foregroundStyle(Theme.coral).font(.subheadline)
             }
             if filter == .balance {
+                let filled = Dictionary(uniqueKeysWithValues: pages.map { ($0.store_id, $0.url) })
                 Section {
-                    TextField("Winkel-id, bijv. vvv", text: $newStore)
+                    ForEach(VoucherStores.all, id: \.id) { store in
+                        BalancePageRow(storeID: store.id, name: store.name, url: filled[store.id] ?? "") { await load() }
+                    }
+                } header: {
+                    Text("Cadeaukaarten in de app")
+                } footer: {
+                    Text("\(VoucherStores.all.filter { filled[$0.id] == nil }.count) van \(VoucherStores.all.count) hebben nog geen saldo-pagina. De knop Saldo checken in de app opent dit adres, met het kaartnummer klaar om te plakken.")
+                }
+                let others = pages.filter { p in !VoucherStores.all.contains { $0.id == p.store_id } }
+                Section {
+                    ForEach(others) { p in
+                        BalancePageRow(storeID: p.store_id, name: p.store_id, url: p.url) { await load() }
+                    }
+                    TextField("Andere winkel: winkel-id, bijv. kwantum", text: $newStore)
                         .autocorrectionDisabled()
                         #if os(iOS)
                         .textInputAutocapitalization(.never)
@@ -60,23 +74,7 @@ struct StoresView: View {
                     Button("Opslaan") { Task { await savePage() } }
                         .disabled(newStore.isEmpty || newURL.isEmpty)
                 } header: {
-                    Text("Saldo-pagina toevoegen")
-                } footer: {
-                    Text("De knop Saldo checken bij een cadeaukaart in de app opent deze pagina, met het kaartnummer klaar om te plakken. Werkt ook voor winkels die al in de app zitten.")
-                }
-                Section {
-                    if pages.isEmpty && !loading { Text("Nog geen saldo-pagina's.").foregroundStyle(Theme.muted) }
-                    ForEach(pages) { p in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(p.store_id).font(.body.weight(.semibold))
-                            Text(p.url).font(.caption).foregroundStyle(Theme.muted).lineLimit(2)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture { newStore = p.store_id; newURL = p.url }
-                        .swipeActions {
-                            Button(role: .destructive) { Task { await deletePage(p) } } label: { Label("Verwijder", systemImage: "trash") }
-                        }
-                    }
+                    Text("Andere winkels")
                 }
             } else if filter == .stores {
                 if stores.isEmpty && !loading { Text("Nog geen winkels toegevoegd via het beheer.").foregroundStyle(Theme.muted) }
@@ -189,6 +187,77 @@ extension StoresView {
             pages.removeAll { $0.store_id == p.store_id }
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+}
+
+/// Eén winkel met zijn saldo-pagina: invullen, opslaan, opzoeken of wissen.
+struct BalancePageRow: View {
+    @EnvironmentObject private var session: Session
+    let storeID: String
+    let name: String
+    let url: String
+    var onChange: () async -> Void
+    @State private var text = ""
+    @State private var busy = false
+    @State private var message: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: url.isEmpty ? "eurosign.circle" : "checkmark.circle.fill")
+                    .foregroundStyle(url.isEmpty ? Theme.muted : Theme.mint)
+                Text(name).font(.body.weight(.semibold))
+                Spacer()
+                if let search = URL(string: "https://www.google.com/search?q=" + (name + " saldo checken").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!) {
+                    Link("Zoek", destination: search).font(.footnote)
+                }
+            }
+            HStack {
+                TextField("https://… (saldo-pagina)", text: $text)
+                    .autocorrectionDisabled()
+                    #if os(iOS)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    #endif
+                    .onSubmit { Task { await save() } }
+                if busy { ProgressView() } else if text != url && !text.isEmpty {
+                    Button("Opslaan") { Task { await save() } }.buttonStyle(.borderless)
+                }
+            }
+            .font(.subheadline)
+            if let message { Text(message).font(.caption).foregroundStyle(Theme.coral) }
+        }
+        .onAppear { text = url }
+        .onChange(of: url) { _, new in text = new }
+        .swipeActions {
+            if !url.isEmpty {
+                Button(role: .destructive) { Task { await clear() } } label: { Label("Wis", systemImage: "trash") }
+            }
+        }
+    }
+
+    private func save() async {
+        var value = text.trimmingCharacters(in: .whitespaces)
+        guard !value.isEmpty else { return }
+        if !value.lowercased().hasPrefix("http") { value = "https://" + value }
+        busy = true
+        defer { busy = false }
+        do {
+            try await session.call("balance_page_save", ["store_id": storeID, "url": value])
+            message = nil
+            await onChange()
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    private func clear() async {
+        do {
+            try await session.call("balance_page_delete", ["store_id": storeID])
+            await onChange()
+        } catch {
+            message = error.localizedDescription
         }
     }
 }

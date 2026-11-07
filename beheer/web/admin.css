@@ -295,3 +295,8 @@ html, body { overflow-x: clip; max-width: 100%; }
 .bp-form { margin: 0 0 16px; }
 .bp-form .se-grid input { width: 100%; }
 .acc .bp-url { word-break: break-all; }
+.bp-row .who { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.bp-row .who input { width: 100%; min-width: 0; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; color: var(--text); padding: 8px 10px; font: inherit; font-size: 14px; }
+.bp-row.done .av { background: rgba(61,214,140,.15); color: var(--mint, #3DD68C); }
+.bp-row .row-btns { flex-wrap: nowrap; }
+@media (max-width: 620px) { .bp-row { flex-wrap: wrap; } .bp-row .row-btns { width: 100%; justify-content: flex-end; } }
