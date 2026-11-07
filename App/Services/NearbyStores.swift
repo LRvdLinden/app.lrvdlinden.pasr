@@ -331,6 +331,32 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
         return out
     }
 
+    /// Bij welk filiaal je nu bent (voor de geschiedenis): een eigen locatie of bekend filiaal binnen 300 m.
+    /// Zonder locatietoegang nil; vraagt er nooit om.
+    func placeName(for card: Card) async -> String? {
+        guard hasLocation, let here = await currentLocation(maxAge: 300) else { return nil }
+        let store = StoreTemplates.template(id: card.templateID)?.name ?? card.storeName
+        var best: (CLLocationDistance, String)?
+        for p in card.places {
+            let d = here.distance(from: CLLocation(latitude: p.latitude, longitude: p.longitude))
+            let parts = p.name.components(separatedBy: " · ")
+            let label = Self.label(name: parts.first ?? store, address: parts.count > 1 ? parts[1] : nil)
+            if d < 300, d < (best?.0 ?? .infinity) { best = (d, label) }
+        }
+        for b in loadCache()[Self.key(store)]?.branches ?? [] {
+            let d = b.distance(from: here)
+            if d < 300, d < (best?.0 ?? .infinity) { best = (d, Self.label(name: b.name, address: b.address)) }
+        }
+        return best?.1
+    }
+
+    /// "PLUS" + "Hoofdstraat 1, Apeldoorn" → "PLUS Apeldoorn".
+    private static func label(name: String, address: String?) -> String {
+        guard let city = address?.components(separatedBy: ", ").last?.trimmingCharacters(in: .whitespaces), !city.isEmpty,
+              !name.localizedCaseInsensitiveContains(city) else { return name }
+        return "\(name) \(city)"
+    }
+
     /// Je plek nu (een recente is goed genoeg). Nil zonder toestemming.
     func currentLocation(maxAge: TimeInterval = 600) async -> CLLocation? {
         guard hasLocation else { return nil }

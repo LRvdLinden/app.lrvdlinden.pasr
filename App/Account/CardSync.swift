@@ -124,6 +124,22 @@ enum CardSync {
         card.pin = f["pin"] as? String
         card.expiresAt = (f["expiresAt"] as? String).flatMap(date)
         card.website = f["website"] as? String
+        card.balanceURL = f["balanceURL"] as? String
+        // geschiedenis: de nieuwere versie wint voor uitgaven en opwaarderingen (zo blijft ongedaan maken staan);
+        // "getoond" synchroniseert niet en blijft per apparaat, net als regels ouder dan wat er meekwam
+        let remote: [CardEvent] = (f["history"] as? [[String: Any]] ?? []).compactMap { e in
+            guard let id = (e["id"] as? String).flatMap(UUID.init(uuidString:)), let at = (e["date"] as? String).flatMap(date),
+                  let kind = (e["kind"] as? String).flatMap(CardEvent.Kind.init(rawValue:)) else { return nil }
+            return CardEvent(id: id, date: at, kind: kind, amount: e["amount"] as? Double, balance: e["balance"] as? Double,
+                             place: e["place"] as? String)
+        }
+        if f["history"] != nil {   // oudere Pasr-versies sturen geen geschiedenis mee: dan blijft die van hier staan
+            let oldest = remote.map(\.date).min()
+            let ids = Set(remote.map(\.id))
+            card.history = remote + card.history.filter { local in
+                !ids.contains(local.id) && (local.kind == .shown || (oldest.map { local.date < $0 } ?? false))
+            }
+        }
         card.places = (f["places"] as? [[String: Any]] ?? []).compactMap { p in
             guard let lat = p["lat"] as? Double, let lon = p["lon"] as? Double else { return nil }
             return CardPlace(name: p["name"] as? String ?? "", latitude: lat, longitude: lon)
@@ -152,6 +168,17 @@ enum CardSync {
         p["pin"] = c.pin
         p["expiresAt"] = c.expiresAt.map(iso)
         p["website"] = c.website
+        p["balanceURL"] = c.balanceURL
+        // altijd meesturen (ook leeg), zodat een ander apparaat weet dat de geschiedenis is bijgewerkt
+        do {
+            p["history"] = c.history.filter { $0.kind != .shown }.prefix(60).map { e -> [String: Any] in
+                var d: [String: Any] = ["id": e.id.uuidString, "date": iso(e.date), "kind": e.kind.rawValue]
+                d["amount"] = e.amount
+                d["balance"] = e.balance
+                d["place"] = e.place
+                return d
+            }
+        }
         let places = c.places
         if !places.isEmpty {
             p["places"] = places.map { ["name": $0.name, "lat": $0.latitude, "lon": $0.longitude] }

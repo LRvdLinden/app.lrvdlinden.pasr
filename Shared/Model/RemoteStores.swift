@@ -55,3 +55,26 @@ enum RemoteStores {
         }
     }
 }
+
+/// Saldo-pagina's per winkel-id, uit het beheer (via de catalogus). Ook voor winkels die in de app zitten.
+enum BalancePages {
+    private static let key = "pasr.balancePages"
+
+    static func save(_ pages: [String: String]) {
+        UserDefaults(suiteName: PasrStore.appGroup)?.set(pages, forKey: key)
+    }
+
+    static func url(for templateID: String?) -> String? {
+        guard let templateID else { return nil }
+        return (UserDefaults(suiteName: PasrStore.appGroup)?.dictionary(forKey: key) as? [String: String])?[templateID]
+    }
+}
+
+extension Card {
+    /// Waar je het tegoed kunt nakijken: je eigen adres bij de kaart, anders dat van de winkel uit het beheer.
+    var balancePage: URL? {
+        let raw = (balanceURL?.isEmpty == false ? balanceURL : nil) ?? BalancePages.url(for: templateID)
+        guard let raw, let url = URL(string: raw.hasPrefix("http") ? raw : "https://" + raw), url.scheme == "https" else { return nil }
+        return url
+    }
+}

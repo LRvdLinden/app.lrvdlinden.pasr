@@ -228,6 +228,8 @@ extension Card {
         c.expiresAt = expiresAt
         c.website = website
         c.placesData = placesData
+        c.historyData = historyData
+        c.balanceURL = balanceURL
         c.logoFromWebsite = logoFromWebsite
         c.isLocked = isLocked
         c.logoData = logoData

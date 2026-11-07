@@ -23,6 +23,7 @@ final class StoreCatalog {
         var body: [String: Any] = [:]
         body["p_since"] = UserDefaults.standard.string(forKey: sinceKey) ?? NSNull()
         guard let json = try? await AccountService.shared.publicRPC("pasr_store_catalog", body: body) as? [String: Any] else { return }
+        if let pages = json["balance_pages"] as? [String: String] { BalancePages.save(pages) }
         let rows = json["stores"] as? [[String: Any]] ?? []
         if !rows.isEmpty {
             var list = Dictionary(RemoteStores.load().map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })

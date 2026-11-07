@@ -54,6 +54,8 @@ struct CardEditorView: View {
         var groupID: UUID?
         /// Eigen locaties (Ik sta hier / speld op de kaart).
         var places: [CardPlace] = []
+        /// Eigen saldo-pagina (voucher).
+        var balanceURL = ""
 
         var balance: Double? {
             let cleaned = balanceText.replacingOccurrences(of: ",", with: ".")
@@ -100,6 +102,7 @@ struct CardEditorView: View {
         d.backPhoto = card.backPhoto
         d.groupID = card.groupID
         d.places = card.places
+        d.balanceURL = card.balanceURL ?? ""
         _draft = State(initialValue: d)
     }
 
@@ -373,6 +376,14 @@ struct CardEditorView: View {
             if draft.hasExpiry {
                 DatePicker("Geldig tot", selection: $draft.expiresAt, displayedComponents: .date)
             }
+            TextField(BalancePages.url(for: draft.templateID).map { String(localized: "Saldo-pagina (\(URL(string: $0)?.host() ?? $0))") }
+                      ?? String(localized: "Saldo-pagina (website, optioneel)"), text: $draft.balanceURL)
+                .textContentType(.URL)
+                .autocorrectionDisabled()
+                #if os(iOS)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                #endif
         }
     }
 
@@ -484,7 +495,9 @@ struct CardEditorView: View {
         card.isFavorite = draft.isFavorite
         card.isLocked = draft.isLocked
         card.note = draft.note
-        card.balance = draft.kind == .voucher ? draft.balance : nil
+        let newBalance = draft.kind == .voucher ? draft.balance : nil
+        let balanceChanged = existing != nil && newBalance != nil && newBalance != card.balance
+        card.balance = newBalance
         card.currencyCode = draft.kind == .voucher ? draft.currencyCode : nil
         card.expiresAt = draft.kind == .voucher && draft.hasExpiry ? draft.expiresAt : nil
         card.pin = draft.pin.isEmpty ? nil : draft.pin
@@ -494,6 +507,9 @@ struct CardEditorView: View {
         card.frontPhoto = draft.frontPhoto
         card.backPhoto = draft.backPhoto
         if !card.isTemporary { card.places = draft.places }
+        let url = draft.balanceURL.trimmingCharacters(in: .whitespaces)
+        card.balanceURL = url.isEmpty ? nil : url
+        if balanceChanged, let b = newBalance { card.recordBalance(b) }
         card.updatedAt = .now
         card.refreshCodeImage()
         if existing == nil {
@@ -510,6 +526,8 @@ struct CardEditorView: View {
             let context = context
             Task { await LogoService.fillMissing(in: context) }
         }
+        let saved = card
+        Task { await WalletPass.refreshIfInWallet(saved) }
         if let onSaved { onSaved() } else { dismiss() }
     }
 }

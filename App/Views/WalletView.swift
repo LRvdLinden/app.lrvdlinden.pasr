@@ -25,6 +25,10 @@ struct WalletView: View {
     @State private var search = ""
     @State private var sheet: Sheet?
     @State private var deleting: Card?
+    /// Wanneer de kaart naar voren kwam en waar (voor de vraag "Hoeveel heb je uitgegeven?" bij een voucher).
+    @State private var shownAt: Date?
+    @State private var shownPlace: String?
+    @AppStorage(SpendSheet.askKey) private var askSpent = true
     /// 0 = front, 180 = back with the code.
     @State private var flipAngle: Double = 0
     @Namespace private var namespace
@@ -32,9 +36,11 @@ struct WalletView: View {
     private let peek: CGFloat = 62
 
     enum Sheet: Identifiable {
-        case add, importScreenshots, settings, edit(Card), share(Card)
+        case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?)
         var id: String {
             switch self {
+            case .history(let card): "history-\(card.id)"
+            case .spend(let card, _): "spend-\(card.id)"
             case .add: "add"
             case .importScreenshots: "import"
             case .settings: "settings"
@@ -101,6 +107,10 @@ struct WalletView: View {
             case .settings: SettingsView()
             case .edit(let card): NavigationStack { CardEditorView(card: card) }
             case .share(let card): ShareCardSheet(card: card)
+            case .history(let card): CardHistorySheet(card: card)
+            case .spend(let card, let place):
+                SpendSheet(card: card, mode: .spent, place: place, asked: true)
+                    .presentationDetents([.medium])
             }
         }
         .confirmationDialog(Text("\(deleting?.storeName ?? "kaart") verwijderen?"),
@@ -225,6 +235,8 @@ struct WalletView: View {
                         card.updatedAt = .now
                     }
                     actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
+                    actionButton(card.kind == .voucher ? "eurosign.circle" : "clock.arrow.circlepath",
+                                 label: card.kind == .voucher ? "Tegoed en uitgaven" : "Geschiedenis") { sheet = .history(card) }
                     if !card.isTemporary {
                         actionButton("square.and.arrow.up", label: "Deel") { share(card) }
                     }
@@ -236,6 +248,13 @@ struct WalletView: View {
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
 
+                if let previous = previousUse(card) {
+                    Text("Vorige keer \(previous.date.formatted(.relative(presentation: .named)))\(previous.place.map { " · \($0)" } ?? "")")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(width: width, alignment: .leading)
+                        .onTapGesture { sheet = .history(card) }
+                }
                 if !card.note.isEmpty {
                     Text(card.note)
                         .font(.footnote)
@@ -280,8 +299,20 @@ struct WalletView: View {
         }
     }
 
+    /// De keer hiervoor dat de kaart is getoond (de huidige keer telt niet mee).
+    private func previousUse(_ card: Card) -> CardEvent? {
+        card.history.filter { $0.kind == .shown && Date.now.timeIntervalSince($0.date) > 120 }.first
+    }
+
     private func bringForward(_ card: Card) {
         card.markUsed()
+        shownAt = .now
+        shownPlace = nil
+        Task {
+            let place = await NearbyStores.shared.placeName(for: card)
+            shownPlace = place
+            card.recordShown(place: place)
+        }
         flipAngle = 0
         withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
         // Once it's in front, turn it over to show the code.
@@ -289,7 +320,17 @@ struct WalletView: View {
     }
 
     private func deselect() {
-        guard selectedID != nil else { return }
+        guard let id = selectedID else { return }
+        // Voucher langer dan een paar seconden getoond: vragen hoeveel je uitgaf (tegoed bijhouden)
+        if askSpent, let card = cards.first(where: { $0.id == id }), card.kind == .voucher, !card.isTemporary,
+           (card.balance ?? 0) > 0, let at = shownAt, Date.now.timeIntervalSince(at) > 4 {
+            let place = shownPlace
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(650))
+                if sheet == nil { sheet = .spend(card, place) }
+            }
+        }
+        shownAt = nil
         withAnimation(.easeInOut(duration: 0.32)) { flipAngle = 0 }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))

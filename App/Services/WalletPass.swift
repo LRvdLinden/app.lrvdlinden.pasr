@@ -43,7 +43,9 @@ enum WalletPass {
         if let balance = card.balance { body["balance"] = balance; body["currency"] = card.currencyCode ?? "EUR" }
         if let expires = card.expiresAt { body["expiresAt"] = ISO8601DateFormatter().string(from: expires) }
         if let logo = logoPNG(for: card) { body["logo"] = logo.base64EncodedString() }
-        var spots = locations ?? card.places.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        let lines = historyLines(card)
+        if !lines.isEmpty { body["history"] = lines }
+        var spots = locations ?? savedLocations(card) ?? card.places.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
         if locations == nil, spots.count < maxLocations {
             let branches = await NearbyStores.shared.branchesNearby(of: storeName(card))
             spots += branches.map(\.coordinate).prefix(maxLocations - spots.count)
@@ -51,6 +53,7 @@ enum WalletPass {
         if !spots.isEmpty {
             body["locations"] = spots.prefix(maxLocations).map { ["latitude": $0.latitude, "longitude": $0.longitude] }
         }
+        saveLocations(Array(spots.prefix(maxLocations)), for: card)
 
         var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = "POST"
@@ -67,6 +70,36 @@ enum WalletPass {
             throw Failure(message: String(localized: "De Wallet-pas kon niet worden gemaakt. Probeer het later opnieuw."))
         }
         return pass
+    }
+
+    // MARK: Bijwerken
+
+    /// Staat de kaart in Wallet, dan de pas daar vervangen door een nieuwe met het actuele tegoed en de laatste regels.
+    /// Gaat zonder vraag (PKPassLibrary.replacePass); Wallet laat bij een nieuw tegoed zelf "Tegoed nu …" zien.
+    @MainActor
+    static func refreshIfInWallet(_ card: Card) async {
+        guard isAvailable, !card.isTemporary, !card.number.isEmpty, isInWallet(card),
+              let pass = try? await make(for: card, locations: savedLocations(card)) else { return }
+        _ = PKPassLibrary().replacePass(with: pass)
+    }
+
+    private static func locationsKey(_ card: Card) -> String { "pasr.wallet.locations.\(card.id.uuidString)" }
+
+    private static func saveLocations(_ spots: [CLLocationCoordinate2D], for card: Card) {
+        UserDefaults.standard.set(spots.map { [$0.latitude, $0.longitude] }, forKey: locationsKey(card))
+    }
+
+    /// De plekken die bij het maken van de pas zijn gekozen (zodat bijwerken ze niet verandert).
+    private static func savedLocations(_ card: Card) -> [CLLocationCoordinate2D]? {
+        guard let list = UserDefaults.standard.array(forKey: locationsKey(card)) as? [[Double]] else { return nil }
+        return list.compactMap { $0.count == 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil }
+    }
+
+    /// Achterkant van de pas: bij een voucher de laatste uitgaven en opwaarderingen, anders wanneer hij is getoond.
+    static func historyLines(_ card: Card) -> [String] {
+        let voucher = card.kind == .voucher
+        let events = card.history.filter { voucher ? $0.kind != .shown : $0.kind == .shown }.prefix(6)
+        return events.map { CardHistoryFormat.line($0, card: card) }
     }
 
     /// The logo as it appears on the card (store logo in its card style, or the owner's own), max 160×50 pt @3x.
