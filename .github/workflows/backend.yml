@@ -111,9 +111,9 @@ jobs:
           PTID: ${{ secrets.PASS_TYPE_ID }}
           PK: ${{ secrets.PASR_SUPABASE_KEY }}
         run: |
-          supabase functions deploy wallet-pass --project-ref "$REF" --no-verify-jwt --use-api
+          supabase functions deploy wallet-pass --yes --project-ref "$REF" --no-verify-jwt --use-api
           if [ -n "$P12" ]; then
-            supabase secrets set --project-ref "$REF" \
+            supabase secrets set --yes --project-ref "$REF" \
               PASS_CERT_P12="$P12" PASS_CERT_PASSWORD="$PW" PASS_TYPE_ID="${PTID:-pass.nl.lrvdlinden.pasr}" \
               PASS_TEAM_ID=EU3UY476T6 PASR_PUBLISHABLE_KEY="$PK" >/dev/null
             echo "::notice::Wallet function deployed and certificate set."
@@ -134,7 +134,7 @@ jobs:
           if [ "$deno_ok" = 1 ]; then
             ~/.deno/bin/deno test --no-check supabase/functions/admin/ || { echo "::error::Tests of the admin function failed"; exit 1; }
           fi
-          supabase functions deploy admin --project-ref "$REF" --no-verify-jwt --use-api
+          supabase functions deploy admin --yes --project-ref "$REF" --no-verify-jwt --use-api
           # Where the database reaches the function (push notifications via pg_net)
           python3 -c 'import json,os;print(json.dumps({"query":"update public.pasr_admin_config set admin_url = '"'"'https://%s.supabase.co/functions/v1/admin'"'"' where id = 1" % os.environ["REF"]}))' > /tmp/u.json
           curl -sf -o /dev/null -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
@@ -155,7 +155,7 @@ jobs:
           else
             echo "::warning::PASR_APNS_KEY_P8 / PASR_APNS_KEY_ID missing: no push notifications for Pasr Beheer yet."
           fi
-          if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$REF" "${args[@]}" >/dev/null; fi
+          if [ ${#args[@]} -gt 0 ]; then supabase secrets set --yes --project-ref "$REF" "${args[@]}" >/dev/null; fi
           echo "::notice::Admin function deployed."
       - name: Gedeelde Pasr function (group-invite)
         if: steps.check.outputs.skip != '1'
@@ -171,9 +171,9 @@ jobs:
             ~/.deno/bin/deno test --no-check supabase/functions/group-invite/ || { echo "::error::Tests of the group-invite function failed"; exit 1; }
           fi
           # De database controleert het token (pasr_group_invite met de JWT van de gebruiker)
-          supabase functions deploy group-invite --project-ref "$REF" --no-verify-jwt --use-api
+          supabase functions deploy group-invite --yes --project-ref "$REF" --no-verify-jwt --use-api
           if [ -n "$S_HOST" ] && [ -n "$S_USER" ] && [ -n "$S_PASS" ] && [ -n "$S_FROM" ]; then
-            supabase secrets set --project-ref "$REF" PASR_SMTP_HOST="$S_HOST" PASR_SMTP_PORT="${S_PORT:-465}" \
+            supabase secrets set --yes --project-ref "$REF" PASR_SMTP_HOST="$S_HOST" PASR_SMTP_PORT="${S_PORT:-465}" \
               PASR_SMTP_USER="$S_USER" PASR_SMTP_PASSWORD="$S_PASS" PASR_SMTP_FROM="$S_FROM" >/dev/null
             echo "::notice::group-invite deployed; invitation mails go out as $S_FROM."
           else
