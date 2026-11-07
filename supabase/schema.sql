@@ -84,6 +84,12 @@ language plpgsql security definer set search_path = public, auth as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  -- gedeelde Pasrs waarin je het laatste lid bent verdwijnen mee (met hun kaarten)
+  if to_regclass('public.pasr_group_members') is not null then
+    delete from public.pasr_groups g
+     where exists (select 1 from public.pasr_group_members m where m.group_id = g.id and m.user_id = uid)
+       and not exists (select 1 from public.pasr_group_members m where m.group_id = g.id and m.user_id <> uid);
+  end if;
   delete from auth.users where id = uid;
   return jsonb_build_object('ok', true);
 end $$;
@@ -312,7 +318,7 @@ revoke all on public.admin_token_state, public.admin_audit, public.admin_push_de
 create or replace function public.pasr_daily_bump(col text, n int default 1) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if col not in ('signups', 'confirmed', 'deleted', 'expired', 'wallet', 'bots') then return; end if;
+  if col not in ('signups', 'confirmed', 'deleted', 'expired', 'wallet', 'bots', 'groups', 'temp_shares') then return; end if;
   execute format('insert into public.pasr_daily as d (day, %1$I) values ((now() at time zone ''utc'')::date, $1)
                   on conflict (day) do update set %1$I = d.%1$I + $1', col) using n;
 end $$;
@@ -435,7 +441,8 @@ begin
     'per_day', (select coalesce(jsonb_agg(jsonb_build_object(
         'day', d.day, 'signups', coalesce(x.signups, 0), 'confirmed', coalesce(x.confirmed, 0),
         'deleted', coalesce(x.deleted, 0), 'expired', coalesce(x.expired, 0), 'wallet', coalesce(x.wallet, 0),
-        'bots', coalesce(x.bots, 0), 'accounts', greatest(t.accounts, 0), 'cards', x.cards_total) order by d.day), '[]'::jsonb)
+        'bots', coalesce(x.bots, 0), 'accounts', greatest(t.accounts, 0), 'cards', x.cards_total,
+        'groups', coalesce(x.groups, 0), 'temp_shares', coalesce(x.temp_shares, 0)) order by d.day), '[]'::jsonb)
       from days d left join public.pasr_daily x on x.day = d.day left join totals_per_day t on t.day = d.day),
     'countries', (select coalesce(jsonb_object_agg(c, n), '{}'::jsonb) from (
         select coalesce(u.raw_user_meta_data->>'country', '?') as c, count(*) as n from auth.users u group by 1) cc),
@@ -447,7 +454,19 @@ begin
         select case when cards = 0 then '0' when cards <= 5 then '1-5' when cards <= 15 then '6-15'
                     when cards <= 30 then '16-30' else '31+' end as bucket, count(*) as n
         from users group by 1) b),
-    'push_devices', (select count(*) from public.admin_push_devices)
+    'push_devices', (select count(*) from public.admin_push_devices),
+    'shared', jsonb_build_object(
+      'groups', (select count(*) from public.pasr_groups),
+      'members', (select count(*) from public.pasr_group_members),
+      'people', (select count(distinct user_id) from public.pasr_group_members),
+      'cards', (select count(*) from public.pasr_group_cards where not deleted),
+      'invites', (select count(*) from public.pasr_group_invites where expires_at > now()),
+      'new_7d', (select count(*) from public.pasr_groups where created_at > now() - interval '7 days')),
+    'temp', case when to_regclass('public.pasr_temp_shares') is null then null else jsonb_build_object(
+      'active', (select count(*) from public.pasr_temp_shares where not revoked and expires_at > now()),
+      'opens', (select coalesce(sum(opens), 0) from public.pasr_temp_shares where expires_at > now() - interval '30 days'),
+      'revoked_30d', (select count(*) from public.pasr_temp_shares where revoked and created_at > now() - interval '30 days'),
+      'new_7d', (select count(*) from public.pasr_temp_shares where created_at > now() - interval '7 days')) end
   ) into result;
   return result;
 end $$;
@@ -476,7 +495,8 @@ begin
            u.created_at, u.email_confirmed_at,
            u.last_sign_in_at,
            (select count(*) from public.pasr_cards c where c.user_id = u.id and not c.deleted) as cards,
-           (select max(c.server_at) from public.pasr_cards c where c.user_id = u.id) as synced_at
+           (select max(c.server_at) from public.pasr_cards c where c.user_id = u.id) as synced_at,
+           (select count(*) from public.pasr_group_members m where m.user_id = u.id) as groups
     from auth.users u
     where (q = '' or position(q in lower(coalesce(u.email, ''))) > 0
                   or position(q in lower(coalesce(u.raw_user_meta_data->>'first_name', ''))) > 0)
@@ -509,6 +529,360 @@ do $$
 begin
   perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-admin-cleanup';
   perform cron.schedule('pasr-admin-cleanup', '41 3 * * *', 'select public.pasr_admin_cleanup()');
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;
+
+-- ===============================================================================================================
+-- Gedeelde Pasr (zoals de gedeelde groep in Wachtwoorden): iemand maakt een groep en nodigt anderen uit per e-mail.
+-- Regels: hoogstens 2 gedeelde Pasrs per persoon, hoogstens 6 leden per groep (uitnodigingen tellen mee), en elk lid
+-- mag alles: kaarten toevoegen, wijzigen en verwijderen, uitnodigen, leden verwijderen en de naam wijzigen.
+-- Kaarten van een groep staan versleuteld (zelfde sleutel als pasr_cards) en zijn alleen via deze functies te lezen.
+-- ===============================================================================================================
+
+create table if not exists public.pasr_groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  created_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.pasr_group_members (
+  group_id uuid not null references public.pasr_groups (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  joined_at timestamptz not null default now(),
+  primary key (group_id, user_id)
+);
+create index if not exists pasr_group_members_user on public.pasr_group_members (user_id);
+create table if not exists public.pasr_group_invites (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.pasr_groups (id) on delete cascade,
+  email text not null,
+  invited_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null default now() + interval '14 days'
+);
+create unique index if not exists pasr_group_invites_once on public.pasr_group_invites (group_id, email);
+create index if not exists pasr_group_invites_email on public.pasr_group_invites (email);
+create table if not exists public.pasr_group_cards (
+  group_id uuid not null references public.pasr_groups (id) on delete cascade,
+  id uuid not null,
+  payload bytea,
+  updated_at timestamptz not null,
+  deleted boolean not null default false,
+  updated_by uuid,
+  server_at timestamptz not null default clock_timestamp(),
+  primary key (group_id, id)
+);
+create index if not exists pasr_group_cards_changes on public.pasr_group_cards (group_id, server_at);
+alter table public.pasr_groups enable row level security;
+alter table public.pasr_group_members enable row level security;
+alter table public.pasr_group_invites enable row level security;
+alter table public.pasr_group_cards enable row level security;
+revoke all on public.pasr_groups, public.pasr_group_members, public.pasr_group_invites, public.pasr_group_cards from anon, authenticated;
+alter table public.pasr_daily add column if not exists groups int not null default 0;
+
+create or replace function public.pasr_group_check(p_group uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  if not exists (select 1 from public.pasr_group_members where group_id = p_group and user_id = auth.uid()) then
+    raise exception 'not a member' using errcode = '42501';
+  end if;
+end $$;
+revoke all on function public.pasr_group_check(uuid) from public, anon, authenticated;
+
+create or replace function public.pasr_group_clean_name(p text) returns text
+language sql immutable as $$ select left(nullif(btrim(regexp_replace(coalesce(p, ''), '\s+', ' ', 'g')), ''), 40) $$;
+
+-- Mijn gedeelde Pasrs met leden en openstaande uitnodigingen, en de uitnodigingen aan mij.
+create or replace function public.pasr_groups() returns jsonb
+language plpgsql security definer set search_path = public, auth as $$
+declare uid uuid := auth.uid(); me text;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  select lower(email) into me from auth.users where id = uid;
+  return jsonb_build_object(
+    'groups', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', g.id, 'name', g.name, 'created_at', g.created_at,
+        'members', (select jsonb_agg(jsonb_build_object(
+            'user_id', m.user_id, 'email', u.email, 'first_name', u.raw_user_meta_data->>'first_name',
+            'me', m.user_id = uid, 'creator', m.user_id = g.created_by, 'joined_at', m.joined_at) order by m.joined_at)
+          from public.pasr_group_members m join auth.users u on u.id = m.user_id where m.group_id = g.id),
+        'invites', coalesce((select jsonb_agg(jsonb_build_object('id', i.id, 'email', i.email, 'created_at', i.created_at)
+            order by i.created_at)
+          from public.pasr_group_invites i where i.group_id = g.id and i.expires_at > now()), '[]'::jsonb),
+        'cards', (select count(*) from public.pasr_group_cards c where c.group_id = g.id and not c.deleted))
+        order by g.created_at)
+      from public.pasr_groups g join public.pasr_group_members gm on gm.group_id = g.id and gm.user_id = uid), '[]'::jsonb),
+    'invites', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', i.id, 'group_id', i.group_id, 'group_name', g.name,
+        'from', coalesce(nullif(u.raw_user_meta_data->>'first_name', ''), u.email),
+        'members', (select count(*) from public.pasr_group_members m where m.group_id = i.group_id),
+        'created_at', i.created_at) order by i.created_at)
+      from public.pasr_group_invites i join public.pasr_groups g on g.id = i.group_id
+      left join auth.users u on u.id = i.invited_by
+      where i.email = me and i.expires_at > now()
+        and not exists (select 1 from public.pasr_group_members m where m.group_id = i.group_id and m.user_id = uid)), '[]'::jsonb),
+    'limits', jsonb_build_object('groups', 2, 'members', 6));
+end $$;
+
+create or replace function public.pasr_group_create(p_name text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); gid uuid; n text := public.pasr_group_clean_name(p_name);
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  if n is null then raise exception 'name required' using errcode = '22023'; end if;
+  if (select count(*) from public.pasr_group_members where user_id = uid) >= 2 then
+    raise exception 'group_limit' using errcode = 'P0001';
+  end if;
+  insert into public.pasr_groups (name, created_by) values (n, uid) returning id into gid;
+  insert into public.pasr_group_members (group_id, user_id) values (gid, uid);
+  perform public.pasr_daily_bump('groups');
+  return jsonb_build_object('id', gid, 'name', n);
+end $$;
+
+create or replace function public.pasr_group_rename(p_group uuid, p_name text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare n text := public.pasr_group_clean_name(p_name);
+begin
+  perform public.pasr_group_check(p_group);
+  if n is null then raise exception 'name required' using errcode = '22023'; end if;
+  update public.pasr_groups set name = n where id = p_group;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Uitnodigen: geeft terug wat de mail nodig heeft (de functie group-invite verstuurt hem).
+create or replace function public.pasr_group_invite(p_group uuid, p_email text) returns jsonb
+language plpgsql security definer set search_path = public, auth as $$
+declare uid uuid := auth.uid(); e text := lower(btrim(coalesce(p_email, ''))); g record; inviter text; existing uuid;
+begin
+  perform public.pasr_group_check(p_group);
+  if e !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(e) > 200 then raise exception 'bad_email' using errcode = '22023'; end if;
+  if exists (select 1 from public.pasr_group_members m join auth.users u on u.id = m.user_id
+             where m.group_id = p_group and lower(u.email) = e) then
+    raise exception 'already_member' using errcode = 'P0001';
+  end if;
+  delete from public.pasr_group_invites where group_id = p_group and expires_at <= now();
+  if (select count(*) from public.pasr_group_members where group_id = p_group)
+     + (select count(*) from public.pasr_group_invites where group_id = p_group and email <> e) >= 6 then
+    raise exception 'member_limit' using errcode = 'P0001';
+  end if;
+  -- hoogstens 20 uitnodigingen per persoon per dag (tegen misbruik voor spam)
+  if (select count(*) from public.pasr_group_invites where invited_by = uid and created_at > now() - interval '1 day') >= 20 then
+    raise exception 'rate_limited' using errcode = 'P0001';
+  end if;
+  insert into public.pasr_group_invites (group_id, email, invited_by) values (p_group, e, uid)
+  on conflict (group_id, email) do update set created_at = now(), expires_at = now() + interval '14 days', invited_by = uid
+  returning id into existing;
+  select * into g from public.pasr_groups where id = p_group;
+  select coalesce(nullif(raw_user_meta_data->>'first_name', ''), email) into inviter from auth.users where id = uid;
+  return jsonb_build_object('id', existing, 'email', e, 'group_name', g.name, 'from', inviter,
+    'has_account', exists (select 1 from auth.users where lower(email) = e));
+end $$;
+
+create or replace function public.pasr_group_cancel_invite(p_invite uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare gid uuid;
+begin
+  select group_id into gid from public.pasr_group_invites where id = p_invite;
+  if gid is null then return jsonb_build_object('ok', true); end if;
+  perform public.pasr_group_check(gid);
+  delete from public.pasr_group_invites where id = p_invite;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Uitnodiging aan mij accepteren of weigeren (alleen met een bevestigd account op hetzelfde e-mailadres).
+create or replace function public.pasr_invite_respond(p_invite uuid, p_accept boolean) returns jsonb
+language plpgsql security definer set search_path = public, auth as $$
+declare uid uuid := auth.uid(); me record; inv record;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  select lower(email) as email, email_confirmed_at into me from auth.users where id = uid;
+  select * into inv from public.pasr_group_invites where id = p_invite and email = me.email and expires_at > now();
+  if inv.id is null then raise exception 'invite_not_found' using errcode = 'P0001'; end if;
+  if not p_accept then
+    delete from public.pasr_group_invites where id = p_invite;
+    return jsonb_build_object('ok', true);
+  end if;
+  if me.email_confirmed_at is null then raise exception 'not_confirmed' using errcode = 'P0001'; end if;
+  if (select count(*) from public.pasr_group_members where user_id = uid) >= 2 then
+    raise exception 'group_limit' using errcode = 'P0001';
+  end if;
+  if (select count(*) from public.pasr_group_members where group_id = inv.group_id) >= 6 then
+    raise exception 'member_limit' using errcode = 'P0001';
+  end if;
+  insert into public.pasr_group_members (group_id, user_id) values (inv.group_id, uid) on conflict do nothing;
+  delete from public.pasr_group_invites where id = p_invite;
+  return jsonb_build_object('ok', true, 'group_id', inv.group_id);
+end $$;
+
+-- Lid verwijderen (elk lid mag dat) of zelf vertrekken (p_user = null). Laatste lid weg = groep en kaarten weg.
+create or replace function public.pasr_group_remove(p_group uuid, p_user uuid default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare who uuid := coalesce(p_user, auth.uid());
+begin
+  perform public.pasr_group_check(p_group);
+  delete from public.pasr_group_members where group_id = p_group and user_id = who;
+  if not exists (select 1 from public.pasr_group_members where group_id = p_group) then
+    delete from public.pasr_groups where id = p_group;
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Kaarten van een groep: zelfde werking als pasr_sync (nieuwste wijziging wint).
+create or replace function public.pasr_group_sync(p_group uuid, changes jsonb, since timestamptz default null) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare uid uuid := auth.uid(); k text; started timestamptz := clock_timestamp(); c jsonb;
+begin
+  perform public.pasr_group_check(p_group);
+  select card_key into k from public.pasr_secret where id = 1;
+  if jsonb_typeof(changes) = 'array' then
+    if jsonb_array_length(changes) > 2000 then raise exception 'too many changes' using errcode = '22023'; end if;
+    for c in select * from jsonb_array_elements(changes) loop
+      continue when (c->>'id') is null or (c->>'updated_at') is null;
+      continue when octet_length(coalesce(c->'card', '{}'::jsonb)::text) > 400000;
+      insert into public.pasr_group_cards as p (group_id, id, payload, updated_at, deleted, updated_by, server_at)
+      values (p_group, (c->>'id')::uuid,
+              pgp_sym_encrypt(coalesce(c->'card', '{}'::jsonb)::text, k, 'cipher-algo=aes256'),
+              (c->>'updated_at')::timestamptz, coalesce((c->>'deleted')::boolean, false), uid, clock_timestamp())
+      on conflict (group_id, id) do update
+        set payload = excluded.payload, updated_at = excluded.updated_at, deleted = excluded.deleted,
+            updated_by = excluded.updated_by, server_at = clock_timestamp()
+        where p.updated_at <= excluded.updated_at;
+    end loop;
+  end if;
+  return jsonb_build_object(
+    'now', started,
+    'cards', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'id', p.id, 'updated_at', p.updated_at, 'deleted', p.deleted,
+               'card', case when p.deleted then null else pgp_sym_decrypt(p.payload, k)::jsonb end))
+      from public.pasr_group_cards p
+      where p.group_id = p_group and (since is null or p.server_at > since)
+    ), '[]'::jsonb));
+end $$;
+
+revoke all on function public.pasr_groups(), public.pasr_group_create(text), public.pasr_group_rename(uuid, text),
+  public.pasr_group_invite(uuid, text), public.pasr_group_cancel_invite(uuid), public.pasr_invite_respond(uuid, boolean),
+  public.pasr_group_remove(uuid, uuid), public.pasr_group_sync(uuid, jsonb, timestamptz) from public, anon;
+grant execute on function public.pasr_groups(), public.pasr_group_create(text), public.pasr_group_rename(uuid, text),
+  public.pasr_group_cancel_invite(uuid), public.pasr_invite_respond(uuid, boolean),
+  public.pasr_group_remove(uuid, uuid), public.pasr_group_sync(uuid, jsonb, timestamptz),
+  public.pasr_group_invite(uuid, text) to authenticated;
+
+-- ============================================================================================================
+-- Tijdelijk delen: een kaart delen tot een einddatum (via WhatsApp of mail). De kaart staat versleuteld op de
+-- server onder een willekeurige code (token, 128 bit); de link is https://pasr.nl/tijdelijk/#<token>. Na het einde
+-- (of als de deler eerder stopt) geeft de server de kaart niet meer uit en toont de app van de ontvanger de code
+-- niet meer. Delen kan zonder account; per internetadres maximaal 50 per dag. 7 dagen na het einde opgeruimd.
+-- ============================================================================================================
+create table if not exists public.pasr_temp_shares (
+  token text primary key,
+  payload bytea,
+  key_hash bytea not null,
+  expires_at timestamptz not null,
+  created_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now(),
+  opens int not null default 0,
+  revoked boolean not null default false
+);
+create index if not exists pasr_temp_shares_expires on public.pasr_temp_shares (expires_at);
+create table if not exists public.pasr_temp_share_rate (
+  ip_hash text not null,
+  day date not null default (now() at time zone 'utc')::date,
+  n int not null default 0,
+  primary key (ip_hash, day)
+);
+alter table public.pasr_temp_shares enable row level security;
+alter table public.pasr_temp_share_rate enable row level security;
+revoke all on public.pasr_temp_shares, public.pasr_temp_share_rate from anon, authenticated;
+alter table public.pasr_daily add column if not exists temp_shares int not null default 0;
+
+
+create or replace function public.pasr_temp_share_create(p_card jsonb, p_expires timestamptz) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare k text; tok text; owner text; ip text; used int; today date := (now() at time zone 'utc')::date;
+begin
+  if jsonb_typeof(p_card) <> 'object' or coalesce(p_card->>'storeName', '') = '' or coalesce(p_card->>'number', '') = ''
+     or octet_length(p_card::text) > 6000 then
+    raise exception 'bad_card' using errcode = '22023';
+  end if;
+  if p_expires is null or p_expires < now() + interval '5 minutes' or p_expires > now() + interval '91 days' then
+    raise exception 'bad_expiry' using errcode = '22023';
+  end if;
+  -- per internetadres (gehasht, nooit bewaard als adres) en een algemene rem
+  ip := split_part(coalesce(current_setting('request.headers', true)::json->>'x-forwarded-for', 'unknown'), ',', 1);
+  ip := encode(digest(ip || coalesce((select hook_secret from public.pasr_secret where id = 1), ''), 'sha256'), 'hex');
+  insert into public.pasr_temp_share_rate as r (ip_hash, day, n) values (ip, today, 1)
+    on conflict (ip_hash, day) do update set n = r.n + 1 returning n into used;
+  if used > 50 or (select coalesce(sum(n), 0) from public.pasr_temp_share_rate where day = today) > 20000 then
+    raise exception 'rate_limited' using errcode = '22023';
+  end if;
+  select card_key into k from public.pasr_secret where id = 1;
+  tok := translate(rtrim(encode(gen_random_bytes(16), 'base64'), '='), '+/', '-_');
+  owner := encode(gen_random_bytes(16), 'hex');
+  insert into public.pasr_temp_shares (token, payload, key_hash, expires_at, created_by)
+  values (tok, pgp_sym_encrypt(p_card::text, k, 'cipher-algo=aes256'), digest(owner, 'sha256'), p_expires, auth.uid());
+  perform public.pasr_daily_bump('temp_shares');
+  return jsonb_build_object('token', tok, 'key', owner, 'expires_at', p_expires);
+end $$;
+
+-- De kaart ophalen (app van de ontvanger en pasr.nl/tijdelijk). Na het einde: alleen de status.
+create or replace function public.pasr_temp_share_get(p_token text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare s public.pasr_temp_shares; k text;
+begin
+  select * into s from public.pasr_temp_shares where token = left(coalesce(p_token, ''), 40);
+  if not found then return jsonb_build_object('status', 'not_found'); end if;
+  if s.revoked then return jsonb_build_object('status', 'revoked', 'expires_at', s.expires_at); end if;
+  if s.expires_at <= now() then return jsonb_build_object('status', 'expired', 'expires_at', s.expires_at); end if;
+  update public.pasr_temp_shares set opens = opens + 1 where token = s.token;
+  select card_key into k from public.pasr_secret where id = 1;
+  return jsonb_build_object('status', 'ok', 'expires_at', s.expires_at, 'card', pgp_sym_decrypt(s.payload, k)::jsonb);
+end $$;
+
+-- Status van meerdere tijdelijke kaarten tegelijk (de app van de ontvanger controleert of er eerder is gestopt).
+create or replace function public.pasr_temp_share_status(p_tokens text[]) returns jsonb
+language sql security definer set search_path = public as $$
+  select coalesce(jsonb_object_agg(t.tok, case
+           when s.token is null then 'not_found'
+           when s.revoked then 'revoked'
+           when s.expires_at <= now() then 'expired'
+           else 'ok' end), '{}'::jsonb)
+  from (select distinct left(x, 40) as tok from unnest((coalesce(p_tokens, '{}'))[1:200]) x) t
+  left join public.pasr_temp_shares s on s.token = t.tok;
+$$;
+
+-- Eerder stoppen: alleen met de sleutel die de deler bij het maken kreeg.
+create or replace function public.pasr_temp_share_revoke(p_token text, p_key text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  update public.pasr_temp_shares set revoked = true, payload = null
+   where token = p_token and key_hash = digest(coalesce(p_key, ''), 'sha256');
+  return jsonb_build_object('ok', found);
+end $$;
+
+create or replace function public.pasr_temp_share_cleanup() returns int
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  delete from public.pasr_temp_shares where expires_at < now() - interval '7 days';
+  get diagnostics n = row_count;
+  update public.pasr_temp_shares set payload = null where expires_at < now() and payload is not null;
+  delete from public.pasr_temp_share_rate where day < (now() at time zone 'utc')::date - 2;
+  delete from public.pasr_group_invites where expires_at < now();   -- uitnodigingen hoogstens 14 dagen
+  return n;
+end $$;
+
+revoke all on function public.pasr_temp_share_create(jsonb, timestamptz), public.pasr_temp_share_get(text),
+  public.pasr_temp_share_status(text[]), public.pasr_temp_share_revoke(text, text), public.pasr_temp_share_cleanup() from public;
+grant execute on function public.pasr_temp_share_create(jsonb, timestamptz), public.pasr_temp_share_get(text),
+  public.pasr_temp_share_status(text[]), public.pasr_temp_share_revoke(text, text) to anon, authenticated;
+do $$
+begin
+  create extension if not exists pg_cron;
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-temp-share-cleanup';
+  perform cron.schedule('pasr-temp-share-cleanup', '23 3 * * *', 'select public.pasr_temp_share_cleanup()');
 exception when others then
   raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
 end $$;

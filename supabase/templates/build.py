@@ -97,7 +97,33 @@ Je krijgt deze mail omdat dit e-mailadres is gebruikt voor een Pasr-account. Pas
 </body></html>"""
 
 
+INVITE = dict(
+    subject="{{FROM}} nodigt je uit voor een gedeelde Pasr",
+    eyebrow="Gedeelde Pasr",
+    title="Uitnodiging voor &ldquo;{{GROUP}}&rdquo;",
+    intro="{{FROM}} wil klantenkaarten met je delen in de gedeelde Pasr <b style=\"color:#ffffff\">{{GROUP}}</b>. "
+          "Open Pasr en log in met dit e-mailadres, of maak gratis een account. Daarna kun je de uitnodiging accepteren.",
+    button="Uitnodiging bekijken",
+    note="Ken je deze persoon niet? Dan kun je deze mail negeren. De uitnodiging verloopt na 14 dagen.",
+)
+
+
+def invite_mail():
+    """Mail voor een uitnodiging (functie group-invite). {{FROM}} en {{GROUP}} vult de functie in (HTML-veilig)."""
+    import re
+    body = mail(dict(INVITE, type="invite"))
+    body = body.replace(f"{SITE}/bevestigen/?token_hash={{{{ .TokenHash }}}}&amp;type=invite", f"{SITE}/uitnodiging/")
+    body = re.sub(r"\{\{ if \.Data\.first_name \}\}.*?\{\{ end \}\}", "", body, flags=re.S)
+    body = body.replace("Je krijgt deze mail omdat dit e-mailadres is gebruikt voor een Pasr-account.",
+                        "Je krijgt deze mail omdat {{FROM}} je heeft uitgenodigd voor een gedeelde Pasr.")
+    return body
+
+
 def main():
+    out = HERE.parent / "functions" / "group-invite" / "template.ts"
+    out.write_text("// Gemaakt door supabase/templates/build.py (niet met de hand wijzigen).\n"
+                   f"export const SUBJECT = {json.dumps(INVITE['subject'], ensure_ascii=False)};\n"
+                   f"export const HTML = {json.dumps(invite_mail(), ensure_ascii=False)};\n")
     cfg = {}
     for key, t in TEMPLATES.items():
         body = mail(t)
