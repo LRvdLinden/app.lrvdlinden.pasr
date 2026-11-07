@@ -132,6 +132,7 @@ struct StoreRequestGroup: Decodable, Identifiable, Hashable {
     let key: String
     let name: String
     let website: String?
+    var kind: String? = nil
     let count: Int
     let ids: [String]
     let notes: [String]

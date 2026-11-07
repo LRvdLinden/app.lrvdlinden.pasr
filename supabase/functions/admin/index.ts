@@ -14,7 +14,7 @@
 //   push_prefs       {device_id, prefs}             -> {ok} | 404 not_registered
 //   push_test        {device_id}                    -> {ok} | 503 apns_not_configured | 404 not_registered
 //   notify           {kind, reason?|name?}  + kop x-pasr-hook (alleen de database, via pg_net) -> {sent}
-//   store_requests   {status?: open|added|rejected} -> {groups:[{key,name,website,count,ids,notes,first,last}]}
+//   store_requests   {status?: open|added|rejected} -> {groups:[{key,name,website,kind,count,vouchers,ids,notes,first,last}]}
 //   store_lookup     {url}                          -> {domain,name,colors,logo,logo_type} | 404 not_found
 //   stores           {}                             -> {stores:[…]} (toegevoegde winkels, met logo)
 //   store_save       {store:{id?,name,domain,category,card_hex,format,kind,aliases,logo}} -> {store}
@@ -353,15 +353,17 @@ Deno.serve(async (req) => {
       }
       case "store_requests": {
         const status = ["open", "added", "rejected"].includes(String(body.status)) ? String(body.status) : "open";
-        const { data, error } = await db.from("pasr_store_requests").select("id, name, website, note, status, store_id, created_at, closed_at")
+        const { data, error } = await db.from("pasr_store_requests").select("id, name, website, note, kind, status, store_id, created_at, closed_at")
           .eq("status", status).order("created_at", { ascending: false }).limit(500);
         if (error) throw new Error(error.message);
         // zelfde winkel (op website, anders op naam) = één regel met het aantal aanvragen
-        const groups = new Map<string, { key: string; name: string; website: string | null; count: number; ids: string[]; notes: string[]; first: string; last: string; store_id: string | null }>();
+        const groups = new Map<string, { key: string; name: string; website: string | null; kind: string; count: number; vouchers: number; ids: string[]; notes: string[]; first: string; last: string; store_id: string | null }>();
         for (const r of data ?? []) {
           const key = domainOf(r.website) ?? r.name.toLowerCase().replace(/\s+/g, " ").trim();
-          const g = groups.get(key) ?? { key, name: r.name, website: domainOf(r.website), count: 0, ids: [], notes: [], first: r.created_at, last: r.created_at, store_id: r.store_id };
+          const g = groups.get(key) ?? { key, name: r.name, website: domainOf(r.website), kind: "loyalty", count: 0, vouchers: 0, ids: [], notes: [], first: r.created_at, last: r.created_at, store_id: r.store_id };
           g.count++; g.ids.push(r.id); if (r.note) g.notes.push(r.note);
+          if (r.kind === "voucher") g.vouchers++;
+          g.kind = g.vouchers * 2 > g.count ? "voucher" : "loyalty";   // wat de meeste aanvragers bedoelen
           if (r.created_at < g.first) g.first = r.created_at;
           if (!g.website && domainOf(r.website)) g.website = domainOf(r.website);
           groups.set(key, g);

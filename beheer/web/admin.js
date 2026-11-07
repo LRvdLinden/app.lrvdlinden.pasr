@@ -605,6 +605,7 @@
     av.title = g.count === 1 ? "1 aanvraag" : `${g.count} aanvragen`;
     const who = el("div", "who"), meta = el("div", "meta");
     who.append(el("div", "mail", g.name));
+    if (g.kind === "voucher") meta.append(el("span", "badge wait", "Cadeaukaart / voucher"));
     if (g.website) meta.append(el("span", null, g.website));
     meta.append(el("span", null, g.count === 1 ? "1 aanvraag" : `${num(g.count)} aanvragen`), el("span", null, "Laatste " + ago(g.last)));
     who.append(meta);
@@ -612,7 +613,8 @@
     const acts = el("div", "acts");
     if (storeFilter === "open") {
       const make = el("button", "btn sm", "Kaart maken");
-      make.addEventListener("click", () => openEditor({ name: g.name, domain: g.website || "" }, g.ids, true));
+      make.addEventListener("click", () => openEditor({ name: g.name, domain: g.website || "", kind: g.kind,
+        category: g.kind === "voucher" ? "Cadeaukaarten" : undefined, format: g.kind === "voucher" ? "code128" : undefined }, g.ids, true));
       acts.append(make);
     }
     row.append(av, who, acts);

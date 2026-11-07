@@ -9,6 +9,7 @@ struct StoreRequestSheet: View {
     @State private var website = ""
     @State private var note = ""
     @State private var notify = true
+    @State private var voucher = false
     @State private var busy = false
     @State private var error: String?
     @State private var sent = false
@@ -53,7 +54,12 @@ struct StoreRequestSheet: View {
                     }
                 } else if !sent {
                     Section {
-                        TextField("Naam van de winkel", text: $name)
+                        Picker("Soort", selection: $voucher) {
+                            Text("Klantenkaart").tag(false)
+                            Text("Cadeaukaart of voucher").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                        TextField(voucher ? "Naam van de cadeaukaart, bijv. VVV" : "Naam van de winkel", text: $name)
                         TextField("Website, bijv. winkel.nl", text: $website)
                             .autocorrectionDisabled()
                             #if os(iOS)
@@ -62,7 +68,7 @@ struct StoreRequestSheet: View {
                             #endif
                         TextField("Opmerking (optioneel)", text: $note, axis: .vertical).lineLimit(1...3)
                     } footer: {
-                        Text("Met de website vinden we het logo en de kleuren van de winkel.")
+                        Text("Met de website vinden we het logo en de kleuren. Ook cadeaukaarten en vouchers kun je aanvragen.")
                     }
                     Section {
                         Toggle(isOn: $notify) {
@@ -125,6 +131,7 @@ struct StoreRequestSheet: View {
         do {
             _ = try await account.rpc("pasr_store_request", body: [
                 "p_name": name.trimmingCharacters(in: .whitespaces), "p_website": website, "p_note": note,
+                "p_kind": voucher ? "voucher" : "loyalty",
             ])
             if notify, await UserPush.enable() { await UserPush.sync() }
             withAnimation(.snappy) { sent = true }

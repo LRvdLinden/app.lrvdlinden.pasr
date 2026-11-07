@@ -37,7 +37,7 @@ struct AddCardView: View {
                     .background(Brand.gradient, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(search.isEmpty ? "Mis je een winkel?" : "\(search) staat er niet tussen?").font(.headline)
-                    Text("Vraag hem aan. Is hij toegevoegd, dan krijg je een melding.").font(.subheadline).foregroundStyle(.secondary)
+                    Text("Ook cadeaukaarten en vouchers. Is hij toegevoegd, dan krijg je een melding.").font(.subheadline).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").foregroundStyle(.tertiary)

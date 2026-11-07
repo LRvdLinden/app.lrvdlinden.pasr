@@ -83,7 +83,8 @@ struct StoresView: View {
                 .foregroundStyle(Theme.amber)
             VStack(alignment: .leading, spacing: 3) {
                 Text(g.name).font(.body.weight(.semibold))
-                Text([g.website, Fmt.plural(g.count, "aanvraag", "aanvragen"), "laatste " + Fmt.ago(g.last)].compactMap { $0 }.joined(separator: " · "))
+                Text([g.kind == "voucher" ? "Cadeaukaart / voucher" : nil, g.website, Fmt.plural(g.count, "aanvraag", "aanvragen"),
+                      "laatste " + Fmt.ago(g.last)].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption).foregroundStyle(Theme.muted)
                 if let note = g.notes.first {
                     Text("“\(note)”").font(.caption).italic().foregroundStyle(Theme.muted).lineLimit(2)
@@ -147,6 +148,7 @@ struct StoreDraft: Identifiable {
     init(request g: StoreRequestGroup) {
         name = g.name
         domain = g.website ?? ""
+        if g.kind == "voucher" { kind = "voucher"; category = "Cadeaukaarten"; format = "code128" }
         requestIDs = g.ids
         fromRequest = true
     }

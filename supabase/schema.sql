@@ -970,8 +970,12 @@ alter table public.pasr_store_requests enable row level security;
 alter table public.pasr_user_push enable row level security;
 revoke all on public.pasr_stores, public.pasr_store_requests, public.pasr_user_push from anon, authenticated;
 alter table public.pasr_daily add column if not exists store_requests int not null default 0;
+-- klantenkaart of cadeaukaart/voucher
+alter table public.pasr_store_requests add column if not exists kind text not null default 'loyalty';
+drop function if exists public.pasr_store_request(text, text, text);
 
-create or replace function public.pasr_store_request(p_name text, p_website text default null, p_note text default null) returns jsonb
+create or replace function public.pasr_store_request(p_name text, p_website text default null, p_note text default null,
+                                                      p_kind text default 'loyalty') returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid(); n text; w text; existing uuid; today int;
 begin
@@ -984,8 +988,9 @@ begin
   if existing is not null then return jsonb_build_object('id', existing, 'duplicate', true); end if;
   select count(*) into today from public.pasr_store_requests where user_id = uid and created_at > now() - interval '1 day';
   if today >= 10 then raise exception 'rate_limited' using errcode = '22023'; end if;
-  insert into public.pasr_store_requests (user_id, name, website, note)
-  values (uid, n, w, nullif(left(trim(coalesce(p_note, '')), 300), '')) returning id into existing;
+  insert into public.pasr_store_requests (user_id, name, website, note, kind)
+  values (uid, n, w, nullif(left(trim(coalesce(p_note, '')), 300), ''),
+          case when p_kind = 'voucher' then 'voucher' else 'loyalty' end) returning id into existing;
   perform public.pasr_daily_bump('store_requests');
   perform public.pasr_admin_notify('store_request', jsonb_build_object('name', n));
   return jsonb_build_object('id', existing, 'duplicate', false);
@@ -993,7 +998,7 @@ end $$;
 
 create or replace function public.pasr_my_store_requests() returns jsonb
 language sql security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'name', r.name, 'website', r.website, 'status', r.status,
+  select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'name', r.name, 'website', r.website, 'status', r.status, 'kind', r.kind,
            'store_id', r.store_id, 'created_at', r.created_at, 'closed_at', r.closed_at) order by r.created_at desc), '[]'::jsonb)
   from public.pasr_store_requests r where r.user_id = auth.uid();
 $$;
@@ -1032,9 +1037,9 @@ language sql security definer set search_path = public as $$
   select jsonb_build_object('ok', true);
 $$;
 
-revoke all on function public.pasr_store_request(text, text, text), public.pasr_my_store_requests(),
+revoke all on function public.pasr_store_request(text, text, text, text), public.pasr_my_store_requests(),
   public.pasr_store_catalog(timestamptz), public.pasr_push_register(text, text, boolean, boolean),
   public.pasr_push_unregister(text) from public;
-grant execute on function public.pasr_store_request(text, text, text), public.pasr_my_store_requests(),
+grant execute on function public.pasr_store_request(text, text, text, text), public.pasr_my_store_requests(),
   public.pasr_push_register(text, text, boolean, boolean), public.pasr_push_unregister(text) to authenticated;
 grant execute on function public.pasr_store_catalog(timestamptz) to anon, authenticated;
