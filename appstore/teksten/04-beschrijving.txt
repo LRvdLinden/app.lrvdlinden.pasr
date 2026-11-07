@@ -25,7 +25,8 @@ APPLE WALLET EN MELDINGEN
 • Een herinnering voordat een voucher of cadeaukaart verloopt.
 
 CADEAUKAARTEN EN VOUCHERS
-• Houd saldo, pincode en vervaldatum bij.
+• Houd saldo, pincode en vervaldatum bij. Na het tonen vraagt Pasr wat je uitgaf, zodat je het tegoed ziet afnemen.
+• Geschiedenis per kaart: wanneer en waar je hem gebruikte, zoals in Apple Wallet.
 • Zie in één oogopslag wat je nog tegoed hebt.
 
 IPHONE, IPAD, APPLE WATCH EN MAC

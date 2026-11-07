@@ -7,4 +7,7 @@
 • Block screenshots of your codes.
 • Your card shows up more reliably at the store: also when Pasr is closed, with your own locations per card.
 • Nearest first and pull to refresh.
-• Choose which branches go on your Wallet pass.
+• Choose which branches go on your Wallet pass, several at once on the map.
+• History per card: when and at which branch you used it.
+• Gift cards: after showing one, Pasr asks what you spent, so you see the balance go down. Check balance opens the issuer's page.
+• Cards in Apple Wallet are updated automatically.
