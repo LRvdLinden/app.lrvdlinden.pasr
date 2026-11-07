@@ -124,7 +124,7 @@ FEATURES = [
     ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 2, "watch"),
     ("lock", "#17162A", "Versleuteld en met Face ID", "Kaartnummers versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID en blokkeer screenshots van je codes.", 3, "lock"),
     ("share", "#6A5CFF", "Samen of even delen", "Een gedeelde Pasr met je gezin, of een kaart tijdelijk uitlenen met een einddatum. <a href=\"#delen\">Zo werkt het</a>", 3, "share"),
-    ("logo", "#1F9E6A", "Met het logo van je winkel", "Ruim 300 Nederlandse kaarten met hun eigen logo en kleur. Of knip zelf een logo uit een foto.", 2, "logos"),
+    ("logo", "#1F9E6A", "Met het logo van je winkel", "Ruim 300 Nederlandse kaarten met hun eigen logo en kleur. Mis je er een? Vraag hem aan in de app, ook cadeaukaarten; hij komt erbij zonder update.", 2, "logos"),
     ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 2, "cloud"),
     ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 2, "theme"),
 ]
@@ -135,7 +135,7 @@ FAQ = [
     ("Kan ik mijn kaarten uit Klarna overzetten?", "Ja. Neem je scherm op terwijl je in Klarna je kaarten één voor één opent, en kies die opname in Pasr. Pasr leest elke barcode die voorbijkomt en herkent de winkel, op je eigen telefoon. Screenshots kiezen kan ook, tot 50 tegelijk. Hetzelfde werkt voor andere kaarten-apps."),
     ("Werkt een gescande kaart echt aan de kassa?", "Ja. Pasr tekent de barcode opnieuw in hetzelfde formaat als op je pas, zoals EAN-13, Code 128 of een QR-code, en zet je scherm op volle helderheid."),
     ("Op welke apparaten werkt Pasr?", "Op iPhone en iPad met iOS en iPadOS 17 of nieuwer en op de Apple Watch met watchOS 10 of nieuwer."),
-    ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Een logo kun je uitknippen uit een foto van je pas."),
+    ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Je kunt de winkel ook aanvragen in de app: tik op + › Kaart toevoegen › Mis je een winkel? (met een gratis Pasr-account). Dat kan ook voor cadeaukaarten en vouchers. Wij maken de kaart met het juiste logo en de juiste kleur en voegen hem toe zonder app-update; je krijgt een melding zodra hij erin staat."),
     ("Waar komen de logo's vandaan?", "De logo's van ruim 230 bekende winkels zitten in de app, in de juiste merkkleur. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
     ("Kan ik screenshots van mijn codes blokkeren?", "Ja. Zet in Instellingen › Privacy en beveiliging Screenshots van codes blokkeren aan; dan is de barcode zwart in een screenshot of schermopname. Bij tijdelijk gedeelde kaarten staat dit altijd aan."),
     ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
