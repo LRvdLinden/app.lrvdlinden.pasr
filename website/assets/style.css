@@ -199,6 +199,13 @@ footer a:hover { color: var(--ink); }
   .features, .steps, .compare { grid-template-columns: 1fr; }
   .compare div:nth-child(even) { padding-left: 0; border-left: 0; }
   .compare div:nth-child(odd) { padding-bottom: 6px; border-bottom: 0; }
+  /* op een telefoon: per regel een label, en Pasr in een eigen vlak */
+  .compare .compare-head { display: none; }
+  .compare div:not(.compare-head)::before { display: block; font: 700 12px var(--body); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+  .compare div:nth-child(odd):not(.compare-head)::before { content: "Wat je vaak ziet"; color: #8A86B3; }
+  .compare div:nth-child(even):not(.compare-head)::before { content: "Pasr"; color: var(--mint); }
+  .compare div:nth-child(odd):not(.compare-head) { padding-top: 26px; }
+  .compare div:nth-child(even):not(.compare-head) { background: rgba(255,255,255,.06); border-radius: 16px; padding: 14px 16px 16px; margin-bottom: 4px; border-bottom: 0; }
   .phone { width: 290px; }
   .watch { right: -2px; width: 112px; height: 136px; }
   .watch .face svg { width: 76px; height: 40px; }
