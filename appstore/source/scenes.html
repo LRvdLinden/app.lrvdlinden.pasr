@@ -230,6 +230,35 @@ h1 em { font-style: normal; background: linear-gradient(90deg, #A79FFF, #FF8A78)
 .ultra .band { position: absolute; left: 14%; right: 14%; height: 30%; background: linear-gradient(180deg, #1F2A44, #18213A); z-index: -1; }
 .ultra .band.t { top: -26%; border-radius: 12px 12px 0 0; }
 .ultra .band.b { bottom: -26%; border-radius: 0 0 12px 12px; }
+/* nieuwe schermen: gedeelde Pasr, tijdelijk delen, schermopname */
+.navtitle { position: absolute; top: 62px; left: 0; right: 0; text-align: center; font: 700 17px var(--ui); }
+.navback { position: absolute; top: 62px; left: 18px; font: 500 17px var(--ui); color: #A79FFF; }
+.navdone { position: absolute; top: 62px; right: 18px; font: 700 17px var(--ui); color: #A79FFF; }
+.ava { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 800 17px var(--ui); color: #fff; flex: none; }
+.group .r .lft { display: flex; align-items: center; gap: 12px; }
+.group .r .lft small { display: block; font: 400 13px var(--ui); color: var(--muted); }
+.group .r.tall { height: 62px; }
+.tag { font: 600 13px var(--ui); color: var(--muted); }
+.seg { display: flex; background: rgba(118, 118, 128, .24); border-radius: 9px; padding: 2px; height: 34px; }
+.seg span { flex: 1; display: grid; place-items: center; font: 600 14px var(--ui); color: #fff; border-radius: 7px; }
+.seg span.on { background: #636366; }
+.minicard { position: relative; border-radius: 14px; overflow: hidden; }
+.minicard .logo { position: absolute; left: 16px; top: 14px; max-height: 26px; max-width: 140px; }
+.minicard .info { position: absolute; left: 16px; top: 52px; font: 600 14px var(--ui); opacity: .9; }
+.minicard .num { position: absolute; left: 16px; bottom: 14px; font: 500 15px ui-monospace, Menlo, monospace; letter-spacing: .08em; }
+.minicard .icons { position: absolute; right: 16px; top: 16px; display: flex; gap: 6px; font: 700 13px var(--ui); opacity: .85; }
+.clock { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; position: relative; display: inline-block; }
+.clock::after { content: ""; position: absolute; left: 4px; top: 1px; width: 2px; height: 5px; background: currentColor; }
+.ppl { display: inline-block; width: 18px; height: 12px; position: relative; }
+.ppl::before, .ppl::after { content: ""; position: absolute; top: 0; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.ppl::before { left: 0; } .ppl::after { left: 7px; opacity: .8; }
+.cta { height: 50px; border-radius: 14px; background: #22252F; display: flex; align-items: center; gap: 10px; padding: 0 16px; font: 600 17px var(--ui); color: #A79FFF; }
+.prog { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; margin-top: 10px; }
+.prog i { display: block; height: 100%; width: 72%; background: linear-gradient(90deg, var(--mint), var(--iris)); border-radius: 3px; }
+.tgl { width: 26px; height: 26px; border-radius: 50%; background: var(--iris); display: grid; place-items: center; color: #fff; font: 800 14px var(--ui); flex: none; }
+.ftile { width: 60px; height: 38px; border-radius: 8px; display: grid; place-items: center; flex: none; }
+.ftile img { max-width: 46px; max-height: 18px; }
+.recdot { width: 12px; height: 12px; border-radius: 50%; background: #FF3B30; box-shadow: 0 0 0 5px rgba(255, 59, 48, .25); display: inline-block; }
 /* promo */
 .promo-logo { display: flex; align-items: center; gap: calc(var(--u) * 2); }
 .promo-logo img { width: calc(var(--u) * 10); height: calc(var(--u) * 10); border-radius: calc(var(--u) * 2.3); }
@@ -347,6 +376,32 @@ const SCREENS = {
   faceid: () => `<div class="lockapp">${status()}<div style="text-align:center">
     <svg class="faceid" viewBox="0 0 64 64"><path d="M4 20V10a6 6 0 0 1 6-6h10M44 4h10a6 6 0 0 1 6 6v10M60 44v10a6 6 0 0 1-6 6H44M20 60H10a6 6 0 0 1-6-6V44M22 24v6M42 24v6M32 24v14h-4M24 46c4 3 12 3 16 0"/></svg>
     <p>Pasr is vergrendeld<small>Ontgrendel met Face ID</small></p></div></div>`,
+  shared: () => `<div class="app">${status()}<div class="navback">‹ Gedeelde Pasr</div><div class="navtitle">Gezin</div>
+    <div class="form" style="top:118px"><div class="label">Personen (3 van 6)</div><div class="group">
+      <div class="r tall"><div class="lft"><div class="ava" style="background:linear-gradient(135deg,#8A7FFF,#6A5CFF)">L</div><div>Léon (jij)<small>leon@voorbeeld.nl</small></div></div><span class="tag">Maker</span></div>
+      <div class="r tall"><div class="lft"><div class="ava" style="background:linear-gradient(135deg,#FF8A78,#FF6B57)">S</div><div>Sanne<small>sanne@voorbeeld.nl</small></div></div></div>
+      <div class="r tall"><div class="lft"><div class="ava" style="background:linear-gradient(135deg,#5FE3BF,#19B489)">M</div><div>Mila<small>mila@voorbeeld.nl</small></div></div></div>
+      <div class="r tall"><div class="lft"><div class="ava" style="background:rgba(255,255,255,.1);font-size:15px">✉︎</div><div>opa@voorbeeld.nl<small>Uitgenodigd</small></div></div></div></div>
+      <div class="label">Iemand uitnodigen</div><div class="group"><div class="r"><span>E-mailadres</span></div><div class="r" style="color:#A79FFF;font-weight:600">Stuur uitnodiging</div></div>
+      <div class="label">Gedeelde kaarten</div></div>
+    <div class="stack" style="top:592px">${["ah.nl", "jumbo.com", "kruidvat.nl", "ikea.com"].map((d, i) => card(d, i * 62, { kind: '<span class="ppl"></span>' })).join("")}</div></div>`,
+  tempshare: () => `<div class="app">${status()}<div class="sheet" style="top:56px"><div class="grab"></div><h3>Deel Albert Heijn</h3>
+    <div class="form" style="top:58px"><div class="seg"><span class="on">Tijdelijk</span><span>Blijvend</span></div>
+      <div class="minicard" style="margin-top:20px;height:210px;background:#00A0E2">${logo("ah.nl")}
+        <div class="icons" style="color:#fff"><span class="clock"></span></div>
+        <div class="info" style="color:#fff">Gedeeld tot zo 9 nov 18:00</div><div class="num" style="color:#fff">•••• ••••</div></div>
+      <div class="label" style="margin-top:24px">Tijdelijk delen</div>
+      <div class="group" style="padding:12px 14px"><div class="seg"><span>1 uur</span><span class="on">1 dag</span><span>1 week</span><span>Eigen</span></div></div>
+      <div class="cta">⏱ Deel tot zo 9 nov 18:00</div>
+      <p style="font:400 13px/1.4 var(--ui);color:var(--muted);margin:10px 4px 22px">Na het einde verdwijnt de code en werkt de link niet meer. Niet in Apple Wallet en niet verder te delen.</p>
+      <div class="label">Nu tijdelijk gedeeld</div><div class="group"><div class="r"><div>Tot 9 nov 18:00<br><span style="font-size:13px">over 1 dag</span></div><b style="color:#FF6B57">Stop</b></div></div></div></div></div>`,
+  importrec: () => `<div class="app">${status()}<div class="navback">Annuleer</div><div class="navtitle">Kaarten importeren</div><div class="navdone">Importeer 5</div>
+    <div class="form" style="top:118px"><div class="group" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:10px;font:600 16px var(--ui)"><span class="recdot"></span>Schermopname lezen… 72%</div>
+      <div class="prog"><i></i></div><div style="font:400 13px var(--ui);color:var(--muted);margin-top:10px">5 kaarten gevonden · alles op je iPhone</div></div>
+      <div class="label">Gevonden</div><div class="group">
+      ${[["ah.nl", "Albert Heijn", "EAN-13 · 2620 1234 5678 4"], ["jumbo.com", "Jumbo", "EAN-13 · 8719 3270 0441 7"], ["kruidvat.nl", "Kruidvat", "EAN-13 · 2101 2345 6789 7"], ["ikea.com", "IKEA Family", "QR · 6275 9801 2345"], ["decathlon.nl", "Decathlon", "Code 128 · 2091 4402 113"]]
+        .map(([d, n, c]) => `<div class="r tall"><div class="lft"><span class="tgl">✓</span><div class="ftile" style="background:${C[d]}">${logo(d, "")}</div><div>${n}<small>${c}</small></div></div></div>`).join("")}</div></div></div>`,
   watchlist: () => `<div class="wui"><div class="wt"><span style="color:#A79FFF">Pasr</span><span>9:41</span></div>
     ${["ah.nl", "jumbo.com", "kruidvat.nl", "ikea.com"].map((d, i) => `<div class="wcard" style="top:${40 + i * 62}px;background:${C[d]}">${logo(d, "")}</div>`).join("")}</div>`,
   watchcode: () => `<div class="wui"><div class="wt"><span style="color:#A79FFF">‹ Jumbo</span><span>9:41</span></div>
@@ -382,6 +437,9 @@ const SCENES = {
   s5: { bg: "light", eyebrow: "Cadeaukaarten en vouchers", title: "Je tegoed <em>altijd bij de hand</em>", sub: "Met een herinnering voordat hij verloopt.", screen: "voucher" },
   s6: { bg: "dark", eyebrow: "iPhone, iPad en Apple Watch", title: "Op je pols en <em>op je beginscherm</em>", sub: "Widgets en een app voor je Apple Watch.", screen: "widgets", watch: "watchcode" },
   s7: { bg: "iris", eyebrow: "Privé", title: "Jouw kaarten, <em>alleen van jou</em>", sub: null, screen: "faceid", feats: true },
+  s8: { bg: "dark", eyebrow: "Gedeelde Pasr", title: "Kaarten delen <em>met je gezin</em>", sub: "Tot 6 personen, elk met een eigen account.", screen: "shared" },
+  s9: { bg: "light", eyebrow: "Tijdelijk delen", title: "Leen een kaart uit, <em>tot een einddatum</em>", sub: "Daarna verdwijnt de code vanzelf.", screen: "tempshare" },
+  s10: { bg: "iris", eyebrow: "Overstappen", title: "Alles mee met <em>één schermopname</em>", sub: "Pasr vindt al je kaarten uit je oude app.", screen: "importrec" },
 };
 
 function marketing(sc, kind) {
@@ -411,8 +469,8 @@ function promo(kind) {
     html += `<div style="position:absolute;left:7%;top:50%;transform:translateY(-50%);width:${W / H < 1.7 ? 46 : 44}%;z-index:3">
       <div class="promo-logo"><img src="icon.png"><span>pasr</span></div>
       <h1 style="margin-top:calc(var(--u)*3.5);font-size:calc(var(--u)*${W / H < 1.7 ? 5.2 : 6.4})">Al je klantenkaarten <em>in één app</em></h1>
-      <p class="sub" style="font-size:calc(var(--u)*2.4)">Gratis, zonder reclame. Voor iPhone, iPad en Apple Watch.</p>
-      <div style="display:flex;gap:calc(var(--u)*1.4);margin-top:calc(var(--u)*3.5)"><span class="badge">Apple Wallet</span><span class="badge">Face ID</span><span class="badge">300+ winkels</span></div></div>`;
+      <p class="sub" style="font-size:calc(var(--u)*2.4)">Gratis, zonder reclame. Voor iPhone, iPad, Apple Watch en Mac.</p>
+      <div style="display:flex;gap:calc(var(--u)*1.4);margin-top:calc(var(--u)*3.5)"><span class="badge">Gedeelde Pasr</span><span class="badge">Apple Wallet</span><span class="badge">300+ winkels</span></div></div>`;
     const cards = [["ah.nl", 54, 14, -10], ["ikea.com", 70, 8, 8], ["jumbo.com", 60, 40, 4], ["hema.nl", 77, 44, -7], ["kruidvat.nl", 52, 64, 9], ["zara.com", 70, 70, -4]];
     html += cards.map(([d, l, t, r]) => `<div class="float" style="left:${l}%;top:${t}%;width:22%;aspect-ratio:1.586;background:${C[d]};transform:rotate(${r}deg)">${logo(d, "")}</div>`).join("");
   } else {

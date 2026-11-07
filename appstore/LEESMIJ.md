@@ -1,6 +1,8 @@
 # Pasr in de App Store
 
-Alles om Pasr in App Store Connect te zetten: teksten (Nederlands), screenshots in de verplichte formaten en promotiebeelden.
+Alles om Pasr in App Store Connect te zetten: teksten (Nederlands en Engels), screenshots in de verplichte formaten en promotiebeelden.
+
+Bijgewerkt voor build 30: gedeelde Pasr, tijdelijk delen, overstappen met een schermopname, winkels aanvragen, filter, licht thema, screenshotblokkade, Mac en Apple Vision Pro.
 
 ## Teksten (`teksten/`)
 
@@ -16,20 +18,28 @@ Alles om Pasr in App Store Connect te zetten: teksten (Nederlands), screenshots 
 | `08-app-review-notities.txt` | App Review › Notities (Engels, voor de reviewer); vul het demo-account in | |
 | `09-app-privacy.txt` | App Privacy (privacylabels) en encryptie | |
 
+`teksten/en-US/` bevat naam, ondertitel, promotietekst, beschrijving, trefwoorden en nieuw-in-deze-versie voor de Engelse winkelpagina (taal *English (U.S.)* toevoegen in App Store Connect). De Engelse beschrijving zegt dat de app zelf Nederlands is. URL's, review-notities en privacy gelden voor beide talen.
+
 ## Screenshots (`screenshots/`)
 
 | Map | Toestel in App Store Connect | Formaat | Aantal |
 |---|---|---|---|
-| `iPhone 6.9 inch (1320x2868)` | iPhone 6,9" (verplicht) | 1320 × 2868 | 7 |
-| `iPhone 6.5 inch (1284x2778)` | iPhone 6,5" | 1284 × 2778 | 7 |
-| `iPhone 6.3 inch (1206x2622)` | iPhone 6,3" | 1206 × 2622 | 7 |
-| `iPhone 6.1 inch (1179x2556)` | iPhone 6,1" | 1179 × 2556 | 7 |
-| `iPad 13 inch (2064x2752)` | iPad 13" (verplicht, Pasr werkt op de iPad) | 2064 × 2752 | 6 |
+| `iPhone 6.9 inch (1320x2868)` | iPhone 6,9" (verplicht) | 1320 × 2868 | 10 |
+| `iPhone 6.5 inch (1284x2778)` | iPhone 6,5" | 1284 × 2778 | 10 |
+| `iPhone 6.3 inch (1206x2622)` | iPhone 6,3" | 1206 × 2622 | 10 |
+| `iPhone 6.1 inch (1179x2556)` | iPhone 6,1" | 1179 × 2556 | 10 |
+| `iPad 13 inch (2064x2752)` | iPad 13" (verplicht, Pasr werkt op de iPad) | 2064 × 2752 | 9 |
 | `Apple Watch Ultra 3 (422x514)` | Apple Watch Ultra 3, in een Ultra 3-mockup | 422 × 514 | 3 |
 | `Apple Watch Ultra 3 zonder mockup (422x514)` | Apple Watch Ultra 3, alleen het scherm (als Apple de mockup niet accepteert) | 422 × 514 | 3 |
 | `Apple Watch Series 46mm (416x496)` | Apple Watch Series 11 46 mm, in mockup | 416 × 496 | 3 |
 
 Volgorde = bestandsnaam (01 eerst). Apple staat 1 tot 10 screenshots per toestel toe.
+
+iPhone-volgorde: 01 overzicht · 02 kaart aan de kassa · 03 scannen · 04 overstappen met één schermopname · 05 gedeelde Pasr met je gezin · 06 tijdelijk uitlenen · 07 t/m 10 Apple Wallet, cadeaukaarten, Watch en privacy. De iPad-set is gelijk, zonder het Watch-scherm.
+
+**Waarom alleen Nederlandse screenshots?** De app zelf is alleen Nederlands. App Store Connect toont deze screenshots ook op de Engelse winkelpagina; Engelse screenshots zouden een app laten zien die niet bestaat.
+
+**Mac en Apple Vision Pro** draaien Pasr als iPad-app (*Designed for iPad*). Daarvoor gebruikt App Store Connect automatisch de iPad-screenshots; aparte Mac- of Vision-screenshots zijn niet nodig. Zet wel de vinkjes aan onder *Prijzen en beschikbaarheid*.
 
 ## Promotie (`promo/`)
 

@@ -1,16 +1,26 @@
-Pasr is a free wallet app for loyalty cards, gift cards and vouchers for Dutch stores. No ads, no in-app purchases.
+Pasr is a free wallet app for loyalty cards, gift cards and vouchers for Dutch stores. No ads, no in-app purchases, no tracking. The app is in Dutch.
 
 How to test:
-1. Open the app and go through the welcome screens. Creating an account is optional; tap "Ga verder zonder account" to continue without one.
-2. Tap + and choose a store (for example "Albert Heijn"), enter any number (for example 2620123456784) and save. Or tap "Scan je kaart" to scan any barcode.
-3. Tap a card: it comes forward and shows the barcode at full screen brightness.
-4. "Voeg toe aan Apple Wallet" under a card creates a signed Wallet pass (pass type pass.nl.lrvdlinden.pasr) via our server. Nothing is stored on the server.
+1. Open the app and go through the welcome screens. An account is optional; tap "Ga verder zonder account" to continue without one.
+2. Tap + > "Kaart toevoegen", choose a store (for example "Albert Heijn"), enter a number (for example 2620123456784) and save. Or tap "Scan je kaart" to scan any barcode.
+3. Tap a card: it comes forward and shows the barcode at full screen brightness. "Voeg toe aan Apple Wallet" creates a signed Wallet pass via our server; nothing is stored there.
+4. Import: + > "Importeren uit andere app" > choose a screen recording (or screenshots) that shows barcodes. Everything is read on the device.
+5. Filter: the filter button next to + filters by card type (loyalty, gift cards, favourites, shared).
+6. Temporary sharing: tap a card > share > "Tijdelijk", choose a period and share. The receiver adds the card in Pasr; after the end date the code is hidden and the link stops working. Settings > "Tijdelijk gedeeld" lets you extend, shorten, expire or stop it.
+7. Shared Pasr (needs the demo account): Settings > "Gedeelde Pasr" > create a group and invite an email address. Members see the group's cards; when adding or editing a card, "Bewaren in" chooses private or the group.
+8. Request a store (needs the demo account): + > "Kaart toevoegen" > "Mis je een winkel?" at the bottom. Added stores appear in the list without an app update, and the requester gets a push notification.
 
-Optional account (for syncing cards between devices):
-Demo account: [VUL IN: e-mailadres]  Password: [VUL IN: wachtwoord]
+Demo account (sign-in fields in App Store Connect): [VUL IN in App Store Connect]
 
-Location: only used, when the user turns it on in Settings, to show a local notification when the user is near a store they have a card for, and to add nearby branch locations to a Wallet pass. The user's location never leaves the device.
-Notifications: local only (reminders before a voucher expires, and the store notification above).
-Camera: scanning barcodes. Face ID: optional lock for the app or single cards.
+Permissions:
+- Camera: scanning barcodes (asked when scanning).
+- Photos: only the photos or screen recording the user picks for import or a logo.
+- Location: only when the user turns on "Kaart tonen bij de winkel"; used for a local notification near a store and for branch locations on a Wallet pass. The location never leaves the device.
+- Notifications: local reminders, and push notifications only for "your requested store was added" and (opt-in) "new stores".
+- Face ID: optional lock for the app or single cards.
 
+Screenshot protection: codes of temporarily shared cards (and, if the user enables it, all codes) appear blank in screenshots and screen recordings, so a shared card really stops working after its end date.
+
+The app also runs as an iPad app on Mac and Apple Vision Pro; camera scanning is hidden there.
+A review prompt is shown at most once a week after the first hours of use. Settings contains a card "Meer apps van de ontwikkelaar" linking to the developer's website.
 Store logos are shown only to help users recognise their own cards. Pasr is not affiliated with these stores.
