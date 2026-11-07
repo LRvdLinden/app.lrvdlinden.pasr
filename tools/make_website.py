@@ -107,22 +107,26 @@ ICONS = {
     "widget": '<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>',
     "cloud": '<path d="M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/>',
     "share": '<path d="M12 4v11M8 8l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
+    "record": '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/>',
+    "devices": '<path d="M3 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v8H3zM1 17h18M19 9h3v10h-5"/>',
     "store": '<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/>',
 }
 
 def icon(name):
     return f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{ICONS[name]}</svg>'
 
+# Bento: (icoon, kleur, titel, tekst, breedte in kolommen van 6, beeld)
 FEATURES = [
-    ("flip", "#6A5CFF", "Kaarten die omdraaien", "Tik op een kaart: hij komt naar voren, draait om en toont de barcode of QR-code. Je scherm gaat vanzelf op volle helderheid."),
-    ("scan", "#FF6B57", "Toevoegen in seconden", "Kies je winkel en scan de barcode met de camera. Een foto of screenshot van je pas werkt ook."),
-    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Bewaar het saldo, de pincode en de vervaldatum, zodat je een cadeaukaart nooit meer vergeet."),
-    ("logo", "#1F9E6A", "Met het logo van je winkel", "Pasr haalt het icoon op van de website van de winkel. Of knip zelf een logo uit een foto van je pas."),
-    ("lock", "#17162A", "Versleuteld en met Face ID", "Je kaartnummers staan versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID, of scherm alleen de code van een cadeaukaart af."),
-    ("watch", "#2ED3A6", "Op je pols en je beginscherm", "Je kaarten staan als pasjes op je Apple Watch. Met de widgets heb je je favorieten, of één kaart met barcode, direct op je beginscherm."),
-    ("cloud", "#0A84FF", "Via je eigen iCloud", "Je kaarten staan op je iPhone, iPad en Watch tegelijk, via je eigen iCloud of je gratis Pasr-account."),
-    ("share", "#FF375F", "Kaarten delen", "Stuur een kaart blijvend of tijdelijk via WhatsApp of mail, of maak een gedeelde Pasr met je gezin. Zie hieronder hoe dat werkt."),
-    ("store", "#AF52DE", "Ruim 300 Nederlandse kaarten", "Van supermarkt tot tankstation, van sportschool tot dierentuin en van drogist tot cadeaukaart: kies je kaart en de kleur en het soort barcode staan goed."),
+    ("flip", "#6A5CFF", "Kaarten die omdraaien", "Tik op een kaart: hij komt naar voren, draait om en toont de barcode of QR-code. Je scherm gaat vanzelf op volle helderheid.", 4, "flip"),
+    ("scan", "#FF6B57", "Toevoegen in seconden", "Kies je winkel en scan de barcode met de camera. Een foto of screenshot van je pas werkt ook.", 2, "scan"),
+    ("record", "#FF375F", "Overstappen met één opname", "Neem je scherm op terwijl je in je oude app je kaarten langsgaat. Pasr vindt ze allemaal.", 2, "record"),
+    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand, met een herinnering voordat hij verloopt.", 2, "gift"),
+    ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 2, "watch"),
+    ("lock", "#17162A", "Versleuteld en met Face ID", "Kaartnummers versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID en blokkeer screenshots van je codes.", 3, "lock"),
+    ("share", "#6A5CFF", "Samen of even delen", "Een gedeelde Pasr met je gezin, of een kaart tijdelijk uitlenen met een einddatum. <a href=\"#delen\">Zo werkt het</a>", 3, "share"),
+    ("logo", "#1F9E6A", "Met het logo van je winkel", "Ruim 300 Nederlandse kaarten met hun eigen logo en kleur. Of knip zelf een logo uit een foto.", 2, "logos"),
+    ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 2, "cloud"),
+    ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 2, "theme"),
 ]
 
 FAQ = [
@@ -210,6 +214,49 @@ def import_demo():
         </div>
       </div>'''
 
+def feature_visual(kind):
+    """Kleine bewegende beelden in de bento-kaarten."""
+    if kind == "flip":
+        _, svg = bars("871932700441")
+        return (f'<div class="fv fv-flip"><div class="fv-card">'
+                f'<div class="fv-face front" style="background:#00A0E2"><img src="/assets/logos/ah.nl.png" alt="" height="22"><span>2620 1234 5678</span></div>'
+                f'<div class="fv-face back" style="background:#00A0E2"><span class="fv-code">{svg}</span></div></div></div>')
+    if kind == "gift":
+        return '<div class="fv fv-gift"><span class="fv-amount">€ 25,00</span><span class="fv-bell">Verloopt over 3 dagen</span></div>'
+    if kind == "lock":
+        return '<div class="fv fv-lock"><span class="fv-ring"></span><span class="fv-ring r2"></span><span class="fv-face-id"></span></div>'
+    if kind == "share":
+        return '<div class="fv fv-share"><span class="a">L</span><span class="b">S</span><span class="c">M</span><span class="fv-clock">tot 18:00</span></div>'
+    if kind == "logos":
+        colours = _card_colours()
+        tiles = "".join(f'<span style="background:{colours.get(d, "#2B2F3A")}"><img src="/assets/logos/{d}.png" alt="" loading="lazy"></span>'
+                        for d in ("jumbo.com", "hema.nl", "kruidvat.nl", "ikea.com", "action.com", "gamma.nl"))
+        return f'<div class="fv fv-logos">{tiles}</div>'
+    if kind == "scan":
+        _, svg = bars("871234567890")
+        return f'<div class="fv fv-scan"><span class="fv-frame"><span class="fv-code">{svg}</span><i></i></span></div>'
+    if kind == "record":
+        cols = ["#00A0E2", "#E2001A", "#0058A3", "#FFD800"]
+        cards = "".join(f'<span style="background:{c}"></span>' for c in cols + cols)
+        return f'<div class="fv fv-record"><span class="fv-phone"><b></b><span class="fv-strip">{cards}</span></span></div>'
+    if kind == "watch":
+        return '<div class="fv fv-watch"><span class="fv-band"></span><span class="fv-wcase"><span class="fv-wcard"></span><span class="fv-wcard c2"></span></span></div>'
+    if kind == "cloud":
+        return '<div class="fv fv-cloud"><span class="d phone"></span><span class="d pad"></span><span class="d watch2"></span><i></i><i></i></div>'
+    if kind == "theme":
+        return '<div class="fv fv-theme"><span class="fv-toggle"><b></b></span></div>'
+    return ""
+
+def feature_card(name, color, title, text, span, visual):
+    dark = " dark" if color == "#17162A" else ""
+    vis = feature_visual(visual) if visual else ""
+    return (f'''      <article class="feature span{span}{dark}{" has-visual" if vis else ""}" id="{anchor(title)}">
+        {vis}
+        <div class="chip" style="--c:{color}">{icon(name)}</div>
+        <h3>{title}</h3>
+        <p>{text}</p>
+      </article>''')
+
 def anchor(text):
     """Leesbaar #-adres voor een vraag of kop: "Kost Pasr geld?" -> "kost-pasr-geld"."""
     import unicodedata
@@ -284,11 +331,7 @@ def page():
     passes = "\n".join(pass_html(i, c) for i, c in enumerate(CARDS))
     _, watch_svg = bars(CARDS[-1][3])
     watch_num = CARDS[-1][3] + str(v.check(CARDS[-1][3]))
-    features = "\n".join(f'''      <article class="feature">
-        <div class="swatch" style="background:{color}">{icon(name)}</div>
-        <h3>{title}</h3>
-        <p>{text}</p>
-      </article>''' for name, color, title, text in FEATURES)
+    features = "\n".join(feature_card(*f) for f in FEATURES)
     faq = "\n".join(f'''      <details id="{anchor(q)}">
         <summary>{q}</summary>
         <p>{a}</p>
