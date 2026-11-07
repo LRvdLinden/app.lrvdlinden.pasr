@@ -375,7 +375,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/Pasr.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "30";
+				CURRENT_PROJECT_VERSION = "31";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/Pasr-Info.plist";
@@ -383,6 +383,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr gebruikt de camera om de barcode op je kaart te scannen.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr gebruikt Face ID om je kaarten te beschermen.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Met Altijd zet Pasr de winkels om je heen ook klaar als je ergens anders bent zonder de app te openen, zodat je kaart bij de winkel verschijnt. Je locatie blijft op je iPhone.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Pasr gebruikt je locatie om je kaart te tonen als je bij een winkel bent. Je locatie blijft op je iPhone.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -411,7 +412,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/Pasr.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "30";
+				CURRENT_PROJECT_VERSION = "31";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/Pasr-Info.plist";
@@ -419,6 +420,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr gebruikt de camera om de barcode op je kaart te scannen.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr gebruikt Face ID om je kaarten te beschermen.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Met Altijd zet Pasr de winkels om je heen ook klaar als je ergens anders bent zonder de app te openen, zodat je kaart bij de winkel verschijnt. Je locatie blijft op je iPhone.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Pasr gebruikt je locatie om je kaart te tonen als je bij een winkel bent. Je locatie blijft op je iPhone.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -447,7 +449,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "30";
+				CURRENT_PROJECT_VERSION = "31";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pasr;
@@ -475,7 +477,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "30";
+				CURRENT_PROJECT_VERSION = "31";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pasr;
@@ -503,7 +505,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "30";
+				CURRENT_PROJECT_VERSION = "31";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/PasrWidgets-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Pasr;
@@ -529,7 +531,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "30";
+				CURRENT_PROJECT_VERSION = "31";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/PasrWidgets-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Pasr;
