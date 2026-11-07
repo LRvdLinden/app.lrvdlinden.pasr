@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fetch the logo of every store in Shared/Model/StoreTemplates.swift and save it as
-Shared/StoreLogos/<domain>.png. Runs in GitHub Actions (Actions › Logos),
+App/StoreLogos/<domain>.png. Runs in GitHub Actions (Actions › Logos),
 because that machine can reach the store websites.
 
 Order per store: the store's full logo on Wikidata/Wikimedia Commons (the wordmark, like SuperCards
@@ -28,7 +28,7 @@ import requests
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "Shared" / "StoreLogos"
+OUT = ROOT / "App" / "StoreLogos"
 SIZE = 256
 STYLES_JSON = ROOT / "tools" / "logo-styles.json"
 # Hand-picked per brand (tools/logo_candidates.py): the Wikimedia Commons file, the colour of the real card
