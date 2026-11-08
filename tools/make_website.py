@@ -372,6 +372,7 @@ def page():
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-itunes-app" content="app-id=6829229123">
   <title>Pasr: klantenkaarten app voor iPhone en Apple Watch | Gratis en zonder reclame</title>
   <meta name="description" content="Pasr bewaart al je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Zet je kaarten met één schermopname over uit Klarna of een andere kaarten-app.">
   <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, Klarna klantenkaarten overzetten, alternatief voor Klarna klantenkaarten, Supercards alternatief, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
@@ -409,7 +410,7 @@ def page():
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl"}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
-    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum"],"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
+    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum"],"downloadUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","installUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
   ]}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
 </head>
@@ -433,13 +434,14 @@ def page():
         <h1 class="enter" style="--d:0"><span>Al je pasjes.</span> <span>Zonder gedoe.</span></h1>
         <p class="lead enter" style="--d:1">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
         <div class="actions enter" style="--d:2">
-          <a class="btn btn-primary" aria-disabled="true" role="link">{APPLE}Binnenkort in de App Store</a>
+          <a class="btn btn-primary" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123" rel="noopener">{APPLE}Download in de App Store</a>
           <a class="btn btn-ghost" href="#functies">Bekijk wat Pasr kan</a>
         </div>
         <ul class="platforms enter" style="--d:3" aria-label="Geschikt voor">
           <li><b>iPhone</b> iOS 17+</li>
           <li><b>iPad</b> iPadOS 17+</li>
           <li><b>Apple Watch</b> watchOS 10+</li>
+          <li><b>Mac</b> met Apple-chip</li>
         </ul>
       </div>
 
@@ -523,9 +525,9 @@ def page():
 
     <section class="wrap cta" id="download" aria-labelledby="cta-title">
       <h2 id="cta-title">Je portemonnee wordt een stuk dunner</h2>
-      <p>Pasr komt binnenkort gratis in de App Store.</p>
+      <p>Pasr staat gratis in de App Store, voor iPhone, iPad, Apple Watch en Mac.</p>
       <div class="actions">
-        <a class="btn btn-primary" aria-disabled="true" role="link">{APPLE}Binnenkort in de App Store</a>
+        <a class="btn btn-primary" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123" rel="noopener">{APPLE}Download in de App Store</a>
       </div>
     </section>
   </main>
@@ -605,6 +607,7 @@ def move_page(slug, m):
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-itunes-app" content="app-id=6829229123">
   <title>{m["title"]} | Pasr</title>
   <meta name="description" content="{m["desc"]}">
   <link rel="canonical" href="{url}">
@@ -664,8 +667,8 @@ def move_page(slug, m):
     </section>
     <section class="wrap cta" id="download" aria-labelledby="cta-title">
       <h2 id="cta-title">Klaar in een minuut</h2>
-      <p>Pasr komt binnenkort gratis in de App Store.</p>
-      <div class="actions"><a class="btn btn-primary" aria-disabled="true" role="link">{APPLE}Binnenkort in de App Store</a></div>
+      <p>Pasr staat gratis in de App Store, voor iPhone, iPad, Apple Watch en Mac.</p>
+      <div class="actions"><a class="btn btn-primary" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123" rel="noopener">{APPLE}Download in de App Store</a></div>
     </section>
   </main>
   <footer>
