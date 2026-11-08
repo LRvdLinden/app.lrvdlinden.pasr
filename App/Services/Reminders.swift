@@ -82,18 +82,25 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
 
     func activate() { UNUserNotificationCenter.current().delegate = self }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    // Met completion handlers in plaats van async: de async-varianten roepen de afhandeling van iOS niet op de
+    // hoofdthread aan, en dan crasht de app bij het openen van een melding.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
-        if let id = (info["cardID"] as? String).flatMap(UUID.init) {
-            await MainActor.run { Self.pendingCardID = id }
-        } else if info["kind"] as? String == "store", let store = info["store"] as? String {
-            await MainActor.run { Self.pendingStoreID = store }
+        let cardID = (info["cardID"] as? String).flatMap(UUID.init)
+        let storeID = info["kind"] as? String == "store" ? info["store"] as? String : nil
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                if let cardID { Self.pendingCardID = cardID } else if let storeID { Self.pendingStoreID = storeID }
+            }
+            completionHandler()
         }
     }
 
     /// Also show them while Pasr is open.
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list, .sound])
     }
 }
 
