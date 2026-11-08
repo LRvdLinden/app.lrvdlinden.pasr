@@ -129,6 +129,7 @@ struct WalletView: View {
         .task(id: WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
         .task(id: "\(order)|\(scenePhase == .active)|\(cards.count)") { await updateDistances(search: false) }
         .onChange(of: openCardID, initial: true) { _, id in openRequestedCard(id) }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrCloseSheets)) { _ in sheet = nil }
         .onChange(of: cards.count) { _, _ in openRequestedCard(openCardID) }
     }
 

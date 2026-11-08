@@ -332,6 +332,7 @@ struct ReceiveTempCardSheet: View {
     }
 
     private func load() async {
+        guard !token.isEmpty else { state = .notFound; return }
         do {
             switch try await TempShare.fetch(token) {
             case .ok(let fields, let until):

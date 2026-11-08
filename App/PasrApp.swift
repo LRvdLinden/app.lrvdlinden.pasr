@@ -87,16 +87,10 @@ struct RootView: View {
         // A tapped notification (voucher reminder or "you're at the store") opens its card.
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenCard)) { _ in openFromNotification() }
         .onAppear { openFromNotification() }
-        .onOpenURL { url in
-            if let id = DeepLink.cardID(from: url) {
-                openCardID = id
-            } else if let token = TempShare.token(from: url) {
-                incomingTemp = IncomingTempShare(token: token)
-            } else if (url.host() == "pasr.nl" && url.path().hasPrefix("/uitnodiging")) || (url.scheme == "pasr" && url.host() == "uitnodiging") {
-                Task { await GroupService.shared.sync(in: context) }   // de uitnodiging verschijnt hieronder
-            } else if let shared = CardShare.decode(url) {
-                incoming = IncomingShare(card: shared)
-            }
+        .onOpenURL { url in handle(url) }
+        // Universele links (pasr.nl/kaart, /tijdelijk, /uitnodiging) komen soms als NSUserActivity binnen
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+            if let url = activity.webpageURL { handle(url) }
         }
         .sheet(item: $incoming) { share in
             ReceiveCardSheet(shared: share.card)
@@ -145,6 +139,37 @@ struct NewStore: Identifiable {
 }
 
 extension RootView {
+    /// Een link naar Pasr: kaart, tijdelijke kaart, uitnodiging of blijvend gedeelde kaart. Staat er nog een venster
+    /// open (bijvoorbeeld een kaart wijzigen), dan gaat dat eerst dicht, anders kan iOS het nieuwe niet tonen.
+    fileprivate func handle(_ url: URL) {
+        if let id = DeepLink.cardID(from: url) {
+            openCardID = id
+            return
+        }
+        let isTemp = (url.host() == "pasr.nl" && url.path().hasPrefix("/tijdelijk")) || (url.scheme == "pasr" && url.host() == "tijdelijk")
+        if isTemp {
+            // ook een onvolledige link tonen we (met "Deze link werkt niet"), zodat er nooit niets gebeurt
+            present { incomingTemp = IncomingTempShare(token: TempShare.token(from: url) ?? "") }
+        } else if (url.host() == "pasr.nl" && url.path().hasPrefix("/uitnodiging")) || (url.scheme == "pasr" && url.host() == "uitnodiging") {
+            Task { await GroupService.shared.sync(in: context) }   // de uitnodiging verschijnt hieronder
+        } else if let shared = CardShare.decode(url) {
+            present { incoming = IncomingShare(card: shared) }
+        }
+    }
+
+    /// Eerst open vensters sluiten, dan tonen (twee vensters tegelijk lukt niet; dan gebeurde er niets).
+    fileprivate func present(_ show: @escaping () -> Void) {
+        NotificationCenter.default.post(name: .pasrCloseSheets, object: nil)
+        newStore = nil
+        invite = nil
+        incoming = nil
+        incomingTemp = nil
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            show()
+        }
+    }
+
     fileprivate func openStoreFromNotification() {
         guard let id = NotificationRouter.pendingStoreID else { return }
         NotificationRouter.pendingStoreID = nil

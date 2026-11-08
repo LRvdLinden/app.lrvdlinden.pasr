@@ -107,6 +107,8 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
 extension Notification.Name {
     static let pasrOpenCard = Notification.Name("pasrOpenCard")
     static let pasrOpenStore = Notification.Name("pasrOpenStore")
+    /// Sluit open vensters (voor een binnenkomende link).
+    static let pasrCloseSheets = Notification.Name("pasrCloseSheets")
 }
 
 
