@@ -1,51 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://pasr.nl/</loc>
-    <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/"/>
-    <lastmod>2026-11-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://pasr.nl/assets/og.png</image:loc>
-    </image:image>
-    <image:image>
-      <image:loc>https://pasr.nl/assets/icon-512.png</image:loc>
-    </image:image>
+    <lastmod>2026-11-09</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/account/</loc>
-    <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/account/"/>
-    <lastmod>2026-11-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pasr.nl/support/</loc>
-    <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/support/"/>
-    <lastmod>2026-11-07</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pasr.nl/privacy/</loc>
-    <xhtml:link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/privacy/"/>
-    <lastmod>2026-11-07</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <lastmod>2026-11-09</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/overstappen/klarna/</loc>
-    <lastmod>2026-11-07</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <lastmod>2026-11-09</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/overstappen.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/overstappen/supercards/</loc>
-    <lastmod>2026-11-07</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <lastmod>2026-11-09</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/overstappen.png</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://pasr.nl/privacy/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://pasr.nl/support/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
 </urlset>

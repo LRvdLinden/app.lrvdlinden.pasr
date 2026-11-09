@@ -523,6 +523,24 @@ function social(sc) {
   return html + "</div>";
 }
 
+
+// ---------- og:image (1200x630, voor het delen van pasr.nl) ----------
+const OG = {
+  home: { title: "Al je klantenkaarten <em>in één app</em>", sub: "Gratis en zonder reclame. Voor iPhone, iPad, Apple Watch en Mac.", screen: "stack" },
+  overstappen: { title: "Overstappen in <em>één minuut</em>", sub: "Neem je scherm op in je oude kaarten-app. Pasr vindt al je kaarten.", screen: "importrec" },
+};
+function og(sc) {
+  document.documentElement.style.setProperty("--u", (H / 100) + "px");
+  let html = `<div class="canvas dark social">`;
+  html += `<div style="position:absolute;left:6.5%;top:50%;transform:translateY(-50%);width:52%;z-index:3">
+    <div class="promo-logo"><img src="icon.png" style="width:calc(var(--u)*13);height:calc(var(--u)*13);border-radius:calc(var(--u)*3)"><span style="font-size:calc(var(--u)*11)">pasr</span></div>
+    <h1 style="margin-top:calc(var(--u)*6);font-size:calc(var(--u)*12.4);line-height:1.02">${sc.title}</h1>
+    <p class="sub" style="font-size:calc(var(--u)*4.6);margin-top:calc(var(--u)*3.6);max-width:92%">${sc.sub}</p>
+    <div style="margin-top:calc(var(--u)*5.5)"><span class="store" style="font-size:calc(var(--u)*4.3);padding:calc(var(--u)*2.4) calc(var(--u)*4.4);gap:calc(var(--u)*1.8)">${APPLE.replace("<svg", '<svg style="width:calc(var(--u)*5);height:calc(var(--u)*5)"')}Nu in de App Store</span></div></div>`;
+  html += device("iphone", sc.screen, `left:79%;top:9%;width:calc(var(--u) * 66);transform:translateX(-50%) rotate(4deg)`);
+  return html + "</div>";
+}
+
 const root = document.getElementById("root");
 if (KIND === "watchmock") {
   root.innerHTML = `<div class="canvas dark" style="position:relative"><div class="ultra"><div class="band t"></div><div class="band b"></div>
@@ -533,6 +551,8 @@ if (KIND === "watchmock") {
 } else if (KIND === "watch") {
   document.documentElement.style.setProperty("--wk", W / 211);
   root.innerHTML = `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden"><div class="ui" style="--k:${W / 211};width:211px;height:${H / (W / 211)}px">${SCREENS[SCENE]()}</div></div>`;
+} else if (KIND === "og") {
+  root.innerHTML = og(OG[SCENE]);
 } else if (KIND === "social") {
   root.innerHTML = social(SOCIAL[SCENE]);
 } else if (KIND === "promo") {
