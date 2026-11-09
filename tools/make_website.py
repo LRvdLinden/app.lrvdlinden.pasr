@@ -434,7 +434,7 @@ def page():
         <h1 class="enter" style="--d:0"><span>Al je pasjes.</span> <span>Zonder gedoe.</span></h1>
         <p class="lead enter" style="--d:1">Pasr bewaart je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Geen reclame, geen betaalapp eromheen.</p>
         <div class="actions enter" style="--d:2">
-          <a class="btn btn-primary" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123" rel="noopener">{APPLE}Download in de App Store</a>
+          <a class="store-badge" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123?itscg=30200&amp;itsct=apps_box_badge&amp;mttnsubad=6829229123" rel="noopener"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/nl-nl?releaseDate=1794096000" alt="Download in de App Store" width="246" height="82"></a>
           <a class="btn btn-ghost" href="#functies">Bekijk wat Pasr kan</a>
         </div>
         <ul class="platforms enter" style="--d:3" aria-label="Geschikt voor">
@@ -527,7 +527,7 @@ def page():
       <h2 id="cta-title">Je portemonnee wordt een stuk dunner</h2>
       <p>Pasr staat gratis in de App Store, voor iPhone, iPad, Apple Watch en Mac.</p>
       <div class="actions">
-        <a class="btn btn-primary" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123" rel="noopener">{APPLE}Download in de App Store</a>
+        <a class="store-badge" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123?itscg=30200&amp;itsct=apps_box_badge&amp;mttnsubad=6829229123" rel="noopener"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/nl-nl?releaseDate=1794096000" alt="Download in de App Store" width="246" height="82" loading="lazy"></a>
       </div>
     </section>
   </main>
@@ -668,7 +668,7 @@ def move_page(slug, m):
     <section class="wrap cta" id="download" aria-labelledby="cta-title">
       <h2 id="cta-title">Klaar in een minuut</h2>
       <p>Pasr staat gratis in de App Store, voor iPhone, iPad, Apple Watch en Mac.</p>
-      <div class="actions"><a class="btn btn-primary" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123" rel="noopener">{APPLE}Download in de App Store</a></div>
+      <div class="actions"><a class="store-badge" href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123?itscg=30200&amp;itsct=apps_box_badge&amp;mttnsubad=6829229123" rel="noopener"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/nl-nl?releaseDate=1794096000" alt="Download in de App Store" width="246" height="82" loading="lazy"></a></div>
     </section>
   </main>
   <footer>
