@@ -733,3 +733,10 @@ html, body { overflow-x: clip; max-width: 100%; }
 .fv-history li .ic { width: 24px; height: 24px; border-radius: 6px; }
 .fv-history li .ic img { width: 19px; height: 19px; }
 @media (max-width: 520px) { .fv-history ul { justify-self: stretch; max-width: none; } .fv-history .fv-bal { justify-self: start; } }
+/* Officiële App Store-badge van Apple */
+.store-badge { display: inline-block; line-height: 0; border-radius: 12px; transition: transform .15s ease; }
+.store-badge img { width: 210px; height: auto; aspect-ratio: 246 / 82; object-fit: contain; vertical-align: middle; }
+.store-badge:hover { transform: translateY(-1px); }
+.store-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
+.actions .store-badge { margin: -10px -6px; }
+@media (max-width: 420px) { .store-badge img { width: 190px; } }
