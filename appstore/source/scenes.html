@@ -265,6 +265,20 @@ h1 em { font-style: normal; background: linear-gradient(90deg, #A79FFF, #FF8A78)
 .promo-logo span { font: 800 calc(var(--u) * 9)/1 "Bricolage"; letter-spacing: -.04em; }
 .badge { display: inline-flex; align-items: center; gap: calc(var(--u) * 1); padding: calc(var(--u) * 1.1) calc(var(--u) * 2); border-radius: 999px;
   background: rgba(255, 255, 255, .12); font: 700 calc(var(--u) * 2)/1 "Figtree"; }
+
+/* ---------- social ---------- */
+.social .s-top { position: absolute; left: 0; right: 0; display: flex; justify-content: center; z-index: 3; }
+.social .s-top .promo-logo img { width: calc(var(--u) * 8); height: calc(var(--u) * 8); border-radius: calc(var(--u) * 1.9); }
+.social .s-top .promo-logo span { font-size: calc(var(--u) * 7); }
+.social .head h1 { font-size: calc(var(--u) * 8.2); }
+.social .head .sub { font-size: calc(var(--u) * 3.6); }
+.social .s-cta { position: absolute; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: calc(var(--u) * 2.4); z-index: 4; }
+.social .store { display: inline-flex; align-items: center; gap: calc(var(--u) * 1.4); background: #fff; color: #0E0C1F; border-radius: 999px;
+  padding: calc(var(--u) * 1.8) calc(var(--u) * 3.4); font: 700 calc(var(--u) * 3.3)/1 "Figtree"; box-shadow: 0 calc(var(--u) * 1.5) calc(var(--u) * 4) rgba(0,0,0,.35); }
+.social .store svg { width: calc(var(--u) * 3.8); height: calc(var(--u) * 3.8); fill: currentColor; }
+.social .s-url { font: 700 calc(var(--u) * 3.3)/1 "Figtree"; opacity: .9; }
+.social.light .store { background: #0E0C1F; color: #fff; }
+.social .fade { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -481,6 +495,34 @@ function promo(kind) {
   return html + "</div>";
 }
 
+
+// ---------- social (Instagram/Facebook post en story) ----------
+const SOCIAL = {
+  p1: { bg: "dark", title: "Al je pasjes. <em>Zonder gedoe.</em>", sub: "Klantenkaarten en cadeaukaarten in één app. Gratis, zonder reclame.", screen: "stack" },
+  p2: { bg: "iris", title: "Overstappen in <em>één minuut</em>", sub: "Neem je scherm op in je oude kaarten-app. Pasr vindt al je kaarten.", screen: "importrec" },
+  p3: { bg: "light", title: "Kaarten delen <em>met je gezin</em>", sub: "Samen één Pasr, tot 6 personen. Of leen een kaart tijdelijk uit.", screen: "shared" },
+  p4: { bg: "dark", title: "Je kaart staat klaar <em>bij de winkel</em>", sub: "Een melding als je binnenloopt, en ook in Apple Wallet.", screen: "lockscreen" },
+};
+const APPLE = '<svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.6-1-2.5-3.9zM14 5.3c.7-.8 1.1-1.9 1-3-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.9-1.4z"/></svg>';
+function social(sc) {
+  const story = H / W > 1.6, tall = H / W > 1.15;
+  document.documentElement.style.setProperty("--u", (W / 100) + "px");
+  const safe = story ? 250 : 0;                       // story: 250px boven en onder vrij
+  const pct = (px) => (px / H * 100).toFixed(2) + "%";
+  let html = `<div class="canvas social ${sc.bg}">`;
+  html += `<div class="s-top" style="top:${pct(safe + W * (story ? .09 : .055))}"><div class="promo-logo"><img src="icon.png"><span>pasr</span></div></div>`;
+  html += `<div class="head" style="top:${pct(safe + W * (story ? .24 : .17))}"><h1>${sc.title}</h1><p class="sub">${sc.sub}</p></div>`;
+  const devTop = story ? safe + W * .62 : tall ? W * .56 : W * .53;
+  const devW = story ? 80 : tall ? 64 : 58;
+  // toestel loopt onderaan zacht weg, zodat de downloadknop vrij staat
+  const fadeAt = H - (story ? safe + W * .14 : W * .16);
+  html += device("iphone", sc.screen, `top:${pct(devTop)};width:calc(var(--u) * ${devW});`
+    + `-webkit-mask-image:linear-gradient(#000 0, #000 ${fadeAt - devTop - W * .2}px, transparent ${fadeAt - devTop}px);`
+    + `mask-image:linear-gradient(#000 0, #000 ${fadeAt - devTop - W * .2}px, transparent ${fadeAt - devTop}px)`);
+  html += `<div class="s-cta" style="bottom:${pct(safe + W * (story ? .07 : .055))}"><span class="store">${APPLE}Download in de App Store</span><span class="s-url">pasr.nl</span></div>`;
+  return html + "</div>";
+}
+
 const root = document.getElementById("root");
 if (KIND === "watchmock") {
   root.innerHTML = `<div class="canvas dark" style="position:relative"><div class="ultra"><div class="band t"></div><div class="band b"></div>
@@ -491,6 +533,8 @@ if (KIND === "watchmock") {
 } else if (KIND === "watch") {
   document.documentElement.style.setProperty("--wk", W / 211);
   root.innerHTML = `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden"><div class="ui" style="--k:${W / 211};width:211px;height:${H / (W / 211)}px">${SCREENS[SCENE]()}</div></div>`;
+} else if (KIND === "social") {
+  root.innerHTML = social(SOCIAL[SCENE]);
 } else if (KIND === "promo") {
   root.innerHTML = promo();
 } else {
