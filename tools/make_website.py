@@ -373,8 +373,8 @@ def page():
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-itunes-app" content="app-id=6829229123">
-  <title>Pasr: klantenkaarten app voor iPhone en Apple Watch | Gratis en zonder reclame</title>
-  <meta name="description" content="Pasr bewaart al je klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Zet je kaarten met één schermopname over uit Klarna of een andere kaarten-app.">
+  <title>Klantenkaarten-app voor iPhone en Apple Watch | Pasr</title>
+  <meta name="description" content="Al je klantenkaarten en cadeaukaarten in één app op iPhone, iPad en Apple Watch. Gratis, zonder reclame. Overstappen uit Klarna met één schermopname.">
   <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, Klarna klantenkaarten overzetten, alternatief voor Klarna klantenkaarten, Supercards alternatief, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="author" content="Pasr">
@@ -391,26 +391,26 @@ def page():
   <meta property="og:url" content="https://pasr.nl/">
   <meta property="og:title" content="Pasr: al je pasjes. Zonder gedoe.">
   <meta property="og:description" content="Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.">
-  <meta property="og:image" content="https://pasr.nl/assets/og.png">
+  <meta property="og:image" content="https://pasr.nl/og/home.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Drie klantenkaarten in Pasr, met een barcode op de voorste kaart">
+  <meta property="og:image:alt" content="Pasr op een iPhone met een stapel klantenkaarten, naast de tekst: Al je klantenkaarten in één app, nu in de App Store">
   <meta property="og:locale" content="nl_NL">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Pasr: al je pasjes. Zonder gedoe.">
   <meta name="twitter:description" content="Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.">
-  <meta name="twitter:image" content="https://pasr.nl/assets/og.png">
-  <meta name="twitter:image:alt" content="Drie klantenkaarten in Pasr, met een barcode op de voorste kaart">
+  <meta name="twitter:image" content="https://pasr.nl/og/home.png">
+  <meta name="twitter:image:alt" content="Pasr op een iPhone met een stapel klantenkaarten, naast de tekst: Al je klantenkaarten in één app, nu in de App Store">
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <script>document.documentElement.classList.add('js')</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
-    {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl"}},
+    {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl","sameAs":["https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"]}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
-    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/assets/og.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum"],"downloadUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","installUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
+    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/og/home.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame.","featureList":["Klantenkaarten en cadeaukaarten bewaren","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum","Kaart tonen bij de winkel, ook als de app dicht is","Tegoed van cadeaukaarten bijhouden","Geschiedenis per kaart","Apple Wallet-pas die zichzelf bijwerkt"],"downloadUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","installUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
   ]}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
 </head>
@@ -552,7 +552,7 @@ def page():
 MOVES = {
     "klarna": dict(
         name="Klarna",
-        title="Klantenkaarten overzetten van Klarna naar Pasr",
+        title="Klantenkaarten overzetten uit Klarna",
         desc="Zet je klantenkaarten met één schermopname over van de Klarna-app naar Pasr: gratis, zonder account en met een Apple Watch-app.",
         intro="Je klantenkaarten staan in de Klarna-app, tussen betalen en winkelen. Wil je een app met alleen je kaarten, zonder account? Zo neem je ze in één minuut mee.",
         app="Klarna",
@@ -572,7 +572,7 @@ MOVES = {
     ),
     "supercards": dict(
         name="Supercards",
-        title="Klantenkaarten overzetten van Supercards naar Pasr",
+        title="Klantenkaarten overzetten uit Supercards",
         desc="Neem je klantenkaarten met één schermopname mee van Supercards naar Pasr: gratis, zonder reclame en met Apple Watch, widgets en gedeelde Pasr.",
         intro="Wil je je kaarten uit Supercards in Pasr? Een export is niet nodig: met één schermopname neem je ze allemaal mee, in ongeveer een minuut.",
         app="Supercards",
@@ -617,11 +617,17 @@ def move_page(slug, m):
   <meta property="og:url" content="{url}">
   <meta property="og:title" content="{m["title"]}">
   <meta property="og:description" content="{m["desc"]}">
-  <meta property="og:image" content="https://pasr.nl/assets/og.png">
+  <meta property="og:image" content="https://pasr.nl/og/overstappen.png">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Pasr op een iPhone die kaarten importeert uit een schermopname, naast de tekst: Overstappen in één minuut">
   <meta property="og:locale" content="nl_NL">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{m["title"]}">
+  <meta name="twitter:description" content="{m["desc"]}">
+  <meta name="twitter:image" content="https://pasr.nl/og/overstappen.png">
+  <meta name="twitter:image:alt" content="Pasr op een iPhone die kaarten importeert uit een schermopname, naast de tekst: Overstappen in één minuut">
   <meta name="theme-color" content="#F4F3FF">
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
