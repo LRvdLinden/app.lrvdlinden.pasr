@@ -66,6 +66,20 @@ h1 em { font-style: normal; background: linear-gradient(90deg, #A79FFF, #FF8A78)
   background: linear-gradient(145deg, #3B3D47, #121318 40%, #2A2C34); box-shadow: 0 calc(var(--u) * 6) calc(var(--u) * 14) rgba(0, 0, 0, .5); }
 .ipad .screen { border-radius: calc(var(--u) * 3.6); }
 .ipad .ui { width: 1032px; height: 1376px; }
+/* iPhone Duo, open (binnenscherm staand, 2007 x 2853): dunne rand, vouw dwars over het midden */
+.duo { width: calc(var(--u) * 90); aspect-ratio: 1000 / 1421; border-radius: calc(var(--u) * 6.2); padding: calc(var(--u) * 1.3);
+  background: linear-gradient(145deg, #4A4C57, #16171C 40%, #33353E); box-shadow: 0 calc(var(--u) * 6) calc(var(--u) * 14) rgba(0, 0, 0, .5),
+  inset 0 0 0 calc(var(--u) * .25) rgba(255, 255, 255, .16); }
+.light .duo { box-shadow: 0 calc(var(--u) * 6) calc(var(--u) * 14) rgba(40, 30, 120, .35), inset 0 0 0 calc(var(--u) * .25) rgba(255, 255, 255, .2); }
+.duo .screen { border-radius: calc(var(--u) * 5.1); }
+.duo .ui { width: 1000px; height: 1421px; }
+.duo .crease { position: absolute; left: 0; right: 0; top: calc(50% - 14px); height: 28px; z-index: 60; pointer-events: none;
+  background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,.05) 45%, rgba(0,0,0,.10) 55%, rgba(255,255,255,0)); }
+.duo .cam { position: absolute; top: 18px; right: 26px; width: 15px; height: 15px; border-radius: 50%; background: #000;
+  box-shadow: 0 0 0 3px rgba(0,0,0,.6); z-index: 61; }
+.duo::before, .duo::after { content: ""; position: absolute; top: calc(50% - var(--u) * 2.4); width: calc(var(--u) * .5); height: calc(var(--u) * 4.8);
+  background: #22232A; border-radius: 2px; }
+.duo::before { left: calc(var(--u) * -.35); } .duo::after { right: calc(var(--u) * -.35); }
 
 /* ---------- Pasr-app ---------- */
 .app { position: absolute; inset: 0; background: var(--ink); }
@@ -436,6 +450,15 @@ function device(kind, screen, style = "") {
       <div style="position:absolute;left:${(1032 - 440 * 1.42) / 2}px;top:20px;width:440px;height:956px;transform:scale(1.42);transform-origin:0 0">${inner}</div>
       <div class="homebar" style="width:300px"></div></div></div></div>`;
   }
+  if (kind === "duo") {
+    // iPhone Duo open: Pasr past zich aan het grote scherm aan, de kaarten blijven in het midden (zoals op de iPad)
+    const inner = SCREENS[screen]().replace('<div class="island"></div>', "").replace('<div class="homebar"></div>', "");
+    const bg = screen === "lockscreen" ? "lock" : screen === "widgets" ? "home" : screen === "scan" ? "camera" : screen === "faceid" ? "lockapp" : "app";
+    const k = 1.42;
+    return `<div class="device duo" style="${style}"><div class="screen"><div class="ui"><div class="${bg}"></div>
+      <div style="position:absolute;left:${(1000 - 440 * k) / 2}px;top:${(1421 - 956 * k) / 2 + 10}px;width:440px;height:956px;transform:scale(${k});transform-origin:0 0">${inner}</div>
+      <div class="crease"></div><div class="cam"></div><div class="homebar" style="width:260px"></div></div></div></div>`;
+  }
   return `<div class="device phone" style="${style}"><div class="screen"><div class="ui">${SCREENS[screen]()}</div></div></div>`;
 }
 
@@ -457,7 +480,7 @@ const SCENES = {
 };
 
 function marketing(sc, kind) {
-  const ipad = kind === "ipad";
+  const ipad = kind === "ipad" || kind === "duo";
   let html = `<div class="canvas ${sc.bg} ${ipad ? "is-ipad" : ""}">`;
   html += `<div class="head" style="top:${ipad ? 4.6 : 5.6}%"><div class="eyebrow"><i></i>${sc.eyebrow}</div><h1>${sc.title}</h1>${sc.sub ? `<p class="sub">${sc.sub}</p>` : ""}</div>`;
   if (sc.screen === "stack") html += floatCard("klm.com", -6, 30, 22, -14) + floatCard("ns.nl", 84, 34, 22, 12);
@@ -564,7 +587,7 @@ if (KIND === "watchmock") {
 requestAnimationFrame(() => {
   document.querySelectorAll(".screen").forEach((s) => {
     const ui = s.querySelector(".ui");
-    const base = s.closest(".watch") ? 211 : s.closest(".ipad") ? 1032 : 440;
+    const base = s.closest(".watch") ? 211 : s.closest(".ipad") ? 1032 : s.closest(".duo") ? 1000 : 440;
     ui.style.setProperty("--k", s.clientWidth / base);
   });
   document.fonts.ready.then(() => { document.body.dataset.ready = "1"; });
