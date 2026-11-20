@@ -127,7 +127,7 @@ struct CardHistorySheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } } }
             .sheet(item: $entry) { mode in
                 SpendSheet(card: card, mode: mode)
                     .presentationDetents([.medium])
@@ -249,9 +249,9 @@ struct SpendSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Bewaar") { if let value { save(value) } }.disabled(value == nil)
+                    Button("Bewaar", systemImage: "checkmark") { if let value { save(value) } }.disabled(value == nil)
                 }
             }
             .onAppear {

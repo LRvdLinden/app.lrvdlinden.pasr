@@ -61,7 +61,7 @@ struct ShareCardSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } }
             }
             .onAppear { sent = TempShare.sent(for: card).filter(\.isActive) }
             .sheet(item: $editing) { item in
@@ -313,7 +313,7 @@ struct ReceiveTempCardSheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Sluit") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Sluit", systemImage: "xmark") { dismiss() } } }
             .task { await load() }
         }
     }
@@ -403,7 +403,7 @@ struct ReceiveCardSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
             .task {
                 try? await Task.sleep(for: .milliseconds(450))

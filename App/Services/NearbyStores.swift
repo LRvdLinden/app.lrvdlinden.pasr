@@ -7,20 +7,45 @@ import Observation
 import UIKit
 #endif
 
-/// "Kaart tonen bij de winkel". iOS laat een app hoogstens 20 plekken tegelijk bewaken; Pasr kiest de 20 beste plekken
-/// rond waar je bent en laat iOS een melding geven als je er binnenloopt:
-/// - eerst je eigen locaties (Ik sta hier / speld op de kaart), daarna filialen uit Apple Kaarten;
-/// - per keten meer filialen als je weinig verschillende winkels hebt;
-/// - met de toestemming "Altijd" wekt iOS Pasr na zo'n kilometer verplaatsen (significante locatiewijziging) en zet
-///   Pasr de plekken opnieuw klaar, ook als je Pasr niet opent. Zonder die toestemming gebeurt dat bij het openen.
+/// "Kaart tonen bij de winkel", in twee stappen:
+/// 1. Grof: iOS bewaakt hoogstens 20 gebieden per app. Pasr kiest de beste winkels rond waar je bent (eerst je eigen
+///    locaties, daarna filialen uit Apple Kaarten) en voegt winkels die dicht bij elkaar liggen (een winkelcentrum)
+///    samen tot één gebied. Kom je in zo'n gebied, dan wekt iOS Pasr; er gaat dan nog geen melding uit.
+/// 2. Precies: Pasr meet je plek met de nauwkeurigste GPS, een halve minuut lang. Alleen als je stilstaat of loopt
+///    (niet rijdt) en binnen 5 meter van een winkel bent (plus de foutmarge van de GPS) komt er één melding, voor de
+///    dichtstbijzijnde winkel. Dezelfde winkel meldt zich daarna 4 uur niet, en twee meldingen vlak na elkaar kan niet.
+/// Met de toestemming "Altijd" wekt iOS Pasr ook na zo'n kilometer verplaatsen en zet Pasr de gebieden opnieuw klaar.
 /// Alles gebeurt op de iPhone; je locatie gaat nergens heen.
 @MainActor
 @Observable
 final class NearbyStores: NSObject, CLLocationManagerDelegate {
     static let shared = NearbyStores()
 
-    static let radius: CLLocationDistance = 150
-    private static let maxPlaces = 20
+    /// Twee plekken binnen deze afstand zijn hetzelfde filiaal (eigen locatie en Kaarten-filiaal, of dubbel in Kaarten).
+    static let radius: CLLocationDistance = 60
+    /// Zo dichtbij moet je zijn voor een melding.
+    static let confirmDistance: CLLocationDistance = 5
+    /// Een filiaal uit Apple Kaarten is één punt in een gebouw; de ingang kan verder weg liggen dan bij een eigen speld.
+    private static let mapsMargin: CLLocationDistance = 15
+    /// Hoogstens zoveel van de GPS-foutmarge telt mee (binnen is GPS minder precies).
+    private static let maxAccuracyMargin: CLLocationDistance = 25
+    /// Een meting die onnauwkeuriger is dan dit gebruikt Pasr niet: dan liever geen melding dan een verkeerde.
+    private static let usableAccuracy: CLLocationAccuracy = 50
+    /// Sneller dan dit (ongeveer 9 km/u) = je rijdt of fietst langs: geen melding.
+    private static let maxSpeed: CLLocationSpeed = 2.5
+    /// Zo lang meet Pasr na het binnenkomen van een gebied.
+    private static let checkDuration: TimeInterval = 25
+    /// Dezelfde winkel niet opnieuw binnen deze tijd.
+    private static let storeCooldown: TimeInterval = 4 * 3600
+    /// Twee meldingen (van verschillende winkels) niet vlak na elkaar.
+    private static let anyCooldown: TimeInterval = 120
+    /// iOS bewaakt hoogstens 20 gebieden per app.
+    private static let maxRegions = 20
+    /// Winkels per gebied samen: zo ver uit elkaar mogen ze liggen.
+    private static let clusterSpan: CLLocationDistance = 80
+    /// Kleinste gebied dat iOS betrouwbaar bewaakt.
+    private static let regionRadius: CLLocationDistance = 100
+    private static let maxPlaces = 40
     private static let replanDistance: CLLocationDistance = 1_000
     private static let searchSpan: CLLocationDistance = 15_000
     private static let cacheReuse: CLLocationDistance = 4_000
@@ -83,6 +108,14 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     private static let sourcesKey = "pasr.nearby.sources"
     private static let cacheKey = "pasr.nearby.cache"
     private static let planKey = "pasr.nearby.plan"
+    private static let shownKey = "pasr.nearby.shown"
+    private static let regionPrefix = "pasr.nearby."
+
+    /// Na het binnenkomen van een gebied: tot wanneer Pasr nauwkeurig meet.
+    private var checkUntil: Date?
+    #if canImport(UIKit)
+    private var checkTask = UIBackgroundTaskIdentifier.invalid
+    #endif
 
     override init() {
         authorization = manager.authorizationStatus
@@ -103,13 +136,18 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     /// Bij het opstarten (ook als iOS Pasr op de achtergrond start na een verplaatsing): weer meeluisteren.
     func resume() {
         updateBackgroundWatching()
+        Task { await removeLegacyNotifications() }
     }
 
     /// Zet het aan: vraagt om meldingen en locatie en plant de plekken.
     func enable(cards: [Card]) async -> Bool {
         UserDefaults.standard.set(true, forKey: Reminders.nearbyKey)
         guard await Reminders.requestPermission() else { return false }
-        if manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization() }
+        // Gebieden bewaken kan alleen met "Altijd". iOS vraagt eerst "Bij gebruik" en later zelf om Altijd.
+        if manager.authorizationStatus == .notDetermined || manager.authorizationStatus == .authorizedWhenInUse {
+            manager.requestAlwaysAuthorization()
+            for _ in 0..<60 where manager.authorizationStatus == .notDetermined { try? await Task.sleep(for: .milliseconds(500)) }
+        }
         await refresh(cards: cards, force: true)
         updateBackgroundWatching()
         return hasLocation
@@ -118,7 +156,8 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     func disable() async {
         UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
         manager.stopMonitoringSignificantLocationChanges()
-        await removeNotifications()
+        stopRegions()
+        await removeLegacyNotifications()
         watched = []
         saveWatched()
     }
@@ -229,18 +268,21 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
         }
         saveCache(cache)
 
-        // Eerst eigen locaties (hoogstens 10), dan filialen: per keten een eerlijk deel, de rest naar de dichtstbijzijnde.
-        var chosen = own.sorted { $0.1 < $1.1 }.prefix(10).map(\.0)
+        // Eerst eigen locaties (hoogstens 15), dan filialen: per keten een eerlijk deel, de rest naar de dichtstbijzijnde.
+        // Dubbele plekken van dezelfde winkel (Kaarten noemt een filiaal soms twee keer) tellen één keer.
+        var chosen: [Watched] = []
+        func isDouble(_ p: Watched) -> Bool {
+            chosen.contains { $0.store == p.store && Self.distance($0.coordinate, p.coordinate) < Self.radius }
+        }
+        for (place, _) in own.sorted(by: { $0.1 < $1.1 }) where chosen.count < 15 && !isDouble(place) { chosen.append(place) }
         let room = Self.maxPlaces - chosen.count
         let stores = Set(found.map(\.0.store)).count
         let perStore = max(3, stores == 0 ? room : Int((Double(room) / Double(stores)).rounded(.up)))
         var count: [String: Int] = [:]
-        var rest: [Watched] = []
-        for (place, _) in found.sorted(by: { $0.1 < $1.1 }) {
+        for (place, _) in found.sorted(by: { $0.1 < $1.1 }) where chosen.count < Self.maxPlaces && !isDouble(place) {
             count[place.store, default: 0] += 1
-            if count[place.store]! <= perStore { rest.append(place) }
+            if count[place.store]! <= perStore { chosen.append(place) }
         }
-        chosen += rest.prefix(room)
 
         await schedule(chosen)
         lastLocation = here
@@ -249,31 +291,128 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
                                    "at": Date.now.timeIntervalSince1970], forKey: Self.planKey)
     }
 
+    /// Gebieden voor iOS: winkels die dicht bij elkaar liggen (een winkelcentrum) delen één gebied, zodat ze samen
+    /// maar één plek van de 20 gebruiken en je bij binnenkomst niet tien keer gewekt wordt.
     private func schedule(_ places: [Watched]) async {
-        await removeNotifications()
-        let center = UNUserNotificationCenter.current()
-        for (index, place) in places.enumerated() {
-            let region = CLCircularRegion(center: place.coordinate, radius: Self.radius, identifier: "nearby-\(index)")
-            region.notifyOnEntry = true
-            region.notifyOnExit = false
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "Je bent bij \(place.store)")
-            content.body = String(localized: "Tik om je kaart te tonen.")
-            content.userInfo = ["cardID": place.cardID.uuidString]
-            content.threadIdentifier = "nearby"
-            content.interruptionLevel = .active
-            content.relevanceScore = 1
-            let trigger = UNLocationNotificationTrigger(region: region, repeats: true)
-            try? await center.add(UNNotificationRequest(identifier: "nearby-\(index)", content: content, trigger: trigger))
+        await removeLegacyNotifications()
+        stopRegions()
+        var clusters: [(center: CLLocationCoordinate2D, members: [Watched])] = []
+        var kept: [Watched] = []
+        for place in places {
+            if let i = clusters.firstIndex(where: { Self.distance($0.center, place.coordinate) < Self.clusterSpan }) {
+                clusters[i].members.append(place)
+                kept.append(place)
+            } else if clusters.count < Self.maxRegions {
+                clusters.append((place.coordinate, [place]))
+                kept.append(place)
+            }
         }
-        watched = places
+        if hasAlways, CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
+            for (index, cluster) in clusters.enumerated() {
+                let spread = cluster.members.map { Self.distance(cluster.center, $0.coordinate) }.max() ?? 0
+                let radius = min(max(Self.regionRadius, spread + 60), manager.maximumRegionMonitoringDistance)
+                let region = CLCircularRegion(center: cluster.center, radius: radius, identifier: "\(Self.regionPrefix)\(index)")
+                region.notifyOnEntry = true
+                region.notifyOnExit = false
+                manager.startMonitoring(for: region)
+            }
+        }
+        watched = kept
         saveWatched()
     }
 
-    private func removeNotifications() async {
+    private func stopRegions() {
+        for region in manager.monitoredRegions where region.identifier.hasPrefix(Self.regionPrefix) {
+            manager.stopMonitoring(for: region)
+        }
+    }
+
+    /// Versies tot en met build 37 lieten iOS zelf een melding geven bij elk filiaal binnen 150 m. Weg ermee.
+    private func removeLegacyNotifications() async {
         let center = UNUserNotificationCenter.current()
         let ids = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix("nearby-") }
-        center.removePendingNotificationRequests(withIdentifiers: ids)
+        if !ids.isEmpty { center.removePendingNotificationRequests(withIdentifiers: ids) }
+    }
+
+    // MARK: Echt bij de winkel?
+
+    /// Je kwam in een gebied: meet een halve minuut nauwkeurig en kijk of je echt bij een winkel bent.
+    private func startCheck() {
+        guard Reminders.nearbyEnabled, hasAlways, !watched.isEmpty else { return }
+        if let until = checkUntil, until > .now { return }   // meet al (meerdere gebieden tegelijk = één meting)
+        checkUntil = Date.now.addingTimeInterval(Self.checkDuration)
+        #if canImport(UIKit)
+        if checkTask == .invalid {
+            checkTask = UIApplication.shared.beginBackgroundTask(withName: "pasr.nearby.check") { [weak self] in
+                MainActor.assumeIsolated { self?.stopCheck() }
+            }
+        }
+        #endif
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.startUpdatingLocation()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.checkDuration + 1))
+            if let until = self.checkUntil, until <= .now { self.stopCheck() }
+        }
+    }
+
+    private func stopCheck() {
+        checkUntil = nil
+        manager.stopUpdatingLocation()
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        #if canImport(UIKit)
+        if checkTask != .invalid {
+            UIApplication.shared.endBackgroundTask(checkTask)
+            checkTask = .invalid
+        }
+        #endif
+    }
+
+    /// Eén meting tijdens de controle. Geeft de winkel waar je nu echt bij bent, of nil.
+    static func storeAtHand(_ location: CLLocation, among places: [Watched]) -> Watched? {
+        let accuracy = location.horizontalAccuracy
+        guard accuracy >= 0, accuracy <= usableAccuracy else { return nil }
+        if location.speed >= 0, location.speed > maxSpeed { return nil }
+        let margin = min(accuracy, maxAccuracyMargin)
+        return places
+            .map { ($0, location.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude))) }
+            .filter { place, d in d <= confirmDistance + margin + (place.own ? 0 : mapsMargin) }
+            .min { $0.1 < $1.1 }?.0
+    }
+
+    private func check(_ location: CLLocation) async {
+        guard checkUntil != nil else { return }   // al klaar (een eerdere meting gaf de melding)
+        // Rijden: stoppen met meten, langsrijden levert niets op.
+        if location.speed >= 0, location.speed > Self.maxSpeed, location.horizontalAccuracy <= Self.usableAccuracy {
+            stopCheck()
+            return
+        }
+        guard let place = Self.storeAtHand(location, among: watched) else { return }
+        stopCheck()
+        var shown = UserDefaults.standard.dictionary(forKey: Self.shownKey) as? [String: Double] ?? [:]
+        let now = Date.now.timeIntervalSince1970
+        shown = shown.filter { now - $0.value < Self.storeCooldown }
+        let key = Self.key(place.store)
+        if let last = shown[key], now - last < Self.storeCooldown { return }
+        if let latest = shown.values.max(), now - latest < Self.anyCooldown { return }
+        shown[key] = now
+        UserDefaults.standard.set(shown, forKey: Self.shownKey)
+
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Je bent bij \(place.store)")
+        content.body = String(localized: "Tik om je kaart te tonen.")
+        content.userInfo = ["cardID": place.cardID.uuidString]
+        content.threadIdentifier = "nearby"
+        content.interruptionLevel = .active
+        content.relevanceScore = 1
+        // Vaste id: een nieuwe melding vervangt de vorige in het berichtencentrum.
+        let center = UNUserNotificationCenter.current()
+        center.removeDeliveredNotifications(withIdentifiers: ["nearby"])
+        try? await center.add(UNNotificationRequest(identifier: "nearby", content: content, trigger: nil))
+    }
+
+    static func distance(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> CLLocationDistance {
+        CLLocation(latitude: a.latitude, longitude: a.longitude).distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude))
     }
 
     // MARK: Zoeken in Apple Kaarten
@@ -438,9 +577,18 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         Task { @MainActor in
+            let gotAlways = status == .authorizedAlways && self.authorization != .authorizedAlways
             self.authorization = status
             self.updateBackgroundWatching()
+            // Net "Altijd" gekregen: de gebieden zetten (zonder Altijd bewaakt iOS ze niet).
+            if gotAlways, Reminders.nearbyEnabled, !self.watched.isEmpty { await self.schedule(self.watched) }
+            if status != .authorizedAlways { self.stopRegions() }
         }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        guard region.identifier.hasPrefix("pasr.nearby.") else { return }
+        Task { @MainActor in self.startCheck() }
     }
 
     private func received(_ location: CLLocation) {
@@ -448,6 +596,10 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
             let list = waiting
             waiting = []
             list.forEach { $0.resume(returning: location) }
+            if checkUntil == nil { return }
+        }
+        if let until = checkUntil {
+            if until > .now { Task { await self.check(location) } } else { stopCheck() }
             return
         }
         // Significante verplaatsing (ook op de achtergrond): opnieuw plannen als je echt ergens anders bent.

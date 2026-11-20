@@ -173,12 +173,12 @@ struct RemindersSettingsSection: View {
                     LabeledContent {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(Brand.mint)
                     } label: {
-                        SettingsLabel("Ook als Pasr dicht is", symbol: "location.circle.fill", color: .blue)
+                        SettingsLabel("Locatie: Altijd", symbol: "location.circle.fill", color: .blue)
                     }
                 } else {
                     Button { stores.requestAlways() } label: {
                         HStack {
-                            SettingsLabel("Ook als Pasr dicht is", symbol: "location.circle", color: .blue)
+                            SettingsLabel("Locatie: Altijd", symbol: "location.circle", color: .orange)
                             Spacer()
                             Text("Zet aan").foregroundStyle(Brand.iris)
                         }
@@ -219,12 +219,12 @@ struct RemindersSettingsSection: View {
 
     private var footer: String {
         guard nearby else {
-            return String(localized: "Bij de winkel verschijnt je kaart met een melding. Je locatie blijft op je iPhone.")
+            return String(localized: "Sta je bij een winkel, dan verschijnt je kaart met een melding. Je locatie blijft op je iPhone.")
         }
         if stores.hasAlways {
-            return String(localized: "Pasr zet de winkels om je heen vanzelf klaar als je ergens anders bent, ook als je de app niet opent. Je locatie blijft op je iPhone.")
+            return String(localized: "Je krijgt een melding als je binnen 5 meter van de winkel bent, niet als je langsrijdt. Eén winkel tegelijk, en dezelfde winkel hoogstens eens per 4 uur. Je locatie blijft op je iPhone.")
         }
-        return String(localized: "Pasr zet de winkels om je heen klaar als je de app opent. Met \u{201C}Ook als Pasr dicht is\u{201D} gebeurt dat ook als je ergens anders bent zonder Pasr te openen. Je locatie blijft op je iPhone.")
+        return String(localized: "Zet je locatie voor Pasr op \u{201C}Altijd\u{201D}. Alleen dan kan Pasr nagaan of je echt bij de winkel bent en niet alleen in de buurt. Je locatie blijft op je iPhone.")
     }
 }
 
@@ -258,7 +258,7 @@ struct NearbyPlacesView: View {
                     }
                 }
             } footer: {
-                Text("iOS laat een app hoogstens 20 plekken tegelijk bewaken. Eigen locaties gaan voor; voeg ze toe bij een kaart onder Wijzig › Locaties.")
+                Text("Winkels die dicht bij elkaar liggen delen een gebied; iOS bewaakt er hoogstens 20. Eigen locaties gaan voor en zijn het preciest: zet je vaste filiaal vast bij een kaart onder Wijzig › Locaties › Ik sta hier.")
             }
             if let plan = stores.lastPlan {
                 Section {

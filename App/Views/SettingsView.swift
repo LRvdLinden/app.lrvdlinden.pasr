@@ -161,7 +161,7 @@ struct SettingsView: View {
             .background(Brand.ink.ignoresSafeArea())
             .navigationTitle("Instellingen")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } }
             }
             .fileExporter(isPresented: $showExporter, document: exportDoc, contentType: .json,
                           defaultFilename: "Pasr-back-up \(Date.now.formatted(.iso8601.year().month().day()))") { result in

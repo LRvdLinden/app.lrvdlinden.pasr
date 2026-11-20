@@ -246,9 +246,9 @@ struct BackupPasswordSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Verder") {
+                    Button("Verder", systemImage: "arrow.right") {
                         onDone(encrypt ? password : nil)
                         dismiss()
                     }

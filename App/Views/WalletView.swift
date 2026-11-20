@@ -94,6 +94,7 @@ struct WalletView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onChange(of: geo.size) { _, _ in ScreenBrightness.screenChanged() }
             }
             .background(Brand.ink.ignoresSafeArea())
             .navigationTitle(selectedID == nil ? (filter == .all ? String(localized: "Kaarten") : filter.title(groups: groups)) : "")
@@ -432,7 +433,7 @@ struct WalletView: View {
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             if selectedID != nil {
-                Button("Klaar") { deselect() }
+                Button("Klaar", systemImage: "xmark") { deselect() }
             } else {
                 Button { sheet = .settings } label: { Label("Instellingen", systemImage: "gearshape") }
             }
@@ -452,29 +453,44 @@ struct WalletView: View {
 }
 
 /// Turns the screen fully bright while a code is shown, like Wallet does.
+/// Per scherm: op iPhone Duo kan de app tijdens het tonen van het binnen- naar het buitenscherm gaan (open- of
+/// dichtklappen). Dan krijgt het nieuwe scherm ook volle helderheid en elk scherm later zijn eigen stand terug.
 enum ScreenBrightness {
     #if os(iOS)
-    @MainActor private static var saved: CGFloat?
+    @MainActor private static var saved: [ObjectIdentifier: (screen: UIScreen, brightness: CGFloat)] = [:]
+    @MainActor private static var active = false
 
     @MainActor static func boost() {
-        guard let screen = currentScreen else { return }
-        if saved == nil { saved = screen.brightness }
-        screen.brightness = 1
+        active = true
         UIApplication.shared.isIdleTimerDisabled = true
+        guard let screen = currentScreen else { return }
+        let id = ObjectIdentifier(screen)
+        if saved[id] == nil { saved[id] = (screen, screen.brightness) }
+        screen.brightness = 1
+    }
+
+    /// Het scherm van de app veranderde (iPhone Duo open- of dichtgeklapt): als er een code staat, ook dat scherm fel.
+    @MainActor static func screenChanged() {
+        if active { boost() }
     }
 
     @MainActor static func restore() {
-        guard let screen = currentScreen, let saved else { return }
-        screen.brightness = saved
-        Self.saved = nil
+        guard active else { return }
+        active = false
+        for (_, entry) in saved { entry.screen.brightness = entry.brightness }
+        saved = [:]
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
+    /// Het scherm van de scene die nu vooraan staat (niet UIScreen.main: op een toestel met twee schermen is dat
+    /// niet eenduidig).
     @MainActor private static var currentScreen: UIScreen? {
-        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.screen }.first
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return (scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)?.screen
     }
     #else
     static func boost() {}
+    static func screenChanged() {}
     static func restore() {}
     #endif
 }

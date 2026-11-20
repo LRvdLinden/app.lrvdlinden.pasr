@@ -149,9 +149,9 @@ struct PlacePickerView: View {
             .searchable(text: $query, prompt: Text("Zoek een plaats of adres"))
             .onSubmit(of: .search) { Task { await searchPlace() } }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { onDone([]) } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { onDone([]) } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(count > 1 ? String(localized: "Voeg \(count) toe") : String(localized: "Voeg toe")) { add() }
+                    Button(count > 1 ? String(localized: "Voeg \(count) toe") : String(localized: "Voeg toe"), systemImage: "plus") { add() }
                         .disabled(count == 0)
                 }
             }

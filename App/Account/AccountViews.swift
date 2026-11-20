@@ -44,7 +44,7 @@ struct AccountSheet: View {
             .scrollDismissesKeyboard(.interactively)
             .background(Brand.ink.ignoresSafeArea())
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Sluit") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Sluit", systemImage: "xmark") { dismiss() } }
             }
         }
         .onChange(of: mode) { _, _ in

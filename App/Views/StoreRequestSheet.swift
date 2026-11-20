@@ -108,7 +108,7 @@ struct StoreRequestSheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } } }
             .task { await loadMine() }
             .sheet(isPresented: $showAccount) {
                 AccountSheet(mode: .signUp) { Task { await CardSync.sync(in: context); await loadMine() } }

@@ -186,10 +186,10 @@ struct CardEditorView: View {
         #endif
         .toolbar {
             if existing != nil {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Bewaar") { save() }.disabled(!canSave)
+                Button("Bewaar", systemImage: "checkmark") { save() }.disabled(!canSave)
             }
         }
         #if os(iOS)

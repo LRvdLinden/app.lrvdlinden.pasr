@@ -73,10 +73,10 @@ struct ImportView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
                 if !found.isEmpty {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Importeer \(found.filter(\.include).count)") { importCards() }
+                        Button("Importeer \(found.filter(\.include).count)", systemImage: "square.and.arrow.down") { importCards() }
                             .disabled(found.allSatisfy { !$0.include } || progress != nil || videoProgress != nil)
                     }
                 }

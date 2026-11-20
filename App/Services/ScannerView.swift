@@ -82,7 +82,7 @@ struct ScannerSheet: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
         }
     }

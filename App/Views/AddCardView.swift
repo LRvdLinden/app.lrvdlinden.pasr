@@ -112,7 +112,7 @@ struct AddCardView: View {
             #endif
             .searchable(text: $search, prompt: Text("Naam van de winkel"))
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
             .navigationDestination(for: Choice.self) { choice in
                 switch choice {

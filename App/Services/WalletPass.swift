@@ -229,9 +229,9 @@ struct WalletPlacesSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    if busy { ProgressView() } else { Button("Maak pas") { Task { await make() } } }
+                    if busy { ProgressView() } else { Button("Maak pas", systemImage: "wallet.pass") { Task { await make() } } }
                 }
             }
             .task { await load() }

@@ -268,7 +268,7 @@ struct TempShareEditSheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } } }
             .confirmationDialog("Delen stoppen?", isPresented: $confirmStop, titleVisibility: .visible) {
                 Button("Stop met delen", role: .destructive) {
                     Task {

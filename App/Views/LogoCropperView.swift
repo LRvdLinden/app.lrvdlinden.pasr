@@ -79,9 +79,9 @@ struct LogoCropperView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Gebruik") {
+                    Button("Gebruik", systemImage: "checkmark") {
                         if let preview = croppedImage, let png = ImageTools.png(preview, maxSide: 256) { onCrop(png) }
                         dismiss()
                     }
