@@ -1,0 +1,67 @@
+name: Cadeaubon assets
+
+# Downloads card images (cadeaubon.nl or an official brand site) listed in a text file in the repo
+# (lines "<id> <url>") to assets-tmp/<id>.<ext> and commits that folder to its own branch, so they can be
+# processed locally. Never commits to main or gedeelde-pasr; delete the branch after use.
+on:
+  workflow_dispatch:
+    inputs:
+      list:
+        description: 'Path to a text file in the repo with lines "<id> <url>"'
+        type: string
+        required: true
+      branch:
+        description: 'Branch to commit assets-tmp/ to (not main or gedeelde-pasr)'
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check branch
+        env:
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          case "$BRANCH" in
+            main|gedeelde-pasr|"") echo "Branch $BRANCH is niet toegestaan"; exit 1;;
+          esac
+          echo "$BRANCH" | grep -Eq '^[A-Za-z0-9._/-]+$' || { echo "Ongeldige branchnaam"; exit 1; }
+      - name: Download
+        env:
+          LIST: ${{ inputs.list }}
+        run: |
+          mkdir -p assets-tmp
+          ok=0; fail=0
+          while read -r id url; do
+            [ -z "$id" ] && continue
+            case "$id" in \#*) continue;; esac
+            echo "$id" | grep -Eq '^[a-z0-9-]+$' || { echo "ongeldig id: $id"; fail=$((fail+1)); continue; }
+            case "$url" in https://*) ;; *) echo "geen https: $url"; fail=$((fail+1)); continue;; esac
+            path="${url%%\?*}"; ext="${path##*.}"; ext=$(echo "$ext" | tr 'A-Z' 'a-z')
+            case "$ext" in png|jpg|jpeg|webp|gif|svg) ;; *) ext=bin;; esac
+            if curl -fsSL --max-time 60 --retry 2 -A "Mozilla/5.0 (Pasr assets)" -o "assets-tmp/$id.$ext" "$url"; then
+              ok=$((ok+1))
+            else
+              echo "mislukt: $id $url"; rm -f "assets-tmp/$id.$ext"; fail=$((fail+1))
+            fi
+          done < "$LIST"
+          echo "Gedownload: $ok, mislukt: $fail"
+          ls -la assets-tmp > assets-tmp/_index.txt
+      - name: Commit to branch
+        env:
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cp -r assets-tmp /tmp/assets-tmp
+          git checkout --orphan "$BRANCH"
+          git rm -rfq .
+          cp -r /tmp/assets-tmp assets-tmp
+          git add -A assets-tmp
+          git commit -qm "Cadeaubon assets"
+          git push -f origin "$BRANCH"
