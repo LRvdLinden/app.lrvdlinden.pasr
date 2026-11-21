@@ -34,6 +34,7 @@ struct BarcodeView: View {
         #if os(watchOS)
         if let codeImage, let image = Image(data: codeImage) {
             image.interpolation(.none).resizable().aspectRatio(contentMode: .fit)
+                .accessibilityLabel(Text("\(format.displayName)-code"))
         } else {
             invalid
         }

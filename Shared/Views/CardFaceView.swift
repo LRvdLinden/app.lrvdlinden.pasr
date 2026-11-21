@@ -151,6 +151,30 @@ struct CardFaceView: View {
 
     private var ink: Color { Color.onCard(appearance.colorHex) }
 
+    /// Wat VoiceOver voorleest: winkel, soort, gegevens, en op de achterkant of de code leesbaar is.
+    private var accessibilityText: String {
+        var parts = [appearance.displayName, appearance.kind.displayName]
+        if appearance.isFavorite { parts.append(String(localized: "favoriet")) }
+        if appearance.isShared { parts.append(String(localized: "gedeeld")) }
+        if let info = voucherInfo { parts.append(info) }
+        if showsCode {
+            if appearance.tempExpired {
+                parts.append(String(localized: "verlopen, de code wordt niet meer getoond"))
+            } else if appearance.isLocked && !revealed {
+                parts.append(String(localized: "code afgeschermd"))
+            } else if appearance.number.isEmpty {
+                parts.append(String(localized: "geen code"))
+            } else if appearance.codeAsText {
+                parts.append(String(localized: "code \(appearance.number)"))
+            } else {
+                parts.append(String(localized: "\(appearance.format.displayName)-code, nummer \(appearance.groupedNumber)"))
+            }
+        } else if !appearance.isLocked && !appearance.tempExpired && !appearance.number.isEmpty {
+            parts.append(String(localized: "nummer \(appearance.groupedNumber)"))
+        }
+        return parts.joined(separator: ", ")
+    }
+
     /// De voorkant is een eigen foto: die vult de hele kaart, met alleen een donkere rand onderaan voor het nummer.
     private var coverImage: Image? {
         guard !showsCode, let data = appearance.cover else { return nil }
@@ -199,8 +223,8 @@ struct CardFaceView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(appearance.displayName))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(accessibilityText))
     }
 
     private var standardFace: some View {
@@ -234,7 +258,8 @@ struct CardFaceView: View {
         .foregroundStyle(ink)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(accessibilityText))
     }
 
     /// "€ 25,00 · geldig tot 10 dec 2026"; bij een tijdelijke kaart "Gedeeld tot …" of "Verlopen".
@@ -382,7 +407,8 @@ struct CardFaceView: View {
             if appearance.isFavorite {
                 Image(systemName: "star.fill").font(.caption).opacity(0.85)
             }
-            Text(appearance.kind.displayName)
+            Label(appearance.kind.displayName, systemImage: appearance.kind.symbol)
+                .labelStyle(KindLabelStyle())
                 .font(.system(size: 10, weight: .semibold, design: .rounded))
                 .textCase(.uppercase)
                 .tracking(0.6)
@@ -399,6 +425,16 @@ struct CardFaceView: View {
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .frame(width: 32, height: 32)
                 .background(ink.opacity(0.16), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+    }
+}
+
+/// Klein pictogram voor de soort, naast de naam (zo hangt de soort niet alleen van kleur of tekst af).
+private struct KindLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 3) {
+            configuration.icon.imageScale(.small)
+            configuration.title
         }
     }
 }

@@ -147,6 +147,10 @@ struct SettingsView: View {
                     Link(destination: URL(string: "https://pasr.nl/privacy/")!) {
                         SettingsLabel("Privacyverklaring", symbol: "hand.raised.fill", color: Brand.iris, external: true)
                     }
+                    // opent de App Store (buiten de app) op de pagina om een beoordeling te schrijven
+                    Link(destination: URL(string: "https://apps.apple.com/nl/app/id6829229123?action=write-review")!) {
+                        SettingsLabel("Beoordeel Pasr", symbol: "star.bubble.fill", color: .orange, external: true)
+                    }
                     Button {
                         UserDefaults.standard.set(false, forKey: "pasr.onboarded")
                         dismiss()

@@ -6,8 +6,10 @@ import PhotosUI
 /// screenshots. Alles wordt op het apparaat gelezen; je controleert de lijst en importeert.
 /// Een telefoon die opneemt (rode stip) terwijl kaarten voorbij schuiven en één voor één in Pasr landen.
 private struct RecordingArt: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(paused: reduceMotion)) { context in
             let phase = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3) / 3
             ZStack {
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -54,7 +56,15 @@ struct ImportView: View {
         var kind: CardKind
         var imageData: Data?
         var logoData: Data?
+        // uit een bestand (CSV, JSON, .pkpass)
+        var balance: Double? = nil
+        var expiresAt: Date? = nil
+        var note: String = ""
+        var details: CardDetails? = nil
     }
+
+    @State private var pickingFile = false
+    @State private var fileMessage: String?
 
     @State private var cropRequest: CropRequest?
 
@@ -83,6 +93,9 @@ struct ImportView: View {
             }
             .onChange(of: items) { _, newItems in Task { await read(newItems) } }
             .onChange(of: video) { _, item in Task { await readVideo(item) } }
+            .fileImporter(isPresented: $pickingFile, allowedContentTypes: WalletImport.fileTypes, allowsMultipleSelection: true) { result in
+                if case .success(let urls) = result { readFiles(urls) }
+            }
             .sheet(item: $cropRequest) { request in
                 if let cropper = LogoCropperView(imageData: request.data, onCrop: { png in
                     if let index = found.firstIndex(where: { $0.id == request.target }) { found[index].logoData = png }
@@ -119,6 +132,23 @@ struct ImportView: View {
                     Text("Kies uit alle foto's")
                 }
                 .font(.footnote)
+                Divider().padding(.horizontal, 40).padding(.vertical, 4)
+                Text("Uit een bestand").font(.headline)
+                Text("Een CSV- of JSON-export van een andere kaarten-app, een eigen lijst, of een Apple Wallet-pas (.pkpass). Pasr herkent kolommen als naam, nummer, formaat, soort, saldo en vervaldatum.")
+                    .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                Button { pickingFile = true } label: {
+                    Label("Kies bestand", systemImage: "doc.badge.plus").frame(maxWidth: 260).padding(.vertical, 6)
+                }
+                .pasrGlassButton()
+                ShareLink(item: WalletImport.exampleCSV, preview: SharePreview("Voorbeeld voor Pasr (CSV)")) {
+                    Label("Voorbeeld-CSV", systemImage: "tablecells")
+                }
+                .font(.footnote)
+                if let fileMessage {
+                    Text(fileMessage).font(.footnote).foregroundStyle(Brand.coral)
+                        .multilineTextAlignment(.center).padding(.horizontal, 28)
+                }
                 Text("Alles wordt op je apparaat gelezen. Er wordt niets geüpload.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
@@ -243,6 +273,33 @@ struct ImportView: View {
         }
     }
 
+    /// CSV, JSON of .pkpass: lezen en aan de lijst toevoegen (dubbele nummers overgeslagen).
+    private func readFiles(_ urls: [URL]) {
+        fileMessage = nil
+        var existing = Set((try? context.fetch(FetchDescriptor<Card>()))?.map(\.number) ?? []).union(found.map(\.number))
+        var errors: [String] = []
+        for url in urls {
+            let access = url.startAccessingSecurityScopedResource()
+            defer { if access { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url), data.count < 30_000_000 else { errors.append(url.lastPathComponent); continue }
+            do {
+                for item in try WalletImport.read(data, fileName: url.lastPathComponent) where !existing.contains(item.number) {
+                    existing.insert(item.number)
+                    let template = StoreTemplates.match(in: item.storeName)
+                    let kind = item.kind ?? template?.kind ?? (item.balance != nil ? .voucher : .loyalty)
+                    let format = item.format ?? template?.format ?? BarcodeFormat.guess(for: item.number)
+                    found.append(Found(storeName: template?.name ?? item.storeName, number: item.number, format: format,
+                                       colorHex: template?.cardHex ?? item.colorHex ?? (Brand.palette.randomElement() ?? "#6A5CFF"),
+                                       templateID: template?.id, kind: kind, imageData: nil, logoData: item.logo,
+                                       balance: item.balance, expiresAt: item.expiresAt, note: item.note, details: item.details))
+                }
+            } catch {
+                errors.append("\(url.lastPathComponent): \(error.localizedDescription)")
+            }
+        }
+        if !errors.isEmpty { fileMessage = errors.joined(separator: "\n") }
+    }
+
     /// Without a known store: the first short line of text that isn't a number or a clock.
     private func guessName(from text: String) -> String {
         let lines = text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
@@ -258,6 +315,11 @@ struct ImportView: View {
                             kind: item.kind, colorHex: item.colorHex)
             card.templateID = item.templateID
             card.logoData = item.logoData
+            card.balance = item.balance
+            if item.balance != nil { card.currencyCode = "EUR" }
+            card.expiresAt = item.kind.hasExpiry ? item.expiresAt : nil
+            card.note = item.note
+            if let details = item.details { card.details = details }
             // A logo cut from a Klarna screenshot of a known store makes way for the store's own logo.
             card.logoFromWebsite = card.templateID != nil
             card.refreshCodeImage()

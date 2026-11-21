@@ -23,6 +23,7 @@ struct WalletView: View {
     private var cardOrder: CardOrder { CardOrder(rawValue: order) ?? .az }
     @State private var distances: [UUID: CLLocationDistance] = [:]
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var search = ""
     @State private var sheet: Sheet?
     @State private var deleting: Card?
@@ -316,9 +317,9 @@ struct WalletView: View {
             card.recordShown(place: place)
         }
         flipAngle = 0
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
         // Once it's in front, turn it over to show the code.
-        withAnimation(.spring(response: 0.62, dampingFraction: 0.78).delay(0.28)) { flipAngle = 180 }
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.15).delay(0.15) : .spring(response: 0.62, dampingFraction: 0.78).delay(0.28)) { flipAngle = 180 }
     }
 
     private func deselect() {
@@ -336,7 +337,7 @@ struct WalletView: View {
         withAnimation(.easeInOut(duration: 0.32)) { flipAngle = 0 }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
         }
     }
 
