@@ -227,8 +227,8 @@
   "card": "#FFFFFF"
  },
  "plus.nl": {
-  "card": "#A2C11C",
-  "nowiki": true
+  "manual": true,
+  "card": "#FFFFFF"
  },
  "aldi.nl": {
   "file": "File:Aldi Nord 201x logo.svg",
@@ -329,5 +329,281 @@
   "logo_url": "https://www.open32.nl/static/version1793256005/frontend/Open32/Open32/nl_NL/images/logo.svg",
   "card": "#05141B",
   "recolour": "#FFFFFF"
+ },
+ "netflix.com": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "ov-chipkaart.nl": {
+  "manual": true,
+  "card": "#E6007E"
+ },
+ "schiphol.nl": {
+  "manual": true,
+  "card": "#0D0A52"
+ },
+ "spotify.com": {
+  "manual": true,
+  "card": "#1DB954"
+ },
+ "rijksmuseum.nl": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "mcdonalds.nl": {
+  "manual": true,
+  "card": "#DA291C"
+ },
+ "zalando.nl": {
+  "manual": true,
+  "card": "#FF4C00"
+ },
+ "mango.com": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "steampowered.com": {
+  "manual": true,
+  "card": "#1B2838"
+ },
+ "xbox.com": {
+  "manual": true,
+  "card": "#107C10"
+ },
+ "lego.com": {
+  "manual": true,
+  "card": "#E3000B"
+ },
+ "yves-rocher.nl": {
+  "manual": true,
+  "card": "#008061"
+ },
+ "libris.nl": {
+  "manual": true,
+  "card": "#ED1A21"
+ },
+ "laplace.com": {
+  "manual": true,
+  "card": "#658D1B"
+ },
+ "lekkerland.nl": {
+  "manual": true,
+  "card": "#E6001A"
+ },
+ "lookfantastic.nl": {
+  "manual": true,
+  "card": "#0C1219"
+ },
+ "missetam.nl": {
+  "manual": true,
+  "card": "#2B1054"
+ },
+ "starbucks.nl": {
+  "manual": true,
+  "card": "#00704A"
+ },
+ "sportsdirect.com": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "pipoos.nl": {
+  "manual": true,
+  "card": "#DC0000"
+ },
+ "montel.nl": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "mooi.nl": {
+  "manual": true,
+  "card": "#1F1F1D"
+ },
+ "landal.nl": {
+  "manual": true,
+  "card": "#0097A2"
+ },
+ "lucardi.nl": {
+  "manual": true,
+  "card": "#510C76"
+ },
+ "totalenergies.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "snapfitness.com": {
+  "manual": true,
+  "card": "#C4161C"
+ },
+ "primera.nl": {
+  "manual": true,
+  "card": "#134395"
+ },
+ "sportcity.nl": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "pathe.nl": {
+  "manual": true,
+  "card": "#2D2926"
+ },
+ "profile.nl": {
+  "manual": true,
+  "card": "#DD261E"
+ },
+ "sanquin.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "ranzijn.nl": {
+  "manual": true,
+  "card": "#FEED04"
+ },
+ "smullers.nl": {
+  "manual": true,
+  "card": "#E32C2E"
+ },
+ "readshop.nl": {
+  "manual": true,
+  "card": "#00AA13"
+ },
+ "swisssense.nl": {
+  "manual": true,
+  "card": "#1C2125"
+ },
+ "travelcard.nl": {
+  "manual": true,
+  "card": "#C6EF56"
+ },
+ "sissy-boy.com": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "zooplus.nl": {
+  "manual": true,
+  "card": "#278403"
+ },
+ "sostrenegrene.com": {
+  "manual": true,
+  "card": "#504139"
+ },
+ "trendhopper.nl": {
+  "manual": true,
+  "card": "#FFD204"
+ },
+ "vuecinemas.nl": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "thebodyshop.com": {
+  "manual": true,
+  "card": "#004236"
+ },
+ "trainmore.nl": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "tuinland.nl": {
+  "manual": true,
+  "card": "#538567"
+ },
+ "thesting.com": {
+  "manual": true,
+  "card": "#231F20"
+ },
+ "top1toys.nl": {
+  "manual": true,
+  "card": "#FFDA00"
+ },
+ "podiumcadeaukaart.nl": {
+  "manual": true,
+  "card": "#E30613"
+ },
+ "mcd-supermarkt.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "mediq.nl": {
+  "manual": true,
+  "card": "#006983"
+ },
+ "mitra.nl": {
+  "manual": true,
+  "card": "#393E35"
+ },
+ "mr-fillet.shop": {
+  "manual": true,
+  "card": "#C61717"
+ },
+ "pourvous.nl": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "rotterdampas.nl": {
+  "manual": true,
+  "card": "#FFED00"
+ },
+ "runnersworld.nl": {
+  "manual": true,
+  "card": "#16E2F5"
+ },
+ "schoonenberg.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "tuincentrumovervecht.nl": {
+  "manual": true,
+  "card": "#63B32E"
+ },
+ "walibi.nl": {
+  "manual": true,
+  "card": "#F81700"
+ },
+ "yellowbrick.nl": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "maxizoo.nl": {
+  "manual": true,
+  "card": "#196428"
+ },
+ "yourgift.nl": {
+  "manual": true,
+  "card": "#53123E"
+ },
+ "museum.nl": {
+  "manual": true,
+  "card": "#FADC64"
+ },
+ "natuurmonumenten.nl": {
+  "manual": true,
+  "card": "#36298B"
+ },
+ "lepainquotidien.com": {
+  "manual": true,
+  "card": "#FBF5EE"
+ },
+ "roompot.nl": {
+  "manual": true,
+  "card": "#26395F"
+ },
+ "denhaag.nl": {
+  "manual": true,
+  "card": "#F6D32B"
+ },
+ "multitankcard.nl": {
+  "manual": true,
+  "card": "#054A61"
+ },
+ "museumcadeaukaart.nl": {
+  "manual": true,
+  "card": "#FADC64"
+ },
+ "tangersupermarkt.nl": {
+  "manual": true,
+  "card": "#0D61AA"
+ },
+ "wijncadeau.nl": {
+  "manual": true,
+  "card": "#A42C54"
  }
 }
