@@ -545,5 +545,21 @@
  "runnersworld.nl": {
   "manual": true,
   "card": "#16E2F5"
+ },
+ "schoonenberg.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "tuincentrumovervecht.nl": {
+  "manual": true,
+  "card": "#63B32E"
+ },
+ "walibi.nl": {
+  "manual": true,
+  "card": "#F81700"
+ },
+ "yellowbrick.nl": {
+  "manual": true,
+  "card": "#000000"
  }
 }
