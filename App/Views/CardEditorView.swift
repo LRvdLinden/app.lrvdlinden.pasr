@@ -28,6 +28,11 @@ struct CardEditorView: View {
     @State private var photoMessage: String?
     @State private var confirmDelete = false
     @State private var pickingPlace = false
+    @State private var noteItems: [PhotosPickerItem] = []
+    @State private var coverItem: PhotosPickerItem?
+    @State private var coverRequest: CropRequest?
+    @State private var viewingPhoto: CardInfoSheet.PhotoItem?
+    @State private var checkingBalance: URL?
     @FocusState private var numberFocused: Bool
 
     struct Draft {
@@ -56,6 +61,44 @@ struct CardEditorView: View {
         var places: [CardPlace] = []
         /// Eigen saldo-pagina (voucher).
         var balanceURL = ""
+        /// Ticket, abonnement, kortingscode.
+        var details = CardDetails()
+        var hasRenewal = false
+        var renewsAt = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
+        var eventDate = Calendar.current.date(bySettingHour: 20, minute: 0, second: 0, of: .now.addingTimeInterval(7 * 86_400)) ?? .now
+        var costText = ""
+        /// Foto-notities (bonnetje, voorwaarden) met onderschrift, en de eigen voorkant.
+        var notePhotos: [Data] = []
+        var captions: [String] = []
+        var cover: Data?
+
+        var cost: Double? {
+            Double(costText.replacingOccurrences(of: ",", with: ".").filter { $0.isNumber || $0 == "." })
+        }
+
+        /// Kortingscode als tekst (standaard) of als barcode.
+        var codeAsText: Bool { kind == .code && details.codeAsBarcode != true }
+
+        /// De gegevens zoals ze bewaard worden (alleen wat bij de soort hoort).
+        var savedDetails: CardDetails {
+            var d = CardDetails()
+            switch kind {
+            case .ticket:
+                d.eventDate = eventDate
+                d.venue = details.venue?.trimmingCharacters(in: .whitespaces).nilIfEmpty
+                d.seat = details.seat?.trimmingCharacters(in: .whitespaces).nilIfEmpty
+            case .subscription:
+                d.renewsAt = hasRenewal ? renewsAt : nil
+                d.cost = cost
+                d.period = details.periodValue.rawValue
+            case .code:
+                d.codeAsBarcode = details.codeAsBarcode == true ? true : nil
+            default: break
+            }
+            let caps = Array(captions.prefix(notePhotos.count)).map { $0.trimmingCharacters(in: .whitespaces) }
+            d.captions = caps.allSatisfy(\.isEmpty) ? nil : caps
+            return d
+        }
 
         var balance: Double? {
             let cleaned = balanceText.replacingOccurrences(of: ",", with: ".")
@@ -64,14 +107,20 @@ struct CardEditorView: View {
         }
 
         var appearance: CardAppearance {
-            CardAppearance(storeName: storeName, number: number.isEmpty ? "0000000000000" : number, format: format,
+            var a = CardAppearance(storeName: storeName,
+                           number: number.isEmpty ? (kind == .subscription ? "" : kind == .code ? "CODE" : "0000000000000") : number,
+                           format: format,
                            colorHex: colorHex, kind: kind, isFavorite: isFavorite, logoData: logoData,
                            balance: kind == .voucher ? balance : nil, currencyCode: currencyCode,
-                           expiresAt: kind == .voucher && hasExpiry ? expiresAt : nil,
+                           expiresAt: kind.hasExpiry && hasExpiry ? expiresAt : nil,
                            logoStyle: logoFromWebsite
                                ? StoreLogoStyles.style(for: StoreTemplates.normalizedDomain(website)
                                    ?? StoreTemplates.template(id: templateID)?.domain)
                                : nil)
+            a.details = savedDetails
+            a.codeAsText = codeAsText
+            a.cover = cover
+            return a
         }
     }
 
@@ -103,6 +152,15 @@ struct CardEditorView: View {
         d.groupID = card.groupID
         d.places = card.places
         d.balanceURL = card.balanceURL ?? ""
+        let details = card.details
+        d.details = details
+        if let date = details.eventDate { d.eventDate = date }
+        d.hasRenewal = details.renewsAt != nil
+        if let date = details.renewsAt { d.renewsAt = date }
+        if let cost = details.cost { d.costText = cost.formatted(.number.precision(.fractionLength(2))) }
+        d.notePhotos = card.notePhotos
+        d.captions = details.captions ?? []
+        d.cover = card.coverPhoto
         _draft = State(initialValue: d)
     }
 
@@ -132,7 +190,7 @@ struct CardEditorView: View {
         d.storeName = storeName
         d.kind = kind
         d.number = number ?? ""
-        if let format { d.format = format }
+        if let format { d.format = format } else if kind == .ticket { d.format = .qr }
         d.colorHex = Brand.palette.randomElement() ?? "#6A5CFF"
         _draft = State(initialValue: d)
     }
@@ -141,7 +199,8 @@ struct CardEditorView: View {
 
     private var codeIsValid: Bool {
         let value = draft.number.trimmingCharacters(in: .whitespaces)
-        guard !value.isEmpty else { return false }
+        if value.isEmpty { return draft.kind == .subscription }   // een abonnement mag zonder lidnummer
+        if draft.codeAsText { return true }
         if draft.format.isLinear { return (try? BarcodeEncoder.encode(value, as: draft.format)) != nil }
         return true
     }
@@ -166,8 +225,22 @@ struct CardEditorView: View {
                 .disabled(existing?.isTemporary == true)
             if showsPlacePicker { placeSection }
             cardSection
-            if draft.kind == .voucher { voucherSection }
+            switch draft.kind {
+            case .voucher:
+                voucherSection
+                GiftGuideSection(guide: RemoteStores.guide(for: draft.templateID, storeName: draft.storeName),
+                                 balancePage: balancePageURL,
+                                 onCheckBalance: { url in
+                                     CardClipboard.copy(draft.number)
+                                     checkingBalance = url
+                                 })
+            case .code: discountSection
+            case .ticket: ticketSection
+            case .subscription: subscriptionSection
+            case .loyalty: EmptyView()
+            }
             logoSection
+            photosSection
             extrasSection
             if existing?.isTemporary != true {
                 CardPlacesSection(places: $draft.places, storeName: placesStoreName) { pickingPlace = true }
@@ -203,7 +276,8 @@ struct CardEditorView: View {
         }
         .onAppear {
             // New card from a store: open the scanner straight away, like the old card apps did.
-            if existing == nil && draft.number.isEmpty && ScannerView.isAvailable { showScanner = true }
+            if existing == nil && draft.number.isEmpty && ScannerView.isAvailable,
+               draft.kind != .code && draft.kind != .subscription { showScanner = true }
         }
         #endif
         .task {
@@ -239,6 +313,38 @@ struct CardEditorView: View {
             }
         }
         .onChange(of: frontItem) { _, item in Task { draft.frontPhoto = await loadImage(item, maxSide: 1600) } }
+        .onChange(of: noteItems) { _, items in
+            guard !items.isEmpty else { return }
+            Task {
+                for item in items where draft.notePhotos.count < Card.maxNotePhotos {
+                    if let data = await loadImage(item, maxSide: 1600) {
+                        draft.notePhotos.append(data)
+                        if draft.captions.count < draft.notePhotos.count { draft.captions.append("") }
+                    }
+                }
+                noteItems = []
+            }
+        }
+        .onChange(of: coverItem) { _, item in
+            Task {
+                guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
+                coverRequest = CropRequest(data: data)
+                coverItem = nil
+            }
+        }
+        .sheet(item: $coverRequest) { request in
+            if let cropper = CoverCropperView(imageData: request.data, onCrop: { draft.cover = $0 }) {
+                cropper
+            } else {
+                Text("Deze afbeelding kan niet worden geopend.").padding()
+            }
+        }
+        .sheet(item: $viewingPhoto) { item in PhotoViewer(data: item.data, title: item.title) }
+        #if canImport(SafariServices)
+        .sheet(item: Binding(get: { checkingBalance.map(IdentifiedURL.init) }, set: { checkingBalance = $0?.url })) { item in
+            SafariView(url: item.url).ignoresSafeArea()
+        }
+        #endif
         .onChange(of: backItem) { _, item in Task { draft.backPhoto = await loadImage(item, maxSide: 1600) } }
         .confirmationDialog("Deze kaart verwijderen?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Verwijder", role: .destructive) {
@@ -252,7 +358,8 @@ struct CardEditorView: View {
 
     private var codeSection: some View {
         Section {
-            TextField("Kaartnummer", text: $draft.number)
+            TextField(draft.kind == .subscription ? String(localized: "Lidnummer (optioneel)") : draft.kind.codeLabel,
+                      text: $draft.number)
                 .font(.system(.body, design: .monospaced))
                 .autocorrectionDisabled()
                 .focused($numberFocused)
@@ -261,13 +368,22 @@ struct CardEditorView: View {
                 #endif
                 .onChange(of: draft.number) { old, new in
                     // Typed by hand: pick EAN-13/EAN-8 automatically when the check digit fits.
-                    if numberFocused, draft.templateID == nil, old.isEmpty || draft.format.isLinear {
+                    if numberFocused, draft.templateID == nil, !draft.codeAsText, draft.kind != .ticket,
+                       old.isEmpty || draft.format.isLinear {
                         draft.format = BarcodeFormat.guess(for: new)
                     }
                 }
 
-            Picker("Soort code", selection: $draft.format) {
-                ForEach(BarcodeFormat.allCases) { Text($0.displayName).tag($0) }
+            if draft.kind == .code {
+                Toggle(isOn: Binding(get: { draft.details.codeAsBarcode == true },
+                                     set: { draft.details.codeAsBarcode = $0 ? true : nil }).animation()) {
+                    Label("Toon als barcode of QR", systemImage: "barcode")
+                }
+            }
+            if !draft.codeAsText {
+                Picker("Soort code", selection: $draft.format) {
+                    ForEach(BarcodeFormat.allCases) { Text($0.displayName).tag($0) }
+                }
             }
 
             HStack(spacing: 10) {
@@ -291,6 +407,8 @@ struct CardEditorView: View {
         } footer: {
             if let photoMessage {
                 Text(photoMessage)
+            } else if draft.codeAsText {
+                Text("Typ of plak de code. Zet Toon als barcode aan als de winkel hem wil scannen.")
             } else if !draft.number.isEmpty && !codeIsValid {
                 Text("Dit nummer past niet bij \(draft.format.displayName). Kies een andere soort code.")
                     .foregroundStyle(Brand.coral)
@@ -301,10 +419,12 @@ struct CardEditorView: View {
     private var cardSection: some View {
         Section("Kaart") {
             TextField("Winkel", text: $draft.storeName)
-            Picker("Soort", selection: $draft.kind) {
-                ForEach(CardKind.allCases) { Text($0.displayName).tag($0) }
+            Picker(selection: $draft.kind.animation()) {
+                ForEach(CardKind.allCases) { Label($0.displayName, systemImage: $0.symbol).tag($0) }
+            } label: {
+                Label("Soort", systemImage: draft.kind.symbol)
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
 
             ScrollView(.horizontal) {
                 HStack(spacing: 10) {
@@ -389,6 +509,131 @@ struct CardEditorView: View {
         }
     }
 
+    private var balancePageURL: URL? {
+        let raw = draft.balanceURL.trimmingCharacters(in: .whitespaces).nilIfEmpty ?? BalancePages.url(for: draft.templateID)
+        guard let raw, let url = URL(string: raw.hasPrefix("http") ? raw : "https://" + raw), url.scheme == "https" else { return nil }
+        return url
+    }
+
+    private var discountSection: some View {
+        Section("Kortingscode") {
+            TextField("Webshop, bijv. \(templateDomain ?? "winkel.nl")", text: $draft.website)
+                .textContentType(.URL)
+                .autocorrectionDisabled()
+                #if os(iOS)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                #endif
+            Toggle("Vervaldatum", isOn: $draft.hasExpiry.animation())
+            if draft.hasExpiry {
+                DatePicker("Geldig tot", selection: $draft.expiresAt, displayedComponents: .date)
+            }
+        }
+    }
+
+    private var ticketSection: some View {
+        Section("Ticket") {
+            DatePicker("Datum en tijd", selection: $draft.eventDate)
+            TextField("Locatie, bijv. Ziggo Dome", text: Binding(get: { draft.details.venue ?? "" },
+                                                                  set: { draft.details.venue = $0 }))
+            TextField("Plaats (rij, stoel, vak)", text: Binding(get: { draft.details.seat ?? "" },
+                                                                set: { draft.details.seat = $0 }))
+        }
+    }
+
+    private var subscriptionSection: some View {
+        Section {
+            HStack {
+                Text("Kosten")
+                TextField("0,00", text: $draft.costText)
+                    .multilineTextAlignment(.trailing)
+                    #if os(iOS)
+                    .keyboardType(.decimalPad)
+                    #endif
+                Text(draft.currencyCode).foregroundStyle(.secondary)
+            }
+            Picker("Per", selection: Binding(get: { draft.details.periodValue }, set: { draft.details.period = $0.rawValue })) {
+                ForEach(CardDetails.Period.allCases) { Text($0.name).tag($0) }
+            }
+            Toggle("Verlengdatum", isOn: $draft.hasRenewal.animation())
+            if draft.hasRenewal {
+                DatePicker("Verlengt op", selection: $draft.renewsAt, displayedComponents: .date)
+            }
+        } header: {
+            Text("Abonnement")
+        } footer: {
+            Text("Met een verlengdatum krijg je twee dagen ervoor een herinnering, zodat je op tijd kunt opzeggen.")
+        }
+    }
+
+    /// Eigen voorkant en tot vier foto-notities (bonnetje, voorwaarden).
+    private var photosSection: some View {
+        Section {
+            if let cover = draft.cover, let image = Image(data: cover) {
+                HStack(spacing: 12) {
+                    image.resizable().scaledToFill()
+                        .frame(width: 76, height: 76 / Brand.cardAspect)
+                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    Text("Eigen voorkant").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Verwijder", role: .destructive) { draft.cover = nil }
+                        .buttonStyle(.borderless)
+                }
+            }
+            PhotosPicker(selection: $coverItem, matching: .images) {
+                Label(draft.cover == nil ? "Foto als voorkant" : "Andere foto als voorkant", systemImage: "photo.artframe")
+            }
+            if let front = draft.frontPhoto {
+                Button { coverRequest = CropRequest(data: front) } label: {
+                    Label("Foto van de voorkant gebruiken", systemImage: "crop")
+                }
+            }
+
+            ForEach(Array(draft.notePhotos.enumerated()), id: \.offset) { index, data in
+                HStack(spacing: 12) {
+                    Button {
+                        viewingPhoto = CardInfoSheet.PhotoItem(data: data, title: caption(index).nilIfEmpty ?? String(localized: "Foto \(index + 1)"))
+                    } label: {
+                        if let image = Image(data: data) {
+                            image.resizable().scaledToFill()
+                                .frame(width: 44, height: 44)
+                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    TextField("Onderschrift, bijv. Bonnetje", text: Binding(get: { caption(index) }, set: { setCaption($0, at: index) }))
+                    Button(role: .destructive) { removePhoto(at: index) } label: {
+                        Image(systemName: "minus.circle.fill").foregroundStyle(.red)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(Text("Verwijder foto"))
+                }
+            }
+            if draft.notePhotos.count < Card.maxNotePhotos {
+                PhotosPicker(selection: $noteItems, maxSelectionCount: Card.maxNotePhotos - draft.notePhotos.count, matching: .images) {
+                    Label("Foto toevoegen", systemImage: "photo.badge.plus")
+                }
+            }
+        } header: {
+            Text("Foto's")
+        } footer: {
+            Text("Tot \(Card.maxNotePhotos) foto's per pas, zoals een bonnetje of de voorwaarden. Foto's blijven op je apparaten (iCloud); een kleine eigen voorkant gaat ook mee in je Pasr-account.")
+        }
+    }
+
+    private func caption(_ index: Int) -> String { index < draft.captions.count ? draft.captions[index] : "" }
+
+    private func setCaption(_ text: String, at index: Int) {
+        while draft.captions.count <= index { draft.captions.append("") }
+        draft.captions[index] = String(text.prefix(40))
+    }
+
+    private func removePhoto(at index: Int) {
+        guard index < draft.notePhotos.count else { return }
+        draft.notePhotos.remove(at: index)
+        if index < draft.captions.count { draft.captions.remove(at: index) }
+    }
+
     private var templateDomain: String? { StoreTemplates.normalizedDomain(StoreTemplates.template(id: draft.templateID)?.domain) }
 
     private var logoSection: some View {
@@ -415,12 +660,14 @@ struct CardEditorView: View {
                     Label("Uitknippen uit foto van de voorkant", systemImage: "rectangle.dashed")
                 }
             }
-            TextField("Website, bijv. \(templateDomain ?? "winkel.nl")", text: $draft.website)
-                .autocorrectionDisabled()
-                #if os(iOS)
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
-                #endif
+            if draft.kind != .code {   // bij een kortingscode staat de webshop al hierboven
+                TextField("Website, bijv. \(templateDomain ?? "winkel.nl")", text: $draft.website)
+                    .autocorrectionDisabled()
+                    #if os(iOS)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    #endif
+            }
             Button { Task { await fetchWebsiteLogo() } } label: {
                 Label(fetchingLogo ? "Logo ophalen…" : "Logo van de website ophalen", systemImage: "globe")
             }
@@ -493,7 +740,8 @@ struct CardEditorView: View {
         card.number = draft.number.trimmingCharacters(in: .whitespaces)
         card.format = draft.format
         card.colorHex = draft.colorHex
-        card.kind = draft.kind
+        // een soort die deze versie niet kent (van een nieuwere Pasr) blijft staan zolang je hem niet wijzigt
+        if CardKind(rawValue: card.kindRaw) != nil || draft.kind != .loyalty || existing == nil { card.kind = draft.kind }
         card.isFavorite = draft.isFavorite
         card.isLocked = draft.isLocked
         card.note = draft.note
@@ -501,7 +749,11 @@ struct CardEditorView: View {
         let balanceChanged = existing != nil && newBalance != nil && newBalance != card.balance
         card.balance = newBalance
         card.currencyCode = draft.kind == .voucher ? draft.currencyCode : nil
-        card.expiresAt = draft.kind == .voucher && draft.hasExpiry ? draft.expiresAt : nil
+        card.expiresAt = draft.kind.hasExpiry && draft.hasExpiry ? draft.expiresAt : nil
+        if draft.kind == .subscription { card.currencyCode = draft.currencyCode }
+        card.details = draft.savedDetails
+        card.setNotePhotos(draft.notePhotos)
+        card.coverPhoto = draft.cover
         card.pin = draft.pin.isEmpty ? nil : draft.pin
         card.logoData = draft.logoData
         card.logoFromWebsite = draft.logoData != nil && draft.logoFromWebsite

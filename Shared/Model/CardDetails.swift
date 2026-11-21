@@ -148,3 +148,8 @@ struct StoreGuide: Codable, Hashable {
         return f.date(from: checked)?.formatted(date: .abbreviated, time: .omitted)
     }
 }
+
+extension String {
+    /// nil voor een lege tekst.
+    var nilIfEmpty: String? { isEmpty ? nil : self }
+}

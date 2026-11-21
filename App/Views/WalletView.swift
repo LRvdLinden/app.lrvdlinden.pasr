@@ -36,9 +36,10 @@ struct WalletView: View {
     private let peek: CGFloat = 62
 
     enum Sheet: Identifiable {
-        case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?)
+        case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?), info(Card)
         var id: String {
             switch self {
+            case .info(let card): "info-\(card.id)"
             case .history(let card): "history-\(card.id)"
             case .spend(let card, _): "spend-\(card.id)"
             case .add: "add"
@@ -109,6 +110,13 @@ struct WalletView: View {
             case .edit(let card): NavigationStack { CardEditorView(card: card) }
             case .share(let card): ShareCardSheet(card: card)
             case .history(let card): CardHistorySheet(card: card)
+            case .info(let card):
+                CardInfoSheet(card: card) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(400))
+                        deleting = card
+                    }
+                }
             case .spend(let card, let place):
                 SpendSheet(card: card, mode: .spent, place: place, asked: true)
                     .presentationDetents([.medium])
@@ -246,7 +254,8 @@ struct WalletView: View {
                     if WalletPass.isAvailable, !card.number.isEmpty, !card.isTemporary {
                         WalletActionButton(card: card).id(card.id)
                     }
-                    actionButton("trash", label: "Verwijder", role: .destructive) { deleting = card }
+                    // details (gids, foto's, ticket, abonnement) en verwijderen, zoals de achterkant van een pas in Wallet
+                    actionButton("info.circle", label: "Details") { sheet = .info(card) }
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
 
@@ -388,7 +397,7 @@ struct WalletView: View {
     private var filterMenu: some View {
         Menu {
             Picker("Filter", selection: Binding(get: { filterRaw }, set: { new in withAnimation(.snappy) { filterRaw = new } })) {
-                ForEach(WalletFilter.basic, id: \.self) { f in
+                ForEach(WalletFilter.basic + WalletFilter.extra.filter { f in cards.contains { f.matches($0) } }, id: \.self) { f in
                     Label(f.title, systemImage: f.symbol).tag(f.rawValue)
                 }
             }
@@ -497,10 +506,12 @@ enum ScreenBrightness {
 
 /// Filter van de kaartenstapel.
 enum WalletFilter: Hashable {
-    case all, favorites, loyalty, voucher, personal, temporary
+    case all, favorites, loyalty, voucher, code, ticket, subscription, personal, temporary
     case group(UUID)
 
     static let basic: [WalletFilter] = [.all, .favorites, .loyalty, .voucher]
+    /// Alleen in het menu als je zo'n pas hebt.
+    static let extra: [WalletFilter] = [.code, .ticket, .subscription]
 
     init?(rawValue: String) {
         switch rawValue {
@@ -508,6 +519,9 @@ enum WalletFilter: Hashable {
         case "favorites": self = .favorites
         case "loyalty": self = .loyalty
         case "voucher": self = .voucher
+        case "code": self = .code
+        case "ticket": self = .ticket
+        case "subscription": self = .subscription
         case "personal": self = .personal
         case "temporary": self = .temporary
         default:
@@ -522,6 +536,9 @@ enum WalletFilter: Hashable {
         case .favorites: "favorites"
         case .loyalty: "loyalty"
         case .voucher: "voucher"
+        case .code: "code"
+        case .ticket: "ticket"
+        case .subscription: "subscription"
         case .personal: "personal"
         case .temporary: "temporary"
         case .group(let id): "group:\(id.uuidString)"
@@ -534,6 +551,9 @@ enum WalletFilter: Hashable {
         case .favorites: String(localized: "Favorieten")
         case .loyalty: String(localized: "Klantenkaarten")
         case .voucher: String(localized: "Cadeaukaarten en vouchers")
+        case .code: String(localized: "Kortingscodes")
+        case .ticket: String(localized: "Tickets")
+        case .subscription: String(localized: "Abonnementen")
         case .personal: String(localized: "Alleen privé")
         case .temporary: String(localized: "Tijdelijk met mij gedeeld")
         case .group: String(localized: "Gedeelde Pasr")
@@ -551,6 +571,9 @@ enum WalletFilter: Hashable {
         case .favorites: "star.fill"
         case .loyalty: "creditcard"
         case .voucher: "giftcard"
+        case .code: CardKind.code.symbol
+        case .ticket: CardKind.ticket.symbol
+        case .subscription: CardKind.subscription.symbol
         case .personal: "person.fill"
         case .temporary: "clock.fill"
         case .group: "person.2.fill"
@@ -563,6 +586,9 @@ enum WalletFilter: Hashable {
         case .favorites: card.isFavorite
         case .loyalty: card.kind == .loyalty
         case .voucher: card.kind == .voucher
+        case .code: card.kind == .code
+        case .ticket: card.kind == .ticket
+        case .subscription: card.kind == .subscription
         case .personal: card.groupID == nil && !card.isTemporary
         case .temporary: card.isTemporary
         case .group(let id): card.groupID == id
