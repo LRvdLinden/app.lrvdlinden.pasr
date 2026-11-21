@@ -521,5 +521,29 @@
  "mcd-supermarkt.nl": {
   "manual": true,
   "card": "#FFFFFF"
+ },
+ "mediq.nl": {
+  "manual": true,
+  "card": "#006983"
+ },
+ "mitra.nl": {
+  "manual": true,
+  "card": "#393E35"
+ },
+ "mr-fillet.shop": {
+  "manual": true,
+  "card": "#C61717"
+ },
+ "pourvous.nl": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "rotterdampas.nl": {
+  "manual": true,
+  "card": "#FFED00"
+ },
+ "runnersworld.nl": {
+  "manual": true,
+  "card": "#16E2F5"
  }
 }
