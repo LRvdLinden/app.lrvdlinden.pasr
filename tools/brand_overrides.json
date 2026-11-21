@@ -227,8 +227,8 @@
   "card": "#FFFFFF"
  },
  "plus.nl": {
-  "card": "#A2C11C",
-  "nowiki": true
+  "manual": true,
+  "card": "#FFFFFF"
  },
  "aldi.nl": {
   "file": "File:Aldi Nord 201x logo.svg",
@@ -425,5 +425,37 @@
  "lucardi.nl": {
   "manual": true,
   "card": "#510C76"
+ },
+ "zooplus.nl": {
+  "manual": true,
+  "card": "#227A05"
+ },
+ "totalenergies.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "snapfitness.com": {
+  "manual": true,
+  "card": "#C4161C"
+ },
+ "primera.nl": {
+  "manual": true,
+  "card": "#134395"
+ },
+ "sportcity.nl": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "pathe.nl": {
+  "manual": true,
+  "card": "#2D2926"
+ },
+ "profile.nl": {
+  "manual": true,
+  "card": "#DD261E"
+ },
+ "sanquin.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
  }
 }
