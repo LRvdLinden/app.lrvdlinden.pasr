@@ -3,7 +3,12 @@ name: Cadeaubon assets
 # Downloads card images (cadeaubon.nl or an official brand site) listed in a text file in the repo
 # (lines "<id> <url>") to assets-tmp/<id>.<ext> and commits that folder to its own branch, so they can be
 # processed locally. Never commits to main or gedeelde-pasr; delete the branch after use.
+# workflow_dispatch only works once this file is on the default branch. Until then (or instead) push a request
+# branch cadeaubon-req/<name> with the list; the assets then land on branch cadeaubon-assets-<name>.
+# Delete both branches after use.
 on:
+  push:
+    branches: ['cadeaubon-req/**']
   workflow_dispatch:
     inputs:
       list:
@@ -25,15 +30,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check branch
         env:
-          BRANCH: ${{ inputs.branch }}
+          BRANCH: ${{ inputs.branch || format('cadeaubon-assets-{0}', github.ref_name) }}
         run: |
+          BRANCH="${BRANCH/cadeaubon-req\//}"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
           case "$BRANCH" in
             main|gedeelde-pasr|"") echo "Branch $BRANCH is niet toegestaan"; exit 1;;
           esac
           echo "$BRANCH" | grep -Eq '^[A-Za-z0-9._/-]+$' || { echo "Ongeldige branchnaam"; exit 1; }
       - name: Download
         env:
-          LIST: ${{ inputs.list }}
+          LIST: ${{ inputs.list || 'assets-request.txt' }}
         run: |
           mkdir -p assets-tmp
           ok=0; fail=0
@@ -41,7 +48,12 @@ jobs:
             [ -z "$id" ] && continue
             case "$id" in \#*) continue;; esac
             echo "$id" | grep -Eq '^[a-z0-9-]+$' || { echo "ongeldig id: $id"; fail=$((fail+1)); continue; }
+            # alleen cadeaubon.nl, of een officiële merksite die in assets-hosts.txt (naast de lijst) staat
+            host=$(echo "$url" | sed -E 's#^https://([^/]+)/.*#\1#')
             case "$url" in https://*) ;; *) echo "geen https: $url"; fail=$((fail+1)); continue;; esac
+            if [ "$host" != "www.cadeaubon.nl" ] && ! grep -qxF "$host" "$(dirname "$LIST")/assets-hosts.txt" 2>/dev/null; then
+              echo "host niet toegestaan: $host"; fail=$((fail+1)); continue
+            fi
             path="${url%%\?*}"; ext="${path##*.}"; ext=$(echo "$ext" | tr 'A-Z' 'a-z')
             case "$ext" in png|jpg|jpeg|webp|gif|svg) ;; *) ext=bin;; esac
             if curl -fsSL --max-time 60 --retry 2 -A "Mozilla/5.0 (Pasr assets)" -o "assets-tmp/$id.$ext" "$url"; then
@@ -53,8 +65,6 @@ jobs:
           echo "Gedownload: $ok, mislukt: $fail"
           ls -la assets-tmp > assets-tmp/_index.txt
       - name: Commit to branch
-        env:
-          BRANCH: ${{ inputs.branch }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
