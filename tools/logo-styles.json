@@ -192,6 +192,9 @@
  "dille-kamille.nl": {
   "bg": "#FFFFFF"
  },
+ "diner-cadeau.nl": {
+  "src": "diner-cadeau.nl-logo-svg"
+ },
  "dirk.nl": {
   "src": "manual"
  },
@@ -301,6 +304,9 @@
  },
  "hansanders.nl": {
   "src": "File:Logo of Hans Anders.svg"
+ },
+ "healthcityzuid.nl": {
+  "src": "healthcityzuid.nl-header-svg"
  },
  "hema.nl": {
   "bg": "#E3191C",
@@ -772,11 +778,5 @@
  },
  "zooplus.nl": {
   "src": "zooplus.nl"
- },
- "healthcityzuid.nl": {
-  "src": "manual"
- },
- "diner-cadeau.nl": {
-  "bg": "#FFFFFF"
  }
 }

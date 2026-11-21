@@ -865,5 +865,9 @@
  "healthcityzuid.nl": {
   "card": "#000000",
   "manual": true
+ },
+ "diner-cadeau.nl": {
+  "card": "#7F1734",
+  "manual": true
  }
 }
