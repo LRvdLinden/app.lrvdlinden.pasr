@@ -329,5 +329,101 @@
   "logo_url": "https://www.open32.nl/static/version1793256005/frontend/Open32/Open32/nl_NL/images/logo.svg",
   "card": "#05141B",
   "recolour": "#FFFFFF"
+ },
+ "netflix.com": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "ov-chipkaart.nl": {
+  "manual": true,
+  "card": "#E6007E"
+ },
+ "schiphol.nl": {
+  "manual": true,
+  "card": "#0D0A52"
+ },
+ "spotify.com": {
+  "manual": true,
+  "card": "#1DB954"
+ },
+ "rijksmuseum.nl": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "mcdonalds.nl": {
+  "manual": true,
+  "card": "#DA291C"
+ },
+ "zalando.nl": {
+  "manual": true,
+  "card": "#FF4C00"
+ },
+ "mango.com": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "steampowered.com": {
+  "manual": true,
+  "card": "#1B2838"
+ },
+ "xbox.com": {
+  "manual": true,
+  "card": "#107C10"
+ },
+ "lego.com": {
+  "manual": true,
+  "card": "#E3000B"
+ },
+ "yves-rocher.nl": {
+  "manual": true,
+  "card": "#008061"
+ },
+ "libris.nl": {
+  "manual": true,
+  "card": "#ED1A21"
+ },
+ "laplace.com": {
+  "manual": true,
+  "card": "#658D1B"
+ },
+ "lekkerland.nl": {
+  "manual": true,
+  "card": "#E6001A"
+ },
+ "lookfantastic.nl": {
+  "manual": true,
+  "card": "#0C1219"
+ },
+ "missetam.nl": {
+  "manual": true,
+  "card": "#2B1054"
+ },
+ "starbucks.nl": {
+  "manual": true,
+  "card": "#00704A"
+ },
+ "sportsdirect.com": {
+  "manual": true,
+  "card": "#FFFFFF"
+ },
+ "pipoos.nl": {
+  "manual": true,
+  "card": "#DC0000"
+ },
+ "montel.nl": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "mooi.nl": {
+  "manual": true,
+  "card": "#1F1F1D"
+ },
+ "landal.nl": {
+  "manual": true,
+  "card": "#0097A2"
+ },
+ "lucardi.nl": {
+  "manual": true,
+  "card": "#510C76"
  }
 }
