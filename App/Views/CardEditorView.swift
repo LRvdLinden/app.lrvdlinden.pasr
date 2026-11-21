@@ -210,6 +210,47 @@ struct CardEditorView: View {
     private var canSave: Bool { !draft.storeName.trimmingCharacters(in: .whitespaces).isEmpty && codeIsValid }
 
     var body: some View {
+        photoSheets(form)
+    }
+
+    /// Foto-notities, eigen voorkant en saldo-checker (apart, zodat de compiler het formulier aankan).
+    private func photoSheets<Content: View>(_ content: Content) -> some View {
+        content
+            .onChange(of: noteItems) { _, items in
+                guard !items.isEmpty else { return }
+                Task {
+                    for item in items where draft.notePhotos.count < Card.maxNotePhotos {
+                        if let data = await loadImage(item, maxSide: 1600) {
+                            draft.notePhotos.append(data)
+                            if draft.captions.count < draft.notePhotos.count { draft.captions.append("") }
+                        }
+                    }
+                    noteItems = []
+                }
+            }
+            .onChange(of: coverItem) { _, item in
+                Task {
+                    guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
+                    coverRequest = CropRequest(data: data)
+                    coverItem = nil
+                }
+            }
+            .sheet(item: $coverRequest) { request in
+                if let cropper = CoverCropperView(imageData: request.data, onCrop: { draft.cover = $0 }) {
+                    cropper
+                } else {
+                    Text("Deze afbeelding kan niet worden geopend.").padding()
+                }
+            }
+            .sheet(item: $viewingPhoto) { item in PhotoViewer(data: item.data, title: item.title) }
+            #if canImport(SafariServices)
+            .sheet(item: Binding(get: { checkingBalance.map(IdentifiedURL.init) }, set: { checkingBalance = $0?.url })) { item in
+                SafariView(url: item.url).ignoresSafeArea()
+            }
+            #endif
+    }
+
+    private var form: some View {
         Form {
             Section {
                 CardFaceView(appearance: draft.appearance)
@@ -313,38 +354,6 @@ struct CardEditorView: View {
             }
         }
         .onChange(of: frontItem) { _, item in Task { draft.frontPhoto = await loadImage(item, maxSide: 1600) } }
-        .onChange(of: noteItems) { _, items in
-            guard !items.isEmpty else { return }
-            Task {
-                for item in items where draft.notePhotos.count < Card.maxNotePhotos {
-                    if let data = await loadImage(item, maxSide: 1600) {
-                        draft.notePhotos.append(data)
-                        if draft.captions.count < draft.notePhotos.count { draft.captions.append("") }
-                    }
-                }
-                noteItems = []
-            }
-        }
-        .onChange(of: coverItem) { _, item in
-            Task {
-                guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
-                coverRequest = CropRequest(data: data)
-                coverItem = nil
-            }
-        }
-        .sheet(item: $coverRequest) { request in
-            if let cropper = CoverCropperView(imageData: request.data, onCrop: { draft.cover = $0 }) {
-                cropper
-            } else {
-                Text("Deze afbeelding kan niet worden geopend.").padding()
-            }
-        }
-        .sheet(item: $viewingPhoto) { item in PhotoViewer(data: item.data, title: item.title) }
-        #if canImport(SafariServices)
-        .sheet(item: Binding(get: { checkingBalance.map(IdentifiedURL.init) }, set: { checkingBalance = $0?.url })) { item in
-            SafariView(url: item.url).ignoresSafeArea()
-        }
-        #endif
         .onChange(of: backItem) { _, item in Task { draft.backPhoto = await loadImage(item, maxSide: 1600) } }
         .confirmationDialog("Deze kaart verwijderen?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Verwijder", role: .destructive) {
