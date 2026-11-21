@@ -1,0 +1,63 @@
+name: Winkel publiceren
+
+# Zet een winkel uit de catalogus live zoals de knop Publiceer in beheer: open aanvragen voor die winkel gaan dicht als
+# "toegevoegd" en de aanvragers krijgen een pushmelding. Logt in met de beheer-secrets; die komen nooit in de log.
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: "Winkel-id (bijvoorbeeld dreamland)"
+        required: true
+      request_ids:
+        description: "Extra aanvraag-id's, met komma's (leeg = alleen automatisch gevonden aanvragen)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Alleen de open aanvragen tonen, niets publiceren"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      URL: https://xcfuiszcfgkpbixqzrjb.supabase.co/functions/v1/admin
+      A_USER: ${{ secrets.PASR_ADMIN_USER }}
+      A_PASS: ${{ secrets.PASR_ADMIN_PASSWORD }}
+      STORE_ID: ${{ inputs.id }}
+      REQ_IDS: ${{ inputs.request_ids }}
+      DRY: ${{ inputs.dry_run }}
+    steps:
+      - name: Publiceren
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          url = os.environ["URL"]
+          def call(body, token=None):
+              h = {"Content-Type": "application/json"}
+              if token: h["Authorization"] = "Bearer " + token
+              req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=h, method="POST")
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: return r.status, json.load(r)
+              except urllib.error.HTTPError as e:
+                  return e.code, json.loads(e.read() or b"{}")
+          st, r = call({"action": "login", "user": os.environ["A_USER"], "password": os.environ["A_PASS"]})
+          if st != 200: raise SystemExit(f"Inloggen mislukt: HTTP {st} {r.get('error')}")
+          token = r["token"]
+          st, r = call({"action": "store_requests", "status": "open"}, token)
+          out = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+          out.write("### Open aanvragen\n\n")
+          for g in r.get("groups", []):
+              line = f"- {g.get('name')} · {g.get('website') or '-'} · {g.get('count')}x · {g.get('kind')} · ids: {', '.join(g.get('ids', []))}"
+              print(line); out.write(line + "\n")
+          if os.environ["DRY"] == "true": raise SystemExit(0)
+          ids = [x.strip() for x in os.environ["REQ_IDS"].split(",") if x.strip()]
+          st, r = call({"action": "store_publish", "id": os.environ["STORE_ID"], "request_ids": ids}, token)
+          msg = f"store_publish {os.environ['STORE_ID']}: HTTP {st} ok={r.get('ok')} aanvragen dicht={r.get('closed')} pushmeldingen={r.get('sent')} push_ready={r.get('push_ready')} {r.get('error') or ''}"
+          print(msg); out.write("\n" + msg + "\n")
+          if st != 200: raise SystemExit(1)
+          PY
