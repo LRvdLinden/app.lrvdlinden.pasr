@@ -12,6 +12,8 @@ enum RemoteStores {
         var format: String
         var kind: String
         var aliases: [String]
+        /// Eerdere kaartkleuren uit het beheer: een kaart in zo'n kleur krijgt de nieuwe kleur mee.
+        var previousHex: [String]?
     }
 
     static var folder: URL? {
@@ -19,8 +21,39 @@ enum RemoteStores {
             .appending(path: "Stores", directoryHint: .isDirectory)
     }
     private static var listURL: URL? { folder?.appending(path: "stores.json") }
+    private static var removedURL: URL? { folder?.appending(path: "removed.json") }
 
     nonisolated(unsafe) private static var cache: [Stored]?
+    nonisolated(unsafe) private static var removedCache: Set<String>?
+    nonisolated(unsafe) private static var domainCache: Set<String>?
+
+    /// Winkels die het beheer heeft weggehaald, ook als ze in de app zitten: die staan niet meer in de lijst.
+    /// Bestaande kaarten van zo'n winkel blijven gewoon werken.
+    static func removedIDs() -> Set<String> {
+        if let removedCache { return removedCache }
+        let set = removedURL.flatMap { try? Data(contentsOf: $0) }
+            .flatMap { try? JSONDecoder().decode(Set<String>.self, from: $0) } ?? []
+        removedCache = set
+        return set
+    }
+
+    static func saveRemoved(_ ids: Set<String>) {
+        guard let folder, let url = removedURL else { return }
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        if let data = try? JSONEncoder().encode(ids) { try? data.write(to: url, options: .atomic) }
+        removedCache = ids
+    }
+
+    /// Het beheer levert voor dit domein een kant-en-klaar logo (en kaartkleur): dan geen stijl uit de app erop.
+    static func managesLogo(for domain: String) -> Bool {
+        if domainCache == nil { domainCache = Set(load().map(\.domain).filter { d in logoURL(for: d).map { FileManager.default.fileExists(atPath: $0.path) } ?? false }) }
+        return domainCache?.contains(domain) ?? false
+    }
+
+    /// Was dit een eerdere kaartkleur van deze winkel in het beheer?
+    static func isPastColour(_ hex: String, for id: String) -> Bool {
+        load().first { $0.id.lowercased() == id.lowercased() }?.previousHex?.contains { $0.caseInsensitiveCompare(hex) == .orderedSame } ?? false
+    }
 
     static func load() -> [Stored] {
         if let cache { return cache }
@@ -35,6 +68,7 @@ enum RemoteStores {
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         if let data = try? JSONEncoder().encode(list) { try? data.write(to: url, options: .atomic) }
         cache = list
+        domainCache = nil
     }
 
     static func logoURL(for domain: String) -> URL? {
@@ -46,12 +80,15 @@ enum RemoteStores {
         logoURL(for: domain).flatMap { try? Data(contentsOf: $0) }
     }
 
-    /// Als StoreTemplate; een winkel die ook in de app zit (zelfde id) wordt niet dubbel getoond.
+    /// Als StoreTemplate. Het beheer is leidend: een winkel die ook in de app zit (zelfde id) neemt naam, kleur,
+    /// logo en soort uit het beheer over.
     static var templates: [StoreTemplate] {
         load().map { s in
-            StoreTemplate(id: s.id, name: s.name, domain: s.domain, category: s.category, colorHex: s.cardHex,
-                          format: BarcodeFormat(rawValue: s.format) ?? .code128, aliases: s.aliases,
-                          kind: CardKind(rawValue: s.kind) ?? .loyalty)
+            var t = StoreTemplate(id: s.id, name: s.name, domain: s.domain, category: s.category, colorHex: s.cardHex,
+                                  format: BarcodeFormat(rawValue: s.format) ?? .code128, aliases: s.aliases,
+                                  kind: CardKind(rawValue: s.kind) ?? .loyalty)
+            t.managed = true
+            return t
         }
     }
 }

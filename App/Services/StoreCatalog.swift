@@ -14,7 +14,8 @@ final class StoreCatalog {
     /// Telt op bij elke wijziging, zodat lijsten opnieuw tekenen.
     private(set) var version = 0
     private var lastCheck: Date?
-    private let sinceKey = "pasr.storecatalog.since"
+    /// v2 (versie 1.0.2): één keer alles opnieuw ophalen, want sindsdien beheert het beheer ook de winkels in de app.
+    private let sinceKey = "pasr.storecatalog.since.v2"
 
     func refresh(force: Bool = false) async {
         guard AccountConfig.isConfigured else { return }
@@ -27,14 +28,20 @@ final class StoreCatalog {
         let rows = json["stores"] as? [[String: Any]] ?? []
         if !rows.isEmpty {
             var list = Dictionary(RemoteStores.load().map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            var removed = RemoteStores.removedIDs()
             for row in rows {
                 guard let id = row["id"] as? String else { continue }
-                if row["removed"] as? Bool == true { list[id] = nil; continue }
-                let store = RemoteStores.Stored(
+                if row["removed"] as? Bool == true { list[id] = nil; removed.insert(id); continue }
+                removed.remove(id)
+                var store = RemoteStores.Stored(
                     id: id, name: row["name"] as? String ?? id, domain: row["domain"] as? String ?? "",
                     category: row["category"] as? String ?? "Overig", cardHex: row["card_hex"] as? String ?? "#2B2F3A",
                     format: row["format"] as? String ?? "code128", kind: row["kind"] as? String ?? "loyalty",
                     aliases: row["aliases"] as? [String] ?? [])
+                // Kleur gewijzigd in het beheer: de oude onthouden, zodat kaarten in die kleur mee veranderen.
+                var past = list[id]?.previousHex ?? []
+                if let old = list[id]?.cardHex, old.caseInsensitiveCompare(store.cardHex) != .orderedSame { past.append(old) }
+                store.previousHex = past.isEmpty ? nil : past
                 list[id] = store
                 if let logo = (row["logo"] as? String).flatMap({ Data(base64Encoded: $0) }), let url = RemoteStores.logoURL(for: store.domain) {
                     try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -42,6 +49,7 @@ final class StoreCatalog {
                 }
             }
             RemoteStores.save(Array(list.values).sorted { $0.name < $1.name })
+            RemoteStores.saveRemoved(removed)
             version += 1
         }
         if let now = json["now"] as? String { UserDefaults.standard.set(now, forKey: sinceKey) }

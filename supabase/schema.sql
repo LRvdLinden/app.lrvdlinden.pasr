@@ -1026,7 +1026,9 @@ language sql security definer set search_path = public as $$
            'updated_at', s.updated_at)
          else jsonb_build_object('id', s.id, 'removed', true, 'updated_at', s.updated_at) end), '[]'::jsonb))
   from public.pasr_stores s
-  where (p_since is null and s.published) or (p_since is not null and s.updated_at > p_since);
+  -- Ook bij de eerste keer ophalen komen niet-gepubliceerde winkels mee (als removed): sinds versie 1.0.2 haalt het
+  -- beheer daarmee ook winkels weg die in de app zitten.
+  where p_since is null or s.updated_at > p_since;
 $$;
 
 create or replace function public.pasr_push_register(p_device text, p_token text, p_sandbox boolean default false,

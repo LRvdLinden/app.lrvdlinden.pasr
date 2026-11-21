@@ -12,9 +12,19 @@ struct StoreTemplate: Identifiable, Hashable {
     let format: BarcodeFormat
     var aliases: [String] = []
     var kind: CardKind = .loyalty
+    /// Komt uit het beheer (de catalogus): kleur en logo zijn daar al op elkaar afgestemd.
+    var managed = false
 
-    /// The card colour: the brand colour behind the store's logo when Pasr has one, else the house colour.
-    var cardHex: String { StoreLogoStyles.style(for: domain)?.card ?? colorHex }
+    /// The card colour: from the beheer when it manages the store, else the brand colour behind the store's logo
+    /// when Pasr has one, else the house colour.
+    var cardHex: String { managed ? colorHex : (StoreLogoStyles.style(for: domain)?.card ?? colorHex) }
+
+    func withID(_ id: String) -> StoreTemplate {
+        var t = StoreTemplate(id: id, name: name, domain: domain, category: category, colorHex: colorHex, format: format,
+                              aliases: aliases, kind: kind)
+        t.managed = managed
+        return t
+    }
 
     /// Lowercased words used to recognise the store in screenshot text.
     var matchTerms: [String] { ([name] + aliases).map { $0.lowercased() } }
@@ -22,11 +32,19 @@ struct StoreTemplate: Identifiable, Hashable {
 
 enum StoreTemplates {
     /// Alle winkels: die in de app plus die later in het beheer zijn toegevoegd (RemoteStores).
+    /// Het beheer is leidend: een winkel uit het beheer vervangt die in de app (zelfde id), en een winkel die het
+    /// beheer heeft weggehaald staat er niet meer tussen. De lijst in de app is de reserve (eerste start, offline).
     static var all: [StoreTemplate] {
         let remote = RemoteStores.templates
-        guard !remote.isEmpty else { return builtIn }
-        let ids = Set(builtIn.map(\.id))
-        return builtIn + remote.filter { !ids.contains($0.id) }
+        let removed = RemoteStores.removedIDs()
+        guard !remote.isEmpty || !removed.isEmpty else { return builtIn }
+        // Ids in het beheer zijn altijd kleine letters (vanderValk heet daar vandervalk): de app-id blijft, zodat
+        // bestaande kaarten gekoppeld blijven.
+        let byID = Dictionary(remote.map { ($0.id.lowercased(), $0) }, uniquingKeysWith: { a, _ in a })
+        let ids = Set(builtIn.map { $0.id.lowercased() })
+        return builtIn.filter { !removed.contains($0.id.lowercased()) }
+            .map { t in byID[t.id.lowercased()]?.withID(t.id) ?? t }
+            + remote.filter { !ids.contains($0.id.lowercased()) }
     }
 
     static let builtIn: [StoreTemplate] = [
@@ -379,7 +397,7 @@ enum StoreTemplates {
 
     static func template(id: String?) -> StoreTemplate? {
         guard let id else { return nil }
-        return all.first { $0.id == id }
+        return all.first { $0.id == id } ?? all.first { $0.id.lowercased() == id.lowercased() }
     }
 
     /// Finds a store whose name or alias appears as whole words in recognised text.
