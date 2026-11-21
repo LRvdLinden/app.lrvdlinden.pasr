@@ -88,6 +88,25 @@ struct AddCardView: View {
         .labelStyle(.titleAndIcon)
     }
 
+    /// Onder de keuze: kortingscode, ticket en abonnement voeg je zelf toe (ze staan niet in de winkellijst).
+    private var otherKinds: some View {
+        HStack(spacing: 8) {
+            ForEach(CardKind.others) { other in
+                Button { path.append(.custom(search, other)) } label: {
+                    Label(other.displayName, systemImage: other.symbol)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(Text("Nieuwe \(other.displayName.lowercased()) toevoegen"))
+            }
+        }
+    }
+
     /// Tijdens zoeken: "Kruidvat heeft ook een cadeaukaart. Toon cadeaukaart".
     @ViewBuilder private var otherKindHint: some View {
         if let other = otherKindMatch {
@@ -118,6 +137,9 @@ struct AddCardView: View {
         NavigationStack(path: $path) {
             ScrollView {
                 kindPicker
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                otherKinds
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                 scanBanner

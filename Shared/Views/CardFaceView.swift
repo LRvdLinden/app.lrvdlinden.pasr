@@ -320,7 +320,6 @@ struct CardFaceView: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.4)
                 .multilineTextAlignment(.center)
-                .textSelection(.enabled)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
