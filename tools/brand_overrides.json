@@ -589,5 +589,21 @@
  "denhaag.nl": {
   "manual": true,
   "card": "#F6D32B"
+ },
+ "multitankcard.nl": {
+  "manual": true,
+  "card": "#054A61"
+ },
+ "museumcadeaukaart.nl": {
+  "manual": true,
+  "card": "#FADC64"
+ },
+ "tangersupermarkt.nl": {
+  "manual": true,
+  "card": "#0D61AA"
+ },
+ "wijncadeau.nl": {
+  "manual": true,
+  "card": "#A42C54"
  }
 }

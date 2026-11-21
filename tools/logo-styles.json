@@ -396,7 +396,13 @@
   "src": "mrfillet.nl"
  },
  "msmode.nl": {},
+ "multitankcard.nl": {
+  "src": "mtc.nl"
+ },
  "museum.nl": {
+  "src": "museum.nl"
+ },
+ "museumcadeaukaart.nl": {
   "src": "museum.nl"
  },
  "natuurmonumenten.nl": {
@@ -589,6 +595,9 @@
  "swisssense.nl": {
   "src": "site"
  },
+ "tangersupermarkt.nl": {
+  "src": "tangermarkt.nl"
+ },
  "tango.nl": {},
  "terstal.nl": {
   "src": "site"
@@ -666,7 +675,9 @@
   "bg": "#F02900",
   "src": "File:Wibra logo 2021 RGB 198x99.png"
  },
- "wijncadeau.nl": {},
+ "wijncadeau.nl": {
+  "src": "wijn-cadeaukaart.nl"
+ },
  "xbox.com": {
   "src": "commons"
  },
