@@ -207,8 +207,8 @@
   "card": "bg"
  },
  "gall.nl": {
-  "file": "File:Logo Gall & Gall.png",
-  "card": "#312F2F"
+  "card": "#4D545D",
+  "manual": true
  },
  "payback.de": {
   "file": "File:Payback Logo 2023.svg",
@@ -605,5 +605,269 @@
  "wijncadeau.nl": {
   "manual": true,
   "card": "#A42C54"
+ },
+ "beddenreus.nl": {
+  "card": "#E3000F",
+  "manual": true
+ },
+ "febo.nl": {
+  "card": "#E32D38",
+  "manual": true
+ },
+ "bcc.nl": {
+  "card": "#3B68B0",
+  "manual": true
+ },
+ "fietsenwinkel.nl": {
+  "card": "#243ECC",
+  "manual": true
+ },
+ "fastnedcharging.com": {
+  "card": "#FFD913",
+  "manual": true
+ },
+ "kikocosmetics.com": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "esprit.nl": {
+  "card": "#BA0C2F",
+  "manual": true
+ },
+ "burgerking.nl": {
+  "card": "#D62300",
+  "manual": true
+ },
+ "americatoday.com": {
+  "card": "#000000",
+  "manual": true
+ },
+ "amazingoriental.nl": {
+  "card": "#5EB52B",
+  "manual": true
+ },
+ "boni.nl": {
+  "card": "#492C64",
+  "manual": true
+ },
+ "acsi.eu": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "costco.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "diergaardeblijdorp.nl": {
+  "card": "#0B8443",
+  "manual": true
+ },
+ "groenrijk.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "gulf.nl": {
+  "card": "#002876",
+  "manual": true
+ },
+ "benu.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "bidfood.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "bakkerbart.nl": {
+  "card": "#CB007C",
+  "manual": true
+ },
+ "bagelsbeans.nl": {
+  "card": "#ECD5AB",
+  "manual": true
+ },
+ "beterhoren.nl": {
+  "card": "#C5003E",
+  "manual": true
+ },
+ "bibliotheek.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "intratuin.nl": {
+  "card": "#47A23F",
+  "manual": true
+ },
+ "biggym.nl": {
+  "card": "#E6007E",
+  "manual": true
+ },
+ "bouwmaat.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "anwb.nl": {
+  "card": "#FFCC00",
+  "manual": true
+ },
+ "asadventure.nl": {
+  "card": "#2E5E3E",
+  "manual": true
+ },
+ "dirk.nl": {
+  "card": "#E20613",
+  "manual": true
+ },
+ "gamemania.nl": {
+  "card": "#FFDD3E",
+  "manual": true
+ },
+ "boekenbon.nl": {
+  "card": "#FFDD00",
+  "manual": true
+ },
+ "healthcity.nl": {
+  "card": "#000000",
+  "manual": true
+ },
+ "janlinders.nl": {
+  "card": "#00A0E2",
+  "manual": true
+ },
+ "kinepolis.nl": {
+  "card": "#1D1D1B",
+  "manual": true
+ },
+ "coolcat.nl": {
+  "card": "#E30613",
+  "manual": true
+ },
+ "jackjones.com": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "fitforfree.nl": {
+  "card": "#F4B52C",
+  "manual": true
+ },
+ "fit20.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "burgerszoo.nl": {
+  "card": "#2E5E3E",
+  "manual": true
+ },
+ "kwantum.nl": {
+  "card": "#FF5C00",
+  "manual": true
+ },
+ "artis.nl": {
+  "card": "#001E07",
+  "manual": true
+ },
+ "didi.nl": {
+  "card": "#717657",
+  "manual": true
+ },
+ "costesfashion.com": {
+  "card": "#000000",
+  "manual": true
+ },
+ "bataviastad.nl": {
+  "card": "#1C2B4A",
+  "manual": true
+ },
+ "hudsonsbay.nl": {
+  "card": "#000000",
+  "manual": true
+ },
+ "fashioncheque.com": {
+  "card": "#000000",
+  "manual": true
+ },
+ "fletcher.nl": {
+  "card": "#00437D",
+  "manual": true
+ },
+ "halfords.nl": {
+  "card": "#F28C00",
+  "manual": true
+ },
+ "kfc.nl": {
+  "card": "#E4002B",
+  "manual": true
+ },
+ "play.google.com": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "donner.nl": {
+  "card": "#EB5D17",
+  "manual": true
+ },
+ "hunkemoller.nl": {
+  "card": "#000000",
+  "manual": true
+ },
+ "bever.nl": {
+  "card": "#2C4D4B",
+  "manual": true
+ },
+ "broekhuis.nl": {
+  "card": "#0072CE",
+  "manual": true
+ },
+ "cineville.nl": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "ekoplaza.nl": {
+  "card": "#702483",
+  "manual": true
+ },
+ "expert.nl": {
+  "card": "#E95E0F",
+  "manual": true
+ },
+ "argos-oil.com": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "greenwheels.nl": {
+  "card": "#34AA52",
+  "manual": true
+ },
+ "centerparcs.nl": {
+  "card": "#045E51",
+  "manual": true
+ },
+ "efteling.com": {
+  "card": "#AA182C",
+  "manual": true
+ },
+ "anytimefitness.nl": {
+  "card": "#6E38D5",
+  "manual": true
+ },
+ "hanos.nl": {
+  "card": "#56004E",
+  "manual": true
+ },
+ "coffeecompany.nl": {
+  "card": "#2E0700",
+  "manual": true
+ },
+ "goossens.nl": {
+  "card": "#492D23",
+  "manual": true
+ },
+ "dungelmann.nl": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "argos.nl": {
+  "card": "#FFFFFF",
+  "manual": true
  }
 }
