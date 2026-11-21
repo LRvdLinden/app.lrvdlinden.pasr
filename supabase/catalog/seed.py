@@ -57,3 +57,13 @@ for i in range(0, len(rows), 25):
     res = query(f"insert into public.pasr_stores ({cols}) values\n{values}\non conflict (id) do nothing returning id;")
     done += len(res) if isinstance(res, list) else 0
 print(f"Catalogus: {done} nieuwe winkels in het beheer gezet ({len(rows)} in het bestand; de rest stond er al).")
+
+# Saldo-checkers van de nieuwe cadeaukaarten (bestaat er al een, dan blijft die staan).
+balance_file = here / "new_vouchers_balance.json"
+if balance_file.exists():
+    pages = json.loads(balance_file.read_text())
+    if pages:
+        values = ",\n".join(f"({lit(k)}, {lit(v)})" for k, v in pages.items())
+        res = query(f"insert into public.pasr_balance_pages (store_id, url) values\n{values}\n"
+                    "on conflict (store_id) do nothing returning store_id;")
+        print(f"Saldo-checkers: {len(res) if isinstance(res, list) else 0} nieuw ({len(pages)} in het bestand).")
