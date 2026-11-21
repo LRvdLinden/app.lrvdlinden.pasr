@@ -66,14 +66,6 @@
     "terms_url": "https://www.bioscoopbon.nl/algemene-voorwaarden",
     "checked": "2026-11-21"
   },
-  "blokkerb": {
-    "validity": "Niet meer in te wisselen",
-    "online": false,
-    "store": false,
-    "how": "Blokker verkoopt op dit moment geen cadeaubonnen en neemt ze ook niet aan. Ook Blokker-cadeaubonnen die vóór 1 januari 2025 zijn gekocht, kun je niet meer verzilveren.",
-    "terms_url": "https://www.blokker.nl/nl/veelgestelde-vragen/categorie/sparen-en-loyalty/",
-    "checked": "2026-11-21"
-  },
   "boekenbon": {
     "validity": "3 jaar na aankoop of activering (tenzij anders vermeld op de kaart)",
     "online": true,
@@ -287,12 +279,6 @@
     "terms_url": "https://www.vvvcadeaukaarten.nl/beheervergoeding",
     "checked": "2026-11-21"
   },
-  "wefashion2": {
-    "online": false,
-    "how": "De Miss Etam Cadeaukaart kun je op dit moment niet meer verzilveren op missetam.nl, en cadeaukaarten zijn online niet te koop. Online kun je wel met een Fashioncheque betalen.",
-    "terms_url": "https://www.missetam.nl/nl/veelgestelde-vragen/categorie/betalen/",
-    "checked": "2026-11-21"
-  },
   "wijncadeau": {
     "validity": "2 jaar na aankoop",
     "online": true,
@@ -320,12 +306,6 @@
     "online": true,
     "how": "Vul de code in bij het afrekenen op zalando.nl; wat overblijft staat in je account onder 'Mijn cadeaubon totaal' en gebruik je bij een volgende bestelling. Retouren worden teruggestort op dat tegoed.",
     "terms_url": "https://www.zalando.nl/faq/Vouchere/gift-cards-and-vouchers-general-info.html",
-    "checked": "2026-11-21"
-  },
-  "zeeman2": {
-    "online": false,
-    "how": "Volgens Zeeman is er op dit moment geen Zeeman-cadeaukaart. In de webshop kun je niet met een online cadeaukaart betalen.",
-    "terms_url": "https://www.zeeman.com/nl-nl/faqs/betalen",
     "checked": "2026-11-21"
   }
 }
