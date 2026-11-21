@@ -207,8 +207,8 @@
   "card": "bg"
  },
  "gall.nl": {
-  "file": "File:Logo Gall & Gall.png",
-  "card": "#312F2F"
+  "card": "#4D545D",
+  "manual": true
  },
  "payback.de": {
   "file": "File:Payback Logo 2023.svg",
@@ -452,6 +452,38 @@
  },
  "healthcity.nl": {
   "card": "#000000",
+  "manual": true
+ },
+ "janlinders.nl": {
+  "card": "#00A0E2",
+  "manual": true
+ },
+ "kinepolis.nl": {
+  "card": "#1D1D1B",
+  "manual": true
+ },
+ "coolcat.nl": {
+  "card": "#E30613",
+  "manual": true
+ },
+ "jackjones.com": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "fitforfree.nl": {
+  "card": "#F4B52C",
+  "manual": true
+ },
+ "fit20.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "burgerszoo.nl": {
+  "card": "#2E5E3E",
+  "manual": true
+ },
+ "kwantum.nl": {
+  "card": "#FF5C00",
   "manual": true
  }
 }

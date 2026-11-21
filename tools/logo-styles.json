@@ -114,7 +114,9 @@
  "burgerking.nl": {
   "src": "manual"
  },
- "burgerszoo.nl": {},
+ "burgerszoo.nl": {
+  "src": "manual"
+ },
  "c-and-a.com": {},
  "carwashkleiboer.nl": {
   "src": "https://www.carwashkleiboer.nl/here/wp-content/uploads/2024/08/carwash-kleiboer-logo-wit.svg"
@@ -135,7 +137,9 @@
   "bg": "#0090E3",
   "src": "File:Logo-coolblue-500x500.jpg"
  },
- "coolcat.nl": {},
+ "coolcat.nl": {
+  "src": "manual"
+ },
  "coop.nl": {
   "bg": "#FFFFFF",
   "src": "File:Coop Supermarkten logo.jpg"
@@ -227,10 +231,10 @@
   "bg": "#333333"
  },
  "fit20.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "fitforfree.nl": {
-  "opaque": true
+  "src": "manual"
  },
  "fletcher.nl": {
   "bg": "#FFFFFF"
@@ -252,7 +256,7 @@
   "src": "File:G-Star Raw logo.svg"
  },
  "gall.nl": {
-  "src": "File:Logo Gall & Gall.png"
+  "src": "manual"
  },
  "gamemania.nl": {
   "src": "manual"
@@ -317,10 +321,10 @@
   "src": "manual"
  },
  "jackjones.com": {
-  "opaque": true
+  "src": "manual"
  },
  "janlinders.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "jumbo.com": {
   "src": "File:Jumbo Logo.svg"
@@ -342,7 +346,9 @@
  "kikocosmetics.com": {
   "src": "manual"
  },
- "kinepolis.nl": {},
+ "kinepolis.nl": {
+  "src": "manual"
+ },
  "klm.com": {
   "src": "File:KLM logo.svg"
  },
@@ -351,7 +357,7 @@
   "src": "File:Kruidvat logo.svg"
  },
  "kwantum.nl": {
-  "bg": "#FF5C00"
+  "src": "manual"
  },
  "landal.nl": {
   "bg": "#FFFAE9"
