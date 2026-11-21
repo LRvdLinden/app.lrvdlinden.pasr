@@ -1,6 +1,6 @@
 {
  "acsi.eu": {
-  "bg": "#009932"
+  "src": "manual"
  },
  "action.com": {
   "src": "File:Action Nederland Logo 2020.svg"
@@ -15,9 +15,12 @@
   "bg": "#FFFFFF",
   "src": "File:Aldi Nord 201x logo.svg"
  },
+ "amazingoriental.nl": {
+  "src": "manual"
+ },
  "amazon.nl": {},
  "americatoday.com": {
-  "opaque": true
+  "src": "manual"
  },
  "anwb.nl": {
   "bg": "#FFFFFF"
@@ -32,7 +35,9 @@
   "src": "File:AVIA International logo.svg"
  },
  "bagelsbeans.nl": {},
- "bakkerbart.nl": {},
+ "bakkerbart.nl": {
+  "src": "manual"
+ },
  "bartsmit.nl": {
   "bg": "#FFDD00"
  },
@@ -45,11 +50,18 @@
  },
  "bauhaus.nl": {},
  "bcc.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
- "benu.nl": {},
+ "beddenreus.nl": {
+  "src": "manual"
+ },
+ "benu.nl": {
+  "src": "manual"
+ },
  "bever.nl": {},
- "bidfood.nl": {},
+ "bidfood.nl": {
+  "src": "manual"
+ },
  "bigbazar.eu": {
   "src": "File:Big Bazar Logo.svg"
  },
@@ -66,7 +78,9 @@
  "bol.com": {
   "bg": "#0000A5"
  },
- "boni.nl": {},
+ "boni.nl": {
+  "src": "manual"
+ },
  "boonsmarkt.nl": {
   "bg": "#FFFFFF"
  },
@@ -87,7 +101,9 @@
  "bruna.nl": {
   "src": "File:Bruna logo.png"
  },
- "burgerking.nl": {},
+ "burgerking.nl": {
+  "src": "manual"
+ },
  "burgerszoo.nl": {},
  "c-and-a.com": {},
  "carwashkleiboer.nl": {
@@ -114,7 +130,9 @@
   "bg": "#FFFFFF",
   "src": "File:Coop Supermarkten logo.jpg"
  },
- "costco.nl": {},
+ "costco.nl": {
+  "src": "manual"
+ },
  "costesfashion.com": {
   "bg": "#FFFFFF"
  },
@@ -140,7 +158,7 @@
   "bg": "#FFFFFF"
  },
  "diergaardeblijdorp.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "dille-kamille.nl": {
   "bg": "#FFFFFF"
@@ -169,7 +187,9 @@
   "bg": "#651C77"
  },
  "ep.nl": {},
- "esprit.nl": {},
+ "esprit.nl": {
+  "src": "manual"
+ },
  "esso.nl": {
   "src": "File:Esso 1934.svg"
  },
@@ -185,13 +205,13 @@
   "bg": "#FFFFFF"
  },
  "fastnedcharging.com": {
-  "opaque": true
+  "src": "manual"
  },
  "febo.nl": {
-  "bg": "#E32D38"
+  "src": "manual"
  },
  "fietsenwinkel.nl": {
-  "opaque": true
+  "src": "manual"
  },
  "firezone.nl": {
   "bg": "#333333"
@@ -237,8 +257,12 @@
  "greenwheels.nl": {
   "bg": "#FFFFFF"
  },
- "groenrijk.nl": {},
- "gulf.nl": {},
+ "groenrijk.nl": {
+  "src": "manual"
+ },
+ "gulf.nl": {
+  "src": "manual"
+ },
  "hanos.nl": {
   "bg": "#57004E"
  },
@@ -301,7 +325,7 @@
   "bg": "#FFFFFF"
  },
  "kikocosmetics.com": {
-  "opaque": true
+  "src": "manual"
  },
  "kinepolis.nl": {},
  "klm.com": {

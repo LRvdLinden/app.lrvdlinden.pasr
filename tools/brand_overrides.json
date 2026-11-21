@@ -329,5 +329,81 @@
   "logo_url": "https://www.open32.nl/static/version1793256005/frontend/Open32/Open32/nl_NL/images/logo.svg",
   "card": "#05141B",
   "recolour": "#FFFFFF"
+ },
+ "beddenreus.nl": {
+  "card": "#E3000F",
+  "manual": true
+ },
+ "febo.nl": {
+  "card": "#E32D38",
+  "manual": true
+ },
+ "bcc.nl": {
+  "card": "#3B68B0",
+  "manual": true
+ },
+ "fietsenwinkel.nl": {
+  "card": "#243ECC",
+  "manual": true
+ },
+ "fastnedcharging.com": {
+  "card": "#FFD913",
+  "manual": true
+ },
+ "kikocosmetics.com": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "esprit.nl": {
+  "card": "#BA0C2F",
+  "manual": true
+ },
+ "burgerking.nl": {
+  "card": "#D62300",
+  "manual": true
+ },
+ "americatoday.com": {
+  "card": "#000000",
+  "manual": true
+ },
+ "amazingoriental.nl": {
+  "card": "#5EB52B",
+  "manual": true
+ },
+ "boni.nl": {
+  "card": "#492C64",
+  "manual": true
+ },
+ "acsi.eu": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "costco.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "diergaardeblijdorp.nl": {
+  "card": "#00843D",
+  "manual": true
+ },
+ "groenrijk.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "gulf.nl": {
+  "card": "#002876",
+  "manual": true
+ },
+ "benu.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "bidfood.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "bakkerbart.nl": {
+  "card": "#CB007C",
+  "manual": true
  }
 }
