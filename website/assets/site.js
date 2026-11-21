@@ -211,6 +211,18 @@
   io.observe(demo);
 })();
 
+// Bento: de bewegende beelden lopen alleen terwijl hun kaart in beeld is (en niet bij minder beweging)
+(function () {
+  const cards = document.querySelectorAll('.features .feature.has-visual');
+  if (!cards.length) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+    cards.forEach(c => c.classList.add('play'));
+    return;
+  }
+  const io = new IntersectionObserver(entries => entries.forEach(e => e.target.classList.toggle('play', e.isIntersecting)), { threshold: 0.2 });
+  cards.forEach(c => io.observe(c));
+})();
+
 // Deelbare #-links: een linkje naast elke kop (tik = adres gekopieerd), en een gedeelde vraag gaat vanzelf open
 (function () {
   const targets = document.querySelectorAll('section[id] h2, article[id] h3, .ft-wrap[id] h3, details[id] summary, main h2[id]');

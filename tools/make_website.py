@@ -126,35 +126,33 @@ ICONS = {
     "ticket": '<path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 0 0 0-4zM14 7v10" stroke-dasharray="0"/>',
     "photo": '<path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 16l4.5-4.5 3.5 3.5 2.5-2.5L20 18M15.5 8.5h.01"/>',
     "choice": '<path d="M4 5h7v14H4zM13 5h7v14h-7zM6.5 15h2M15.5 15h2"/>',
+    "sort": '<path d="M7 4v16M4 17l3 3 3-3M14 6h6M14 12h4M14 18h2"/>',
 }
 
 def icon(name):
     return f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{ICONS[name]}</svg>'
 
-# Bento: (icoon, kleur, titel, tekst, breedte in kolommen van 6, beeld)
+# Bento: (icoon, kleur, titel, tekst, breedte in kolommen van 6, beeld).
+# Breedtes per rij samen 6; een rij 4+2 wordt altijd gevolgd door een rij 2+4, zodat ook het tablet-raster (2 kolommen) sluit.
 FEATURES = [
     ("flip", "#6A5CFF", "Kaarten die omdraaien", "Tik op een kaart: hij komt naar voren, draait om en toont de barcode of QR-code. Je scherm gaat vanzelf op volle helderheid.", 4, "flip"),
-    ("scan", "#FF6B57", "Toevoegen in seconden", "Kies je winkel en scan de barcode met de camera. Een foto of screenshot van je pas werkt ook.", 2, "scan"),
-    ("record", "#FF375F", "Overstappen met één opname", "Neem je scherm op terwijl je in je oude app je kaarten langsgaat. Pasr vindt ze allemaal.", 3, "record"),
+    ("scan", "#FF6B57", "Toevoegen in seconden", "Kies je winkel en scan de barcode met de camera. Zoom in op een kleine code en zet de zaklamp aan als hij glimt. Een foto of screenshot van je pas werkt ook.", 2, "scan"),
+    ("choice", "#17162A", "Eerst kiezen wat je toevoegt", "Bij Kaart toevoegen kies je eerst: klantenkaart of cadeaukaart. Zo zie je meteen de juiste winkels.", 2, "choice"),
+    ("ticket", "#6A5CFF", "Meer dan klantenkaarten", "Naast klantenkaarten en cadeaukaarten bewaar je ook kortingscodes, coupons, tickets en abonnementen, elk met hun eigen code bij de hand.", 4, "types"),
+    ("record", "#FF375F", "Overstappen uit elke app", "Neem je scherm op terwijl je in je oude app je kaarten langsgaat, kies screenshots, of importeer een CSV-bestand. Pasr vindt ze allemaal.", 3, "record"),
     ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 3, "watch"),
     ("history", "#0A84FF", "Je gebruik en uitgaven, zoals in Wallet", "Zie wanneer en bij welk filiaal je een kaart liet zien. Bij een cadeaukaart vraagt Pasr na het tonen wat je uitgaf: je ziet het tegoed afnemen, met elke uitgave in de lijst. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar vanzelf bij.", 4, "history"),
-    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand. Met Saldo checken kijk je het tegoed na bij de uitgever, je kaartnummer staat klaar om te plakken. <a href=\"/cadeaubon/\">Cadeaubon-gids</a>", 2, "gift"),
+    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand. Met Saldo checken kijk je het tegoed na bij de uitgever, je kaartnummer staat klaar om te plakken.", 2, "gift"),
+    ("bell", "#2ED3A6", "Herinneringen, ook per <span class=\"nw\">e-mail</span>", "Nog tegoed op een cadeaukaart? Pasr herinnert je eraan, ook als de kaart geen vervaldatum heeft. Als melding op je iPhone of per e-mail.", 2, "remind"),
+    ("guide", "#E2683C", "Een gids bij elke kaart", "Bij een cadeaukaart zie je hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Bij een klantenkaart zie je welke voordelen het programma geeft. Lees ze ook hier: de <a href=\"/cadeaubon/\">Cadeaubon-gids</a> en de <a href=\"/klantenkaart/\">Klantenkaart-gids</a>.", 4, "guide"),
     ("lock", "#17162A", "Versleuteld en met Face ID", "Kaartnummers versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID en blokkeer screenshots van je codes.", 3, "lock"),
     ("share", "#6A5CFF", "Samen of even delen", "Een gedeelde Pasr met je gezin, of een kaart tijdelijk uitlenen met een einddatum. <a href=\"#delen\">Zo werkt het</a>", 3, "share"),
     ("pin", "#FF6B57", "Je kaart verschijnt bij de winkel", "Loop je een winkel binnen, dan staat je kaart klaar met een melding. Zet je vaste filiaal zelf vast, kies welke filialen op je Wallet-pas komen, en met “Ook als Pasr dicht is” zet Pasr de winkels om je heen vanzelf klaar als je ergens anders bent. <a href=\"#waarom-verschijnt-mijn-kaart-niet-altijd-bij-de-winkel\">Zo werkt het</a>", 4, "near"),
     ("logo", "#1F9E6A", "Met het logo van je winkel", f"{N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers met hun eigen logo en kleur. <a href=\"/kaarten/\">Bekijk ze allemaal</a>. Mis je er een? Vraag hem aan in de app; hij komt erbij zonder update.", 2, "logos"),
+    ("photo", "#FF6B57", "Tot 4 foto's per pas", "Bewaar tot vier foto's bij een pas, zoals de achterkant of een bon, en maak een eigen foto de voorkant.", 2, "photos"),
+    ("sort", "#0A84FF", "Slim sorteren", "Standaard staan je kaarten van A tot Z. Kies Meest gebruikt of In de buurt, en die kaarten staan bovenaan, ook in je widgets en op je Apple Watch.", 4, "sort"),
     ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 3, "cloud"),
     ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 3, "theme"),
-]
-
-# Nieuw in versie 1.0.2 (afgesproken in features-102.md). Zelfde bento als FEATURES; breedtes per rij samen 6.
-NEW_102 = [
-    ("guide", "#E2683C", "Cadeaubon-gids per merk", "Bij je cadeaukaart zie je hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Lees ze ook hier: de <a href=\"/cadeaubon/\">Cadeaubon-gids</a> en de <a href=\"/klantenkaart/\">Klantenkaart-gids</a>.", 4, None),
-    ("bell", "#2ED3A6", "Tegoed-herinneringen", "Nog tegoed op een cadeaukaart? Pasr herinnert je eraan, ook als de kaart geen vervaldatum heeft.", 2, None),
-    ("mail", "#0A84FF", "Meldingen ook per e-mail", "Herinneringen en meldingen kun je nu ook per e-mail krijgen, naast pushmeldingen op je iPhone.", 2, None),
-    ("ticket", "#6A5CFF", "Kortingscodes, tickets en abonnementen", "Naast klantenkaarten en cadeaukaarten bewaar je nu ook kortingscodes, tickets en abonnementen in Pasr.", 4, None),
-    ("photo", "#FF6B57", "Tot 4 foto's per pas", "Bewaar tot vier foto's bij een pas en maak een eigen foto de voorkant: bijsnijden en positioneren doe je in de app.", 3, None),
-    ("choice", "#17162A", "Eerst kiezen: klantenkaart of cadeaukaart", "Bij Kaart toevoegen kies je eerst wat je toevoegt, een klantenkaart of een cadeaukaart, zodat je meteen de juiste lijst ziet.", 3, None),
 ]
 
 FAQ = [
@@ -272,11 +270,15 @@ def feature_visual(kind):
         return f'<div class="fv fv-logos">{tiles}</div>'
     if kind == "scan":
         _, svg = bars("871234567890")
-        return f'<div class="fv fv-scan"><span class="fv-frame"><span class="fv-code">{svg}</span><i></i></span></div>'
+        torch = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v4l-2 3v11h-4V10L8 7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+        return (f'<div class="fv fv-scan" aria-hidden="true"><span class="fv-frame"><span class="fv-code">{svg}</span><i></i></span>'
+                f'<span class="fv-tools"><b class="fv-torch">{torch}</b><b class="fv-zoom"><span class="z1">1×</span><span class="z2">2×</span></b></span></div>')
     if kind == "record":
         cols = ["#00A0E2", "#E2001A", "#0058A3", "#FFD800"]
         cards = "".join(f'<span style="background:{c}"></span>' for c in cols + cols)
-        return f'<div class="fv fv-record"><span class="fv-phone"><b></b><span class="fv-strip">{cards}</span></span></div>'
+        sources = "".join(f'<span class="s{i}">{t}</span>' for i, t in enumerate(["Schermopname", "Screenshots", "CSV-bestand"]))
+        return (f'<div class="fv fv-record" aria-hidden="true"><span class="fv-phone"><b></b><span class="fv-strip">{cards}</span></span>'
+                f'<span class="fv-src">{sources}</span></div>')
     if kind == "watch":
         return '<div class="fv fv-watch"><span class="fv-band"></span><span class="fv-wcase"><span class="fv-wcard"></span><span class="fv-wcard c2"></span></span></div>'
     if kind == "cloud":
@@ -298,6 +300,48 @@ def feature_visual(kind):
                 '<span class="fv-pulse"></span><span class="fv-me"></span>'
                 '<span class="fv-note"><img src="/assets/icon.png" alt=""><span><b>Je bent bij Albert Heijn</b>Tik om je kaart te tonen.</span></span>'
                 '</div>')
+    if kind == "choice":
+        return ('<div class="fv fv-choice" aria-hidden="true">'
+                '<span class="opt o1"><i class="ic-l"></i>Klantenkaart</span>'
+                '<span class="opt o2"><i class="ic-g"></i>Cadeaukaart</span>'
+                '<span class="fv-tap"></span></div>')
+    if kind == "types":
+        _, svg = bars("871234567890")
+        qr = "".join(f'<i style="grid-area:{1 + k // 5}/{1 + k % 5}"></i>' for k in range(25) if (k * 7 + k // 3) % 3 != 1)
+        return ('<div class="fv fv-types" aria-hidden="true">'
+                '<span class="ty t1"><small>Kortingscode</small><b class="code">ZOMER20</b></span>'
+                '<span class="ty t2"><small>Coupon</small><b>−€ 5,00</b><em>bij € 25</em></span>'
+                f'<span class="ty t3"><small>Ticket</small><span class="qr">{qr}</span><em>Rij 7 · stoel 12</em></span>'
+                f'<span class="ty t4"><small>Abonnement</small><b>Sportschool</b><span class="bar">{svg}</span></span>'
+                '</div>')
+    if kind == "remind":
+        mail = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+        return ('<div class="fv fv-remind" aria-hidden="true">'
+                '<span class="nt n1"><img src="/assets/icon.png" alt=""><span><b>Nog € 12,50 tegoed</b>op je bol cadeaukaart</span></span>'
+                f'<span class="nt n2"><span class="mail">{mail}</span><span><b>Per e-mail</b>Herinnering van Pasr</span></span>'
+                '</div>')
+    if kind == "guide":
+        colours = _card_colours()
+        check = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        rows = [("Geldig", "2 jaar na aankoop"), ("Inwisselen", "Online en in de winkel"), ("Voorwaarden", "Officiële site")]
+        items = "".join(f'<li style="--i:{i}"><span class="ck">{check}</span><span class="t"><b>{a}</b>{b}</span></li>' for i, (a, b) in enumerate(rows))
+        card = f'<span class="gc" style="background:{colours.get("bol.com", "#0000A4")}"><img src="/assets/logos/bol.com.png" alt=""><small>Cadeaukaart</small></span>'
+        return f'<div class="fv fv-guide" aria-hidden="true">{card}<div class="sheet"><span class="hd">Gids</span><ul>{items}</ul></div></div>'
+    if kind == "photos":
+        return ('<div class="fv fv-photos" aria-hidden="true"><span class="frame">'
+                '<span class="ph p0"></span><span class="ph p1"></span><span class="ph p2"></span><span class="ph p3"></span>'
+                '<span class="badge">Voorkant</span></span>'
+                '<span class="thumbs"><i class="p0"></i><i class="p1"></i><i class="p2"></i><i class="p3"></i></span></div>')
+    if kind == "sort":
+        colours = _card_colours()
+        # (domein, naam, plek bij A-Z, bij Meest gebruikt, bij In de buurt, extra bij meest gebruikt, extra bij in de buurt)
+        rows = [("ah.nl", "Albert Heijn", 0, 1, 2, "18×", "1,2 km"), ("hema.nl", "HEMA", 1, 3, 0, "3×", "200 m"),
+                ("ikea.com", "IKEA", 2, 2, 3, "6×", "8 km"), ("kruidvat.nl", "Kruidvat", 3, 0, 1, "24×", "650 m")]
+        items = "".join(f'<li style="--a:{a};--b:{b};--c:{c}"><span class="lg" style="background:{colours.get(d, "#2B2F3A")}"><img src="/assets/logos/{d}.png" alt=""></span>'
+                        f'<span class="nm">{n}</span><span class="mt"><span class="m1">{x}</span><span class="m2">{y}</span></span></li>'
+                        for d, n, a, b, c, x, y in rows)
+        return ('<div class="fv fv-sort" aria-hidden="true"><span class="seg"><i></i><span>A tot Z</span><span>Meest gebruikt</span><span>In de buurt</span></span>'
+                f'<ul>{items}</ul></div>')
     if kind == "theme":
         return '<div class="fv fv-theme"><span class="fv-toggle"><b></b></span></div>'
     return ""
@@ -305,7 +349,7 @@ def feature_visual(kind):
 def feature_card(name, color, title, text, span, visual):
     dark = " dark" if color == "#17162A" else ""
     vis = feature_visual(visual) if visual else ""
-    return (f'''      <article class="feature span{span}{dark}{" has-visual" if vis else ""}" id="{anchor(title)}">
+    return (f'''      <article class="feature span{span}{dark}{" has-visual" if vis else ""}" id="{anchor(re.sub(r"<[^>]+>", "", title))}">
         {vis}
         <div class="chip" style="--c:{color}">{icon(name)}</div>
         <h3>{title}</h3>
@@ -387,7 +431,6 @@ def page():
     _, watch_svg = bars(CARDS[-1][3])
     watch_num = CARDS[-1][3] + str(v.check(CARDS[-1][3]))
     features = "\n".join(feature_card(*f) for f in FEATURES)
-    new102 = "\n".join(feature_card(*f) for f in NEW_102)
     faq = "\n".join(f'''      <details id="{anchor(q)}">
         <summary>{q}</summary>
         <p>{a}</p>
@@ -400,7 +443,7 @@ def page():
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-itunes-app" content="app-id=6829229123">
   <title>Klantenkaarten-app voor iPhone en Apple Watch | Pasr</title>
-  <meta name="description" content="Al je klantenkaarten, cadeaukaarten, kortingscodes en tickets in één app op iPhone, iPad en Apple Watch. Gratis, zonder reclame, nu met cadeaubon-gids en tegoed-herinneringen.">
+  <meta name="description" content="Al je klantenkaarten, cadeaukaarten, kortingscodes en tickets in één app op iPhone, iPad en Apple Watch. Gratis, zonder reclame, met een cadeaubon-gids en tegoed-herinneringen.">
   <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, Klarna klantenkaarten overzetten, alternatief voor Klarna klantenkaarten, Supercards alternatief, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="author" content="Pasr">
@@ -436,7 +479,7 @@ def page():
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl","sameAs":["https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"]}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
-    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/og/home.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Met {N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers van winkels, elk met logo en kleur.","featureList":["Klantenkaarten en cadeaukaarten bewaren","{N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers met logo en kleur","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum","Kaart tonen bij de winkel, ook als de app dicht is","Tegoed van cadeaukaarten bijhouden","Geschiedenis per kaart","Apple Wallet-pas die zichzelf bijwerkt","Cadeaubon-gids per merk: geldigheid, inwisselen en voorwaarden","Tegoed-herinneringen, ook zonder vervaldatum","Meldingen ook per e-mail","Kortingscodes, tickets en abonnementen bewaren","Tot 4 foto's per pas met een eigen voorkant","Bij toevoegen kiezen tussen klantenkaart en cadeaukaart"],"downloadUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","installUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
+    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/og/home.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Met {N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers van winkels, elk met logo en kleur.","featureList":["Klantenkaarten en cadeaukaarten bewaren","{N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers met logo en kleur","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum","Kaart tonen bij de winkel, ook als de app dicht is","Tegoed van cadeaukaarten bijhouden","Geschiedenis per kaart","Apple Wallet-pas die zichzelf bijwerkt","Cadeaubon-gids per merk: geldigheid, inwisselen en voorwaarden","Tegoed-herinneringen, ook zonder vervaldatum","Meldingen ook per e-mail","Programmagids bij klantenkaarten: voordelen per programma","Kortingscodes, coupons, tickets en abonnementen bewaren","Tot 4 foto's per pas met een eigen voorkant","Bij toevoegen kiezen tussen klantenkaart en cadeaukaart","Slim sorteren: A tot Z, meest gebruikt of winkels in de buurt bovenaan","Scannen met zoom en zaklamp","Importeren uit andere apps via schermopname, screenshots of een CSV-bestand"],"downloadUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","installUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
   ]}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
 </head>
