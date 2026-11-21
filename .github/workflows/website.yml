@@ -34,6 +34,8 @@ jobs:
               "// Written by the Website workflow (public values).\nwindow.PASR_ACCOUNT = " + json.dumps({"url": url, "key": key}) + ";\n")
           print("Account config:", "set" if url and key else "empty (secrets PASR_SUPABASE_URL / PASR_SUPABASE_KEY missing)")
           PY
+      - name: Versie achter css en js (geen oude bestanden uit de cache)
+        run: python3 tools/version_assets.py
       - name: Install lftp
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
       - name: Upload via FTPS
