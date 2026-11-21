@@ -44,7 +44,10 @@ final class StoreCatalog {
             var removed = RemoteStores.removedIDs()
             for row in rows {
                 guard let id = row["id"] as? String else { continue }
-                if row["removed"] as? Bool == true { list[id] = nil; removed.insert(id); continue }
+                if row["removed"] as? Bool == true {
+                    if list[id]?.cover != nil { RemoteStores.saveCover(nil, for: id) }
+                    list[id] = nil; removed.insert(id); continue
+                }
                 removed.remove(id)
                 var store = RemoteStores.Stored(
                     id: id, name: row["name"] as? String ?? id, domain: row["domain"] as? String ?? "",
@@ -56,11 +59,18 @@ final class StoreCatalog {
                 if let old = list[id]?.cardHex, old.caseInsensitiveCompare(store.cardHex) != .orderedSame { past.append(old) }
                 store.previousHex = past.isEmpty ? nil : past
                 store.guide = row.keys.contains("guide") ? StoreGuide(json: row["guide"]) : list[id]?.guide
-                list[id] = store
                 if let logo = (row["logo"] as? String).flatMap({ Data(base64Encoded: $0) }), let url = RemoteStores.logoURL(for: store.domain) {
                     try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
                     try? logo.write(to: url, options: .atomic)
                 }
+                // Kaartontwerp: alleen meegestuurd als de winkel er een heeft; ontbreekt het, dan is het weg.
+                if let cover = (row["cover"] as? String).flatMap({ Data(base64Encoded: $0) }) {
+                    RemoteStores.saveCover(cover, for: id)
+                    store.cover = row["updated_at"] as? String ?? "1"
+                } else {
+                    if list[id]?.cover != nil { RemoteStores.saveCover(nil, for: id) }
+                }
+                list[id] = store
             }
             RemoteStores.save(Array(list.values).sorted { $0.name < $1.name })
             RemoteStores.saveRemoved(removed)

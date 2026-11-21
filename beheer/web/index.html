@@ -179,7 +179,7 @@
         <div id="reqList" class="acc-list" aria-busy="true"></div>
         <article id="storeEditor" class="card store-editor hidden" aria-label="Winkel maken">
           <header class="card-h"><h2 id="seTitle">Nieuwe winkel</h2><button id="seClose" class="btn ghost sm" type="button">Sluiten</button></header>
-          <div id="sePreview" class="se-preview"><img id="sePreviewLogo" alt=""><span id="sePreviewName"></span><small>Klantenkaart</small></div>
+          <div id="sePreview" class="se-preview"><img id="sePreviewCover" class="se-cover hidden" alt=""><img id="sePreviewLogo" alt=""><span id="sePreviewName"></span><small>Klantenkaart</small></div>
           <div class="se-grid">
             <label class="se-wide">Website
               <span class="se-row"><input id="seDomain" type="text" placeholder="winkel.nl" autocomplete="off" spellcheck="false"><button id="seLookup" class="btn ghost sm" type="button">Opzoeken</button></span></label>
@@ -191,6 +191,9 @@
               <span class="se-row"><input id="seColor" type="color" value="#2B2F3A"><span id="seSwatches" class="se-swatches"></span></span></label>
             <label class="se-wide">Logo
               <span class="se-row"><input id="seLogoFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="seLogoClear" class="btn ghost sm" type="button">Geen logo</button></span></label>
+            <label class="se-wide" id="seCoverRow">Kaartontwerp (voorkant van de cadeaukaart)
+              <span class="se-row"><input id="seCoverFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="seCoverClear" class="btn ghost sm" type="button">Geen ontwerp</button></span>
+              <span class="muted sm">Wordt bijgesneden tot kaartformaat (1,586:1, 640 px breed, JPEG). Gaat in de app voor op logo en kleur; een eigen voorkant van de gebruiker gaat daar weer voor.</span></label>
             <label class="se-wide">Andere namen (komma's)<input id="seAliases" type="text" placeholder="bijv. kwantum wonen" autocomplete="off"></label>
           </div>
           <fieldset id="seGuide" class="se-guide hidden">

@@ -17,7 +17,8 @@
 //   store_requests   {status?: open|added|rejected} -> {groups:[{key,name,website,kind,count,vouchers,ids,notes,first,last}]}
 //   store_lookup     {url}                          -> {domain,name,colors,logo,logo_type} | 404 not_found
 //   stores           {}                             -> {stores:[…]} (toegevoegde winkels, met logo)
-//   store_save       {store:{id?,name,domain,category,card_hex,format,kind,aliases,logo,guide?}} -> {store}
+//   store_save       {store:{id?,name,domain,category,card_hex,format,kind,aliases,logo,guide?,cover?}} -> {store}
+//                    (cover: base64 JPEG/PNG van het kaartontwerp, null = verwijderen; weglaten = laten staan)
 //   store_publish    {id, request_ids?, push?}      -> {ok, sent, closed}  (aanvragen dicht als "toegevoegd")
 //   store_unpublish  {id}                           -> {ok}
 //   store_reject     {request_ids}                  -> {ok, closed}
@@ -243,8 +244,8 @@ Deno.serve(async (req) => {
   let body: Record<string, unknown>;
   try {
     const text = await req.text();
-    // een winkel met logo mag groter zijn
-    if (text.length > 450_000) return json({ error: "too_large" }, 413);
+    // een winkel met logo (en kaartontwerp) mag groter zijn
+    if (text.length > 700_000) return json({ error: "too_large" }, 413);
     const b = JSON.parse(text || "{}");
     if (!b || typeof b !== "object" || Array.isArray(b)) return json({ error: "bad_json" }, 400);
     if (text.length > 8192 && b.action !== "store_save") return json({ error: "too_large" }, 413);

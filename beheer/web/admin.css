@@ -262,6 +262,9 @@ h2 { font: 700 16px/1.3 var(--display); margin: 0; }
 .se-preview { aspect-ratio: 1.586; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; color: #fff;
   box-shadow: 0 20px 40px -24px rgba(0,0,0,.7); margin-bottom: 16px; transition: background .3s; }
 .se-preview.light { color: #111216; }
+.se-preview { position: relative; overflow: hidden; }
+.se-preview img.se-cover { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; }
+.se-preview.has-cover > :not(.se-cover) { visibility: hidden; }
 .se-preview img { max-height: 44px; max-width: 70%; align-self: flex-start; object-fit: contain; }
 .se-preview span { font-weight: 700; font-size: 20px; }
 .se-preview small { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }

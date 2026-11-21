@@ -36,9 +36,11 @@ struct SharedCard: Codable, Equatable {
     var expiresAt: Date? { e.map { Date(timeIntervalSince1970: TimeInterval($0)) } }
 
     var appearance: CardAppearance {
-        CardAppearance(storeName: n, number: c, format: format, colorHex: h, kind: kind,
-                       balance: b, currencyCode: b == nil ? nil : "EUR", expiresAt: expiresAt)
+        var a = CardAppearance(storeName: n, number: c, format: format, colorHex: h, kind: kind,
+                               balance: b, currencyCode: b == nil ? nil : "EUR", expiresAt: expiresAt)
             .with(details: x ?? CardDetails(), codeAsText: kind == .code && x?.codeAsBarcode != true)
+        if kind == .voucher { a.storeCover = RemoteStores.cover(for: t) }
+        return a
     }
 
     func makeCard() -> Card {

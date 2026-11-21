@@ -161,7 +161,8 @@ struct AddCardView: View {
                                 Button { path.append(.template(template)) } label: {
                                     tile(name: template.name, colorHex: template.cardHex, symbol: nil,
                                          domain: template.domain.isEmpty ? nil : template.domain,
-                                         balanceCheck: template.kind == .voucher && BalancePages.url(for: template.id) != nil)
+                                         balanceCheck: template.kind == .voucher && BalancePages.url(for: template.id) != nil,
+                                         cover: template.kind == .voucher ? RemoteStores.cover(for: template.id) : nil)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -256,14 +257,21 @@ struct AddCardView: View {
     /// A tile like the cards in SuperCards: the brand colour with the logo big in the middle, the name
     /// underneath. Without a logo, the name goes on the tile.
     private func tile(name: String, colorHex: String, symbol: String?, domain: String? = nil,
-                      balanceCheck: Bool = false) -> some View {
+                      balanceCheck: Bool = false, cover: Data? = nil) -> some View {
         let ink = Color.onCard(colorHex)
+        // Cadeaukaart met een kaartontwerp uit het beheer: de echte kaart als tegel.
+        let coverImage = cover.flatMap { Image(data: $0) }
         let hasLogo = domain.map { LogoService.bundledLogo(for: $0) != nil } ?? false
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         return VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .bottomLeading) {
                 shape.fill(Color(hex: colorHex))
-                if let domain {
+                if let coverImage {
+                    coverImage.resizable().scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                        .accessibilityHidden(true)
+                } else if let domain {
                     // Like SuperCards: the logo big in the middle of the brand colour.
                     GeometryReader { geo in
                         StoreLogoView(domain: domain, height: geo.size.height * 0.46, maxWidth: geo.size.width * 0.66)
@@ -276,7 +284,7 @@ struct AddCardView: View {
                         .foregroundStyle(ink)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                if !hasLogo && symbol == nil {
+                if !hasLogo && symbol == nil && coverImage == nil {
                     Text(name)
                         .font(.system(.subheadline, design: .rounded).weight(.semibold))
                         .foregroundStyle(ink)

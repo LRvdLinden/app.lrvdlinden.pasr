@@ -1,4 +1,5 @@
 // /kaarten/: zoeken (ook op aliassen), soort kaart, categorie; daarna de live catalogus erbij (terugval: de gegenereerde lijst).
+// Cadeaukaarten met een kaartontwerp tonen dat als kaart (statisch uit covers.json, nieuwe live via pasr_store_covers).
 (function () {
   'use strict';
   var cfgEl = document.getElementById('kaarten-config');
@@ -259,18 +260,73 @@
     }
   }
 
+  // Kaartontwerpen van cadeaukaarten (pasr_store_covers, hoogstens 40 per keer): alleen voor ontwerpen die (nog) niet als
+  // bestand op de site staan, zoals een ontwerp dat na het maken van de site in het beheer is gezet.
+  function setCover(card, b64) {
+    var img = card.querySelector('.kc-cover');
+    if (!img) {
+      img = document.createElement('img');
+      img.className = 'kc-cover'; img.alt = ''; img.decoding = 'async';
+      card.insertBefore(img, card.firstChild);
+    }
+    img.removeAttribute('width'); img.removeAttribute('height');
+    img.src = (b64.charAt(0) === '/' ? 'data:image/jpeg;base64,' : 'data:image/png;base64,') + b64;
+    card.classList.add('has-cover');
+  }
+  function loadCovers(ids) {
+    for (var i = 0; i < ids.length; i += 40) {
+      rpc('pasr_store_covers', { p_ids: ids.slice(i, i + 40) }).then(function (covers) {
+        if (!covers || typeof covers !== 'object') return;
+        Object.keys(covers).forEach(function (id) {
+          var b64 = covers[id];
+          if (typeof b64 !== 'string' || !/^(\/9j\/|iVBORw0KGgo)[A-Za-z0-9+/=]+$/.test(b64)) return;
+          Array.prototype.forEach.call(blocks.voucher.querySelectorAll('.kc[data-id="' + id.replace(/[^a-z0-9-]/g, '') + '"] .kc-card'), function (card) {
+            setCover(card, b64);
+          });
+        });
+      });
+    }
+  }
+
   function fetchCatalog() {
     if (!cfg.url || !cfg.key || !window.fetch || !window.JSON) return;
     rpc('pasr_store_index').then(function (json) {
       if (!json || !Array.isArray(json.stores)) return;   // offline of geblokkeerd: de gegenereerde lijst blijft staan
-      var built = Date.parse(cfg.built || '') || 0, need = [];
+      var built = Date.parse(cfg.built || '') || 0, need = [], covers = [], staticCovers = [];
       json.stores.forEach(function (s) {
-        if (!s || typeof s.id !== 'string' || s.removed || !s.has_logo) return;
+        if (!s || typeof s.id !== 'string' || s.removed) return;
         var known = document.querySelector('.kc[data-id="' + s.id.replace(/[^a-z0-9-]/g, '') + '"]');
-        if (!known || (built && Date.parse(s.updated_at || '') > built)) need.push(s.id);
+        var changed = !known || (built && Date.parse(s.updated_at || '') > built);
+        if (s.has_logo && changed) need.push(s.id);
+        if (s.kind === 'voucher') {
+          var hasStatic = known && known.querySelector('.kc-cover');
+          var file = cfg.covers && cfg.covers[s.id];
+          // Staat het ontwerp als bestand op de site, dan dat (klein en gecachet); anders live ophalen.
+          if (s.has_cover && file) { if (!hasStatic) staticCovers.push([s.id, file]); }
+          else if (s.has_cover) covers.push(s.id);
+          // ontwerp in het beheer weggehaald: weer logo en kleur
+          if (s.has_cover === false && hasStatic) {
+            Array.prototype.forEach.call(document.querySelectorAll('.kc[data-id="' + s.id.replace(/[^a-z0-9-]/g, '') + '"] .kc-card'), function (card) {
+              var img = card.querySelector('.kc-cover'); if (img) img.remove();
+              card.classList.remove('has-cover');
+            });
+          }
+        }
       });
       merge(json);
       if (need.length) loadLogos(need);
+      if (covers.length) loadCovers(covers);
+      staticCovers.forEach(function (pair) {
+        if (!/^[a-z0-9-]+\.(jpg|png)$/.test(pair[1])) return;
+        Array.prototype.forEach.call(blocks.voucher.querySelectorAll('.kc[data-id="' + pair[0].replace(/[^a-z0-9-]/g, '') + '"] .kc-card'), function (card) {
+          if (card.querySelector('.kc-cover')) return;
+          var img = document.createElement('img');
+          img.className = 'kc-cover'; img.alt = ''; img.decoding = 'async'; img.loading = 'lazy';
+          img.src = '/assets/covers/' + pair[1];
+          card.insertBefore(img, card.firstChild);
+          card.classList.add('has-cover');
+        });
+      });
     });
   }
   if ('requestIdleCallback' in window) requestIdleCallback(fetchCatalog, { timeout: 2000 }); else setTimeout(fetchCatalog, 300);

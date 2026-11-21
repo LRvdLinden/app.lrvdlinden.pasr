@@ -17,6 +17,11 @@ struct WidgetCard: Codable, Identifiable, Hashable {
     var score: Double
     /// Website of the store, to draw its logo the right way (see StoreLogoStyles).
     var logoDomain: String? = nil
+    /// Winkel-id met een kaartontwerp (cadeaukaart zonder eigen voorkant, sinds build 41); de widget leest het
+    /// ontwerp uit de App Group (RemoteStores).
+    var coverStore: String? = nil
+    /// Versie van dat ontwerp, zodat de snapshot (en de widget) verandert als het ontwerp verandert.
+    var coverVersion: String? = nil
 
     var format: BarcodeFormat { BarcodeFormat(rawValue: formatRaw) ?? .code128 }
     var kind: CardKind { CardKind(rawValue: kindRaw) ?? .loyalty }
@@ -25,9 +30,11 @@ struct WidgetCard: Codable, Identifiable, Hashable {
     var logoData: Data? { try? Data(contentsOf: WidgetStore.logoURL(for: id)) }
 
     var appearance: CardAppearance {
-        CardAppearance(storeName: name, number: number, format: format, colorHex: colorHex, kind: kind,
+        var a = CardAppearance(storeName: name, number: number, format: format, colorHex: colorHex, kind: kind,
                        isFavorite: isFavorite, logoData: logoData, balance: balance, currencyCode: currencyCode,
                        expiresAt: expiresAt, isLocked: isLocked, logoStyle: StoreLogoStyles.style(for: logoDomain))
+        a.storeCover = kind == .voucher ? RemoteStores.cover(for: coverStore) : nil
+        return a
     }
 
     var monogram: String {
@@ -100,7 +107,9 @@ extension Array where Element == Card {
                               number: card.number, formatRaw: card.formatRaw, kindRaw: card.kindRaw,
                               isFavorite: card.isFavorite, isLocked: card.isLocked, balance: card.balance,
                               currencyCode: card.currencyCode, expiresAt: card.expiresAt, score: Card.score(card),
-                              logoDomain: card.logoFromWebsite ? card.logoDomain : nil)
+                              logoDomain: card.logoFromWebsite ? card.logoDomain : nil,
+                              coverStore: card.storeCover != nil ? card.templateID : nil,
+                              coverVersion: card.storeCover != nil ? RemoteStores.coverVersion(for: card.templateID) : nil)
         }
         return (cards, logos)
     }

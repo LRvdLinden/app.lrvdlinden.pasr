@@ -949,6 +949,18 @@ create table if not exists public.pasr_stores (
 create index if not exists pasr_stores_updated on public.pasr_stores (updated_at);
 -- Cadeaubon-gids per winkel (geldigheid, online/winkel, uitleg, voorwaarden); zie het blok na pasr_store_logos.
 alter table public.pasr_stores add column if not exists guide jsonb;
+-- Kaartontwerp (voorkant) van een cadeaukaart, base64 JPEG/PNG (hoogstens ~150 kB). Gevuld uit
+-- supabase/catalog/covers.json (supabase/catalog/covers.py, alleen waar cover nog leeg is) en te bewerken in het beheer.
+alter table public.pasr_stores add column if not exists cover text;
+do $$ begin
+  alter table public.pasr_stores add constraint pasr_stores_cover_image
+    check (cover is null or (octet_length(cover) <= 210000 and cover ~ '^(/9j/|iVBORw0KGgo)[A-Za-z0-9+/]+=*$'));
+exception when duplicate_object then null;
+end $$;
+-- Welke winkels al eens een cover uit covers.json kregen: haalt het beheer hem weg, dan komt hij niet terug.
+create table if not exists public.pasr_store_cover_seeded (id text primary key, at timestamptz not null default now());
+alter table public.pasr_store_cover_seeded enable row level security;
+revoke all on public.pasr_store_cover_seeded from anon, authenticated;
 create table if not exists public.pasr_store_requests (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users (id) on delete cascade,
@@ -1026,6 +1038,8 @@ language sql security definer set search_path = public as $$
     case when s.published then jsonb_build_object('id', s.id, 'name', s.name, 'domain', s.domain, 'category', s.category,
            'card_hex', s.card_hex, 'format', s.format, 'kind', s.kind, 'aliases', to_jsonb(s.aliases), 'logo', s.logo,
            'guide', s.guide, 'updated_at', s.updated_at)
+           -- kaartontwerp als voorkant van een cadeaukaart (build 41): alleen meesturen als er een is
+           || case when s.cover is not null then jsonb_build_object('cover', s.cover) else '{}'::jsonb end
          else jsonb_build_object('id', s.id, 'removed', true, 'updated_at', s.updated_at) end), '[]'::jsonb))
   from public.pasr_stores s
   -- Ook bij de eerste keer ophalen komen niet-gepubliceerde winkels mee (als removed): sinds versie 1.0.2 haalt het
@@ -1069,7 +1083,7 @@ language sql stable security definer set search_path = public as $$
     'stores', coalesce(jsonb_agg(
       case when s.published then jsonb_build_object('id', s.id, 'name', s.name, 'domain', s.domain, 'category', s.category,
              'card_hex', s.card_hex, 'kind', s.kind, 'aliases', to_jsonb(s.aliases), 'has_logo', s.logo is not null,
-             'guide', s.guide, 'updated_at', s.updated_at)
+             'has_cover', s.cover is not null, 'guide', s.guide, 'updated_at', s.updated_at)
            else jsonb_build_object('id', s.id, 'removed', true) end), '[]'::jsonb))
   from public.pasr_stores s;
 $$;
@@ -1079,8 +1093,15 @@ language sql stable security definer set search_path = public as $$
   from public.pasr_stores s
   where s.published and s.logo is not null and s.id = any(p_ids[1:40]);
 $$;
-revoke all on function public.pasr_store_index(), public.pasr_store_logos(text[]) from public;
-grant execute on function public.pasr_store_index(), public.pasr_store_logos(text[]) to anon, authenticated;
+-- Kaartontwerpen (covers) voor pasr.nl/kaarten en de gidspagina's: alleen voor de gevraagde winkels (hoogstens 40).
+create or replace function public.pasr_store_covers(p_ids text[]) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_object_agg(s.id, s.cover), '{}'::jsonb)
+  from public.pasr_stores s
+  where s.published and s.cover is not null and s.id = any(p_ids[1:40]);
+$$;
+revoke all on function public.pasr_store_index(), public.pasr_store_logos(text[]), public.pasr_store_covers(text[]) from public;
+grant execute on function public.pasr_store_index(), public.pasr_store_logos(text[]), public.pasr_store_covers(text[]) to anon, authenticated;
 
 -- Cadeaubon-gids (versie 1.0.2). guide is een JSON-object met (allemaal optioneel): validity (tekst), online en store
 -- (true/false), how (korte uitleg), shipping (tekst), terms_url (https) en checked (YYYY-MM-DD). De apps en pasr.nl lezen

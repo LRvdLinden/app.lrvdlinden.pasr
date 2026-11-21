@@ -83,6 +83,9 @@ html:not(.js) .kf { display: none; }
   box-shadow: inset 0 0 0 .75px rgba(255, 255, 255, .16), 0 10px 22px -16px rgba(20, 15, 60, .55); }
 @supports not (aspect-ratio: 1 / 1) { .kc-card { height: 0; padding-top: 63%; } }
 .kc-card.ink-dark { color: #17162A; box-shadow: inset 0 0 0 1px rgba(23, 22, 42, .10), 0 10px 22px -16px rgba(20, 15, 60, .45); }
+.kc-card .kc-cover { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.kc-card.has-cover .kc-logo, .kc-card.has-cover .kc-word { display: none; }
+.kc-card.has-cover.ink-dark { box-shadow: 0 10px 22px -16px rgba(20, 15, 60, .45); }
 .kc-logo { position: absolute; top: 27%; bottom: 27%; left: 17%; right: 17%; display: flex; align-items: center; justify-content: center; }
 .kc-logo img { width: 100%; height: 100%; object-fit: contain; }
 .kc-logo.plate { top: 24%; bottom: 24%; left: 14%; right: 14%; background: var(--plate, #fff); border-radius: 10px; padding: 6px 10px; }

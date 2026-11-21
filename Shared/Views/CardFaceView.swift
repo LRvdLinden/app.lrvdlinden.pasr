@@ -31,6 +31,8 @@ struct CardAppearance: Equatable {
     var codeAsText = false
     /// Eigen voorkant (foto, al op kaartformaat bijgesneden).
     var cover: Data?
+    /// Kaartontwerp van de winkel uit het beheer (alleen cadeaukaarten); een eigen voorkant gaat voor.
+    var storeCover: Data?
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
@@ -66,6 +68,7 @@ struct CardAppearance: Equatable {
         details = card.details
         codeAsText = card.showsCodeAsText
         cover = card.coverPhoto
+        storeCover = card.storeCover
     }
 
     /// Kopie met de gegevens van ticket, abonnement of kortingscode.
@@ -181,12 +184,62 @@ struct CardFaceView: View {
         return Image(data: data)
     }
 
+    /// Het kaartontwerp van de winkel (cadeaukaart), als er geen eigen voorkant is.
+    private var storeCoverImage: Image? {
+        guard !showsCode, appearance.cover == nil, appearance.kind == .voucher, let data = appearance.storeCover else { return nil }
+        return Image(data: data)
+    }
+
     var body: some View {
         if let coverImage {
             coverFront(coverImage)
+        } else if let storeCoverImage {
+            storeCoverFront(storeCoverImage)
         } else {
             standardFace
         }
+    }
+
+    /// Voorkant met het echte kaartontwerp van de winkel: de afbeelding vult de kaart (afgeronde hoeken). Alleen wat
+    /// er echt toe doet staat er klein overheen: favoriet/gedeeld/slot rechtsboven en het tegoed linksonder.
+    private func storeCoverFront(_ image: Image) -> some View {
+        ZStack {
+            Color(hex: appearance.colorHex)
+            image.resizable().scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            VStack(alignment: .leading, spacing: 0) {
+                let marks = appearance.tempUntil != nil || appearance.isShared || appearance.isFavorite || appearance.isLocked
+                if marks {
+                    HStack(spacing: 6) {
+                        if appearance.tempUntil != nil { Image(systemName: "clock.fill") }
+                        if appearance.isShared { Image(systemName: "person.2.fill") }
+                        if appearance.isFavorite { Image(systemName: "star.fill") }
+                        if appearance.isLocked { Image(systemName: "lock.fill") }
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.45), in: Capsule())
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                Spacer(minLength: 0)
+                if let info = voucherInfo {
+                    Text(info)
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .lineLimit(1)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(.black.opacity(0.55), in: Capsule())
+                }
+            }
+            .padding(10)
+            .foregroundStyle(.white)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(accessibilityText))
     }
 
     private func coverFront(_ image: Image) -> some View {

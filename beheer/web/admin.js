@@ -48,7 +48,9 @@
       case "bad_guide_url": return "Vul bij de gids (voorwaarden of programmapagina) een geldig https-adres in.";
       case "bad_guide_date": return "Vul bij 'Gecontroleerd op' een geldige datum in.";
       case "bad_logo": return "Dit logo kan niet worden gebruikt (PNG, JPEG of WebP, kleiner dan 300 kB).";
-      case "too_large": return "Het logo is te groot. Kies een kleiner bestand.";
+      case "too_large": return "Het logo of kaartontwerp is te groot. Kies een kleiner bestand.";
+      case "bad_cover": return "Dit kaartontwerp kan niet worden gebruikt (PNG of JPEG).";
+      case "cover_too_large": return "Het kaartontwerp is te groot (hoogstens ~150 kB).";
       case "bad_email": return "Dit is geen geldig e-mailadres.";
       case "bad_url": return "Vul een geldig https-adres in.";
       case "bad_id": return "Kies een winkel uit de lijst (of typ het winkel-id).";
@@ -763,7 +765,7 @@
   }
 
   function openEditor(s, requestIds, fromRequest) {
-    editing = { id: s.id || null, requestIds, logo: s.logo || null, published: !!s.published };
+    editing = { id: s.id || null, requestIds, logo: s.logo || null, cover: s.cover || null, coverChanged: false, published: !!s.published };
     $("seTitle").textContent = s.id ? s.name : (fromRequest ? "Kaart maken voor aanvraag" : "Nieuwe winkel");
     $("seDomain").value = s.domain || "";
     $("seName").value = s.name || "";
@@ -795,6 +797,7 @@
     .observe($("storeEditor"), { attributes: true, attributeFilter: ["class"] });
   $("seClose").addEventListener("click", () => { $("storeEditor").classList.add("hidden"); editing = null; });
   ["seName", "seColor", "seKind"].forEach((id) => $(id).addEventListener("input", preview));
+  $("seKind").addEventListener("change", preview);
   /** Gids: bij een cadeaukaart de cadeaubon-gids, bij een klantenkaart de programmagids (zo spaar je, voordelen). */
   function guideVisible() {
     const kind = $("seKind").value === "voucher" ? "voucher" : "loyalty";
@@ -832,6 +835,35 @@
     $("sePreviewLogo").classList.toggle("hidden", !editing.logo);
     if (editing.logo) $("sePreviewLogo").src = "data:image/png;base64," + editing.logo;
     p.querySelector("small").textContent = $("seKind").value === "voucher" ? "Cadeaukaart" : "Klantenkaart";
+    // Kaartontwerp: alleen bij een cadeaukaart; dan is dat de voorkant (zoals in de app en op pasr.nl/kaarten).
+    const voucher = $("seKind").value === "voucher";
+    $("seCoverRow").classList.toggle("hidden", !voucher);
+    const cover = voucher && editing.cover;
+    $("sePreviewCover").classList.toggle("hidden", !cover);
+    p.classList.toggle("has-cover", !!cover);
+    if (cover) { $("sePreviewCover").src = (editing.cover.startsWith("/9j/") ? "data:image/jpeg;base64," : "data:image/png;base64,") + editing.cover; }
+    $("sePreview").setAttribute("aria-label", $("seName").value || "Winkel");
+  }
+  /** Kaartontwerp bijsnijden tot 1,586:1 en verkleinen tot 640 px breed (JPEG 0,8); zelfde als tools/make_covers.py. */
+  function makeCover(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const ratio = 1.586, W = 640, H = Math.round(W / ratio);
+        let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0;
+        if (sw / sh > ratio) { const nw = Math.round(sh * ratio); sx = (sw - nw) / 2; sw = nw; }
+        else { const nh = Math.round(sw / ratio); sy = (sh - nh) / 2; sh = nh; }
+        const c = document.createElement("canvas"); c.width = W; c.height = H;
+        const x = c.getContext("2d"); x.fillStyle = "#FFFFFF"; x.fillRect(0, 0, W, H);
+        x.imageSmoothingQuality = "high"; x.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+        let q = 0.8, out = c.toDataURL("image/jpeg", q).split(",")[1];
+        while (out.length > 200_000 && q > 0.4) { q -= 0.1; out = c.toDataURL("image/jpeg", q).split(",")[1]; }
+        out.length > 200_000 ? reject(new Error("Het kaartontwerp is te groot.")) : resolve(out);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Dit bestand is geen afbeelding.")); };
+      img.src = url;
+    });
   }
   function luminance(hex) {
     const v = parseInt(hex.slice(1), 16), c = [(v >> 16) & 255, (v >> 8) & 255, v & 255].map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
@@ -899,6 +931,14 @@
     reader.readAsDataURL(f);
   });
   $("seLogoClear").addEventListener("click", () => { editing.logo = null; $("seLogoFile").value = ""; preview(); });
+  $("seCoverFile").addEventListener("change", async () => {
+    const f = $("seCoverFile").files[0];
+    if (!f) return;
+    if (f.size > 8_000_000) { $("seMsg").textContent = "Dit bestand is te groot (hoogstens 8 MB)."; return; }
+    try { editing.cover = await makeCover(f); editing.coverChanged = true; $("seMsg").textContent = ""; preview(); }
+    catch (err) { $("seMsg").textContent = err.message; }
+  });
+  $("seCoverClear").addEventListener("click", () => { editing.cover = null; editing.coverChanged = true; $("seCoverFile").value = ""; preview(); });
 
   function storeBody() {
     return {
@@ -906,6 +946,8 @@
       category: $("seCategory").value, card_hex: $("seColor").value, format: $("seFormat").value, kind: $("seKind").value,
       aliases: $("seAliases").value.split(",").map((a) => a.trim()).filter(Boolean), logo: editing.logo,
       guide: guideBody(),
+      // alleen meesturen als het ontwerp is gewijzigd (anders blijft het in de database staan)
+      ...(editing.coverChanged ? { cover: editing.cover } : {}),
     };
   }
   async function saveStore(publish) {

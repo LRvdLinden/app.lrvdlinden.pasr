@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import store_catalog as sc
-from make_kaarten import esc, fold, is_light, sort_key, APP_STORE, MONTHS
+from make_kaarten import account_config, cover_img, esc, fold, is_light, sort_key, APP_STORE, MONTHS
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
@@ -90,7 +90,11 @@ def card_face(c, big=False):
                 f'height="{size[1]}"{lazy} decoding="async"></span>')
     else:
         face = f'<span class="kc-word" aria-hidden="true">{esc(c["name"])}</span>'
-    return f'<div class="kc-card{ink}{" gd-card" if big else ""}" style="background:{c["card"]}">{face}</div>'
+    cover = cover_img(c, lazy=not big)
+    # Cadeaukaart zonder ontwerp in de repo: assets/covers.js vraagt het live op (pasr_store_covers), voor nieuwe ontwerpen.
+    live = f' data-cover="{esc(c["id"])}"' if c["kind"] == "voucher" and not cover else ""
+    return (f'<div class="kc-card{ink}{" gd-card" if big else ""}{" has-cover" if cover else ""}"{live} '
+            f'style="background:{c["card"]}">{cover}{face}</div>')
 
 
 def faq_items(c, g, kind):
@@ -126,6 +130,16 @@ def faq_items(c, g, kind):
     if g.get("shipping"):
         out.append((f"Wat kost het verzenden van een {n}?", g["shipping"]))
     return out
+
+
+def covers_script(k):
+    """Op de cadeaubon-gidsen: kaartontwerpen die na het maken van de site in het beheer zijn gezet live ophalen."""
+    if k["dir"] != "cadeaubon":
+        return ""
+    url, key = account_config()
+    if not (url and key):
+        return ""
+    return f'  <script src="/assets/covers.js" data-url="{esc(url)}" data-key="{esc(key)}" defer></script>\n'
 
 
 def head(title, desc, url, ld, og_title, k):
@@ -167,7 +181,7 @@ def head(title, desc, url, ld, og_title, k):
   <link rel="stylesheet" href="/assets/kaarten.css">
   <link rel="stylesheet" href="/assets/gids.css">
   <script>document.documentElement.classList.add('js')</script>
-  <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False, separators=(",", ":"))}</script>
+{covers_script(k)}  <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False, separators=(",", ":"))}</script>
 </head>'''
 
 

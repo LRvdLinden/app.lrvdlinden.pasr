@@ -32,7 +32,22 @@ export type StoreInput = {
   aliases: string[]; logo: string | null;
   /** Alleen aanwezig als de invoer een gids meestuurt (null = gids wissen); anders blijft de gids in de database staan. */
   guide?: Guide | null;
+  /** Kaartontwerp (voorkant) van een cadeaukaart, base64 JPEG/PNG. Alleen aanwezig als de invoer het meestuurt
+   *  (null = verwijderen); anders blijft de cover in de database staan. */
+  cover?: string | null;
 };
+
+/** Hoogstens zoveel tekens base64 (~150 kB); zelfde grens als de check constraint pasr_stores_cover_image. */
+export const COVER_MAX = 210_000;
+
+/** Cover controleren: base64 van een JPEG of PNG, niet te groot. Leeg = null (verwijderen). */
+export function cleanCover(v: unknown): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (v === null || v === undefined || v === "") return { ok: true, value: null };
+  const s = String(v).replace(/^data:image\/[a-z]+;base64,/, "");
+  if (!/^(\/9j\/|iVBORw0KGgo)[A-Za-z0-9+/]+=*$/.test(s)) return { ok: false, error: "bad_cover" };
+  if (s.length > COVER_MAX) return { ok: false, error: "cover_too_large" };
+  return { ok: true, value: s };
+}
 
 /** Cadeaubon-gids per winkel (kolom pasr_stores.guide). Alle sleutels optioneel; onbekend = weglaten. */
 export type Guide = {
@@ -96,6 +111,11 @@ export function cleanStore(v: unknown): { ok: true; value: StoreInput } | { ok: 
     const g = cleanGuide(b.guide);
     if (!g.ok) return g;
     value.guide = g.value;
+  }
+  if ("cover" in b) {
+    const c = cleanCover(b.cover);
+    if (!c.ok) return c;
+    value.cover = c.value;
   }
   return { ok: true, value };
 }

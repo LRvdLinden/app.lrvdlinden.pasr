@@ -16,6 +16,44 @@ enum RemoteStores {
         var previousHex: [String]?
         /// Cadeaubon-gids (sinds 1.0.2): geldigheid, waar in te wisselen, voorwaarden.
         var guide: StoreGuide?
+        /// Kaartontwerp (sinds build 41): de versie (updated_at uit het beheer) van de voorkant van deze cadeaukaart;
+        /// nil = geen ontwerp. De afbeelding zelf staat als bestand naast de logo's (cover-<id>.img), niet in de JSON.
+        var cover: String?
+    }
+
+    nonisolated(unsafe) private static var coverCache: [String: Data] = [:]
+
+    static func coverURL(for id: String) -> URL? {
+        guard !id.isEmpty, id.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" }) else { return nil }
+        return folder?.appending(path: "cover-\(id.lowercased()).img")
+    }
+
+    /// Het kaartontwerp van een cadeaukaart uit het beheer (JPEG/PNG), of nil.
+    static func cover(for templateID: String?) -> Data? {
+        guard let id = templateID?.lowercased(), !id.isEmpty,
+              load().contains(where: { $0.id.lowercased() == id && $0.cover != nil }) else { return nil }
+        if let data = coverCache[id] { return data }
+        guard let data = coverURL(for: id).flatMap({ try? Data(contentsOf: $0) }) else { return nil }
+        coverCache[id] = data
+        return data
+    }
+
+    /// Versie van het ontwerp (voor widgets en Watch: alleen opnieuw versturen als het verandert).
+    static func coverVersion(for templateID: String?) -> String? {
+        guard let id = templateID?.lowercased(), !id.isEmpty else { return nil }
+        return load().first { $0.id.lowercased() == id }?.cover
+    }
+
+    /// Ontwerp bewaren of (nil) weghalen.
+    static func saveCover(_ data: Data?, for id: String) {
+        guard let folder, let url = coverURL(for: id) else { return }
+        coverCache[id.lowercased()] = nil
+        if let data {
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try? data.write(to: url, options: .atomic)
+        } else {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     /// De cadeaubon-gids van een winkel uit het beheer: op id, anders op naam.
@@ -80,6 +118,7 @@ enum RemoteStores {
         if let data = try? JSONEncoder().encode(list) { try? data.write(to: url, options: .atomic) }
         cache = list
         domainCache = nil
+        coverCache = [:]
     }
 
     static func logoURL(for domain: String) -> URL? {
@@ -119,6 +158,13 @@ enum BalancePages {
 }
 
 extension Card {
+    /// Het kaartontwerp van de winkel als voorkant: alleen bij een cadeaukaart van een winkel met een ontwerp in het
+    /// beheer, en niet als de gebruiker een eigen voorkant koos (die gaat voor).
+    var storeCover: Data? {
+        guard kind == .voucher, coverPhoto == nil else { return nil }
+        return RemoteStores.cover(for: templateID)
+    }
+
     /// Waar je het tegoed kunt nakijken: je eigen adres bij de kaart, anders dat van de winkel uit het beheer.
     var balancePage: URL? {
         let raw = (balanceURL?.isEmpty == false ? balanceURL : nil) ?? BalancePages.url(for: templateID)

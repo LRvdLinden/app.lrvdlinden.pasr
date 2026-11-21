@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Maakt website/kaarten/index.html: alle kaarten die Pasr kent, om te bekijken en te doorzoeken.
 De lijst en de aantallen komen uit de repo (tools/store_catalog.py). In de browser vraagt de pagina daarna de live
-lijst op (pasr_store_index, zonder logo's; logo's van nieuwe of gewijzigde winkels los via pasr_store_logos): winkels die
+lijst op (pasr_store_index, zonder logo's; logo's van nieuwe of gewijzigde winkels los via pasr_store_logos, kaartontwerpen
+van cadeaukaarten via pasr_store_covers): winkels die
 in het beheer zijn bijgekomen verschijnen erbij, catalogus-winkels die (nog) niet gepubliceerd zijn verdwijnen.
 Kaarten met een gids (tools/make_gids.py) linken naar hun gidspagina. Lukt dat niet, dan blijft de gegenereerde lijst staan.
-Logo's worden verkleind naar website/assets/kaarten/<domain>.png.
+Logo's worden verkleind naar website/assets/kaarten/<domain>.png; kaartontwerpen (supabase/catalog/covers.json) komen in
+website/assets/covers/<id>.jpg en vullen de hele kaart.
 Wordt aangeroepen door tools/make_website.py; los: python3 tools/make_kaarten.py"""
 import html
 import io
@@ -88,6 +90,48 @@ def web_logos(cards):
     return sizes
 
 
+COVERS = REPO / "supabase" / "catalog" / "covers.json"
+COVER_OUT = ROOT / "assets" / "covers"
+
+
+def web_covers():
+    """Kaartontwerpen van cadeaukaarten (supabase/catalog/covers.json, gemaakt met tools/make_covers.py) als
+    website/assets/covers/<id>.jpg (of .png). Geeft id -> bestandsnaam. Ontwerpen die er niet meer in staan gaan weg."""
+    import base64
+    data = json.loads(COVERS.read_text(encoding="utf-8")) if COVERS.exists() else {}
+    COVER_OUT.mkdir(parents=True, exist_ok=True)
+    names = {}
+    for sid, b64 in data.items():
+        if not re.fullmatch(r"[a-z0-9-]{2,40}", sid):
+            continue
+        raw = base64.b64decode(b64)
+        name = f"{sid}.png" if raw[:4] == b"\x89PNG" else f"{sid}.jpg"
+        target = COVER_OUT / name
+        if not target.exists() or target.read_bytes() != raw:
+            target.write_bytes(raw)
+        names[sid] = name
+    for f in COVER_OUT.iterdir():
+        if f.name not in names.values():
+            f.unlink()
+    return names
+
+
+def cover_names():
+    """id -> bestandsnaam van de kaartontwerpen die al in website/assets/covers/ staan (zonder iets te schrijven)."""
+    data = json.loads(COVERS.read_text(encoding="utf-8")) if COVERS.exists() else {}
+    return {sid: (f"{sid}.png" if b64.startswith("iVBOR") else f"{sid}.jpg") for sid, b64 in data.items()}
+
+
+def cover_img(c, lazy=True):
+    """<img> met het kaartontwerp (vult de hele kaart); leeg als deze cadeaukaart er (in de repo) geen heeft."""
+    name = cover_names().get(c["id"]) if c["kind"] == "voucher" else None
+    if not name:
+        return ""
+    lazy_attr = ' loading="lazy"' if lazy else ""
+    return (f'<img class="kc-cover" src="/assets/covers/{esc(name)}" alt="" width="640" height="404"'
+            f'{lazy_attr} decoding="async">')
+
+
 GIFT = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16v10H4zM3 7h18v3H3zM12 7v13M12 7c-1.5-3-5-3-5-1s3 1 5 1c2 0 5 1 5-1s-3.5-2-5 1" '
         'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>')
 
@@ -109,8 +153,9 @@ def tile(c, sizes, guide_links=None):
         saldo = (f'<a class="kc-saldo" href="{esc(c["balance"])}" target="_blank" rel="noopener nofollow" '
                  f'aria-label="Saldo-check van {esc(c["name"])} (opent de site van de uitgever)">{GIFT}Saldo-check</a>')
     src = ' data-src="catalogus"' if c["source"] == "catalogus" else ""
+    cover = cover_img(c)
     return (f'<li class="kc" data-id="{esc(c["id"])}"{src} data-c="{esc(c["category"])}" data-q="{esc(q)}">'
-            f'<div class="kc-card{ink}" style="background:{c["card"]}">{face}{saldo}</div>'
+            f'<div class="kc-card{ink}{" has-cover" if cover else ""}" style="background:{c["card"]}">{cover}{face}{saldo}</div>'
             + (f'<a class="kc-name" href="{guide_links[c["id"]]}" aria-label="Gids: {esc(c["name"])}">{esc(c["name"])}<span class="kc-gids" aria-hidden="true"> · gids</span></a></li>'
                if guide_links and c["id"] in guide_links else f'<span class="kc-name">{esc(c["name"])}</span></li>'))
 
@@ -119,6 +164,8 @@ def build(write=True):
     cards = sc.all_cards()
     n = sc.counts(cards)
     sizes = web_logos(cards) if write else {}
+    if write:
+        web_covers()
     now = datetime.now(timezone.utc).replace(microsecond=0)
     day = f"{now.day} {MONTHS[now.month - 1]} {now.year}"
     url, key = account_config()
@@ -132,7 +179,8 @@ def build(write=True):
         cat_opts[kind] = cats
     all_cats = sorted({c["category"] for c in cards}, key=fold)
     options = "".join(f'<option value="{esc(c)}">{esc(c)}</option>' for c in all_cats)
-    config = {"url": url, "key": key, "cats": cat_opts, "built": now.isoformat()}
+    # kaartontwerpen die als bestand op de site staan (ook voor winkels die pas live in de lijst komen)
+    config = {"url": url, "key": key, "cats": cat_opts, "built": now.isoformat(), "covers": cover_names()}
 
     title = "Alle klantenkaarten en cadeaukaarten in Pasr"
     desc = (f"Zoek je winkel: Pasr kent {n['loyalty']} klantenkaarten en {n['voucher']} cadeaukaarten en vouchers, "

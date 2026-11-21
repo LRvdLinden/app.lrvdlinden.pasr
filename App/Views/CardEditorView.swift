@@ -120,6 +120,8 @@ struct CardEditorView: View {
             a.details = savedDetails
             a.codeAsText = codeAsText
             a.cover = cover
+            // Kaartontwerp van de winkel (cadeaukaart) zolang je geen eigen voorkant kiest.
+            a.storeCover = kind == .voucher && cover == nil ? RemoteStores.cover(for: templateID) : nil
             return a
         }
     }

@@ -25,15 +25,19 @@ struct WatchCard: Codable, Identifiable, Hashable {
     var codeAsText: Bool? = nil
     /// Regel onder de kop voor ticket en abonnement (sinds 1.0.2), al opgemaakt op de iPhone.
     var details: CardDetails? = nil
+    /// Kaartontwerp van de winkel (cadeaukaart zonder eigen voorkant, sinds build 41), verkleind op de iPhone.
+    var cover: Data? = nil
 
     var format: BarcodeFormat { BarcodeFormat(rawValue: formatRaw) ?? .code128 }
     var kind: CardKind { CardKind(rawValue: kindRaw) ?? .loyalty }
 
     var appearance: CardAppearance {
-        CardAppearance(storeName: name, number: number, format: format, colorHex: colorHex, kind: kind,
-                       isFavorite: isFavorite, logoData: logo, balance: balance, currencyCode: currencyCode,
-                       expiresAt: expiresAt, isLocked: isLocked, logoStyle: StoreLogoStyles.style(for: logoDomain))
+        var a = CardAppearance(storeName: name, number: number, format: format, colorHex: colorHex, kind: kind,
+                               isFavorite: isFavorite, logoData: logo, balance: balance, currencyCode: currencyCode,
+                               expiresAt: expiresAt, isLocked: isLocked, logoStyle: StoreLogoStyles.style(for: logoDomain))
             .with(details: details ?? CardDetails(), codeAsText: codeAsText ?? false)
+        a.storeCover = kind == .voucher ? cover : nil
+        return a
     }
 
     /// Without images: small enough for the application context, which arrives fastest.
@@ -41,6 +45,7 @@ struct WatchCard: Codable, Identifiable, Hashable {
         var copy = self
         copy.logo = nil
         copy.code = nil
+        copy.cover = nil
         return copy
     }
 }

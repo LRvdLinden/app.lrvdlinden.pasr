@@ -18,6 +18,8 @@ struct WalletView: View {
     /// Filter naast de plusknop (blijft bewaard): alle, favorieten, klantenkaarten, cadeaukaarten, privé, gedeeld, tijdelijk.
     @AppStorage("pasr.walletFilter") private var filterRaw = WalletFilter.all.rawValue
     private var groups = GroupService.shared
+    /// Opnieuw tekenen als het beheer winkels (logo, kaartontwerp) bijwerkt.
+    private var catalog = StoreCatalog.shared
     /// Volgorde (CardOrder): standaard A tot Z; of meest gebruikt, dichtstbij, of in de buurt en dan meest gebruikt.
     @AppStorage(CardOrder.key) private var order = CardOrder.az.rawValue
     private var cardOrder: CardOrder { CardOrder(rawValue: order) ?? .az }
@@ -126,7 +128,7 @@ struct WalletView: View {
             if newValue != nil { ScreenBrightness.boost() } else { ScreenBrightness.restore() }
         }
         .onDisappear { ScreenBrightness.restore() }
-        .task(id: WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
+        .task(id: "\(catalog.version)|" + WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
         .task(id: "\(order)|\(scenePhase == .active)|\(cards.count)") { await updateDistances(search: false) }
         .onChange(of: openCardID, initial: true) { _, id in openRequestedCard(id) }
         .onReceive(NotificationCenter.default.publisher(for: .pasrCloseSheets)) { _ in sheet = nil }

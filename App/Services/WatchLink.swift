@@ -1,5 +1,7 @@
 #if os(iOS)
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 import WatchConnectivity
 
 /// Sends the cards straight to the paired Apple Watch whenever they change. iCloud syncs too,
@@ -24,12 +26,30 @@ final class WatchLink: NSObject, WCSessionDelegate {
             .enumerated().map { i, card in
                 var w = WatchCard(card)
                 w.rank = order == .az ? nil : i
+                w.cover = Self.watchCover(for: card)
                 return w
             }
         guard let data = WatchPayload.encode(list) else { return }
         try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
         try? data.write(to: lastFile, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         push(list, data: data)
+    }
+
+    /// Het kaartontwerp verkleind voor de Watch (320 px breed, JPEG), per winkel en versie onthouden.
+    nonisolated(unsafe) private static var coverCache: [String: Data] = [:]
+
+    @MainActor
+    private static func watchCover(for card: Card) -> Data? {
+        guard let id = card.templateID?.lowercased(), let data = card.storeCover else { return nil }
+        let key = id + "|" + (RemoteStores.coverVersion(for: id) ?? "")
+        if let cached = coverCache[key] { return cached }
+        guard let image = ImageTools.cgImage(from: data, maxSide: 320) else { return nil }
+        let output = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(output, UTType.jpeg.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, image, [kCGImageDestinationLossyCompressionQuality: 0.75] as CFDictionary)
+        guard CGImageDestinationFinalize(dest) else { return nil }
+        coverCache[key] = output as Data
+        return output as Data
     }
 
     private func push(_ list: [WatchCard], data: Data) {

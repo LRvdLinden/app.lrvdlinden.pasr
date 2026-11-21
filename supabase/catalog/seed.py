@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Eenmalige vulling van pasr_stores met alle winkels uit de app (supabase/catalog/stores.json, gemaakt door
 tools/build_catalog.py) plus de aanvullingen in dezelfde map (bijv. new_loyalty.json, new_vouchers.json): elk
-*.json-bestand hier met een lijst winkels in hetzelfde formaat; guides*.json en balance*.json (andere structuur)
+*.json-bestand hier met een lijst winkels in hetzelfde formaat; guides*.json, balance*.json en covers.json (andere structuur)
 worden overgeslagen. Bestaat een winkel al in het beheer, dan blijft die zoals hij is: het beheer is leidend.
 Draait in de Backend-workflow met SUPABASE_ACCESS_TOKEN en REF."""
 import json, os, urllib.request
@@ -13,7 +13,7 @@ FIELDS = ["id", "name", "domain", "category", "card_hex", "format", "kind", "ali
 
 
 def catalog_files():
-    files = sorted(p for p in here.glob("*.json") if not p.name.startswith(("guides", "balance")))
+    files = sorted(p for p in here.glob("*.json") if not p.name.startswith(("guides", "balance", "covers")))
     return sorted(files, key=lambda p: p.name != "stores.json")  # stores.json eerst
 
 

@@ -24,7 +24,7 @@ enum WidgetSync {
         let order = CardOrder.current
         let byUse = order == .used || order == .nearUsed
         return order.rawValue + ";" + cards.map { card in
-            "\(card.id)|\(card.storeName)|\(card.number)|\(card.formatRaw)|\(card.colorHex)|\(card.isFavorite)|\(card.isLocked)|\(card.logoData?.count ?? 0)|\(card.balance ?? -1)|\(card.codeImage?.count ?? 0)|\(card.expiresAt?.timeIntervalSince1970 ?? 0)|\(card.kindRaw)|\(card.detailsData?.hashValue ?? 0)|\(byUse ? card.useCount : 0)"
+            "\(card.id)|\(card.storeName)|\(card.number)|\(card.formatRaw)|\(card.colorHex)|\(card.isFavorite)|\(card.isLocked)|\(card.logoData?.count ?? 0)|\(card.balance ?? -1)|\(card.codeImage?.count ?? 0)|\(card.expiresAt?.timeIntervalSince1970 ?? 0)|\(card.kindRaw)|\(card.detailsData?.hashValue ?? 0)|\(byUse ? card.useCount : 0)|\(card.coverPhoto?.count ?? 0)|\(card.storeCover != nil ? RemoteStores.coverVersion(for: card.templateID) ?? "" : "")"
         }.joined(separator: ";")
     }
 }

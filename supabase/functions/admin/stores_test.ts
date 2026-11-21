@@ -1,4 +1,4 @@
-import { cleanGuide, cleanStore, domainOf, imageType, parseHead, slug } from "./stores.ts";
+import { cleanCover, cleanGuide, cleanStore, domainOf, imageType, parseHead, slug } from "./stores.ts";
 import { message } from "./push.ts";
 const ok = (c: unknown, m: string) => { if (!c) throw new Error(m); };
 
@@ -74,4 +74,15 @@ Deno.test("cadeaubon-gids", () => {
   const s2 = cleanStore({ name: "Bol", card_hex: "#0000A4", guide: { validity: "3 jaar" } });
   ok(s2.ok && s2.value.guide?.validity === "3 jaar", "met gids");
   ok(!cleanStore({ name: "Bol", card_hex: "#0000A4", guide: { terms_url: "javascript:alert(1)" } }).ok, "foute gids");
+});
+
+Deno.test("kaartontwerp (cover)", () => {
+  const s1 = cleanStore({ name: "VVV", card_hex: "#0066B3" });
+  ok(s1.ok && !("cover" in s1.value), "zonder cover blijft de cover staan");
+  const s2 = cleanStore({ name: "VVV", card_hex: "#0066B3", cover: "data:image/jpeg;base64,/9j/4AAQSkZJRg==" });
+  ok(s2.ok && s2.value.cover === "/9j/4AAQSkZJRg==", "jpeg");
+  const s3 = cleanStore({ name: "VVV", card_hex: "#0066B3", cover: null });
+  ok(s3.ok && s3.value.cover === null, "verwijderen");
+  ok(!cleanCover("R0lGODlh").ok, "geen gif");
+  ok(!cleanCover("/9j/" + "A".repeat(220_000)).ok, "te groot");
 });
