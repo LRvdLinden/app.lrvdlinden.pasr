@@ -8,11 +8,13 @@ const here = __dirname;
 const out = process.argv[2] || path.join(here, "..", "out");
 const page = pathToFileURL(path.join(here, "scenes.html")).href;
 const jobs = [];
+const only = process.env.ONLY;   // bijvoorbeeld ONLY=Duo: alleen mappen met dat woord
 const add = (dir, name, w, h, s, k) => jobs.push({ dir, name, w, h, s, k });
 const iphone = ["s1", "s2", "s3", "s10", "s8", "s9", "s4", "s5", "s6", "s7"];
 iphone.forEach((s, i) => add("screenshots/iPhone 6.9 inch (1320x2868)", String(i + 1).padStart(2, "0"), 1320, 2868, s, "iphone"));
 iphone.forEach((s, i) => add("screenshots/iPhone 6.5 inch (1284x2778)", String(i + 1).padStart(2, "0"), 1284, 2778, s, "iphone"));
 ["s1", "s2", "s3", "s10", "s8", "s9", "s4", "s5", "s7"].forEach((s, i) => add("screenshots/iPad 13 inch (2064x2752)", String(i + 1).padStart(2, "0"), 2064, 2752, s, "ipad"));
+["s1", "s2", "s3", "s10", "s8", "s9", "s4", "s5"].forEach((s, i) => add("screenshots/iPhone Duo binnenscherm (2007x2853)", String(i + 1).padStart(2, "0"), 2007, 2853, s, "duo"));
 iphone.forEach((s, i) => add("screenshots/iPhone 6.3 inch (1206x2622)", String(i + 1).padStart(2, "0"), 1206, 2622, s, "iphone"));
 iphone.forEach((s, i) => add("screenshots/iPhone 6.1 inch (1179x2556)", String(i + 1).padStart(2, "0"), 1179, 2556, s, "iphone"));
 ["watchlist", "watchcode", "watchqr"].forEach((s, i) => {
@@ -31,7 +33,7 @@ add("promo/Overig", "social-1200x630", 1200, 630, "", "promo");
 
 (async () => {
 const browser = await chromium.launch();
-for (const j of jobs) {
+for (const j of jobs.filter((x) => !only || x.dir.includes(only))) {
   const p = await browser.newPage({ viewport: { width: j.w, height: j.h }, deviceScaleFactor: 1 });
   p.on("pageerror", (e) => console.error("ERR", j.s, e.message));
   p.on("console", (m) => { if (m.type() === "error") console.error("CONSOLE", j.s, m.text()); });

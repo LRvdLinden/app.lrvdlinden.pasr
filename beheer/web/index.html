@@ -160,9 +160,21 @@
           <button type="button" data-status="open">Open aanvragen</button>
           <button type="button" data-status="stores">Toegevoegd</button>
           <button type="button" data-status="rejected">Afgewezen</button>
+          <button type="button" data-status="balance">Saldo-pagina's</button>
         </div>
       </div>
       <div id="storeErr" class="banner hidden" role="alert"></div>
+      <form id="bpForm" class="card bp-form hidden" novalidate autocomplete="off">
+        <p class="muted sm">De knop &ldquo;Saldo checken&rdquo; bij een cadeaukaart of voucher in de app opent deze pagina, met het kaartnummer klaar om te plakken. Werkt ook voor winkels die al in de app zitten, zonder app-update.</p>
+        <p class="muted sm">Hieronder staan alle cadeaukaarten en vouchers uit de app. Vul het adres in en druk op Opslaan; &ldquo;Zoek&rdquo; zoekt de saldo-pagina voor je op. Een andere winkel toevoegen kan hier:</p>
+        <div class="se-grid">
+          <label>Winkel<input id="bpStore" list="bpStores" placeholder="bijv. vvv of VVV Cadeaukaart" spellcheck="false"></label>
+          <label>Saldo-pagina<input id="bpUrl" type="text" inputmode="url" placeholder="https://…" spellcheck="false"></label>
+        </div>
+        <datalist id="bpStores"></datalist>
+        <div class="row-btns"><button id="bpSave" class="btn" type="submit">Opslaan</button></div>
+        <div id="bpMsg" class="err" role="status"></div>
+      </form>
       <div class="stores-layout">
         <div id="reqList" class="acc-list" aria-busy="true"></div>
         <article id="storeEditor" class="card store-editor hidden" aria-label="Winkel maken">
@@ -181,6 +193,21 @@
               <span class="se-row"><input id="seLogoFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="seLogoClear" class="btn ghost sm" type="button">Geen logo</button></span></label>
             <label class="se-wide">Andere namen (komma's)<input id="seAliases" type="text" placeholder="bijv. kwantum wonen" autocomplete="off"></label>
           </div>
+          <fieldset id="seGuide" class="se-guide hidden">
+            <legend><span id="seGTitle">Gids</span> <span class="muted sm">(in de app en op pasr.nl; alleen officiële bronnen, onbekend leeg laten)</span></legend>
+            <div class="se-grid">
+              <label data-gkind="voucher">Geldigheid<input id="seGValidity" type="text" maxlength="80" placeholder="bijv. 3 jaar na aankoop" autocomplete="off"></label>
+              <label>Gecontroleerd op<input id="seGChecked" type="date"></label>
+              <label data-gkind="voucher">Online inwisselen<select id="seGOnline"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
+              <label data-gkind="voucher">In de winkel<select id="seGStore"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
+              <label data-gkind="loyalty" class="se-wide">Zo spaar je (1 tot 2 zinnen)<textarea id="seGEarn" rows="2" maxlength="400"></textarea></label>
+              <label data-gkind="loyalty" class="se-wide">Belangrijkste voordelen<textarea id="seGPerks" rows="2" maxlength="400"></textarea></label>
+              <label class="se-wide"><span id="seGHowLabel">Zo wissel je hem in (1 tot 3 zinnen)</span><textarea id="seGHow" rows="3" maxlength="400"></textarea></label>
+              <label data-gkind="voucher" class="se-wide">Verzendkosten<input id="seGShipping" type="text" maxlength="200" autocomplete="off"></label>
+              <label data-gkind="loyalty" class="se-wide">Programmapagina (https)<input id="seGProgram" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
+              <label class="se-wide">Voorwaarden of FAQ (https)<input id="seGTerms" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
+            </div>
+          </fieldset>
           <p class="muted sm" id="seRequests"></p>
           <label class="se-check"><input id="sePush" type="checkbox" checked> Pushmelding sturen (aan de aanvragers en wie "Nieuwe winkels" aan heeft)</label>
           <div class="row-btns">

@@ -28,6 +28,7 @@ Bijgewerkt voor build 30: gedeelde Pasr, tijdelijk delen, overstappen met een sc
 | `iPhone 6.5 inch (1284x2778)` | iPhone 6,5" | 1284 × 2778 | 10 |
 | `iPhone 6.3 inch (1206x2622)` | iPhone 6,3" | 1206 × 2622 | 10 |
 | `iPhone 6.1 inch (1179x2556)` | iPhone 6,1" | 1179 × 2556 | 10 |
+| `iPhone Duo binnenscherm (2007x2853)` | iPhone Duo, binnenscherm staand (niet verplicht; vanaf april 2027 wel voor apps met de iOS 27.1 SDK). Los in `Pasr-AppStore-iPhone-Duo.zip`, omdat de grote zip anders boven de 100 MB van GitHub komt | 2007 × 2853 | 8 |
 | `iPad 13 inch (2064x2752)` | iPad 13" (verplicht, Pasr werkt op de iPad) | 2064 × 2752 | 9 |
 | `Apple Watch Ultra 3 (422x514)` | Apple Watch Ultra 3, in een Ultra 3-mockup | 422 × 514 | 3 |
 | `Apple Watch Ultra 3 zonder mockup (422x514)` | Apple Watch Ultra 3, alleen het scherm (als Apple de mockup niet accepteert) | 422 × 514 | 3 |
@@ -35,7 +36,7 @@ Bijgewerkt voor build 30: gedeelde Pasr, tijdelijk delen, overstappen met een sc
 
 Volgorde = bestandsnaam (01 eerst). Apple staat 1 tot 10 screenshots per toestel toe.
 
-iPhone-volgorde: 01 overzicht · 02 kaart aan de kassa · 03 scannen · 04 overstappen met één schermopname · 05 gedeelde Pasr met je gezin · 06 tijdelijk uitlenen · 07 t/m 10 Apple Wallet, cadeaukaarten, Watch en privacy. De iPad-set is gelijk, zonder het Watch-scherm.
+iPhone-volgorde: 01 overzicht · 02 kaart aan de kassa · 03 scannen · 04 overstappen met één schermopname · 05 gedeelde Pasr met je gezin · 06 tijdelijk uitlenen · 07 t/m 10 Apple Wallet, cadeaukaarten, Watch en privacy. De iPad-set is gelijk, zonder het Watch-scherm. De iPhone Duo-set (open toestel) heeft de eerste acht: overzicht, kassa, scannen, overstappen, gedeelde Pasr, tijdelijk uitlenen, Apple Wallet en cadeaukaarten.
 
 **Waarom alleen Nederlandse screenshots?** De app zelf is alleen Nederlands. App Store Connect toont deze screenshots ook op de Engelse winkelpagina; Engelse screenshots zouden een app laten zien die niet bestaat.
 

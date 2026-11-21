@@ -18,7 +18,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
+            Brand.night.ignoresSafeArea()
             RadialGradient(colors: [Brand.iris.opacity(glow ? 0.35 : 0.0), .clear],
                            center: .center, startRadius: 10, endRadius: 360)
                 .ignoresSafeArea()

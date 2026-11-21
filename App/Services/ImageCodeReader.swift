@@ -1,6 +1,8 @@
 import Foundation
 import Vision
 import CoreGraphics
+import CoreImage
+import ImageIO
 #if canImport(UIKit)
 import UIKit
 #else
@@ -18,15 +20,25 @@ enum ImageCodeReader {
 
     static func read(_ data: Data) async -> Result? {
         guard let cgImage = cgImage(from: data) else { return nil }
-        return await Task.detached(priority: .userInitiated) { () -> Result? in
-            let barcodes = VNDetectBarcodesRequest()
+        return await read(cgImage)
+    }
+
+    /// Alleen de barcodes (snel), voor elk beeld uit een schermopname.
+    nonisolated static func barcodes(in cgImage: CGImage) -> [(payload: String, format: BarcodeFormat)] {
+        return detect(in: cgImage, thorough: false)
+            .filter { $0.payloadStringValue?.isEmpty == false }
+            .sorted { area($0.boundingBox) > area($1.boundingBox) }
+            .map { ($0.payloadStringValue!, format(for: $0.symbology, payload: $0.payloadStringValue!)) }
+    }
+
+    static func read(_ cgImage: CGImage) async -> Result? {
+        await Task.detached(priority: .userInitiated) { () -> Result? in
             let text = VNRecognizeTextRequest()
             text.recognitionLevel = .accurate
             text.recognitionLanguages = ["nl-NL", "en-US", "de-DE", "fr-FR"]
-            let handler = VNImageRequestHandler(cgImage: cgImage)
-            try? handler.perform([barcodes, text])
+            try? VNImageRequestHandler(cgImage: cgImage).perform([text])
 
-            let best = (barcodes.results ?? [])
+            let best = detect(in: cgImage)
                 .filter { $0.payloadStringValue?.isEmpty == false }
                 .max { area($0.boundingBox) < area($1.boundingBox) }
             guard let best, let payload = best.payloadStringValue else { return nil }
@@ -53,7 +65,41 @@ enum ImageCodeReader {
         }
     }
 
-    private static func area(_ rect: CGRect) -> CGFloat { rect.width * rect.height }
+    nonisolated private static func area(_ rect: CGRect) -> CGFloat { rect.width * rect.height }
+
+    /// Barcodes zoeken, in een paar rondes tot er iets gevonden is: de foto zelf, dan in grijs met meer contrast (glans,
+    /// slecht licht), dan scherper en groter (kleine of vage code), dan een kwartslag gedraaid. Alle soorten codes.
+    /// `thorough` false: alleen de eerste ronde (snel, voor elk beeld uit een schermopname).
+    nonisolated static func detect(in cgImage: CGImage, thorough: Bool = true) -> [VNBarcodeObservation] {
+        func run(_ image: CGImage, _ orientation: CGImagePropertyOrientation = .up) -> [VNBarcodeObservation] {
+            let request = VNDetectBarcodesRequest()
+            try? VNImageRequestHandler(cgImage: image, orientation: orientation).perform([request])
+            return (request.results ?? []).filter { $0.payloadStringValue?.isEmpty == false }
+        }
+        let first = run(cgImage)
+        if !first.isEmpty || !thorough { return first }
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        let input = CIImage(cgImage: cgImage)
+        func render(_ image: CIImage) -> CGImage? { context.createCGImage(image, from: input.extent) }
+        let contrast = input.applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0, kCIInputContrastKey: 1.6])
+        if let image = render(contrast) {
+            let found = run(image)
+            if !found.isEmpty { return found }
+        }
+        let sharp = contrast.applyingFilter("CISharpenLuminance", parameters: [kCIInputSharpnessKey: 0.8])
+        if max(cgImage.width, cgImage.height) < 1600 {
+            let scale = 1600 / CGFloat(max(cgImage.width, cgImage.height))
+            let big = sharp.applyingFilter("CILanczosScaleTransform", parameters: [kCIInputScaleKey: scale])
+            if let image = context.createCGImage(big, from: big.extent) {
+                let found = run(image)
+                if !found.isEmpty { return found }
+            }
+        } else if let image = render(sharp) {
+            let found = run(image)
+            if !found.isEmpty { return found }
+        }
+        return run(cgImage, .right)
+    }
 
     private static func cgImage(from data: Data) -> CGImage? {
         #if canImport(UIKit)

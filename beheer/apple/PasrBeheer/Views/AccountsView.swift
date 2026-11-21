@@ -10,6 +10,7 @@ struct AccountsView: View {
     @State private var error: String?
     @State private var deleting: User?
     @State private var toast: String?
+    @State private var showReview = false
 
     private static let filters = [("all", "Alle"), ("unconfirmed", "Onbevestigd"), ("cards", "Met kaarten"), ("active", "Actief")]
 
@@ -67,6 +68,12 @@ struct AccountsView: View {
             UserDetailView(user: u, onResend: { await resend(u) }, onDelete: { deleting = u })
         }
         .searchable(text: $search, prompt: "Zoek op e-mail of naam")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Review-account maken", systemImage: "person.badge.key") { showReview = true }
+            }
+        }
+        .sheet(isPresented: $showReview, onDismiss: { Task { await load(reset: true) } }) { ReviewAccountView() }
         .refreshable { await load(reset: true) }
         .task(id: "\(filter)|\(search)|\(session.refreshTick)") {
             if !search.isEmpty { try? await Task.sleep(for: .milliseconds(300)) }
@@ -206,6 +213,7 @@ struct UserDetailView: View {
             }
             Section("Gegevens") {
                 LabeledContent("Kaarten op de server", value: Fmt.n(user.cards))
+                LabeledContent("Gedeelde Pasrs", value: Fmt.n(user.groups ?? 0))
                 LabeledContent("Land", value: user.country.map { "\(Fmt.flag($0)) \(Fmt.country($0))" } ?? "onbekend")
                 LabeledContent("Aangemaakt", value: Fmt.ago(user.created_at))
                 LabeledContent("Bevestigd", value: user.isConfirmed ? Fmt.ago(user.email_confirmed_at) : "nog niet")

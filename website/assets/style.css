@@ -170,7 +170,7 @@ section { padding: 90px 0; }
 
 footer { border-top: 1px solid var(--line); padding: 30px 0 50px; font-size: 15px; color: var(--ink-2); }
 footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; }
-footer nav { display: flex; gap: 22px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
 footer a { color: var(--ink-2); text-decoration: none; }
 footer a:hover { color: var(--ink); }
 
@@ -191,6 +191,7 @@ footer a:hover { color: var(--ink); }
   body { font-size: 17px; }
   .nav ul { gap: 16px; }
   .nav ul li:nth-child(1), .nav ul li:nth-child(3) { display: none; }
+  .nav ul li.hide-sm { display: none; }
   .steps, .compare { grid-template-columns: 1fr; }
   .compare div:nth-child(even) { padding-left: 0; border-left: 0; }
   .compare div:nth-child(odd) { padding-bottom: 6px; border-bottom: 0; }
@@ -254,6 +255,8 @@ footer a:hover { color: var(--ink); }
 .stores { padding: 10px 0 90px; overflow: hidden; }
 .stores-title { text-align: center; font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: -.01em; margin: 0 auto 26px; color: var(--ink); max-width: 90%; }
 .stores-title .count { color: var(--iris); font-variant-numeric: tabular-nums; }
+.stores-more { text-align: center; margin: 26px 0 0; }
+.stores-more .btn { font-size: 16px; padding: 11px 20px; }
 .marquee-row { overflow: hidden; padding: 7px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
 .marquee-track { display: flex; gap: 14px; width: max-content; animation: drift 46s linear infinite; }
 .marquee-row.reverse .marquee-track { animation-direction: reverse; animation-duration: 52s; }
@@ -740,3 +743,167 @@ html, body { overflow-x: clip; max-width: 100%; }
 .store-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
 .actions .store-badge { margin: -10px -6px; }
 @media (max-width: 420px) { .store-badge img { width: 190px; } }
+/* Bento: beelden van de nieuwere functies. Alle animaties lopen alleen terwijl de kaart in beeld is (site.js zet .play). */
+.js .feature.has-visual:not(.play) .fv, .js .feature.has-visual:not(.play) .fv * { animation-play-state: paused !important; }
+
+/* Scannen: zaklamp en zoom */
+.fv-scan .fv-frame { overflow: hidden; animation: fvTorchGlow 4.4s ease-in-out infinite; }
+.fv-scan .fv-code svg { transform-origin: 50% 50%; animation: fvZoom 4.4s ease-in-out infinite; }
+.fv-tools { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; }
+.fv-tools b { height: 28px; min-width: 28px; border-radius: 999px; background: rgba(255,255,255,.85); color: #B4481F; display: grid; place-items: center;
+  font: 800 12px var(--body); box-shadow: 0 6px 14px -8px rgba(180,60,40,.6); }
+.fv-torch { animation: fvTorch 4.4s ease-in-out infinite; }
+.fv-torch svg { width: 16px; height: 16px; }
+.fv-zoom { position: relative; width: 34px; }
+.fv-zoom span { position: absolute; inset: 0; display: grid; place-items: center; }
+.fv-zoom .z2 { opacity: 0; animation: fvZ2 4.4s ease-in-out infinite; }
+.fv-zoom .z1 { animation: fvZ1 4.4s ease-in-out infinite; }
+@keyframes fvTorch { 0%, 22%, 92%, 100% { background: rgba(255,255,255,.85); color: #B4481F; } 28%, 86% { background: #FFD66B; color: #6B3A00; box-shadow: 0 0 0 4px rgba(255,214,107,.35), 0 6px 14px -8px rgba(180,60,40,.6); } }
+@keyframes fvTorchGlow { 0%, 22%, 92%, 100% { box-shadow: 0 14px 26px -16px rgba(180,60,40,.6); } 28%, 86% { box-shadow: 0 0 0 6px rgba(255,214,107,.45), 0 14px 26px -16px rgba(180,60,40,.6); } }
+@keyframes fvZoom { 0%, 45%, 100% { transform: scale(1); } 55%, 90% { transform: scale(1.22); } }
+@keyframes fvZ1 { 0%, 45%, 100% { opacity: 1; } 52%, 92% { opacity: 0; } }
+@keyframes fvZ2 { 0%, 45%, 100% { opacity: 0; } 52%, 92% { opacity: 1; } }
+
+/* Overstappen: opname, screenshots of CSV */
+.fv-record { grid-auto-flow: column; gap: 18px; }
+.fv-src { display: grid; gap: 6px; }
+.fv-src span { font: 700 12px var(--body); color: #B0123A; background: rgba(255,255,255,.45); padding: 5px 11px; border-radius: 999px; opacity: .55;
+  animation: fvSrc 6s ease-in-out infinite; }
+.fv-src .s1 { animation-delay: 2s; } .fv-src .s2 { animation-delay: 4s; }
+.fv-src .s0 { opacity: 1; background: #fff; }
+@keyframes fvSrc { 0% { opacity: .55; background: rgba(255,255,255,.45); transform: none; }
+  6%, 30% { opacity: 1; background: #fff; transform: translateX(4px); box-shadow: 0 8px 16px -10px rgba(176,18,58,.6); }
+  36%, 100% { opacity: .55; background: rgba(255,255,255,.45); transform: none; box-shadow: none; } }
+
+/* Eerst kiezen: klantenkaart of cadeaukaart */
+.fv-choice { grid-auto-flow: column; gap: 12px; }
+.fv-choice .opt { width: 96px; height: 100px; border-radius: 16px; border: 1.5px solid rgba(255,255,255,.18); background: rgba(255,255,255,.07); color: #fff;
+  display: grid; place-items: center; align-content: center; gap: 10px; font: 700 12px var(--body); animation: fvOpt1 6s ease-in-out infinite; }
+.fv-choice .o2 { animation-name: fvOpt2; }
+.fv-choice .opt i { display: block; width: 46px; height: 30px; border-radius: 6px; position: relative; }
+.fv-choice .ic-l { background: linear-gradient(135deg, #8A7FFF, var(--iris)); }
+.fv-choice .ic-l::after { content: ""; position: absolute; left: 6px; right: 14px; bottom: 6px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.75); }
+.fv-choice .ic-g { background: linear-gradient(90deg, transparent 19px, #fff 19px, #fff 26px, transparent 26px), linear-gradient(135deg, #FF8A78, var(--coral)); }
+.fv-tap { position: absolute; left: calc(50% - 11px); top: calc(50% + 10px); width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.9);
+  box-shadow: 0 0 0 6px rgba(255,255,255,.2); opacity: 0; animation: fvTap 6s ease-in-out infinite; }
+@keyframes fvTap { 0%, 8% { opacity: 0; transform: translate(-54px, 30px) scale(1); }
+  16% { opacity: 1; transform: translate(-54px, 0) scale(1); } 20% { transform: translate(-54px, 0) scale(.75); } 26% { transform: translate(-54px, 0) scale(1); opacity: 1; }
+  34%, 52% { opacity: 0; transform: translate(-54px, 0); } 58% { opacity: 1; transform: translate(54px, 0) scale(1); } 64% { transform: translate(54px, 0) scale(.75); }
+  70% { transform: translate(54px, 0) scale(1); opacity: 1; } 78%, 100% { opacity: 0; transform: translate(54px, 0); } }
+@keyframes fvOpt1 { 0%, 18%, 48%, 100% { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.07); transform: none; }
+  22%, 42% { border-color: var(--iris); background: rgba(106,92,255,.32); transform: scale(1.05); } }
+@keyframes fvOpt2 { 0%, 62%, 92%, 100% { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.07); transform: none; }
+  66%, 86% { border-color: var(--coral); background: rgba(255,107,87,.28); transform: scale(1.05); } }
+
+/* Meer dan klantenkaarten: een waaier van kortingscode, coupon, ticket en abonnement */
+.fv-types { background: linear-gradient(135deg, #ECE9FF, #F7F5FF); --k: 1; }
+.fv-types .ty { position: absolute; left: calc(50% - 56px); top: calc(50% - 44px); width: 112px; height: 88px; border-radius: 12px; padding: 9px 10px;
+  display: grid; align-content: start; gap: 3px; font-size: 11px; line-height: 1.2; box-shadow: 0 12px 22px -14px rgba(40,30,120,.6);
+  transform: translateX(calc(var(--x) * var(--k) * 1px)) rotate(var(--rot)); animation: fvDeal 7s cubic-bezier(.2,.8,.2,1) infinite; animation-delay: calc(var(--i) * .35s); }
+.fv-types .ty small { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .75; }
+.fv-types .ty b { font: 800 15px/1.1 var(--display); }
+.fv-types .ty em { font-style: normal; font-size: 10px; opacity: .8; }
+.fv-types .t1 { --x: -168; --rot: -7deg; --i: 0; background: #fff; color: #17162A; border: 1.5px dashed var(--iris); }
+.fv-types .t1 .code { font: 700 14px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; color: var(--iris-deep); background: #EFEDFF; border-radius: 6px; padding: 4px 6px; justify-self: start; margin-top: 4px; }
+.fv-types .t2 { --x: -56; --rot: -2deg; --i: 1; background: linear-gradient(135deg, #FF8A78, var(--coral)); color: #fff; }
+.fv-types .t2::before, .fv-types .t2::after { content: ""; position: absolute; top: calc(50% - 7px); width: 14px; height: 14px; border-radius: 50%; background: #F1EFFF; }
+.fv-types .t2::before { left: -7px; } .fv-types .t2::after { right: -7px; }
+.fv-types .t3 { --x: 56; --rot: 2deg; --i: 2; background: #17162A; color: #fff; border-left: 2px dashed rgba(255,255,255,.35); grid-template-columns: auto 1fr; column-gap: 8px; }
+.fv-types .t3 small, .fv-types .t3 em { grid-column: 1 / -1; }
+.fv-types .qr { display: grid; grid-template: repeat(5, 7px) / repeat(5, 7px); gap: 1px; background: #fff; padding: 3px; border-radius: 4px; justify-self: start; }
+.fv-types .qr i { background: #17162A; border-radius: 1px; }
+.fv-types .t4 { --x: 168; --rot: 7deg; --i: 3; background: linear-gradient(135deg, #2ED3A6, #19B489); color: #0B3B2E; }
+.fv-types .t4 .bar { background: #fff; border-radius: 5px; padding: 3px 5px; margin-top: 4px; display: block; }
+.fv-types .t4 .bar svg { width: 100%; height: 18px; }
+@keyframes fvDeal { 0% { opacity: 0; transform: translateY(40px) rotate(0); }
+  10%, 84% { opacity: 1; transform: translateX(calc(var(--x) * var(--k) * 1px)) rotate(var(--rot)); }
+  92%, 100% { opacity: 0; transform: translateX(calc(var(--x) * var(--k) * .6px)) translateY(-10px) rotate(var(--rot)); } }
+@media (max-width: 900px) { .fv-types { --k: .78; } }
+@media (max-width: 620px) { .fv-types { --k: .58; } .fv-types .ty { width: 88px; height: 80px; left: calc(50% - 44px); top: calc(50% - 40px); padding: 7px; } .fv-types .ty b { font-size: 13px; } .fv-types .t1 .code { font-size: 12px; padding: 3px 4px; } .fv-types .qr { grid-template: repeat(5, 6px) / repeat(5, 6px); } }
+
+/* Herinneringen: een melding en een e-mail */
+.fv-remind { background: linear-gradient(135deg, #D9F7EE, #C3F0E2); align-content: center; gap: 8px; padding: 0 10px; }
+.fv-remind .nt { width: 100%; max-width: 270px; display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(255,255,255,.95);
+  box-shadow: 0 10px 20px -14px rgba(10,80,60,.6); font-size: 11px; line-height: 1.3; color: #4B4966; animation: fvNt1 6s ease-in-out infinite; }
+.fv-remind .nt b { display: block; color: #17162A; font-size: 12px; }
+.fv-remind .nt img, .fv-remind .mail { width: 26px; height: 26px; border-radius: 7px; flex: none; }
+.fv-remind .mail { background: #0A84FF; color: #fff; display: grid; place-items: center; }
+.fv-remind .mail svg { width: 16px; height: 16px; }
+.fv-remind .n2 { animation-name: fvNt2; }
+@keyframes fvNt1 { 0%, 6% { opacity: 0; transform: translateY(-24px); } 16%, 88% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; transform: translateY(-8px); } }
+@keyframes fvNt2 { 0%, 38% { opacity: 0; transform: translateY(-24px) scale(.96); } 48%, 88% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; transform: translateY(-8px); } }
+
+/* Gids bij je kaart */
+.fv-guide { background: linear-gradient(135deg, #FFE8DC, #FFF4EE); grid-auto-flow: column; gap: 18px; padding: 0 16px; }
+.fv-guide .gc { width: 124px; height: 80px; border-radius: 12px; padding: 10px; display: grid; align-content: space-between; color: #fff;
+  box-shadow: 0 14px 24px -14px rgba(0,0,120,.6); animation: fvGc 7s ease-in-out infinite; }
+.fv-guide .gc img { height: 18px; width: auto; }
+.fv-guide .gc small { font-size: 10px; font-weight: 700; opacity: .85; }
+.fv-guide .sheet { width: min(300px, 100%); background: #fff; border-radius: 14px; padding: 8px 10px 10px; box-shadow: 0 12px 24px -16px rgba(180,72,31,.6); }
+.fv-guide .hd { display: inline-block; font: 800 11px var(--body); color: #B4481F; background: #FFE8DC; border-radius: 999px; padding: 2px 9px; margin-bottom: 6px; }
+.fv-guide ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.fv-guide li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: center; font-size: 11px; color: #4B4966; line-height: 1.25;
+  animation: fvGRow 7s ease-in-out infinite; animation-delay: calc(var(--i) * .45s); }
+.fv-guide li b { display: block; color: #17162A; font-size: 12px; }
+.fv-guide .ck { width: 20px; height: 20px; border-radius: 50%; background: var(--mint); color: #fff; display: grid; place-items: center;
+  animation: fvCk 7s cubic-bezier(.3,1.6,.5,1) infinite; animation-delay: calc(var(--i) * .45s + .2s); }
+.fv-guide .ck svg { width: 12px; height: 12px; }
+@keyframes fvGc { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(-2deg) translateY(-3px); } }
+@keyframes fvGRow { 0%, 8% { opacity: 0; transform: translateX(-12px); } 16%, 90% { opacity: 1; transform: none; } 97%, 100% { opacity: 0; } }
+@keyframes fvCk { 0%, 12% { transform: scale(0); } 20%, 90% { transform: scale(1); } 97%, 100% { transform: scale(0); } }
+@media (max-width: 520px) { .fv-guide .gc { display: none; } }
+
+/* Tot 4 foto's per pas */
+.fv-photos { background: linear-gradient(135deg, #FFE3DE, #FFF1EE); align-content: center; gap: 9px; }
+.fv-photos .frame { position: relative; width: 150px; height: 94px; border-radius: 12px; overflow: hidden; box-shadow: 0 14px 24px -14px rgba(180,60,40,.6); background: #ccc; }
+.fv-photos .ph { position: absolute; inset: 0; opacity: 0; animation: fvPh 8s ease-in-out infinite; }
+.fv-photos .ph.p0 { opacity: 1; }
+.fv-photos .p0 { background: radial-gradient(circle at 75% 28%, #FFE08A 0 11%, transparent 12%), linear-gradient(170deg, transparent 58%, #3C8D5A 59%), linear-gradient(#8FD0FF, #CFEFFF); }
+.fv-photos .p1 { background: repeating-linear-gradient(transparent 0 10px, #D7D3EA 10px 12px) 22px 16px / 104px 62px no-repeat, linear-gradient(#fff, #fff) 16px 10px / 116px 76px no-repeat, #E7E3F6; }
+.fv-photos .p2 { background: linear-gradient(135deg, #6A5CFF, #FF6B57); }
+.fv-photos .p3 { background: radial-gradient(circle at 30% 70%, #FFB199 0 22%, transparent 23%), radial-gradient(circle at 70% 40%, #FFD66B 0 18%, transparent 19%), #2B2F3A; }
+.fv-photos .ph.p1 { animation-delay: 2s; } .fv-photos .ph.p2 { animation-delay: 4s; } .fv-photos .ph.p3 { animation-delay: 6s; }
+.fv-photos .ph.p0 { animation-name: fvPh0; }
+.fv-photos .badge { position: absolute; left: 8px; bottom: 8px; font: 800 10px var(--body); color: #17162A; background: rgba(255,255,255,.92); padding: 3px 8px; border-radius: 999px;
+  animation: fvPh0 8s ease-in-out infinite; }
+.fv-photos .thumbs { display: flex; gap: 6px; }
+.fv-photos .thumbs i { width: 30px; height: 20px; border-radius: 5px; outline: 2px solid transparent; outline-offset: 1px; animation: fvTh 8s ease-in-out infinite; }
+.fv-photos .thumbs i.p0 { outline-color: var(--coral); }
+.fv-photos .thumbs i.p1 { animation-delay: 2s; background-size: 18px 10px, 22px 14px, auto; background-position: 6px 5px, 4px 3px, 0 0; }
+.fv-photos .thumbs i.p2 { animation-delay: 4s; } .fv-photos .thumbs i.p3 { animation-delay: 6s; }
+.fv-photos .thumbs i.p0 { animation-name: fvTh0; }
+@keyframes fvPh { 0% { opacity: 0; } 4%, 25% { opacity: 1; } 29%, 100% { opacity: 0; } }
+@keyframes fvPh0 { 0%, 25% { opacity: 1; } 29%, 96% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes fvTh { 0% { outline-color: transparent; } 4%, 25% { outline-color: var(--coral); transform: translateY(-2px); } 29%, 100% { outline-color: transparent; transform: none; } }
+@keyframes fvTh0 { 0%, 25% { outline-color: var(--coral); transform: translateY(-2px); } 29%, 96% { outline-color: transparent; transform: none; } 100% { outline-color: var(--coral); } }
+
+/* Slim sorteren: A tot Z, meest gebruikt, in de buurt */
+.fv-sort { background: linear-gradient(135deg, #DCEBFF, #EEF4FF); align-content: center; gap: 8px; }
+.fv-sort .seg { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); width: 300px; padding: 3px; border-radius: 10px; background: rgba(10,60,140,.1);
+  font: 700 11px var(--body); color: #17162A; text-align: center; }
+.fv-sort .seg span { position: relative; padding: 4px 2px; white-space: nowrap; }
+.fv-sort .seg i { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); border-radius: 8px; background: #fff; box-shadow: 0 3px 8px -4px rgba(10,60,140,.5);
+  animation: fvSeg 9s cubic-bezier(.6,0,.2,1) infinite; }
+.fv-sort ul { list-style: none; margin: 0; padding: 0; position: relative; width: 300px; height: 98px; }
+.fv-sort li { position: absolute; left: 0; right: 0; top: 0; height: 22px; display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center;
+  background: #fff; border-radius: 7px; padding: 0 8px 0 0; font-size: 11px; font-weight: 700; color: #17162A; box-shadow: 0 4px 10px -8px rgba(10,60,140,.5);
+  transform: translateY(calc(var(--a) * 25px)); animation: fvSortRow 9s cubic-bezier(.6,0,.2,1) infinite; }
+.fv-sort .lg { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; }
+.fv-sort .lg img { width: 17px; height: 17px; object-fit: contain; }
+.fv-sort .mt { position: relative; width: 44px; height: 14px; text-align: right; color: #0A84FF; font-variant-numeric: tabular-nums; }
+.fv-sort .mt span { position: absolute; right: 0; top: 0; opacity: 0; }
+.fv-sort .m1 { animation: fvM1 9s ease-in-out infinite; } .fv-sort .m2 { animation: fvM2 9s ease-in-out infinite; }
+@keyframes fvSeg { 0%, 28% { transform: none; } 33%, 61% { transform: translateX(100%); } 66%, 94% { transform: translateX(200%); } 100% { transform: none; } }
+@keyframes fvSortRow { 0%, 28% { transform: translateY(calc(var(--a) * 25px)); } 33%, 61% { transform: translateY(calc(var(--b) * 25px)); }
+  66%, 94% { transform: translateY(calc(var(--c) * 25px)); } 100% { transform: translateY(calc(var(--a) * 25px)); } }
+@keyframes fvM1 { 0%, 30% { opacity: 0; } 35%, 60% { opacity: 1; } 64%, 100% { opacity: 0; } }
+@keyframes fvM2 { 0%, 63% { opacity: 0; } 68%, 93% { opacity: 1; } 97%, 100% { opacity: 0; } }
+@media (max-width: 380px) { .fv-sort .seg, .fv-sort ul { width: 260px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-scan .fv-frame, .fv-scan .fv-code svg, .fv-torch, .fv-zoom span, .fv-src span, .fv-choice .opt, .fv-tap, .fv-types .ty, .fv-remind .nt,
+  .fv-guide .gc, .fv-guide li, .fv-guide .ck, .fv-photos .ph, .fv-photos .badge, .fv-photos .thumbs i, .fv-sort .seg i, .fv-sort li, .fv-sort .mt span { animation: none !important; }
+  .fv-tap { display: none; }
+  .fv-choice .o1 { border-color: var(--iris); background: rgba(106,92,255,.32); }
+}
+.nw { white-space: nowrap; }

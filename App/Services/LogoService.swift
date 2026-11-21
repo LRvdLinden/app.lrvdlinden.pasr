@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// Store logos. Known stores have their logo in the app (Shared/StoreLogos, filled by
+/// Store logos. Known stores have their logo in the app (App/StoreLogos, filled by
 /// tools/fetch_logos.py), so it shows at once, offline too. For other websites the device fetches
 /// the icon the store publishes (apple-touch-icon or site icon). Users can switch logos off in Settings.
 enum LogoService {
@@ -27,7 +27,8 @@ enum LogoService {
         for card in all {
             guard let template = StoreTemplates.template(id: card.templateID) else { continue }
             if card.colorHex.uppercased() != template.cardHex.uppercased(),
-               StoreColourHistory.isDefault(card.colorHex, for: template.id) {
+               StoreColourHistory.isDefault(card.colorHex, for: template.id)
+                || RemoteStores.isPastColour(card.colorHex, for: template.id) {
                 card.colorHex = template.cardHex
                 changed = true
             }
@@ -99,8 +100,10 @@ enum LogoService {
 
     /// The logo that ships with the app for a known store, e.g. "ah.nl".
     static func bundledLogo(for domain: String) -> Data? {
-        guard !domain.isEmpty,
-              let url = Bundle.main.url(forResource: domain, withExtension: "png")
+        guard !domain.isEmpty else { return nil }
+        // Het beheer is leidend: een logo uit het beheer gaat voor dat in de app.
+        if let remote = RemoteStores.logo(for: domain) { return remote }
+        guard let url = Bundle.main.url(forResource: domain, withExtension: "png")
                 ?? Bundle.main.url(forResource: domain, withExtension: "png", subdirectory: "StoreLogos")
         else { return nil }
         return try? Data(contentsOf: url)

@@ -13,9 +13,74 @@ import SwiftData
 enum Reminders {
     static let voucherKey = "pasr.reminders.vouchers"
     static let nearbyKey = "pasr.reminders.nearby"
+    /// Tegoed-herinnering (cadeaukaarten met tegoed, ook zonder vervaldatum) en hoe vaak.
+    static let balanceKey = "pasr.reminders.balance"
+    static let balanceIntervalKey = "pasr.reminders.balanceInterval"
+    /// Hoe: "push", "mail" of "both". E-mail kan alleen met een Pasr-account.
+    static let channelKey = "pasr.reminders.channel"
 
     static var vouchersEnabled: Bool { UserDefaults.standard.object(forKey: voucherKey) as? Bool ?? true }
     static var nearbyEnabled: Bool { UserDefaults.standard.bool(forKey: nearbyKey) }
+    static var balanceEnabled: Bool { UserDefaults.standard.object(forKey: balanceKey) as? Bool ?? true }
+    static var balanceInterval: Interval {
+        UserDefaults.standard.string(forKey: balanceIntervalKey).flatMap(Interval.init(rawValue:)) ?? .month
+    }
+    static var channel: Channel {
+        UserDefaults.standard.string(forKey: channelKey).flatMap(Channel.init(rawValue:)) ?? .push
+    }
+
+    /// Meldingen op dit apparaat: altijd, behalve als je alleen e-mail koos (en een account hebt).
+    @MainActor static var pushEnabled: Bool { channel != .mail || !AccountService.shared.isSignedIn }
+
+    enum Interval: String, CaseIterable, Identifiable {
+        case week, month, quarter
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .week: String(localized: "Elke week")
+            case .month: String(localized: "Elke maand")
+            case .quarter: String(localized: "Elk kwartaal")
+            }
+        }
+
+        /// De volgende momenten (10:00): zaterdag, de 1e van de maand of de 1e van januari, april, juli en oktober.
+        /// De mails van de server volgen hetzelfde ritme.
+        func nextDates(after now: Date = .now, count: Int, calendar: Calendar = .current) -> [Date] {
+            var result: [Date] = []
+            var components: DateComponents
+            switch self {
+            case .week: components = DateComponents(hour: 10, minute: 0, weekday: 7)
+            case .month, .quarter: components = DateComponents(day: 1, hour: 10, minute: 0)
+            }
+            var cursor = now
+            while result.count < count {
+                guard let next = calendar.nextDate(after: cursor, matching: components, matchingPolicy: .nextTime) else { break }
+                cursor = next
+                if self == .quarter, ![1, 4, 7, 10].contains(calendar.component(.month, from: next)) { continue }
+                result.append(next)
+            }
+            return result
+        }
+    }
+
+    enum Channel: String, CaseIterable, Identifiable {
+        case push, mail, both
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .push: String(localized: "Pushmelding")
+            case .mail: String(localized: "E-mail")
+            case .both: String(localized: "Beide")
+            }
+        }
+        var symbol: String {
+            switch self {
+            case .push: "bell.fill"
+            case .mail: "envelope.fill"
+            case .both: "bell.and.waves.left.and.right.fill"
+            }
+        }
+    }
 
     /// Asks for permission to show notifications (once; iOS remembers the answer).
     @discardableResult
@@ -23,206 +88,108 @@ enum Reminders {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
-    // MARK: Vouchers
+    /// Cadeaukaarten die meetellen voor de tegoed-herinnering: tegoed boven nul, niet verlopen, niet tijdelijk gedeeld.
+    static func balanceCards(_ cards: [Card]) -> [Card] {
+        cards.filter { $0.deletedAt == nil && $0.kind == .voucher && ($0.balance ?? 0) > 0 && !$0.isExpired && !$0.isTemporary }
+            .alphabetical()
+    }
 
-    /// Plans the reminders for all vouchers with an expiry date again (cheap; runs whenever cards change).
+    /// "Je hebt nog € 25,00 bij Bol" of, bij meer kaarten, het totaal met de grootste tegoeden.
+    static func balanceMessage(_ cards: [Card]) -> (title: String, body: String)? {
+        let list = balanceCards(cards)
+        guard let first = list.first else { return nil }
+        func money(_ c: Card) -> String { CardAppearance(c).balanceText ?? "" }
+        if list.count == 1 {
+            let expiry = first.expiresAt.map { String(localized: " Geldig tot \($0.formatted(date: .abbreviated, time: .omitted)).") } ?? ""
+            return (String(localized: "Je hebt nog \(money(first)) bij \(first.storeName)"),
+                    String(localized: "Vergeet je cadeaukaart niet.") + expiry)
+        }
+        let codes = Set(list.map { $0.currencyCode ?? "EUR" })
+        let top = list.sorted { ($0.balance ?? 0) > ($1.balance ?? 0) }.prefix(3)
+        var body = top.map { "\($0.storeName) \(money($0))" }.joined(separator: ", ")
+        if list.count > 3 { body += String(localized: " en \(list.count - 3) meer") }
+        if codes.count == 1, let code = codes.first {
+            let total = list.reduce(0) { $0 + ($1.balance ?? 0) }.formatted(.currency(code: code))
+            return (String(localized: "Je hebt nog \(total) tegoed op \(list.count) cadeaukaarten"), body)
+        }
+        return (String(localized: "Je hebt nog tegoed op \(list.count) cadeaukaarten"), body)
+    }
+
+    // MARK: Plannen
+
+    /// Plant alle herinneringen opnieuw (goedkoop; gebeurt als kaarten veranderen): vervaldatums van vouchers en
+    /// kortingscodes, verlengingen van abonnementen en de tegoed-herinnering.
     @MainActor
     static func rescheduleVouchers(_ cards: [Card]) async {
         let center = UNUserNotificationCenter.current()
-        let pending = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix("voucher-") }
+        let pending = await center.pendingNotificationRequests().map(\.identifier)
+            .filter { $0.hasPrefix("voucher-") || $0.hasPrefix("balance-") || $0.hasPrefix("renew-") }
         center.removePendingNotificationRequests(withIdentifiers: pending)
-        guard vouchersEnabled else { return }
-        let vouchers = cards.filter { $0.deletedAt == nil && $0.kind == .voucher && $0.expiresAt != nil }
-        guard !vouchers.isEmpty else { return }
+        guard pushEnabled else { return }
+        let live = cards.filter { $0.deletedAt == nil && !$0.isTemporary }
+        let expiring = vouchersEnabled ? live.filter { $0.kind.hasExpiry && $0.expiresAt != nil } : []
+        let renewing = vouchersEnabled ? live.filter { $0.kind == .subscription && $0.details.renewsAt != nil } : []
+        let balance = balanceEnabled ? balanceMessage(live) : nil
+        guard !expiring.isEmpty || !renewing.isEmpty || balance != nil else { return }
         let settings = await center.notificationSettings()
         if settings.authorizationStatus == .notDetermined { await requestPermission() }
 
         let calendar = Calendar.current
-        for card in vouchers {
+        func add(_ id: String, title: String, body: String, at fire: Date, card: Card?, thread: String) async {
+            guard fire > .now else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+            if let card { content.userInfo = ["cardID": card.id.uuidString] }
+            content.threadIdentifier = thread
+            let trigger = UNCalendarNotificationTrigger(
+                dateMatching: calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fire), repeats: false)
+            try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
+        }
+
+        for card in expiring {
             guard let expires = card.expiresAt else { continue }
             let day = calendar.startOfDay(for: expires)
-            let balance = CardAppearance(card).balanceText
+            let balance = card.kind == .voucher ? CardAppearance(card).balanceText : nil
+            let isCode = card.kind == .code
             let moments: [(Int, String, String)] = [
-                (-7, String(localized: "\(card.storeName) verloopt over een week"),
+                (-7, isCode ? String(localized: "Kortingscode \(card.storeName) verloopt over een week")
+                            : String(localized: "\(card.storeName) verloopt over een week"),
                  balance.map { String(localized: "Je hebt nog \($0) tegoed. Gebruik je kaart op tijd.") }
-                    ?? String(localized: "Gebruik je kaart op tijd.")),
-                (0, String(localized: "\(card.storeName) verloopt vandaag"),
+                    ?? (isCode ? String(localized: "Gebruik je code op tijd.") : String(localized: "Gebruik je kaart op tijd."))),
+                (0, isCode ? String(localized: "Kortingscode \(card.storeName) verloopt vandaag")
+                           : String(localized: "\(card.storeName) verloopt vandaag"),
                  balance.map { String(localized: "Laatste dag om je \($0) te gebruiken.") }
-                    ?? String(localized: "Laatste dag om je kaart te gebruiken.")),
+                    ?? (isCode ? String(localized: "Laatste dag om je code te gebruiken.") : String(localized: "Laatste dag om je kaart te gebruiken."))),
             ]
             for (offset, title, body) in moments {
                 guard let date = calendar.date(byAdding: .day, value: offset, to: day),
-                      let fire = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: date), fire > .now else { continue }
-                let content = UNMutableNotificationContent()
-                content.title = title
-                content.body = body
-                content.sound = .default
-                content.userInfo = ["cardID": card.id.uuidString]
-                content.threadIdentifier = "vouchers"
-                let trigger = UNCalendarNotificationTrigger(
-                    dateMatching: calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fire), repeats: false)
-                try? await center.add(UNNotificationRequest(identifier: "voucher-\(card.id.uuidString)-\(offset)",
-                                                            content: content, trigger: trigger))
+                      let fire = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: date) else { continue }
+                await add("voucher-\(card.id.uuidString)-\(offset)", title: title, body: body, at: fire, card: card, thread: "vouchers")
+            }
+        }
+
+        for card in renewing {
+            guard let renews = card.details.renewsAt,
+                  let date = calendar.date(byAdding: .day, value: -2, to: calendar.startOfDay(for: renews)),
+                  let fire = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: date) else { continue }
+            let appearance = CardAppearance(card)
+            let cost = card.details.cost.map { $0.formatted(.currency(code: card.currencyCode ?? "EUR")) }
+            await add("renew-\(card.id.uuidString)",
+                      title: String(localized: "\(card.storeName) verlengt over 2 dagen"),
+                      body: cost.map { String(localized: "Je betaalt dan \($0). Opzeggen? Doe het op tijd.") }
+                        ?? (appearance.infoLine ?? String(localized: "Opzeggen? Doe het op tijd.")),
+                      at: fire, card: card, thread: "subscriptions")
+        }
+
+        if let balance {
+            let single = balanceCards(live).count == 1 ? balanceCards(live).first : nil
+            for (i, fire) in balanceInterval.nextDates(count: 3).enumerated() {
+                await add("balance-\(i)", title: balance.title, body: balance.body, at: fire, card: single, thread: "balance")
             }
         }
     }
-}
-
-/// Finds the branches of your stores around you (Apple Maps, on the device) and lets iOS show a notification
-/// when you walk in. iOS allows 20 places per app, so the nearest 20 are used and refreshed when you open Pasr.
-@MainActor
-@Observable
-final class NearbyStores: NSObject, CLLocationManagerDelegate {
-    static let shared = NearbyStores()
-
-    private let manager = CLLocationManager()
-    private var continuation: CheckedContinuation<CLLocation?, Never>?
-    private(set) var lastRefresh: Date?
-    private(set) var placesWatched = 0
-
-    override init() {
-        super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-    }
-
-    var authorization: CLAuthorizationStatus { manager.authorizationStatus }
-
-    /// Switches the feature on: asks for location and notifications, then plans the places.
-    func enable(cards: [Card]) async -> Bool {
-        UserDefaults.standard.set(true, forKey: Reminders.nearbyKey)
-        guard await Reminders.requestPermission() else { return false }
-        if manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization() }
-        await refresh(cards: cards, force: true)
-        return manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways
-    }
-
-    func disable() async {
-        UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
-        await removeAll()
-    }
-
-    private func removeAll() async {
-        let center = UNUserNotificationCenter.current()
-        let ids = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix("nearby-") }
-        center.removePendingNotificationRequests(withIdentifiers: ids)
-        placesWatched = 0
-    }
-
-    /// Looks up the nearest branches again (at most once an hour unless forced).
-    func refresh(cards: [Card], force: Bool = false) async {
-        guard Reminders.nearbyEnabled else { return }
-        if !force, let last = lastRefresh, Date.now.timeIntervalSince(last) < 3600 { return }
-        guard manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways,
-              let here = await currentLocation() else { return }
-        lastRefresh = .now
-
-        // One entry per store you have a card for (the card that opens when you arrive).
-        var stores: [(name: String, cardID: UUID)] = []
-        var seen = Set<String>()
-        for card in cards.alphabetical() where card.deletedAt == nil {
-            let name = StoreTemplates.template(id: card.templateID)?.name ?? card.storeName
-            let key = name.lowercased()
-            guard !name.isEmpty, !name.contains("eigen kaart"), seen.insert(key).inserted else { continue }
-            stores.append((name, card.id))
-        }
-
-        var places: [(distance: CLLocationDistance, store: String, cardID: UUID, coordinate: CLLocationCoordinate2D)] = []
-        for store in stores.prefix(40) {
-            let request = MKLocalSearch.Request()
-            request.naturalLanguageQuery = store.name
-            request.resultTypes = .pointOfInterest
-            request.region = MKCoordinateRegion(center: here.coordinate, latitudinalMeters: 15_000, longitudinalMeters: 15_000)
-            guard let response = try? await MKLocalSearch(request: request).start() else { continue }
-            let wanted = Self.squash(store.name)
-            for item in response.mapItems.prefix(10) {
-                // Only real branches of that store (Maps also returns things that merely mention the name).
-                guard let name = item.name, Self.squash(name).contains(wanted) || wanted.contains(Self.squash(name)) else { continue }
-                let coordinate = item.placemark.coordinate
-                let distance = here.distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
-                places.append((distance, store.name, store.cardID, coordinate))
-            }
-        }
-        // Nearest 20, at most 3 per store so one chain doesn't take every place.
-        var perStore: [String: Int] = [:]
-        let chosen = places.sorted { $0.distance < $1.distance }.filter { place in
-            perStore[place.store, default: 0] += 1
-            return perStore[place.store]! <= 3
-        }.prefix(20)
-
-        await removeAll()
-        let center = UNUserNotificationCenter.current()
-        for (index, place) in chosen.enumerated() {
-            let region = CLCircularRegion(center: place.coordinate, radius: 120, identifier: "nearby-\(index)")
-            region.notifyOnEntry = true
-            region.notifyOnExit = false
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "Je bent bij \(place.store)")
-            content.body = String(localized: "Tik om je kaart te tonen.")
-            content.userInfo = ["cardID": place.cardID.uuidString]
-            content.threadIdentifier = "nearby"
-            content.interruptionLevel = .active
-            content.relevanceScore = 1
-            let trigger = UNLocationNotificationTrigger(region: region, repeats: true)
-            try? await center.add(UNNotificationRequest(identifier: "nearby-\(index)", content: content, trigger: trigger))
-        }
-        placesWatched = chosen.count
-    }
-
-    /// Up to 10 branches of one store around you, nearest first (for the locations of an Apple Wallet pass).
-    /// Empty without location access; it never asks for it.
-    func branchesNearby(of store: String) async -> [CLLocationCoordinate2D] {
-        guard !store.isEmpty, manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways,
-              let here = await currentLocation() else { return [] }
-        let request = MKLocalSearch.Request()
-        request.naturalLanguageQuery = store
-        request.resultTypes = .pointOfInterest
-        request.region = MKCoordinateRegion(center: here.coordinate, latitudinalMeters: 25_000, longitudinalMeters: 25_000)
-        guard let response = try? await MKLocalSearch(request: request).start() else { return [] }
-        let wanted = Self.squash(store)
-        return response.mapItems
-            .filter { item in
-                guard let name = item.name else { return false }
-                return Self.squash(name).contains(wanted) || wanted.contains(Self.squash(name))
-            }
-            .map(\.placemark.coordinate)
-            .sorted {
-                here.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude))
-                    < here.distance(from: CLLocation(latitude: $1.latitude, longitude: $1.longitude))
-            }
-            .prefix(10)
-            .map { $0 }
-    }
-
-    /// "AH" and "Albert Heijn", "Kruidvat Apeldoorn" → lowercase letters and digits only.
-    private static func squash(_ text: String) -> String {
-        text.lowercased().filter { $0.isLetter || $0.isNumber }
-    }
-
-    private func currentLocation() async -> CLLocation? {
-        if let recent = manager.location, Date.now.timeIntervalSince(recent.timestamp) < 600 { return recent }
-        return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            manager.requestLocation()
-        }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let location = locations.last
-        Task { @MainActor in
-            self.continuation?.resume(returning: location)
-            self.continuation = nil
-        }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        Task { @MainActor in
-            self.continuation?.resume(returning: nil)
-            self.continuation = nil
-        }
-    }
-
-    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {}
 }
 
 /// Opens the card from a tapped notification.
@@ -232,36 +199,61 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     @MainActor static var pendingCardID: UUID? {
         didSet { NotificationCenter.default.post(name: .pasrOpenCard, object: nil) }
     }
+    /// Pushmelding "nieuwe winkel": RootView opent Kaart toevoegen bij die winkel.
+    @MainActor static var pendingStoreID: String? {
+        didSet { NotificationCenter.default.post(name: .pasrOpenStore, object: nil) }
+    }
 
     func activate() { UNUserNotificationCenter.current().delegate = self }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        if let id = (response.notification.request.content.userInfo["cardID"] as? String).flatMap(UUID.init) {
-            await MainActor.run { Self.pendingCardID = id }
+    // Met completion handlers in plaats van async: de async-varianten roepen de afhandeling van iOS niet op de
+    // hoofdthread aan, en dan crasht de app bij het openen van een melding.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let info = response.notification.request.content.userInfo
+        let cardID = (info["cardID"] as? String).flatMap(UUID.init)
+        let storeID = info["kind"] as? String == "store" ? info["store"] as? String : nil
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                if let cardID { Self.pendingCardID = cardID } else if let storeID { Self.pendingStoreID = storeID }
+            }
+            completionHandler()
         }
     }
 
     /// Also show them while Pasr is open.
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list, .sound])
     }
 }
 
 extension Notification.Name {
     static let pasrOpenCard = Notification.Name("pasrOpenCard")
+    static let pasrOpenStore = Notification.Name("pasrOpenStore")
+    /// Sluit open vensters (voor een binnenkomende link).
+    static let pasrCloseSheets = Notification.Name("pasrCloseSheets")
 }
 
 
-/// Refreshes the "at the store" places when Pasr comes to the front (iOS keeps watching them afterwards).
+/// Plant de plekken voor "Kaart tonen bij de winkel" als Pasr naar voren komt, en opnieuw als eigen locaties
+/// veranderen. Met de toestemming Altijd doet iOS het daarna zelf bij een verplaatsing (zie NearbyStores).
 struct RemindersModifier: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
+
+    private var placesFingerprint: String {
+        cards.map { "\($0.id)\($0.placesData?.count ?? 0)\($0.storeName)" }.sorted().joined()
+    }
 
     func body(content: Content) -> some View {
         content
             .task { await NearbyStores.shared.refresh(cards: cards) }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await NearbyStores.shared.refresh(cards: cards) } }
+            }
+            .onChange(of: placesFingerprint) { _, _ in
+                Task { await NearbyStores.shared.sourcesChanged(cards: cards) }
             }
     }
 }
@@ -270,21 +262,79 @@ extension View {
     func reminders() -> some View { modifier(RemindersModifier()) }
 }
 
-/// Settings: voucher reminders and the card at the store.
+/// Settings: herinneringen (vervaldatums, tegoed; push of e-mail) en de kaart bij de winkel.
 struct RemindersSettingsSection: View {
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
     @AppStorage(Reminders.voucherKey) private var vouchers = true
+    @AppStorage(Reminders.balanceKey) private var balance = true
+    @AppStorage(Reminders.balanceIntervalKey) private var interval = Reminders.Interval.month.rawValue
+    @AppStorage(Reminders.channelKey) private var channel = Reminders.Channel.push.rawValue
     @AppStorage(Reminders.nearbyKey) private var nearby = false
+    @AppStorage(UserPush.newStoresKey) private var newStores = false
     @State private var note: String?
+    @State private var savingChannel = false
     private var stores: NearbyStores { .shared }
+    private var account: AccountService { .shared }
+
+    private func remindersChanged() {
+        Task {
+            await Reminders.rescheduleVouchers(cards)
+            await MailReminders.syncIfMailing()
+        }
+    }
+
+    private var channelBinding: Binding<String> {
+        Binding(get: { account.isSignedIn ? channel : Reminders.Channel.push.rawValue }, set: { new in
+            let old = channel
+            channel = new
+            savingChannel = true
+            Task {
+                defer { savingChannel = false }
+                do {
+                    try await MailReminders.save(enabled: new != Reminders.Channel.push.rawValue)
+                    note = nil
+                } catch {
+                    channel = old
+                    note = error.localizedDescription
+                }
+                await Reminders.rescheduleVouchers(cards)
+            }
+        })
+    }
 
     var body: some View {
         Section {
             Toggle(isOn: $vouchers) {
-                SettingsLabel("Herinnering als een voucher verloopt", symbol: "bell.badge.fill", color: .red)
+                SettingsLabel("Vervaldatums en verlengingen", symbol: "bell.badge.fill", color: .red)
             }
-            .onChange(of: vouchers) { _, _ in Task { await Reminders.rescheduleVouchers(cards) } }
+            .onChange(of: vouchers) { _, _ in remindersChanged() }
 
+            Toggle(isOn: $balance) {
+                SettingsLabel("Tegoed-herinnering", symbol: "eurosign.circle.fill", color: Brand.mint)
+            }
+            .onChange(of: balance) { _, _ in remindersChanged() }
+            if balance {
+                Picker(selection: $interval) {
+                    ForEach(Reminders.Interval.allCases) { Text($0.title).tag($0.rawValue) }
+                } label: {
+                    SettingsLabel("Hoe vaak", symbol: "calendar", color: .orange)
+                }
+                .onChange(of: interval) { _, _ in remindersChanged() }
+            }
+
+            if account.isSignedIn {
+                Picker(selection: channelBinding) {
+                    ForEach(Reminders.Channel.allCases) { c in
+                        Label(c.title, systemImage: c.symbol).tag(c.rawValue)
+                    }
+                } label: {
+                    HStack {
+                        SettingsLabel("Herinneren via", symbol: "envelope.badge.fill", color: Brand.iris)
+                        if savingChannel { ProgressView().controlSize(.small) }
+                    }
+                }
+                .disabled(savingChannel)
+            }
             Toggle(isOn: Binding(get: { nearby }, set: { on in
                 Task {
                     if on {
@@ -298,18 +348,143 @@ struct RemindersSettingsSection: View {
             })) {
                 SettingsLabel("Kaart tonen bij de winkel", symbol: "location.fill", color: .blue)
             }
+
+            if nearby {
+                if stores.hasAlways {
+                    LabeledContent {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Brand.mint)
+                    } label: {
+                        SettingsLabel("Locatie: Altijd", symbol: "location.circle.fill", color: .blue)
+                    }
+                } else {
+                    Button { stores.requestAlways() } label: {
+                        HStack {
+                            SettingsLabel("Locatie: Altijd", symbol: "location.circle", color: .orange)
+                            Spacer()
+                            Text("Zet aan").foregroundStyle(Brand.iris)
+                        }
+                    }
+                    .tint(.primary)
+                }
+                NavigationLink {
+                    NearbyPlacesView()
+                } label: {
+                    LabeledContent {
+                        Text("\(stores.placesWatched)")
+                    } label: {
+                        SettingsLabel("Winkels in de buurt", symbol: "mappin.and.ellipse", color: Brand.coral)
+                    }
+                }
+            }
+
+            if AccountService.shared.isSignedIn {
+                Toggle(isOn: Binding(get: { newStores }, set: { on in
+                    newStores = on
+                    Task {
+                        if on, !(await UserPush.enable()) {
+                            newStores = false
+                            note = String(localized: "Sta meldingen voor Pasr toe in de Instellingen van je iPhone.")
+                        }
+                        await UserPush.sync()
+                    }
+                })) {
+                    SettingsLabel("Nieuwe winkels in Pasr", symbol: "storefront.fill", color: Brand.mint)
+                }
+            }
         } header: {
             Text("Meldingen")
         } footer: {
             Text(note ?? footer)
         }
+        .task { await MailReminders.refreshChannel() }
+    }
+
+    private var remindersFooter: String {
+        let balanceText = balance
+            ? String(localized: "Heb je tegoed op een cadeaukaart, ook zonder vervaldatum, dan krijg je \((Reminders.Interval(rawValue: interval) ?? .month).title.lowercased()) een seintje. ")
+            : ""
+        guard account.isSignedIn else {
+            return balanceText + String(localized: "Herinneringen ook per e-mail? Dat kan met een Pasr-account.")
+        }
+        switch Reminders.Channel(rawValue: channel) ?? .push {
+        case .push: return balanceText
+        case .mail: return balanceText + String(localized: "Je krijgt de herinneringen per e-mail van support@pasr.nl, niet als melding op dit apparaat. Alleen je eigen kaarten in je account tellen mee, niet die in een gedeelde Pasr.")
+        case .both: return balanceText + String(localized: "Je krijgt de herinneringen als melding en per e-mail van support@pasr.nl. Voor e-mail tellen alleen je eigen kaarten in je account mee, niet die in een gedeelde Pasr.")
+        }
     }
 
     private var footer: String {
-        var text = String(localized: "Bij de winkel verschijnt je kaart op je toegangsscherm. Je locatie blijft op je iPhone.")
-        if nearby, stores.placesWatched > 0 {
-            text += " " + String(localized: "Nu actief voor \(stores.placesWatched) winkels in de buurt.")
+        remindersFooter + (remindersFooter.isEmpty ? "" : "\n\n") + nearbyFooter
+    }
+
+    private var nearbyFooter: String {
+        guard nearby else {
+            return String(localized: "Sta je bij een winkel, dan verschijnt je kaart met een melding. Je locatie blijft op je iPhone.")
         }
-        return text
+        if stores.hasAlways {
+            return String(localized: "Je krijgt een melding als je binnen 5 meter van de winkel bent, niet als je langsrijdt. Eén winkel tegelijk, en dezelfde winkel hoogstens eens per 4 uur. Je locatie blijft op je iPhone.")
+        }
+        return String(localized: "Zet je locatie voor Pasr op \u{201C}Altijd\u{201D}. Alleen dan kan Pasr nagaan of je echt bij de winkel bent en niet alleen in de buurt. Je locatie blijft op je iPhone.")
+    }
+}
+
+/// Instellingen › Winkels in de buurt: welke plekken iOS nu bewaakt (hoogstens 20), eigen locaties eerst.
+struct NearbyPlacesView: View {
+    @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
+    private var stores: NearbyStores { .shared }
+    @State private var busy = false
+
+    var body: some View {
+        List {
+            Section {
+                if stores.watched.isEmpty {
+                    Text("Nog geen winkels gevonden. Trek omlaag of tik op Zoek opnieuw.").foregroundStyle(.secondary)
+                }
+                ForEach(stores.watched) { place in
+                    HStack(spacing: 12) {
+                        Image(systemName: place.own ? "mappin.circle.fill" : "storefront.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(place.own ? Brand.coral : Brand.iris)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(place.store).font(.body.weight(.semibold))
+                            Text(place.own ? String(localized: "Eigen locatie") + (place.name == place.store ? "" : " · \(place.name)") : place.name)
+                                .font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        Spacer()
+                        if let here = stores.lastLocation {
+                            Text(Self.distance(here.distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude))))
+                                .font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } footer: {
+                Text("Winkels die dicht bij elkaar liggen delen een gebied; iOS bewaakt er hoogstens 20. Eigen locaties gaan voor en zijn het preciest: zet je vaste filiaal vast bij een kaart onder Wijzig › Locaties › Ik sta hier.")
+            }
+            if let plan = stores.lastPlan {
+                Section {
+                    LabeledContent("Bijgewerkt", value: plan.formatted(.relative(presentation: .named)))
+                }
+            }
+        }
+        .navigationTitle("Winkels in de buurt")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if busy { ProgressView() } else {
+                    Button("Zoek opnieuw", systemImage: "arrow.clockwise") { Task { await reload() } }
+                }
+            }
+        }
+        .refreshable { await reload() }
+    }
+
+    private func reload() async {
+        busy = true
+        defer { busy = false }
+        await stores.refresh(cards: cards, force: true)
+    }
+
+    static func distance(_ meters: CLLocationDistance) -> String {
+        Measurement(value: meters, unit: UnitLength.meters)
+            .formatted(.measurement(width: .abbreviated, usage: .road, numberFormatStyle: .number.precision(.fractionLength(0...1))))
     }
 }

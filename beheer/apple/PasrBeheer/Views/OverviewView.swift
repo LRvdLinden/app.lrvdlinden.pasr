@@ -24,12 +24,12 @@ struct OverviewView: View {
                 kpis
                 chartCard
                 ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: 16) { botsCard; perAccountCard; countriesCard }
+                    HStack(alignment: .top, spacing: 16) { botsCard; perAccountCard; countriesCard; sharingCard }
                     VStack(spacing: 16) {
                         HStack(alignment: .top, spacing: 16) { botsCard; perAccountCard }
-                        countriesCard
+                        HStack(alignment: .top, spacing: 16) { countriesCard; sharingCard }
                     }
-                    VStack(spacing: 16) { botsCard; perAccountCard; countriesCard }
+                    VStack(spacing: 16) { botsCard; perAccountCard; countriesCard; sharingCard }
                 }
                 Text("Alleen tellingen en accountgegevens. De inhoud van kaarten staat versleuteld op de server en is hier niet te zien. Dagen in UTC.")
                     .font(.caption).foregroundStyle(Theme.muted)
@@ -77,6 +77,10 @@ struct OverviewView: View {
                 KPITile(title: "Actief", value: Fmt.n(t.active_30d), detail: "ingelogd, 30 dagen", color: Theme.iris2)
                 KPITile(title: "Wallet-passen", value: Fmt.n(stats?.wallet_total ?? 0), detail: "gemaakt, totaal", color: Theme.sky)
                 KPITile(title: "Landen", value: Fmt.n((stats?.countries ?? [:]).keys.filter { $0 != "?" }.count), detail: "waar accounts vandaan komen", color: Theme.amber)
+                KPITile(title: "Gedeelde Pasrs", value: Fmt.n(stats?.shared?.groups ?? 0),
+                        detail: "\(Fmt.plural(stats?.shared?.people ?? 0, "persoon", "personen")) · \(Fmt.plural(stats?.shared?.cards ?? 0, "kaart", "kaarten"))", color: Theme.mint)
+                KPITile(title: "Tijdelijk gedeeld", value: Fmt.n(stats?.temp?.active ?? 0),
+                        detail: "nu geldig · +\(Fmt.n(stats?.temp?.new_7d ?? 0)) deze week", color: Theme.violet)
             }
             .redacted(reason: stats == nil ? .placeholder : [])
         }
@@ -161,6 +165,32 @@ struct OverviewView: View {
                 } else {
                     ForEach(Array(entries), id: \.key) { e in
                         DistRow(label: "\(Fmt.flag(e.key))  \(Fmt.country(e.key))", value: e.value, total: total, max: top, color: Theme.mint)
+                    }
+                }
+            }
+        }
+    }
+
+    private var sharingCard: some View {
+        let sh = stats?.shared ?? Stats.Shared(), tp = stats?.temp ?? Stats.Temp()
+        let rows: [(String, Int)] = [
+            ("Gedeelde Pasrs", sh.groups), ("Personen in een gedeelde Pasr", sh.people), ("Gedeelde kaarten", sh.cards),
+            ("Openstaande uitnodigingen", sh.invites), ("Tijdelijk gedeeld, nu geldig", tp.active),
+            ("Tijdelijk: keren geopend (30 dagen)", tp.opens), ("Tijdelijk: eerder gestopt (30 dagen)", tp.revoked_30d),
+        ]
+        return CardBox {
+            VStack(alignment: .leading, spacing: 10) {
+                header("Delen", "gedeelde Pasrs en tijdelijk delen")
+                if rows.allSatisfy({ $0.1 == 0 }) {
+                    Text("Nog niets gedeeld.").font(.subheadline).foregroundStyle(Theme.muted)
+                } else {
+                    ForEach(rows, id: \.0) { row in
+                        HStack {
+                            Text(row.0).font(.subheadline)
+                            Spacer()
+                            Text(Fmt.n(row.1)).font(.subheadline.monospacedDigit().weight(.semibold))
+                        }
+                        Divider().overlay(Theme.line)
                     }
                 }
             }

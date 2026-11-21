@@ -4,7 +4,17 @@ import SwiftUI
 struct AddCardView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
-    @State private var path: [Choice] = []
+    @State private var path: [Choice]
+    @State private var requesting = false
+    /// Wat je toevoegt: een klantenkaart of een cadeaukaart/voucher. De lijst toont alleen die soort.
+    @State private var kind: CardKind
+    private var catalog = StoreCatalog.shared
+
+    /// `store`: meteen naar die winkel (bijvoorbeeld vanuit de melding "nieuwe winkel").
+    init(store: StoreTemplate? = nil) {
+        _path = State(initialValue: store.map { [Choice.template($0)] } ?? [])
+        _kind = State(initialValue: store?.kind ?? .loyalty)
+    }
     @State private var showScan = false
     /// A card scanned whose store wasn't recognised: picking a store fills in its number.
     @State private var scanned: ScannedCode?
@@ -16,21 +26,109 @@ struct AddCardView: View {
 
     enum Choice: Hashable {
         case template(StoreTemplate)
-        case custom(String)
+        case custom(String, CardKind)
     }
 
-    private var templates: [StoreTemplate] {
+    /// Onderaan (en als zoeken niets oplevert): een winkel aanvragen.
+    private var missingStore: some View {
+        Button { requesting = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "storefront")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 46, height: 46)
+                    .background(Brand.gradient, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(search.isEmpty ? "Mis je een winkel?" : "\(search) staat er niet tussen?").font(.headline)
+                    Text("Ook cadeaukaarten en vouchers. Is hij toegevoegd, dan krijg je een melding.").font(.subheadline).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func templates(of kind: CardKind) -> [StoreTemplate] {
+        _ = catalog.version   // opnieuw tekenen als er winkels bij zijn gekomen
         let query = search.trimmingCharacters(in: .whitespaces)
-        let list = StoreTemplates.all.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        let list = StoreTemplates.all.filter { $0.kind == kind }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         guard !query.isEmpty else { return list }
         return list.filter { t in t.matchTerms.contains { $0.localizedCaseInsensitiveContains(query) } }
     }
 
-    /// By category; while searching, one list without headers.
+    private var templates: [StoreTemplate] { templates(of: kind) }
+
+    /// Bij zoeken: staat de winkel er ook als de andere soort in? Dan wijzen we erop.
+    private var otherKindMatch: StoreTemplate? {
+        guard !search.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        return templates(of: kind == .voucher ? .loyalty : .voucher).first
+    }
+
+    /// By category (empty ones left out); while searching, one list without headers.
     private var groups: [(String, [StoreTemplate])] {
         let list = templates
-        guard search.trimmingCharacters(in: .whitespaces).isEmpty else { return [("", list)] }
-        return StoreTemplates.categories.map { category in (category, list.filter { $0.category == category }) }
+        guard search.trimmingCharacters(in: .whitespaces).isEmpty else { return list.isEmpty ? [] : [("", list)] }
+        let known = Set(StoreTemplates.categories)
+        let rest = list.filter { !known.contains($0.category) }
+        return (StoreTemplates.categories.map { category in (category, list.filter { $0.category == category }) }
+                + [(String(localized: "Overig"), rest)])
+            .filter { !$0.1.isEmpty }
+    }
+
+    private var kindPicker: some View {
+        Picker("Soort kaart", selection: $kind.animation(.snappy)) {
+            Label("Klantenkaart", systemImage: "creditcard").tag(CardKind.loyalty)
+            Label("Cadeaukaart / voucher", systemImage: "gift").tag(CardKind.voucher)
+        }
+        .pickerStyle(.segmented)
+        .labelStyle(.titleAndIcon)
+    }
+
+    /// Onder de keuze: kortingscode, ticket en abonnement voeg je zelf toe (ze staan niet in de winkellijst).
+    private var otherKinds: some View {
+        HStack(spacing: 8) {
+            ForEach(CardKind.others) { other in
+                Button { path.append(.custom(search, other)) } label: {
+                    Label(other.displayName, systemImage: other.symbol)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(Text("Nieuwe \(other.displayName.lowercased()) toevoegen"))
+            }
+        }
+    }
+
+    /// Tijdens zoeken: "Kruidvat heeft ook een cadeaukaart. Toon cadeaukaart".
+    @ViewBuilder private var otherKindHint: some View {
+        if let other = otherKindMatch {
+            let isVoucher = other.kind == .voucher
+            Button {
+                withAnimation(.snappy) { kind = other.kind }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: isVoucher ? "gift" : "creditcard")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    (Text(isVoucher ? "Er is ook een cadeaukaart. " : "Er is ook een klantenkaart. ")
+                     + Text(isVoucher ? "Toon cadeaukaarten" : "Toon klantenkaarten").foregroundStyle(Brand.mint).bold())
+                        .font(.subheadline)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .padding(14)
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
@@ -38,12 +136,21 @@ struct AddCardView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
+                kindPicker
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                otherKinds
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
                 scanBanner
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
+                otherKindHint
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
                 LazyVGrid(columns: columns, spacing: 12, pinnedViews: [.sectionHeaders]) {
-                    Button { path.append(.custom(search)) } label: {
-                        tile(name: search.isEmpty ? String(localized: "Andere winkel") : search,
+                    Button { path.append(.custom(search, kind)) } label: {
+                        tile(name: search.isEmpty ? String(localized: kind == .voucher ? "Andere cadeaukaart" : "Andere winkel") : search,
                              colorHex: "#2B2F3A", symbol: "plus")
                     }
                     .buttonStyle(.plain)
@@ -53,7 +160,8 @@ struct AddCardView: View {
                             ForEach(items) { template in
                                 Button { path.append(.template(template)) } label: {
                                     tile(name: template.name, colorHex: template.cardHex, symbol: nil,
-                                         domain: template.domain.isEmpty ? nil : template.domain)
+                                         domain: template.domain.isEmpty ? nil : template.domain,
+                                         balanceCheck: template.kind == .voucher && BalancePages.url(for: template.id) != nil)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -70,6 +178,10 @@ struct AddCardView: View {
                     }
                 }
                 .padding(16)
+
+                missingStore
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 28)
             }
             .background(Brand.ink.ignoresSafeArea())
             .navigationTitle("Kaart toevoegen")
@@ -78,17 +190,19 @@ struct AddCardView: View {
             #endif
             .searchable(text: $search, prompt: Text("Naam van de winkel"))
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
             .navigationDestination(for: Choice.self) { choice in
                 switch choice {
                 case .template(let template):
                     CardEditorView(template: template, number: scanned?.number, format: scanned?.format, onSaved: { dismiss() })
-                case .custom(let name):
-                    CardEditorView(storeName: name, number: scanned?.number, format: scanned?.format, onSaved: { dismiss() })
+                case .custom(let name, let kind):
+                    CardEditorView(storeName: name, kind: kind, number: scanned?.number, format: scanned?.format, onSaved: { dismiss() })
                 }
             }
         }
+        .sheet(isPresented: $requesting) { StoreRequestSheet(name: search) }
+        .task { await catalog.refresh() }
         .fullScreenCover(isPresented: $showScan) {
             CardScanView(onAdded: { _ in dismiss() },
                          onUnknownStore: { number, format in
@@ -114,8 +228,8 @@ struct AddCardView: View {
                 .buttonStyle(.plain)
             }
             .padding(16)
-            .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        } else {
+            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else if ScannerView.isAvailable {   // geen camera-scanner op de Mac of Vision Pro
             Button { showScan = true } label: {
                 HStack(spacing: 14) {
                     Image(systemName: "camera.viewfinder")
@@ -123,8 +237,9 @@ struct AddCardView: View {
                         .frame(width: 52, height: 52)
                         .background(.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Scan je kaart").font(.headline)
-                        Text("Pasr herkent de winkel en zet hem er meteen in").font(.subheadline).opacity(0.85)
+                        Text(kind == .voucher ? "Scan je cadeaukaart" : "Scan je kaart").font(.headline)
+                        Text(kind == .voucher ? "Met saldo, vervaldatum en saldo-checker" : "Pasr herkent de winkel en zet hem er meteen in")
+                            .font(.subheadline).opacity(0.85)
                     }
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.right").font(.subheadline.weight(.semibold)).opacity(0.7)
@@ -140,7 +255,8 @@ struct AddCardView: View {
 
     /// A tile like the cards in SuperCards: the brand colour with the logo big in the middle, the name
     /// underneath. Without a logo, the name goes on the tile.
-    private func tile(name: String, colorHex: String, symbol: String?, domain: String? = nil) -> some View {
+    private func tile(name: String, colorHex: String, symbol: String?, domain: String? = nil,
+                      balanceCheck: Bool = false) -> some View {
         let ink = Color.onCard(colorHex)
         let hasLogo = domain.map { LogoService.bundledLogo(for: $0) != nil } ?? false
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -166,6 +282,18 @@ struct AddCardView: View {
                         .foregroundStyle(ink)
                         .lineLimit(2)
                         .padding(12)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if balanceCheck {
+                    Label("Saldo-check", systemImage: "gift")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .padding(7)
+                        .accessibilityLabel("Saldo checken kan")
                 }
             }
             .aspectRatio(Brand.cardAspect, contentMode: .fit)

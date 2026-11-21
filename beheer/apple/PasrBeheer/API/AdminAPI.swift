@@ -24,6 +24,13 @@ struct APIError: Error, LocalizedError, Equatable {
         case "not_registered": return "Dit apparaat is nog niet aangemeld voor pushmeldingen."
         case "apns_invalid": return "Apple kent dit apparaat niet (meer). Zet meldingen uit en weer aan."
         case "decode": return "Onverwacht antwoord van de server."
+        case "bad_email": return "Dit is geen geldig e-mailadres."
+        case "bad_url": return "Vul een geldig https-adres in."
+        case "bad_id": return "Dit winkel-id klopt niet (kleine letters, cijfers en streepjes)."
+        case "weak_password": return "Kies een wachtwoord van minimaal 10 tekens met letters en cijfers."
+        case "exists": return "Dit account bestaat al. Zet \u{201C}wachtwoord vervangen\u{201D} aan."
+        case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs."
+        case "create_failed", "update_failed", "seed_failed": return "Het review-account kon niet worden gemaakt. Probeer het opnieuw."
         default: return "Er ging iets mis op de server (\(code))."
         }
     }

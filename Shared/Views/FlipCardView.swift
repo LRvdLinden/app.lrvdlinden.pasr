@@ -6,6 +6,8 @@ struct FlipCardView: View, Animatable {
     let appearance: CardAppearance
     var angle: Double
     var cornerRadius: CGFloat = 22
+    /// Verminderde beweging: niet draaien, alleen van voor- naar achterkant wisselen.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var animatableData: Double {
         get { angle }
@@ -22,6 +24,6 @@ struct FlipCardView: View, Animatable {
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(showingBack ? 1 : 0)
         }
-        .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
+        .rotation3DEffect(.degrees(reduceMotion ? (showingBack ? 180 : 0) : angle), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
     }
 }

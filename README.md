@@ -102,4 +102,4 @@ Instellen:
 
 ## Logo's
 
-`Shared/StoreLogos/<domein>.png` zijn doorzichtige logo's, zoals SuperCards ze op de kaart zet: het volledige woordmerk van Wikidata/Wikimedia Commons waar dat er is, anders het icoon van de winkelsite met de achtergrond eruit gehaald. `Shared/Model/StoreLogoStyles.swift` (gegenereerd) geeft per winkel de kaartkleur. Workflow Logos haalt ze op (`tools/fetch_logos.py`).
+`App/StoreLogos/<domein>.png` zijn doorzichtige logo's, zoals SuperCards ze op de kaart zet: het volledige woordmerk van Wikidata/Wikimedia Commons waar dat er is, anders het icoon van de winkelsite met de achtergrond eruit gehaald. `Shared/Model/StoreLogoStyles.swift` (gegenereerd) geeft per winkel de kaartkleur. Workflow Logos haalt ze op (`tools/fetch_logos.py`).

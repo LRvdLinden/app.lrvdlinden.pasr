@@ -35,10 +35,39 @@ final class Card {
     var logoFromWebsite: Bool = false
     /// The code stays hidden until Face ID confirms it's you (handy for vouchers with a balance).
     var isLocked: Bool = false
+    /// Gedeelde Pasr waarin deze kaart staat; nil = privé. Een kaart verhuizen maakt een kopie met een nieuw id.
+    var groupID: UUID?
+
+    // Tijdelijk met mij gedeeld (zie TempShare): tot wanneer, de code op de server en of de deler eerder stopte.
+    var sharedUntil: Date?
+    var shareToken: String?
+    var shareRevoked: Bool = false
+
+    /// Eigen locaties (JSON van [CardPlace], hoogstens 10): "Ik sta hier" of een speld op de kaart. Gaan voor bij
+    /// "Kaart tonen bij de winkel" en op de Wallet-pas.
+    var placesData: Data?
+
+    /// Geschiedenis (JSON van [CardEvent]): wanneer je de kaart liet zien, en bij een voucher wat je uitgaf of
+    /// opwaardeerde. Hoogstens 90 dagen en 150 regels.
+    var historyData: Data?
+    /// Saldo-pagina van de uitgever (voucher); anders die van de winkel uit de catalogus.
+    var balanceURL: String?
+
+    /// Extra gegevens per soort (JSON van CardDetails): ticket, abonnement, kortingscode en de onderschriften van de
+    /// foto's. Sinds 1.0.2; oudere versies laten het veld staan.
+    var detailsData: Data?
 
     @Attribute(.externalStorage) var logoData: Data?
     @Attribute(.externalStorage) var frontPhoto: Data?
     @Attribute(.externalStorage) var backPhoto: Data?
+    /// Eigen voorkant: een foto, bijgesneden op kaartformaat (JPEG, hoogstens 1000 pixels breed).
+    @Attribute(.externalStorage) var coverPhoto: Data?
+    /// Tot vier foto-notities (bonnetje, voorwaarden), elk een JPEG van hoogstens 1600 pixels. Blijven op je apparaten
+    /// (iCloud), net als de foto's van voor- en achterkant; ze gaan niet via het Pasr-account.
+    @Attribute(.externalStorage) var photo1: Data?
+    @Attribute(.externalStorage) var photo2: Data?
+    @Attribute(.externalStorage) var photo3: Data?
+    @Attribute(.externalStorage) var photo4: Data?
     /// A pre-rendered PNG of a 2D code, so the Watch (which has no Core Image) can show it.
     @Attribute(.externalStorage) var codeImage: Data?
 
@@ -66,6 +95,12 @@ final class Card {
         return expiresAt < Calendar.current.startOfDay(for: .now)
     }
 
+    /// Een tijdelijk met mij gedeelde kaart: niet naar Wallet, niet verder delen, niet naar Watch of widgets.
+    var isTemporary: Bool { shareToken != nil }
+
+    /// Tijdelijke kaart voorbij het einde (of gestopt door de deler): de code wordt nergens meer getoond.
+    var isShareExpired: Bool { isTemporary && (shareRevoked || (sharedUntil ?? .distantPast) <= .now) }
+
     func markUsed() {
         useCount += 1
         lastUsed = .now
@@ -89,5 +124,175 @@ extension Card {
         guard let lastUsed = card.lastUsed else { return 0 }
         let days = max(0, Date.now.timeIntervalSince(lastUsed) / 86_400)
         return Double(card.useCount) * pow(0.5, days / 30)
+    }
+}
+
+
+/// Een eigen locatie van een kaart: een filiaal dat je zelf hebt vastgezet.
+struct CardPlace: Codable, Hashable, Identifiable {
+    var id = UUID()
+    var name: String
+    var latitude: Double
+    var longitude: Double
+
+    static let maxPerCard = 10
+}
+
+extension Card {
+    var places: [CardPlace] {
+        get { placesData.flatMap { try? JSONDecoder().decode([CardPlace].self, from: $0) } ?? [] }
+        set { placesData = newValue.isEmpty ? nil : try? JSONEncoder().encode(Array(newValue.prefix(CardPlace.maxPerCard))) }
+    }
+}
+
+
+/// Een regel in de geschiedenis van een kaart.
+struct CardEvent: Codable, Hashable, Identifiable {
+    enum Kind: String, Codable { case shown, spent, topup, set }
+    var id = UUID()
+    var date = Date()
+    var kind: Kind
+    /// Bedrag van de uitgave of opwaardering (positief).
+    var amount: Double?
+    /// Tegoed na deze regel (voucher).
+    var balance: Double?
+    /// Waar (filiaal, als dat bekend was).
+    var place: String?
+
+    static let keepDays: Double = 90
+    static let maxCount = 150
+}
+
+extension Card {
+    var history: [CardEvent] {
+        get { historyData.flatMap { try? JSONDecoder().decode([CardEvent].self, from: $0) } ?? [] }
+        set {
+            let cutoff = Date.now.addingTimeInterval(-CardEvent.keepDays * 86_400)
+            let kept = newValue.filter { $0.date > cutoff }.sorted { $0.date > $1.date }.prefix(CardEvent.maxCount)
+            historyData = kept.isEmpty ? nil : try? JSONEncoder().encode(Array(kept))
+        }
+    }
+
+    /// Laatst getoond (uit de geschiedenis, anders lastUsed).
+    var lastShown: CardEvent? { history.first { $0.kind == .shown } }
+
+    /// Kaart getoond. Binnen 10 minuten nog eens dezelfde kaart telt niet opnieuw (wel de plek als die er nog niet was).
+    func recordShown(place: String?) {
+        var list = history
+        if let last = list.first(where: { $0.kind == .shown }), Date.now.timeIntervalSince(last.date) < 600 {
+            if last.place == nil, let place, let i = list.firstIndex(of: last) { list[i].place = place; history = list }
+            return
+        }
+        list.insert(CardEvent(kind: .shown, place: place), at: 0)
+        history = list
+    }
+
+    /// Uitgegeven (voucher): tegoed omlaag, nooit onder nul.
+    func recordSpent(_ amount: Double, place: String?) {
+        let new = max(0, (balance ?? 0) - amount)
+        balance = (new * 100).rounded() / 100
+        var list = history
+        list.insert(CardEvent(kind: .spent, amount: amount, balance: balance, place: place), at: 0)
+        history = list
+        updatedAt = .now
+    }
+
+    /// Opgewaardeerd of tegoed gecorrigeerd (bijvoorbeeld na Saldo checken).
+    func recordTopUp(_ amount: Double) {
+        balance = (((balance ?? 0) + amount) * 100).rounded() / 100
+        var list = history
+        list.insert(CardEvent(kind: .topup, amount: amount, balance: balance), at: 0)
+        history = list
+        updatedAt = .now
+    }
+
+    func recordBalance(_ value: Double) {
+        balance = (max(0, value) * 100).rounded() / 100
+        var list = history
+        list.insert(CardEvent(kind: .set, balance: balance), at: 0)
+        history = list
+        updatedAt = .now
+    }
+
+    /// Een regel weghalen; bij een uitgave of opwaardering gaat het tegoed terug.
+    func removeEvent(_ event: CardEvent) {
+        switch event.kind {
+        case .spent: if let a = event.amount { balance = (balance ?? 0) + a }
+        case .topup: if let a = event.amount { balance = max(0, (balance ?? 0) - a) }
+        default: break
+        }
+        if let b = balance { balance = (b * 100).rounded() / 100 }
+        history = history.filter { $0.id != event.id }
+        updatedAt = .now
+    }
+}
+
+/// Volgorde van de kaarten. Standaard altijd A tot Z; in Instellingen (of het filtermenu) kun je kiezen voor meest
+/// gebruikt of de winkel in de buurt bovenaan. Widgets en Watch volgen dezelfde keuze (de iPhone geeft de volgorde mee).
+enum CardOrder: String, CaseIterable, Identifiable {
+    case az, used, near, nearUsed
+
+    static let key = "pasr.walletOrder"
+    static var current: CardOrder { UserDefaults.standard.string(forKey: key).flatMap(CardOrder.init(rawValue:)) ?? .az }
+
+    var id: String { rawValue }
+    var usesLocation: Bool { self == .near || self == .nearUsed }
+
+    var title: String {
+        switch self {
+        case .az: String(localized: "A tot Z")
+        case .used: String(localized: "Meest gebruikt bovenaan")
+        case .near: String(localized: "Dichtstbij eerst")
+        case .nearUsed: String(localized: "In de buurt, dan meest gebruikt")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .az: "textformat"
+        case .used: "chart.bar.fill"
+        case .near: "location"
+        case .nearUsed: "location.magnifyingglass"
+        }
+    }
+
+    /// Binnen deze afstand telt een winkel als "in de buurt" (voor In de buurt, dan meest gebruikt).
+    static let nearbyMeters: Double = 1_000
+}
+
+extension Array where Element == Card {
+    /// In de gekozen volgorde. Gelijke plaatsen (en alles zonder afstand of gebruik) blijven A tot Z.
+    func ordered(_ order: CardOrder, distances: [UUID: Double] = [:]) -> [Card] {
+        let az = alphabetical()
+        func stable(_ before: (Card, Card) -> Bool?) -> [Card] {
+            az.enumerated().sorted { a, b in before(a.element, b.element) ?? (a.offset < b.offset) }.map(\.element)
+        }
+        func byScore(_ a: Card, _ b: Card) -> Bool? {
+            let x = Card.score(a), y = Card.score(b)
+            return abs(x - y) < 0.0001 ? nil : x > y
+        }
+        switch order {
+        case .az:
+            return az
+        case .used:
+            return stable(byScore)
+        case .near:
+            return stable { a, b in
+                switch (distances[a.id], distances[b.id]) {
+                case let (x?, y?) where x != y: x < y
+                case (.some, nil): true
+                case (nil, .some): false
+                default: nil
+                }
+            }
+        case .nearUsed:
+            return stable { a, b in
+                let na = distances[a.id].map { $0 <= CardOrder.nearbyMeters } ?? false
+                let nb = distances[b.id].map { $0 <= CardOrder.nearbyMeters } ?? false
+                if na != nb { return na }
+                if na, let x = distances[a.id], let y = distances[b.id], x != y { return x < y }
+                return byScore(a, b)
+            }
+        }
     }
 }

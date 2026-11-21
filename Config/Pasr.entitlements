@@ -16,6 +16,10 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<key>com.apple.developer.pass-type-identifiers</key>
+	<array>
+		<string>$(TeamIdentifierPrefix)pass.nl.lrvdlinden.pasr</string>
+	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.nl.lrvdlinden.pasr</string>

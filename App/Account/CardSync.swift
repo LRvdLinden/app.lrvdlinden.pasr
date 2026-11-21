@@ -34,18 +34,14 @@ enum CardSync {
         let started = Date.now
         let all = (try? context.fetch(FetchDescriptor<Card>())) ?? []
         let pushed = lastSync(for: user) ?? .distantPast
-        let changes: [[String: Any]] = all.filter { changedAt($0) > pushed }.map { card in
-            var row: [String: Any] = ["id": card.id.uuidString, "updated_at": iso(changedAt(card)),
-                                      "deleted": card.deletedAt != nil]
-            if card.deletedAt == nil { row["card"] = payload(card) }
-            return row
-        }
+        // alleen privékaarten; kaarten in een gedeelde Pasr gaan via GroupService
+        let changes = rows(all.filter { $0.groupID == nil && !$0.isTemporary && changedAt($0) > pushed })
         let since = UserDefaults.standard.string(forKey: sinceKey(user))
         var body: [String: Any] = ["changes": changes]
         if let since { body["since"] = since } else { body["since"] = NSNull() }
         do {
             guard let result = try await account.rpc("pasr_sync", body: body) as? [String: Any] else { return }
-            apply(result["cards"] as? [[String: Any]] ?? [], to: all, in: context)
+            apply(result["cards"] as? [[String: Any]] ?? [], to: all, in: context, group: nil)
             if let now = result["now"] as? String { UserDefaults.standard.set(now, forKey: sinceKey(user)) }
             UserDefaults.standard.set(started.timeIntervalSince1970, forKey: pushedKey(user))
             lastError = nil
@@ -55,6 +51,8 @@ enum CardSync {
                (try? await account.rpc("pasr_set_country", body: ["p_country": country])) != nil {
                 UserDefaults.standard.set(true, forKey: countryKey)
             }
+            await GroupService.shared.sync(in: context)
+            await UserPush.syncOnce()
             await LogoService.fillMissing(in: context)
         } catch {
             lastError = error.localizedDescription
@@ -63,13 +61,25 @@ enum CardSync {
 
     // MARK: Down
 
-    private static func apply(_ rows: [[String: Any]], to existing: [Card], in context: ModelContext) {
+    /// Changes to send: id, moment and (unless deleted) the card itself.
+    static func rows(_ cards: [Card]) -> [[String: Any]] {
+        cards.map { card in
+            var row: [String: Any] = ["id": card.id.uuidString, "updated_at": iso(changedAt(card)),
+                                      "deleted": card.deletedAt != nil]
+            if card.deletedAt == nil { row["card"] = payload(card) }
+            return row
+        }
+    }
+
+    /// `group`: the shared Pasr these rows come from (nil = the private cards).
+    static func apply(_ rows: [[String: Any]], to existing: [Card], in context: ModelContext, group: UUID?) {
         var byID = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         var changed = false
         for row in rows {
             guard let idText = row["id"] as? String, let id = UUID(uuidString: idText),
                   let stamp = (row["updated_at"] as? String).flatMap(date) else { continue }
             let local = byID[id]
+            if let local, local.groupID != group { continue }   // belongs to another place (private or another group)
             if let local, changedAt(local) >= stamp { continue }   // this device has the newer version
             if row["deleted"] as? Bool == true {
                 if let local, local.deletedAt == nil {
@@ -82,6 +92,7 @@ enum CardSync {
             let card = local ?? {
                 let new = Card()
                 new.id = id
+                new.groupID = group
                 context.insert(new)
                 byID[id] = new
                 return new
@@ -113,6 +124,37 @@ enum CardSync {
         card.pin = f["pin"] as? String
         card.expiresAt = (f["expiresAt"] as? String).flatMap(date)
         card.website = f["website"] as? String
+        card.balanceURL = f["balanceURL"] as? String
+        // sinds 1.0.2; oudere versies sturen "details" niet mee: dan blijft wat hier staat
+        if let d = f["details"] as? [String: Any] {
+            var details = CardDetails(json: d)
+            details.captions = card.details.captions   // onderschriften horen bij de foto's, en die blijven op het apparaat
+            card.details = details
+        }
+        if let cover = (f["cover"] as? String).flatMap({ Data(base64Encoded: $0) }) {
+            card.coverPhoto = cover
+        } else if f["hasCover"] as? Bool == false {
+            card.coverPhoto = nil
+        }
+        // geschiedenis: de nieuwere versie wint voor uitgaven en opwaarderingen (zo blijft ongedaan maken staan);
+        // "getoond" synchroniseert niet en blijft per apparaat, net als regels ouder dan wat er meekwam
+        let remote: [CardEvent] = (f["history"] as? [[String: Any]] ?? []).compactMap { e in
+            guard let id = (e["id"] as? String).flatMap(UUID.init(uuidString:)), let at = (e["date"] as? String).flatMap(date),
+                  let kind = (e["kind"] as? String).flatMap(CardEvent.Kind.init(rawValue:)) else { return nil }
+            return CardEvent(id: id, date: at, kind: kind, amount: e["amount"] as? Double, balance: e["balance"] as? Double,
+                             place: e["place"] as? String)
+        }
+        if f["history"] != nil {   // oudere Pasr-versies sturen geen geschiedenis mee: dan blijft die van hier staan
+            let oldest = remote.map(\.date).min()
+            let ids = Set(remote.map(\.id))
+            card.history = remote + card.history.filter { local in
+                !ids.contains(local.id) && (local.kind == .shown || (oldest.map { local.date < $0 } ?? false))
+            }
+        }
+        card.places = (f["places"] as? [[String: Any]] ?? []).compactMap { p in
+            guard let lat = p["lat"] as? Double, let lon = p["lon"] as? Double else { return nil }
+            return CardPlace(name: p["name"] as? String ?? "", latitude: lat, longitude: lon)
+        }
         if let logo = (f["logo"] as? String).flatMap({ Data(base64Encoded: $0) }) {
             card.logoData = logo
             card.logoFromWebsite = false
@@ -137,6 +179,28 @@ enum CardSync {
         p["pin"] = c.pin
         p["expiresAt"] = c.expiresAt.map(iso)
         p["website"] = c.website
+        p["balanceURL"] = c.balanceURL
+        // ticket, abonnement, kortingscode (zonder de onderschriften van foto's: die blijven op het apparaat)
+        var details = c.details
+        details.captions = nil
+        p["details"] = details.json
+        // eigen voorkant: mee als hij klein genoeg is (de server neemt hoogstens 400 kB per kaart)
+        p["hasCover"] = c.coverPhoto != nil
+        if let cover = c.coverPhoto, cover.count < 120_000 { p["cover"] = cover.base64EncodedString() }
+        // altijd meesturen (ook leeg), zodat een ander apparaat weet dat de geschiedenis is bijgewerkt
+        do {
+            p["history"] = c.history.filter { $0.kind != .shown }.prefix(60).map { e -> [String: Any] in
+                var d: [String: Any] = ["id": e.id.uuidString, "date": iso(e.date), "kind": e.kind.rawValue]
+                d["amount"] = e.amount
+                d["balance"] = e.balance
+                d["place"] = e.place
+                return d
+            }
+        }
+        let places = c.places
+        if !places.isEmpty {
+            p["places"] = places.map { ["name": $0.name, "lat": $0.latitude, "lon": $0.longitude] }
+        }
         if let logo = c.logoData, !c.logoFromWebsite {
             p["ownLogo"] = true
             if logo.count < 150_000 { p["logo"] = logo.base64EncodedString() }

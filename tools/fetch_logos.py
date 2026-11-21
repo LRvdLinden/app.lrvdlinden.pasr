@@ -342,7 +342,10 @@ struct StoreLogoStyle: Equatable, Hashable {
 }
 
 enum StoreLogoStyles {
-    static func style(for domain: String?) -> StoreLogoStyle? { domain.flatMap { all[$0] } }
+    /// Niet voor winkels die het beheer bijhoudt: dat logo is al kant-en-klaar voor de kaartkleur.
+    static func style(for domain: String?) -> StoreLogoStyle? {
+        domain.flatMap { RemoteStores.managesLogo(for: $0) ? nil : all[$0] }
+    }
 
     static let all: [String: StoreLogoStyle] = [
 """ + "\n".join(rows) + """

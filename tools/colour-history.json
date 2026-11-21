@@ -32,12 +32,14 @@
 "#FFFFFF"
 ],
 "amazingoriental": [
+"#5EB52B",
 "#C8102E"
 ],
 "amazon": [
 "#FF9900"
 ],
 "america": [
+"#000000",
 "#003B7E"
 ],
 "amikappers": [
@@ -49,21 +51,26 @@
 ],
 "anwbcamping": [
 "#00843D",
-"#009932"
+"#009932",
+"#FFFFFF"
 ],
 "anytime": [
-"#5E2D91"
+"#5E2D91",
+"#6E38D5"
 ],
 "apotheekbenu": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "appstore": [
 "#1A1A1A"
 ],
 "argos": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "artis": [
+"#001E07",
 "#1A1A1A"
 ],
 "asadventure": [
@@ -74,9 +81,11 @@
 "#FFFFFF"
 ],
 "bagels": [
-"#E30613"
+"#E30613",
+"#ECD5AB"
 ],
 "bakkerbart": [
+"#CB007C",
 "#E30613"
 ],
 "bartsmit": [
@@ -95,31 +104,38 @@
 "#E30613"
 ],
 "bcc": [
+"#3B68B0",
 "#E30613"
 ],
 "beautycadeau": [
 "#E6007E"
 ],
 "beddenreus": [
+"#E3000F",
 "#E30613"
 ],
 "benu": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "beterhoren": [
+"#C5003E",
 "#E30613"
 ],
 "bever": [
-"#004F2D"
+"#004F2D",
+"#2C4D4B"
 ],
 "bfit": [
 "#8E8E93"
 ],
 "bibliotheek": [
-"#E6007E"
+"#E6007E",
+"#FFFFFF"
 ],
 "bidfood": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "bieb2": [
 "#E6007E"
@@ -129,7 +145,8 @@
 "#FFFFFF"
 ],
 "bigsfitness": [
-"#1A1A1A"
+"#1A1A1A",
+"#E6007E"
 ],
 "bijenkorf": [
 "#000000",
@@ -143,10 +160,12 @@
 "#E2001A"
 ],
 "blijdorp": [
-"#00843D"
+"#00843D",
+"#0B8443"
 ],
 "bloedbank": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "blokker": [
 "#E3001B",
@@ -163,7 +182,8 @@
 "#004236"
 ],
 "boekenbon": [
-"#1A1A1A"
+"#1A1A1A",
+"#FFDD00"
 ],
 "boekhandel": [
 "#1A1A1A",
@@ -181,6 +201,7 @@
 "#0000A5"
 ],
 "boni": [
+"#492C64",
 "#E30613"
 ],
 "boons": [
@@ -211,6 +232,7 @@
 "#FFFFFF"
 ],
 "broekhuis": [
+"#0072CE",
 "#1A1A1A"
 ],
 "bruna": [
@@ -231,7 +253,8 @@
 "#E30613"
 ],
 "center": [
-"#00843D"
+"#00843D",
+"#045E51"
 ],
 "chasin": [
 "#000000",
@@ -245,7 +268,8 @@
 "#FF4F00"
 ],
 "coffeecompany": [
-"#1A1A1A"
+"#1A1A1A",
+"#2E0700"
 ],
 "cool": [
 "#E30613"
@@ -258,9 +282,11 @@
 "#FFFFFF"
 ],
 "costco": [
-"#E31837"
+"#E31837",
+"#FFFFFF"
 ],
 "costes": [
+"#000000",
 "#1A1A1A"
 ],
 "crisp": [
@@ -289,7 +315,8 @@
 "#FFFFFF"
 ],
 "didi": [
-"#1A1A1A"
+"#1A1A1A",
+"#717657"
 ],
 "dierenarts": [
 "#8E8E93"
@@ -304,6 +331,7 @@
 "#7F1734"
 ],
 "dirk": [
+"#E20613",
 "#E30613"
 ],
 "discus": [
@@ -327,16 +355,19 @@
 "#1A1A1A"
 ],
 "efteling": [
-"#7A0026"
+"#7A0026",
+"#AA182C"
 ],
 "ekoplaza": [
 "#5A8C2B",
-"#651C77"
+"#651C77",
+"#702483"
 ],
 "ep": [
 "#E30613"
 ],
 "esprit": [
+"#BA0C2F",
 "#E30613"
 ],
 "esso": [
@@ -351,22 +382,26 @@
 "#E30613"
 ],
 "expert": [
-"#E30613"
+"#E30613",
+"#E95E0F"
 ],
 "eyewish": [
 "#E6007E"
 ],
 "fashioncheque": [
+"#000000",
 "#1A1A1A"
 ],
 "fastned": [
-"#FFD500"
+"#FFD500",
+"#FFD913"
 ],
 "febo": [
 "#E30613",
 "#E32D38"
 ],
 "fietsenwinkel": [
+"#243ECC",
 "#E30613"
 ],
 "filmhuis": [
@@ -376,13 +411,15 @@
 "#E30613"
 ],
 "fit20": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "fitforfree": [
 "#E30613"
 ],
 "fletcher": [
-"#003B7E"
+"#003B7E",
+"#00437D"
 ],
 "flyingblue": [
 "#000099",
@@ -404,10 +441,12 @@
 ],
 "gall": [
 "#312F2F",
+"#4D545D",
 "#7F1734"
 ],
 "gamemania": [
-"#E30613"
+"#E30613",
+"#FFDD3E"
 ],
 "gamma": [
 "#003878",
@@ -418,21 +457,26 @@
 "#34C759"
 ],
 "googleplay": [
-"#34A853"
+"#34A853",
+"#FFFFFF"
 ],
 "goossens": [
-"#1A1A1A"
+"#1A1A1A",
+"#492D23"
 ],
 "greenwheels": [
-"#00843D"
+"#00843D",
+"#34AA52"
 ],
 "groenrijk": [
-"#5A9E2F"
+"#5A9E2F",
+"#FFFFFF"
 ],
 "gstaroutlet": [
 "#000000"
 ],
 "gulf": [
+"#002876",
 "#F68B1F"
 ],
 "halfords": [
@@ -440,6 +484,7 @@
 ],
 "hanos": [
 "#1A1A1A",
+"#56004E",
 "#57004E"
 ],
 "hansanders": [
@@ -447,6 +492,7 @@
 "#FFFFFF"
 ],
 "health-city": [
+"#000000",
 "#E30613"
 ],
 "hema": [
@@ -479,6 +525,7 @@
 "#00563F"
 ],
 "hollandhome": [
+"#47A23F",
 "#78B829"
 ],
 "hoogvliet": [
@@ -504,15 +551,19 @@
 "#E30613"
 ],
 "hubo2": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "hudson": [
+"#000000",
 "#1A1A1A"
 ],
 "hunkemoller": [
+"#000000",
 "#1A1A1A"
 ],
 "hunkemoller2": [
+"#000000",
 "#1A1A1A"
 ],
 "ici": [
@@ -543,6 +594,7 @@
 "#FFDD00"
 ],
 "intratuin": [
+"#47A23F",
 "#78B829"
 ],
 "intratuincadeau": [
@@ -613,10 +665,12 @@
 "#FFD200"
 ],
 "landal": [
+"#0097A2",
 "#5A8C2B"
 ],
 "lebon": [
-"#3B3A36"
+"#3B3A36",
+"#FBF5EE"
 ],
 "leenbakker": [
 "#E30613",
@@ -630,7 +684,8 @@
 "#E3000B"
 ],
 "lekkerland": [
-"#E30613"
+"#E30613",
+"#E6001A"
 ],
 "levis": [
 "#C41230"
@@ -649,13 +704,16 @@
 "#FFC700"
 ],
 "lookfantastic": [
+"#0C1219",
 "#1A1A1A"
 ],
 "lpq": [
+"#658D1B",
 "#E30613"
 ],
 "lucardi": [
-"#1A1A1A"
+"#1A1A1A",
+"#510C76"
 ],
 "lush": [
 "#000000",
@@ -668,56 +726,71 @@
 "#003D7C"
 ],
 "mango": [
+"#000000",
 "#1A1A1A"
 ],
 "marqt": [
 "#1A1A1A",
 "#573009"
 ],
+"maxizoo": [
+"#196428"
+],
 "mcd": [
 "#DB2F36",
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "mcdonalds": [
+"#DA291C",
 "#FFC72C"
 ],
 "mediamarkt": [
 "#DF0000"
 ],
 "mediq": [
-"#003B7E"
+"#003B7E",
+"#006983"
 ],
 "missetam": [
+"#2B1054",
 "#C8102E"
 ],
 "mitra": [
+"#393E35",
 "#E30613"
 ],
 "montel": [
 "#1A1A1A"
 ],
 "mooi": [
-"#1A1A1A"
+"#1A1A1A",
+"#1F1F1D"
 ],
 "mrfillet": [
+"#C61717",
 "#C8102E"
 ],
 "msmode": [
 "#E6007E"
 ],
 "multitankcard": [
+"#054A61",
 "#E30613"
 ],
 "museumcadeau": [
-"#E30613"
+"#E30613",
+"#FADC64"
 ],
 "museumkaart": [
-"#E30613"
+"#E30613",
+"#FADC64"
 ],
 "natuurmonumenten": [
 "#000F95",
 "#00843D",
-"#051497"
+"#051497",
+"#36298B"
 ],
 "natuurwinkel": [
 "#5A8C2B",
@@ -728,6 +801,7 @@
 "#FFFFFF"
 ],
 "netflixgift": [
+"#000000",
 "#E50914"
 ],
 "nettorama": [
@@ -752,18 +826,22 @@
 "#1A1A1A"
 ],
 "ooievaarspas": [
-"#E30613"
+"#E30613",
+"#F6D32B"
 ],
 "open32": [
 "#05141B"
 ],
 "overvecht": [
+"#63B32E",
 "#78B829"
 ],
 "ovpas": [
-"#00A0E2"
+"#00A0E2",
+"#E6007E"
 ],
 "pathe": [
+"#2D2926",
 "#FFB800"
 ],
 "payback": [
@@ -789,6 +867,7 @@
 "#E40613"
 ],
 "pipoos": [
+"#DC0000",
 "#E6007E"
 ],
 "playstation": [
@@ -796,15 +875,18 @@
 ],
 "plus": [
 "#A2C11C",
-"#E2001A"
+"#E2001A",
+"#FFFFFF"
 ],
 "podiumcadeau": [
-"#AF52DE"
+"#AF52DE",
+"#E30613"
 ],
 "poiesz": [
 "#E30613"
 ],
 "pourvous": [
+"#000000",
 "#E6007E"
 ],
 "praxis": [
@@ -817,9 +899,11 @@
 "#00AEEF"
 ],
 "primera": [
+"#134395",
 "#E2001A"
 ],
 "profile": [
+"#DD261E",
 "#E30613"
 ],
 "q8": [
@@ -831,9 +915,11 @@
 "#FFFFFF"
 ],
 "ranzijn": [
-"#00843D"
+"#00843D",
+"#FEED04"
 ],
 "readshop": [
+"#00AA13",
 "#E30613"
 ],
 "restaurantorange": [
@@ -846,13 +932,15 @@
 "#3B3A36"
 ],
 "roompot": [
-"#003B7E"
+"#003B7E",
+"#26395F"
 ],
 "rotterdampas": [
 "#00843D",
 "#FFED00"
 ],
 "runnersworld": [
+"#16E2F5",
 "#E30613"
 ],
 "scapino": [
@@ -860,10 +948,12 @@
 "#FFFFFF"
 ],
 "schiphol": [
+"#0D0A52",
 "#141251"
 ],
 "schoonenberg": [
-"#003B7E"
+"#003B7E",
+"#FFFFFF"
 ],
 "schuurman": [
 "#1A1A1A",
@@ -896,13 +986,16 @@
 "#FFFFFF"
 ],
 "smullers": [
-"#E30613"
+"#E30613",
+"#E32C2E"
 ],
 "snapfitness": [
-"#6A1B9A"
+"#6A1B9A",
+"#C4161C"
 ],
 "sostrene": [
-"#1A1A1A"
+"#1A1A1A",
+"#504139"
 ],
 "spar": [
 "#00843D",
@@ -916,6 +1009,7 @@
 "#0082C3"
 ],
 "sportcity": [
+"#1A1A1A",
 "#E30613"
 ],
 "sportdirect": [
@@ -938,7 +1032,8 @@
 "#1B2838"
 ],
 "sting": [
-"#1A1A1A"
+"#1A1A1A",
+"#231F20"
 ],
 "studentenkaart": [
 "#5E5CE6"
@@ -947,13 +1042,15 @@
 "#008C15"
 ],
 "swiss": [
+"#1C2125",
 "#E30613"
 ],
 "tandarts": [
 "#8E8E93"
 ],
 "tanger": [
-"#00843D"
+"#00843D",
+"#0D61AA"
 ],
 "tango": [
 "#E30613"
@@ -984,9 +1081,11 @@
 "#8E8E93"
 ],
 "total": [
-"#E30613"
+"#E30613",
+"#FFFFFF"
 ],
 "trainmore": [
+"#000000",
 "#E30613"
 ],
 "travelcard": [
@@ -998,9 +1097,11 @@
 "#FFFFFF"
 ],
 "trendhopper": [
-"#1A1A1A"
+"#1A1A1A",
+"#FFD204"
 ],
 "tuinland": [
+"#538567",
 "#78B829"
 ],
 "vanderValk": [
@@ -1022,13 +1123,15 @@
 "#F13033"
 ],
 "vue": [
+"#000000",
 "#1A1A1A"
 ],
 "vvv": [
 "#00519E"
 ],
 "walibi": [
-"#E6007E"
+"#E6007E",
+"#F81700"
 ],
 "waterstones": [
 "#1A1A1A"
@@ -1037,6 +1140,7 @@
 "#1A1A1A"
 ],
 "wefashion2": [
+"#2B1054",
 "#C8102E"
 ],
 "wehkamp": [
@@ -1052,7 +1156,8 @@
 "#F02900"
 ],
 "wijncadeau": [
-"#7F1734"
+"#7F1734",
+"#A42C54"
 ],
 "xbox": [
 "#107C10"
@@ -1062,19 +1167,24 @@
 "#FFFFFF"
 ],
 "yellowbrick": [
+"#000000",
 "#FFD500"
 ],
 "ytickets": [
+"#53123E",
 "#E6007E"
 ],
 "yvesrocher": [
+"#008061",
 "#014E2E",
 "#2E5E3E"
 ],
 "zalando": [
+"#FF4C00",
 "#FF6900"
 ],
 "zalandogift": [
+"#FF4C00",
 "#FF6900"
 ],
 "zara": [
@@ -1096,7 +1206,8 @@
 "#74F58D"
 ],
 "zooplus": [
-"#00843D"
+"#00843D",
+"#278403"
 ],
 "zorgverzekeraar": [
 "#0A84FF"

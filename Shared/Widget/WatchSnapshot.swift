@@ -19,6 +19,12 @@ struct WatchCard: Codable, Identifiable, Hashable {
     var logoDomain: String? = nil
     var logo: Data?
     var code: Data?
+    /// Plaats in de volgorde van de iPhone (nil = A tot Z). Sinds 1.0.2.
+    var rank: Int? = nil
+    /// Kortingscode als tekst (sinds 1.0.2).
+    var codeAsText: Bool? = nil
+    /// Regel onder de kop voor ticket en abonnement (sinds 1.0.2), al opgemaakt op de iPhone.
+    var details: CardDetails? = nil
 
     var format: BarcodeFormat { BarcodeFormat(rawValue: formatRaw) ?? .code128 }
     var kind: CardKind { CardKind(rawValue: kindRaw) ?? .loyalty }
@@ -27,6 +33,7 @@ struct WatchCard: Codable, Identifiable, Hashable {
         CardAppearance(storeName: name, number: number, format: format, colorHex: colorHex, kind: kind,
                        isFavorite: isFavorite, logoData: logo, balance: balance, currencyCode: currencyCode,
                        expiresAt: expiresAt, isLocked: isLocked, logoStyle: StoreLogoStyles.style(for: logoDomain))
+            .with(details: details ?? CardDetails(), codeAsText: codeAsText ?? false)
     }
 
     /// Without images: small enough for the application context, which arrives fastest.
@@ -45,6 +52,10 @@ extension WatchCard {
                   isLocked: card.isLocked, balance: card.balance, currencyCode: card.currencyCode,
                   expiresAt: card.expiresAt, score: Card.score(card),
                   logoDomain: card.logoFromWebsite ? card.logoDomain : nil, logo: card.logoData, code: card.codeImage)
+        codeAsText = card.showsCodeAsText ? true : nil
+        var d = card.details
+        d.captions = nil   // onderschriften van foto's hoeven niet naar de Watch
+        details = d.isEmpty ? nil : d
     }
 }
 

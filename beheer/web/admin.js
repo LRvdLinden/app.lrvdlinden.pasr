@@ -44,9 +44,14 @@
       case "bad_name": return "Vul een naam in.";
       case "bad_color": return "Kies een kaartkleur.";
       case "bad_domain": return "Dit is geen geldige website.";
+      case "bad_guide": return "De cadeaubon-gids klopt niet (online en winkel: ja, nee of onbekend).";
+      case "bad_guide_url": return "Vul bij de gids (voorwaarden of programmapagina) een geldig https-adres in.";
+      case "bad_guide_date": return "Vul bij 'Gecontroleerd op' een geldige datum in.";
       case "bad_logo": return "Dit logo kan niet worden gebruikt (PNG, JPEG of WebP, kleiner dan 300 kB).";
       case "too_large": return "Het logo is te groot. Kies een kleiner bestand.";
       case "bad_email": return "Dit is geen geldig e-mailadres.";
+      case "bad_url": return "Vul een geldig https-adres in.";
+      case "bad_id": return "Kies een winkel uit de lijst (of typ het winkel-id).";
       case "weak_password": return "Kies een wachtwoord van minimaal 10 tekens met letters en cijfers.";
       case "exists": return "Dit account bestaat al. Vink aan dat je het wachtwoord wilt vervangen.";
       case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs.";
@@ -621,7 +626,18 @@
     $("storeErr").classList.add("hidden");
     try {
       list.replaceChildren();
-      if (storeFilter === "stores") {
+      $("bpForm").classList.toggle("hidden", storeFilter !== "balance");
+      if (storeFilter === "balance") {
+        await loadBuiltin();
+        const r = await api("balance_pages");
+        const pages = new Map((r.pages || []).map((p) => [p.store_id, p.url]));
+        // alle cadeaukaarten en vouchers (ingevulde eerst onderaan per groep), daarna andere winkels met een adres
+        const vouchers = (builtin || []).filter((s) => s.voucher);
+        const todo = vouchers.filter((s) => !pages.has(s.id)).length;
+        list.append(el("p", "muted sm", todo ? `${todo} van ${vouchers.length} cadeaukaarten hebben nog geen saldo-pagina.` : "Alle cadeaukaarten hebben een saldo-pagina."));
+        for (const s of vouchers) list.append(balanceRow({ store_id: s.id, url: pages.get(s.id) || "" }));
+        for (const [id, url] of pages) if (!vouchers.some((s) => s.id === id)) list.append(balanceRow({ store_id: id, url }));
+      } else if (storeFilter === "stores") {
         const r = await api("stores");
         if (!(r.stores || []).length) list.append(el("p", "empty", "Nog geen winkels toegevoegd via het beheer."));
         for (const s of r.stores || []) list.append(storeRow(s));
@@ -636,6 +652,74 @@
       $("storeErr").textContent = err.message; $("storeErr").classList.remove("hidden");
     } finally { list.removeAttribute("aria-busy"); }
   }
+
+  // ---- Saldo-pagina's ----
+  let builtin = null;
+  async function loadBuiltin() {
+    if (builtin) return;
+    try { builtin = await (await fetch("stores-builtin.json", { cache: "no-cache" })).json(); } catch { builtin = []; }
+    let remote = [];
+    try { remote = ((await api("stores")).stores || []).map((s) => ({ id: s.id, name: s.name, voucher: s.kind === "voucher" })); } catch {}
+    builtin = [...builtin, ...remote.filter((r) => !builtin.some((b) => b.id === r.id))]
+      .sort((a, b) => Number(b.voucher) - Number(a.voucher) || a.name.localeCompare(b.name, "nl"));
+    const dl = $("bpStores");
+    dl.replaceChildren(...builtin.map((s) => { const o = document.createElement("option"); o.value = s.id; o.label = s.name + (s.voucher ? " (cadeaukaart)" : ""); return o; }));
+  }
+  const storeName = (id) => (builtin || []).find((s) => s.id === id)?.name || id;
+  function resolveStore(text) {
+    const t = text.trim().toLowerCase();
+    const hit = (builtin || []).find((s) => s.id === t || s.name.toLowerCase() === t);
+    return hit ? hit.id : t;
+  }
+  function balanceRow(p) {
+    const row = el("form", "acc bp-row");
+    row.noValidate = true;
+    const who = el("div", "who");
+    who.append(el("div", "mail", storeName(p.store_id)));
+    const input = document.createElement("input");
+    input.type = "text"; input.inputMode = "url"; input.placeholder = "https://… (saldo-pagina)"; input.value = p.url; input.spellcheck = false;
+    input.setAttribute("aria-label", `Saldo-pagina ${storeName(p.store_id)}`);
+    who.append(input);
+    const btns = el("div", "row-btns");
+    const find = document.createElement("a");
+    find.className = "btn ghost sm"; find.textContent = "Zoek"; find.target = "_blank"; find.rel = "noopener";
+    find.href = "https://www.google.com/search?q=" + encodeURIComponent(storeName(p.store_id) + " saldo checken");
+    const save = el("button", "btn sm", "Opslaan"); save.type = "submit";
+    btns.append(find, save);
+    if (p.url) {
+      const del = el("button", "btn danger sm", "Wis"); del.type = "button";
+      del.onclick = async () => {
+        if (!(await ask("Saldo-pagina wissen?", `${storeName(p.store_id)}: ${p.url}`, "Wis"))) return;
+        try { await api("balance_page_delete", { store_id: p.store_id }); input.value = ""; p.url = ""; del.remove(); row.classList.remove("done"); toast("Gewist"); } catch (e) { toast(e.message); }
+      };
+      btns.append(del);
+      row.classList.add("done");
+    }
+    row.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      let url = input.value.trim();
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      save.disabled = true;
+      try { const r = await api("balance_page_save", { store_id: p.store_id, url }); input.value = r.url; row.classList.add("done"); toast(`${storeName(p.store_id)} opgeslagen`); }
+      catch (err) { toast(err.message); }
+      finally { save.disabled = false; }
+    });
+    row.append(el("div", "av", p.url ? "✓" : "€"), who, btns);
+    return row;
+  }
+  $("bpForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("bpMsg"); msg.textContent = "";
+    let url = $("bpUrl").value.trim();
+    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+    try {
+      const r = await api("balance_page_save", { store_id: resolveStore($("bpStore").value), url });
+      toast(`Saldo-pagina voor ${storeName(r.store_id)} opgeslagen`);
+      $("bpStore").value = ""; $("bpUrl").value = "";
+      loadStores();
+    } catch (err) { msg.textContent = err.message; }
+  });
 
   function requestRow(g) {
     const row = el("div", "acc req");
@@ -688,6 +772,13 @@
     $("seKind").value = s.kind || "loyalty";
     $("seColor").value = s.card_hex || "#2B2F3A";
     $("seAliases").value = (s.aliases || []).join(", ");
+    const g = s.guide || {};
+    $("seGValidity").value = g.validity || ""; $("seGHow").value = g.how || ""; $("seGShipping").value = g.shipping || "";
+    $("seGTerms").value = g.terms_url || ""; $("seGChecked").value = g.checked || "";
+    $("seGEarn").value = g.earn || ""; $("seGPerks").value = g.perks || ""; $("seGProgram").value = g.program_url || "";
+    $("seGOnline").value = typeof g.online === "boolean" ? String(g.online) : "";
+    $("seGStore").value = typeof g.store === "boolean" ? String(g.store) : "";
+    guideVisible();
     $("seSwatches").replaceChildren();
     $("seRequests").textContent = requestIds.length ? `Na publiceren worden ${requestIds.length === 1 ? "1 aanvraag" : requestIds.length + " aanvragen"} gesloten als toegevoegd.` : "";
     $("seReject").classList.toggle("hidden", !requestIds.length);
@@ -704,6 +795,33 @@
     .observe($("storeEditor"), { attributes: true, attributeFilter: ["class"] });
   $("seClose").addEventListener("click", () => { $("storeEditor").classList.add("hidden"); editing = null; });
   ["seName", "seColor", "seKind"].forEach((id) => $(id).addEventListener("input", preview));
+  /** Gids: bij een cadeaukaart de cadeaubon-gids, bij een klantenkaart de programmagids (zo spaar je, voordelen). */
+  function guideVisible() {
+    const kind = $("seKind").value === "voucher" ? "voucher" : "loyalty";
+    $("seGuide").classList.remove("hidden");
+    $("seGTitle").textContent = kind === "voucher" ? "Cadeaubon-gids" : "Programmagids";
+    $("seGHowLabel").textContent = kind === "voucher" ? "Zo wissel je hem in (1 tot 3 zinnen)" : "Zo kom je aan de kaart (1 zin)";
+    document.querySelectorAll("#seGuide [data-gkind]").forEach((n) => n.classList.toggle("hidden", n.dataset.gkind !== kind));
+  }
+  $("seKind").addEventListener("change", guideVisible);
+  /** Gids uit het formulier (alleen de velden van deze soort kaart); leeg = null (wissen). */
+  function guideBody() {
+    const g = {}, t = (id) => $(id).value.trim(), b = (id) => ($(id).value === "" ? undefined : $(id).value === "true");
+    if ($("seKind").value === "voucher") {
+      if (t("seGValidity")) g.validity = t("seGValidity");
+      if (b("seGOnline") !== undefined) g.online = b("seGOnline");
+      if (b("seGStore") !== undefined) g.store = b("seGStore");
+      if (t("seGShipping")) g.shipping = t("seGShipping");
+    } else {
+      if (t("seGEarn")) g.earn = t("seGEarn");
+      if (t("seGPerks")) g.perks = t("seGPerks");
+      if (t("seGProgram")) g.program_url = t("seGProgram");
+    }
+    if (t("seGHow")) g.how = t("seGHow");
+    if (t("seGTerms")) g.terms_url = t("seGTerms");
+    if (t("seGChecked")) g.checked = t("seGChecked");
+    return Object.keys(g).length ? g : null;
+  }
 
   function preview() {
     if (!editing) return;
@@ -787,6 +905,7 @@
       id: editing.id || undefined, name: $("seName").value.trim(), domain: $("seDomain").value.trim(),
       category: $("seCategory").value, card_hex: $("seColor").value, format: $("seFormat").value, kind: $("seKind").value,
       aliases: $("seAliases").value.split(",").map((a) => a.trim()).filter(Boolean), logo: editing.logo,
+      guide: guideBody(),
     };
   }
   async function saveStore(publish) {

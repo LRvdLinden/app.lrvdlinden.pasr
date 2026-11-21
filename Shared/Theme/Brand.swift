@@ -6,8 +6,11 @@ import AppKit
 #endif
 
 enum Brand {
-    static let ink = Color(hex: "#0A0B10")
-    static let inkRaised = Color(hex: "#15171F")
+    /// Achtergrond: licht of donker volgens de weergave (Instellingen › Weergave). Watch en widgets blijven donker.
+    static let ink = Color.adaptive(light: "#F4F3FF", dark: "#0A0B10")
+    static let inkRaised = Color.adaptive(light: "#FFFFFF", dark: "#15171F")
+    /// Altijd donker (widgets, Watch, splash).
+    static let night = Color(hex: "#0A0B10")
     static let iris = Color(hex: "#6A5CFF")
     static let coral = Color(hex: "#FF6B57")
     static let mint = Color(hex: "#2ED3A6")
@@ -24,7 +27,31 @@ enum Brand {
     static let cardAspect: CGFloat = 1.586
 }
 
+/// Weergave van de app: Automatisch (volgt iOS), Licht of Donker.
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case auto, light, dark
+    static let key = "pasr.appearance"
+    var id: String { rawValue }
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .auto: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
 extension Color {
+    /// Kleur die meekleurt met licht en donker (alleen iPhone/iPad; elders de donkere).
+    static func adaptive(light: String, dark: String) -> Color {
+        #if os(iOS) || os(visionOS)
+        let l = UIColor(Color(hex: light)), d = UIColor(Color(hex: dark))
+        return Color(UIColor { $0.userInterfaceStyle == .light ? l : d })
+        #else
+        return Color(hex: dark)
+        #endif
+    }
+
     init(hex: String) {
         let (r, g, b) = Color.rgb(fromHex: hex)
         self.init(.sRGB, red: r, green: g, blue: b, opacity: 1)

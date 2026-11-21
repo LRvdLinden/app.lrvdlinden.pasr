@@ -1,4 +1,4 @@
-import { cleanStore, domainOf, imageType, parseHead, slug } from "./stores.ts";
+import { cleanGuide, cleanStore, domainOf, imageType, parseHead, slug } from "./stores.ts";
 import { message } from "./push.ts";
 const ok = (c: unknown, m: string) => { if (!c) throw new Error(m); };
 
@@ -55,4 +55,23 @@ Deno.test("aanvraag hoort bij winkel", async () => {
   ok(requestMatches(store, { name: "Bakkerscadeaukaart" }), "alias");
   ok(!requestMatches(store, { name: "Bakker Bart" }), "andere winkel");
   ok(!requestMatches({ name: "AH" }, { name: "a" }), "te kort");
+});
+
+Deno.test("cadeaubon-gids", () => {
+  const r = cleanGuide({ validity: " 3 jaar ", online: true, store: false, how: "Bij de kassa.", terms_url: "https://www.bol.com/x", checked: "2026-11-21", foo: 1 });
+  ok(r.ok && r.value?.validity === "3 jaar" && r.value.online === true && r.value.store === false && !("foo" in (r.value ?? {})), JSON.stringify(r));
+  ok(!cleanGuide({ terms_url: "http://bol.com" }).ok, "alleen https");
+  ok(!cleanGuide({ program_url: "http://ah.nl" }).ok, "programma alleen https");
+  const loy = cleanGuide({ earn: "Scan je kaart.", perks: "Korting.", program_url: "https://www.ah.nl/bonuskaart" });
+  ok(loy.ok && loy.value?.earn === "Scan je kaart." && loy.value.program_url === "https://www.ah.nl/bonuskaart", JSON.stringify(loy));
+  ok(!cleanGuide({ checked: "21-11-2026" }).ok, "datum");
+  ok(!cleanGuide({ online: "ja" }).ok, "true/false");
+  ok(!cleanGuide([1]).ok, "geen lijst");
+  const empty = cleanGuide({ validity: "  " });
+  ok(empty.ok && empty.value === null, "leeg wordt null");
+  const s1 = cleanStore({ name: "Bol", card_hex: "#0000A4" });
+  ok(s1.ok && !("guide" in s1.value), "zonder gids blijft de gids staan");
+  const s2 = cleanStore({ name: "Bol", card_hex: "#0000A4", guide: { validity: "3 jaar" } });
+  ok(s2.ok && s2.value.guide?.validity === "3 jaar", "met gids");
+  ok(!cleanStore({ name: "Bol", card_hex: "#0000A4", guide: { terms_url: "javascript:alert(1)" } }).ok, "foute gids");
 });

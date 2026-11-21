@@ -9,6 +9,9 @@ struct SettingsView: View {
     @State private var iCloudStatus: CKAccountStatus?
     @AppStorage(LogoService.settingKey) private var fetchLogos = true
     @AppStorage(Biometrics.appLockKey) private var appLock = false
+    @AppStorage(ScreenShield.settingKey) private var blockScreenshots = false
+    @AppStorage(AppAppearance.key) private var appearance = AppAppearance.auto.rawValue
+    @AppStorage(CardOrder.key) private var order = CardOrder.az.rawValue
     @State private var exportDoc: BackupDocument?
     @State private var showExporter = false
     @State private var showImporter = false
@@ -37,9 +40,64 @@ struct SettingsView: View {
 
                 AccountSettingsSection()
 
+                if AccountConfig.isConfigured {
+                    Section {
+                        NavigationLink { SharedPasrView() } label: {
+                            HStack {
+                                SettingsLabel("Gedeelde Pasr", symbol: "person.2.fill", color: Brand.mint)
+                                Spacer()
+                                if !GroupService.shared.invites.isEmpty {
+                                    Text("\(GroupService.shared.invites.count)")
+                                        .font(.caption.weight(.bold)).foregroundStyle(.white)
+                                        .padding(.horizontal, 7).padding(.vertical, 2)
+                                        .background(Brand.coral, in: Capsule())
+                                } else if !GroupService.shared.groups.isEmpty {
+                                    Text("\(GroupService.shared.groups.count)").foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        NavigationLink { TempSharesView() } label: {
+                            HStack {
+                                HStack(spacing: 12) {
+                                    FanIcon()
+                                    Text("Tijdelijk gedeeld").foregroundStyle(.primary)
+                                }
+                                Spacer()
+                                let active = TempShare.allSent().filter(\.isActive).count
+                                if active > 0 { Text("\(active)").foregroundStyle(.secondary) }
+                            }
+                        }
+                    } footer: {
+                        Text("Deel kaarten met je gezin of huisgenoten, elk met een eigen account, of leen een kaart tijdelijk uit.")
+                    }
+                }
+
                 RemindersSettingsSection()
 
-                Section("Privacy en beveiliging") {
+                Section {
+                    Picker(selection: $appearance) {
+                        Text("Automatisch").tag(AppAppearance.auto.rawValue)
+                        Text("Licht").tag(AppAppearance.light.rawValue)
+                        Text("Donker").tag(AppAppearance.dark.rawValue)
+                    } label: {
+                        SettingsLabel("Weergave", symbol: "circle.lefthalf.filled", color: .gray)
+                    }
+                    Picker(selection: $order) {
+                        ForEach(CardOrder.allCases) { o in Label(o.title, systemImage: o.symbol).tag(o.rawValue) }
+                    } label: {
+                        SettingsLabel("Volgorde van kaarten", symbol: "arrow.up.arrow.down", color: Brand.iris)
+                    }
+                    .onChange(of: order) { _, new in
+                        Task {
+                            if CardOrder(rawValue: new)?.usesLocation == true { _ = await NearbyStores.shared.locationForPin() }
+                            WidgetSync.update(with: active)
+                        }
+                    }
+                } footer: {
+                    Text("Automatisch volgt de instelling van je iPhone of iPad. Kaarten houden altijd hun eigen kleur. De volgorde is standaard A tot Z; met Meest gebruikt of In de buurt staan die kaarten bovenaan, ook in de widgets en op je Apple Watch. Bij gelijke plaatsen blijft het A tot Z.")
+                }
+
+                Section {
                     Toggle(isOn: Binding(get: { appLock }, set: { newValue in
                         // Confirm with Face ID before switching the lock on or off.
                         Task {
@@ -49,6 +107,9 @@ struct SettingsView: View {
                         }
                     })) {
                         SettingsLabel("Vergrendelen met \(Biometrics.methodName)", symbol: Biometrics.symbolName, color: Brand.mint)
+                    }
+                    Toggle(isOn: $blockScreenshots) {
+                        SettingsLabel("Screenshots van codes blokkeren", symbol: "eye.slash.fill", color: .indigo)
                     }
                     Toggle(isOn: $fetchLogos) {
                         SettingsLabel("Logo's van websites ophalen", symbol: "photo", color: .orange)
@@ -60,6 +121,10 @@ struct SettingsView: View {
                             LogoService.removeWebsiteLogos(in: context)
                         }
                     }
+                } header: {
+                    Text("Privacy en beveiliging")
+                } footer: {
+                    Text("Met Screenshots van codes blokkeren is de barcode zwart in een screenshot of schermopname. Tijdelijk met jou gedeelde kaarten zijn altijd zo beschermd.")
                 }
 
                 Section {
@@ -81,6 +146,10 @@ struct SettingsView: View {
                     }
                     Link(destination: URL(string: "https://pasr.nl/privacy/")!) {
                         SettingsLabel("Privacyverklaring", symbol: "hand.raised.fill", color: Brand.iris, external: true)
+                    }
+                    // opent de App Store (buiten de app) op de pagina om een beoordeling te schrijven
+                    Link(destination: URL(string: "https://apps.apple.com/nl/app/id6829229123?action=write-review")!) {
+                        SettingsLabel("Beoordeel Pasr", symbol: "star.bubble.fill", color: .orange, external: true)
                     }
                     Button {
                         UserDefaults.standard.set(false, forKey: "pasr.onboarded")
@@ -108,7 +177,7 @@ struct SettingsView: View {
             .background(Brand.ink.ignoresSafeArea())
             .navigationTitle("Instellingen")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } }
             }
             .fileExporter(isPresented: $showExporter, document: exportDoc, contentType: .json,
                           defaultFilename: "Pasr-back-up \(Date.now.formatted(.iso8601.year().month().day()))") { result in
@@ -127,7 +196,7 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $askBackupPassword) {
                 BackupPasswordSheet { password in
-                    if let doc = try? BackupDocument(backup: PasrBackup(cards: active), password: password) {
+                    if let doc = try? BackupDocument(backup: PasrBackup(cards: active.filter { !$0.isTemporary }), password: password) {
                         exportDoc = doc
                         Task { @MainActor in
                             try? await Task.sleep(for: .milliseconds(400))

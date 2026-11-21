@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CoreLocation
 
 /// The home screen: cards stacked like Apple Wallet. Tapping one brings it forward, larger and
 /// fully bright, and turns it over to show the barcode or QR code on the back.
@@ -14,9 +15,22 @@ struct WalletView: View {
     }
 
     @State private var selectedID: UUID?
+    /// Filter naast de plusknop (blijft bewaard): alle, favorieten, klantenkaarten, cadeaukaarten, privé, gedeeld, tijdelijk.
+    @AppStorage("pasr.walletFilter") private var filterRaw = WalletFilter.all.rawValue
+    private var groups = GroupService.shared
+    /// Volgorde (CardOrder): standaard A tot Z; of meest gebruikt, dichtstbij, of in de buurt en dan meest gebruikt.
+    @AppStorage(CardOrder.key) private var order = CardOrder.az.rawValue
+    private var cardOrder: CardOrder { CardOrder(rawValue: order) ?? .az }
+    @State private var distances: [UUID: CLLocationDistance] = [:]
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var search = ""
     @State private var sheet: Sheet?
     @State private var deleting: Card?
+    /// Wanneer de kaart naar voren kwam en waar (voor de vraag "Hoeveel heb je uitgegeven?" bij een voucher).
+    @State private var shownAt: Date?
+    @State private var shownPlace: String?
+    @AppStorage(SpendSheet.askKey) private var askSpent = true
     /// 0 = front, 180 = back with the code.
     @State private var flipAngle: Double = 0
     @Namespace private var namespace
@@ -24,9 +38,12 @@ struct WalletView: View {
     private let peek: CGFloat = 62
 
     enum Sheet: Identifiable {
-        case add, importScreenshots, settings, edit(Card), share(Card)
+        case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?), info(Card)
         var id: String {
             switch self {
+            case .info(let card): "info-\(card.id)"
+            case .history(let card): "history-\(card.id)"
+            case .spend(let card, _): "spend-\(card.id)"
             case .add: "add"
             case .importScreenshots: "import"
             case .settings: "settings"
@@ -36,8 +53,10 @@ struct WalletView: View {
         }
     }
 
+    private var filter: WalletFilter { WalletFilter(rawValue: filterRaw) ?? .all }
+
     private var visibleCards: [Card] {
-        let sorted = cards.alphabetical()
+        let sorted = cards.ordered(cardOrder, distances: distances).filter { filter.matches($0) }
         let query = search.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return sorted }
         return sorted.filter {
@@ -55,6 +74,8 @@ struct WalletView: View {
                 ZStack {
                     if cards.isEmpty {
                         emptyState
+                    } else if visibleCards.isEmpty && filter != .all {
+                        filteredEmpty
                     } else {
                         stack(width: width)
                             .blur(radius: selectedID == nil ? 0 : 14)
@@ -65,9 +86,10 @@ struct WalletView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onChange(of: geo.size) { _, _ in ScreenBrightness.screenChanged() }
             }
             .background(Brand.ink.ignoresSafeArea())
-            .navigationTitle(selectedID == nil ? String(localized: "Kaarten") : "")
+            .navigationTitle(selectedID == nil ? (filter == .all ? String(localized: "Kaarten") : filter.title(groups: groups)) : "")
             .toolbar { toolbar }
             .searchable(text: $search, prompt: Text("Zoek kaarten"))
         }
@@ -78,6 +100,17 @@ struct WalletView: View {
             case .settings: SettingsView()
             case .edit(let card): NavigationStack { CardEditorView(card: card) }
             case .share(let card): ShareCardSheet(card: card)
+            case .history(let card): CardHistorySheet(card: card)
+            case .info(let card):
+                CardInfoSheet(card: card) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(400))
+                        deleting = card
+                    }
+                }
+            case .spend(let card, let place):
+                SpendSheet(card: card, mode: .spent, place: place, asked: true)
+                    .presentationDetents([.medium])
             }
         }
         .confirmationDialog(Text("\(deleting?.storeName ?? "kaart") verwijderen?"),
@@ -94,8 +127,32 @@ struct WalletView: View {
         }
         .onDisappear { ScreenBrightness.restore() }
         .task(id: WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
+        .task(id: "\(order)|\(scenePhase == .active)|\(cards.count)") { await updateDistances(search: false) }
         .onChange(of: openCardID, initial: true) { _, id in openRequestedCard(id) }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrCloseSheets)) { _ in sheet = nil }
         .onChange(of: cards.count) { _, _ in openRequestedCard(openCardID) }
+    }
+
+    /// Afstanden voor "Dichtstbij eerst" (uit wat Pasr al weet; met `search` ook filialen opzoeken).
+    private func updateDistances(search: Bool) async {
+        guard cardOrder.usesLocation else { distances = [:]; return }
+        let stores = NearbyStores.shared
+        var here = await stores.currentLocation(maxAge: 300)
+        if let h = here { distances = stores.knownDistances(for: cards, from: h) }
+        if search || (here != nil && distances.count < min(cards.count, 3)) {
+            here = await stores.updateBranches(cards: cards) ?? here
+            if let h = here { distances = stores.knownDistances(for: cards, from: h) }
+        }
+        WidgetSync.update(with: cards)   // widgets en Watch in dezelfde volgorde
+    }
+
+    /// Omlaag trekken: account en gedeelde Pasrs synchroniseren en de winkels om je heen opnieuw zoeken.
+    private func pullToRefresh() async {
+        if cardOrder.usesLocation { await updateDistances(search: true) } else { await NearbyStores.shared.refresh(cards: cards, force: true) }
+        if AccountService.shared.isSignedIn {
+            await CardSync.sync(in: context)
+            await GroupService.shared.sync(in: context)
+        }
     }
 
     private func openRequestedCard(_ id: UUID?) {
@@ -135,11 +192,14 @@ struct WalletView: View {
             .padding(.top, 8)
         }
         .scrollIndicators(.hidden)
+        .refreshable { await pullToRefresh() }
     }
 
     @ViewBuilder private func cardMenu(_ card: Card) -> some View {
         Button { sheet = .edit(card) } label: { Label("Wijzig", systemImage: "pencil") }
-        Button { share(card) } label: { Label("Deel", systemImage: "square.and.arrow.up") }
+        if !card.isTemporary {
+            Button { share(card) } label: { Label("Deel", systemImage: "square.and.arrow.up") }
+        }
         Button {
             card.isFavorite.toggle()
             card.updatedAt = .now
@@ -161,7 +221,10 @@ struct WalletView: View {
                 .transition(.opacity)
 
             VStack(spacing: 22) {
-                FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
+                // tijdelijke kaart: elke 15 seconden opnieuw tekenen, zodat de code op het einde verdwijnt
+                TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in
+                    FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
+                }
                     .frame(width: width, height: width / Brand.cardAspect)
                     .matchedGeometryEffect(id: card.id, in: namespace)
                     .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
@@ -174,14 +237,27 @@ struct WalletView: View {
                         card.updatedAt = .now
                     }
                     actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
-                    actionButton("square.and.arrow.up", label: "Deel") { sheet = .share(card) }
-                    if WalletPass.isAvailable, !card.number.isEmpty {
+                    actionButton(card.kind == .voucher ? "eurosign.circle" : "clock.arrow.circlepath",
+                                 label: card.kind == .voucher ? "Tegoed en uitgaven" : "Geschiedenis") { sheet = .history(card) }
+                    if !card.isTemporary {
+                        actionButton("square.and.arrow.up", label: "Deel") { share(card) }
+                    }
+                    // tijdelijk gedeelde kaarten mogen niet in Apple Wallet
+                    if WalletPass.isAvailable, !card.number.isEmpty, !card.isTemporary {
                         WalletActionButton(card: card).id(card.id)
                     }
-                    actionButton("trash", label: "Verwijder", role: .destructive) { deleting = card }
+                    // details (gids, foto's, ticket, abonnement) en verwijderen, zoals de achterkant van een pas in Wallet
+                    actionButton("info.circle", label: "Details") { sheet = .info(card) }
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
 
+                if let previous = previousUse(card) {
+                    Text("Vorige keer \(previous.date.formatted(.relative(presentation: .named)))\(previous.place.map { " · \($0)" } ?? "")")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(width: width, alignment: .leading)
+                        .onTapGesture { sheet = .history(card) }
+                }
                 if !card.note.isEmpty {
                     Text(card.note)
                         .font(.footnote)
@@ -226,20 +302,42 @@ struct WalletView: View {
         }
     }
 
+    /// De keer hiervoor dat de kaart is getoond (de huidige keer telt niet mee).
+    private func previousUse(_ card: Card) -> CardEvent? {
+        card.history.filter { $0.kind == .shown && Date.now.timeIntervalSince($0.date) > 120 }.first
+    }
+
     private func bringForward(_ card: Card) {
         card.markUsed()
+        shownAt = .now
+        shownPlace = nil
+        Task {
+            let place = await NearbyStores.shared.placeName(for: card)
+            shownPlace = place
+            card.recordShown(place: place)
+        }
         flipAngle = 0
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
         // Once it's in front, turn it over to show the code.
-        withAnimation(.spring(response: 0.62, dampingFraction: 0.78).delay(0.28)) { flipAngle = 180 }
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.15).delay(0.15) : .spring(response: 0.62, dampingFraction: 0.78).delay(0.28)) { flipAngle = 180 }
     }
 
     private func deselect() {
-        guard selectedID != nil else { return }
+        guard let id = selectedID else { return }
+        // Voucher langer dan een paar seconden getoond: vragen hoeveel je uitgaf (tegoed bijhouden)
+        if askSpent, let card = cards.first(where: { $0.id == id }), card.kind == .voucher, !card.isTemporary,
+           (card.balance ?? 0) > 0, let at = shownAt, Date.now.timeIntervalSince(at) > 4 {
+            let place = shownPlace
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(650))
+                if sheet == nil { sheet = .spend(card, place) }
+            }
+        }
+        shownAt = nil
         withAnimation(.easeInOut(duration: 0.32)) { flipAngle = 0 }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
         }
     }
 
@@ -273,7 +371,7 @@ struct WalletView: View {
                 .pasrGlassButton(prominent: true)
                 .tint(Brand.iris)
                 Button { sheet = .importScreenshots } label: {
-                    Label("Screenshots importeren", systemImage: "photo.stack").frame(maxWidth: 260).padding(.vertical, 6)
+                    Label("Importeren uit andere app", systemImage: "square.and.arrow.down.on.square").frame(maxWidth: 260).padding(.vertical, 6)
                 }
                 .pasrGlassButton()
                 #if DEBUG
@@ -287,18 +385,69 @@ struct WalletView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Filterknop naast de plus: gevuld icoon als er een filter aanstaat.
+    private var filterMenu: some View {
+        Menu {
+            Picker("Filter", selection: Binding(get: { filterRaw }, set: { new in withAnimation(.snappy) { filterRaw = new } })) {
+                ForEach(WalletFilter.basic + WalletFilter.extra.filter { f in cards.contains { f.matches($0) } }, id: \.self) { f in
+                    Label(f.title, systemImage: f.symbol).tag(f.rawValue)
+                }
+            }
+            Picker("Volgorde", selection: Binding(get: { order }, set: { new in
+                withAnimation(.snappy) { order = new }
+                if CardOrder(rawValue: new)?.usesLocation == true {
+                    Task { _ = await NearbyStores.shared.locationForPin(); await updateDistances(search: true) }
+                }
+                WidgetSync.update(with: cards)
+            })) {
+                ForEach(CardOrder.allCases) { o in Label(o.title, systemImage: o.symbol).tag(o.rawValue) }
+            }
+            let shared = cards.contains { $0.groupID != nil }
+            let temporary = cards.contains(where: \.isTemporary)
+            if shared || temporary {
+                Picker("Delen", selection: Binding(get: { filterRaw }, set: { new in withAnimation(.snappy) { filterRaw = new } })) {
+                    Label(WalletFilter.personal.title, systemImage: WalletFilter.personal.symbol).tag(WalletFilter.personal.rawValue)
+                    if shared {
+                        ForEach(groups.groups) { g in
+                            Label(g.name, systemImage: "person.2.fill").tag(WalletFilter.group(g.id).rawValue)
+                        }
+                    }
+                    if temporary {
+                        Label(WalletFilter.temporary.title, systemImage: WalletFilter.temporary.symbol).tag(WalletFilter.temporary.rawValue)
+                    }
+                }
+            }
+        } label: {
+            Label("Filter", systemImage: filter == .all ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+        }
+        .accessibilityValue(Text(filter.title(groups: groups)))
+    }
+
+    private var filteredEmpty: some View {
+        VStack(spacing: 14) {
+            Image(systemName: filter.symbol).font(.system(size: 40, weight: .semibold)).foregroundStyle(.secondary)
+            Text("Geen kaarten bij \(filter.title(groups: groups))").font(.headline)
+            Button("Toon alle kaarten") { withAnimation(.snappy) { filterRaw = WalletFilter.all.rawValue } }
+                .pasrGlassButton()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             if selectedID != nil {
-                Button("Klaar") { deselect() }
+                Button("Klaar", systemImage: "xmark") { deselect() }
             } else {
                 Button { sheet = .settings } label: { Label("Instellingen", systemImage: "gearshape") }
             }
         }
         ToolbarItem(placement: .primaryAction) {
+            if selectedID == nil, !cards.isEmpty { filterMenu }
+        }
+        ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button { sheet = .add } label: { Label("Kaart toevoegen", systemImage: "plus.rectangle.on.rectangle") }
-                Button { sheet = .importScreenshots } label: { Label("Screenshots importeren", systemImage: "photo.stack") }
+                Button { sheet = .importScreenshots } label: { Label("Importeren uit andere app", systemImage: "square.and.arrow.down.on.square") }
             } label: {
                 Label("Toevoegen", systemImage: "plus")
             }
@@ -307,29 +456,136 @@ struct WalletView: View {
 }
 
 /// Turns the screen fully bright while a code is shown, like Wallet does.
+/// Per scherm: op iPhone Duo kan de app tijdens het tonen van het binnen- naar het buitenscherm gaan (open- of
+/// dichtklappen). Dan krijgt het nieuwe scherm ook volle helderheid en elk scherm later zijn eigen stand terug.
 enum ScreenBrightness {
     #if os(iOS)
-    @MainActor private static var saved: CGFloat?
+    @MainActor private static var saved: [ObjectIdentifier: (screen: UIScreen, brightness: CGFloat)] = [:]
+    @MainActor private static var active = false
 
     @MainActor static func boost() {
-        guard let screen = currentScreen else { return }
-        if saved == nil { saved = screen.brightness }
-        screen.brightness = 1
+        active = true
         UIApplication.shared.isIdleTimerDisabled = true
+        guard let screen = currentScreen else { return }
+        let id = ObjectIdentifier(screen)
+        if saved[id] == nil { saved[id] = (screen, screen.brightness) }
+        screen.brightness = 1
+    }
+
+    /// Het scherm van de app veranderde (iPhone Duo open- of dichtgeklapt): als er een code staat, ook dat scherm fel.
+    @MainActor static func screenChanged() {
+        if active { boost() }
     }
 
     @MainActor static func restore() {
-        guard let screen = currentScreen, let saved else { return }
-        screen.brightness = saved
-        Self.saved = nil
+        guard active else { return }
+        active = false
+        for (_, entry) in saved { entry.screen.brightness = entry.brightness }
+        saved = [:]
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
+    /// Het scherm van de scene die nu vooraan staat (niet UIScreen.main: op een toestel met twee schermen is dat
+    /// niet eenduidig).
     @MainActor private static var currentScreen: UIScreen? {
-        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.screen }.first
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return (scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)?.screen
     }
     #else
     static func boost() {}
+    static func screenChanged() {}
     static func restore() {}
     #endif
+}
+
+/// Filter van de kaartenstapel.
+enum WalletFilter: Hashable {
+    case all, favorites, loyalty, voucher, code, ticket, subscription, personal, temporary
+    case group(UUID)
+
+    static let basic: [WalletFilter] = [.all, .favorites, .loyalty, .voucher]
+    /// Alleen in het menu als je zo'n pas hebt.
+    static let extra: [WalletFilter] = [.code, .ticket, .subscription]
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "all": self = .all
+        case "favorites": self = .favorites
+        case "loyalty": self = .loyalty
+        case "voucher": self = .voucher
+        case "code": self = .code
+        case "ticket": self = .ticket
+        case "subscription": self = .subscription
+        case "personal": self = .personal
+        case "temporary": self = .temporary
+        default:
+            guard rawValue.hasPrefix("group:"), let id = UUID(uuidString: String(rawValue.dropFirst(6))) else { return nil }
+            self = .group(id)
+        }
+    }
+
+    var rawValue: String {
+        switch self {
+        case .all: "all"
+        case .favorites: "favorites"
+        case .loyalty: "loyalty"
+        case .voucher: "voucher"
+        case .code: "code"
+        case .ticket: "ticket"
+        case .subscription: "subscription"
+        case .personal: "personal"
+        case .temporary: "temporary"
+        case .group(let id): "group:\(id.uuidString)"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .all: String(localized: "Alle kaarten")
+        case .favorites: String(localized: "Favorieten")
+        case .loyalty: String(localized: "Klantenkaarten")
+        case .voucher: String(localized: "Cadeaukaarten en vouchers")
+        case .code: String(localized: "Kortingscodes")
+        case .ticket: String(localized: "Tickets")
+        case .subscription: String(localized: "Abonnementen")
+        case .personal: String(localized: "Alleen privé")
+        case .temporary: String(localized: "Tijdelijk met mij gedeeld")
+        case .group: String(localized: "Gedeelde Pasr")
+        }
+    }
+
+    @MainActor func title(groups: GroupService) -> String {
+        if case .group(let id) = self { return groups.group(id)?.name ?? title }
+        return title
+    }
+
+    var symbol: String {
+        switch self {
+        case .all: "rectangle.stack"
+        case .favorites: "star.fill"
+        case .loyalty: "creditcard"
+        case .voucher: "giftcard"
+        case .code: CardKind.code.symbol
+        case .ticket: CardKind.ticket.symbol
+        case .subscription: CardKind.subscription.symbol
+        case .personal: "person.fill"
+        case .temporary: "clock.fill"
+        case .group: "person.2.fill"
+        }
+    }
+
+    func matches(_ card: Card) -> Bool {
+        switch self {
+        case .all: true
+        case .favorites: card.isFavorite
+        case .loyalty: card.kind == .loyalty
+        case .voucher: card.kind == .voucher
+        case .code: card.kind == .code
+        case .ticket: card.kind == .ticket
+        case .subscription: card.kind == .subscription
+        case .personal: card.groupID == nil && !card.isTemporary
+        case .temporary: card.isTemporary
+        case .group(let id): card.groupID == id
+        }
+    }
 }
