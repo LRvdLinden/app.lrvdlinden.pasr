@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Maakt website/kaarten/index.html: alle kaarten die Pasr kent, om te bekijken en te doorzoeken.
 De lijst en de aantallen komen uit de repo (tools/store_catalog.py). In de browser vraagt de pagina daarna de live
-catalogus op (pasr_store_catalog): winkels die in het beheer zijn bijgekomen verschijnen erbij, catalogus-winkels die
-(nog) niet gepubliceerd zijn verdwijnen. Lukt dat niet, dan blijft de gegenereerde lijst staan.
+lijst op (pasr_store_index, zonder logo's; logo's van nieuwe of gewijzigde winkels los via pasr_store_logos): winkels die
+in het beheer zijn bijgekomen verschijnen erbij, catalogus-winkels die (nog) niet gepubliceerd zijn verdwijnen.
+Kaarten met een gids (tools/make_gids.py) linken naar hun gidspagina. Lukt dat niet, dan blijft de gegenereerde lijst staan.
 Logo's worden verkleind naar website/assets/kaarten/<domain>.png.
 Wordt aangeroepen door tools/make_website.py; los: python3 tools/make_kaarten.py"""
 import html
@@ -91,7 +92,7 @@ GIFT = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16v10H4zM3 7
         'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>')
 
 
-def tile(c, sizes):
+def tile(c, sizes, guide_links=None):
     st = c["style"] or {}
     ink = " ink-dark" if is_light(c["card"]) else ""
     q = " ".join(dict.fromkeys(fold(x) for x in [c["name"], *c["aliases"], c["domain"]]))
@@ -110,7 +111,8 @@ def tile(c, sizes):
     src = ' data-src="catalogus"' if c["source"] == "catalogus" else ""
     return (f'<li class="kc" data-id="{esc(c["id"])}"{src} data-c="{esc(c["category"])}" data-q="{esc(q)}">'
             f'<div class="kc-card{ink}" style="background:{c["card"]}">{face}{saldo}</div>'
-            f'<span class="kc-name">{esc(c["name"])}</span></li>')
+            + (f'<a class="kc-name" href="{guide_links[c["id"]]}" aria-label="Gids: {esc(c["name"])}">{esc(c["name"])}<span class="kc-gids" aria-hidden="true"> · gids</span></a></li>'
+               if guide_links and c["id"] in guide_links else f'<span class="kc-name">{esc(c["name"])}</span></li>'))
 
 
 def build(write=True):
@@ -120,15 +122,17 @@ def build(write=True):
     now = datetime.now(timezone.utc).replace(microsecond=0)
     day = f"{now.day} {MONTHS[now.month - 1]} {now.year}"
     url, key = account_config()
+    import make_gids   # hier: make_gids gebruikt zelf hulpjes uit dit bestand
+    guide_links = make_gids.links()
     lists, cat_opts = {}, {}
     for kind in ("loyalty", "voucher"):
         items = sorted((c for c in cards if c["kind"] == kind), key=lambda c: (sort_key(c["name"]), c["id"]))
-        lists[kind] = "\n".join("          " + tile(c, sizes) for c in items)
+        lists[kind] = "\n".join("          " + tile(c, sizes, guide_links) for c in items)
         cats = sorted({c["category"] for c in items}, key=fold)
         cat_opts[kind] = cats
     all_cats = sorted({c["category"] for c in cards}, key=fold)
     options = "".join(f'<option value="{esc(c)}">{esc(c)}</option>' for c in all_cats)
-    config = {"url": url, "key": key, "cats": cat_opts}
+    config = {"url": url, "key": key, "cats": cat_opts, "built": now.isoformat()}
 
     title = "Alle klantenkaarten en cadeaukaarten in Pasr"
     desc = (f"Zoek je winkel: Pasr kent {n['loyalty']} klantenkaarten en {n['voucher']} cadeaukaarten en vouchers, "
@@ -201,7 +205,8 @@ def build(write=True):
         <li><a href="/#functies">Functies</a></li>
         <li><a href="/kaarten/" aria-current="page">Kaarten</a></li>
         <li><a href="/#delen">Delen</a></li>
-        <li><a href="/#faq">Vragen</a></li>
+        <li><a href="/cadeaubon/">Cadeaubons</a></li>
+        <li class="hide-sm"><a href="/#faq">Vragen</a></li>
         <li><a href="/support/">Support</a></li>
       </ul>
     </nav>
@@ -243,13 +248,14 @@ def build(write=True):
 
       <div class="kg-block" data-kind="loyalty">
         <h2 class="kg-title">Klantenkaarten <span>({n["loyalty"]})</span></h2>
+        <p class="kg-note">Bij de bekendste spaarprogramma&rsquo;s staat een gids: tik op een naam met <b>gids</b>, of bekijk de <a href="/klantenkaart/">Klantenkaart-gids</a>.</p>
         <ul class="kg" role="list">
 {lists["loyalty"]}
         </ul>
       </div>
       <div class="kg-block" data-kind="voucher">
         <h2 class="kg-title">Cadeaukaarten en vouchers <span>({n["voucher"]})</span></h2>
-        <p class="kg-note">Met <b>Saldo-check</b> kijk je het tegoed na op de site van de uitgever; in Pasr staat je kaartnummer dan klaar om te plakken.</p>
+        <p class="kg-note">Met <b>Saldo-check</b> kijk je het tegoed na op de site van de uitgever; in Pasr staat je kaartnummer dan klaar om te plakken. Tik op de naam voor de <a href="/cadeaubon/">Cadeaubon-gids</a>: geldigheid, inwisselen en voorwaarden.</p>
         <ul class="kg" role="list">
 {lists["voucher"]}
         </ul>
@@ -274,6 +280,8 @@ def build(write=True):
     <div class="wrap">
       <span>&copy; {now.year} Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels; Pasr is niet aan hen verbonden. Winkel en wil je je logo anders of niet in Pasr? Mail <a href="mailto:support@pasr.nl?subject=Logo%20in%20Pasr">support@pasr.nl</a>.</span>
       <nav aria-label="Voettekst">
+        <a href="/cadeaubon/">Cadeaubon-gids</a>
+        <a href="/klantenkaart/">Klantenkaart-gids</a>
         <a href="/privacy/">Privacy</a>
         <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>

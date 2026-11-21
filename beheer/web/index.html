@@ -194,14 +194,17 @@
             <label class="se-wide">Andere namen (komma's)<input id="seAliases" type="text" placeholder="bijv. kwantum wonen" autocomplete="off"></label>
           </div>
           <fieldset id="seGuide" class="se-guide hidden">
-            <legend>Cadeaubon-gids <span class="muted sm">(in de app en op pasr.nl; alleen officiële bronnen, onbekend leeg laten)</span></legend>
+            <legend><span id="seGTitle">Gids</span> <span class="muted sm">(in de app en op pasr.nl; alleen officiële bronnen, onbekend leeg laten)</span></legend>
             <div class="se-grid">
-              <label>Geldigheid<input id="seGValidity" type="text" maxlength="80" placeholder="bijv. 3 jaar na aankoop" autocomplete="off"></label>
+              <label data-gkind="voucher">Geldigheid<input id="seGValidity" type="text" maxlength="80" placeholder="bijv. 3 jaar na aankoop" autocomplete="off"></label>
               <label>Gecontroleerd op<input id="seGChecked" type="date"></label>
-              <label>Online inwisselen<select id="seGOnline"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
-              <label>In de winkel<select id="seGStore"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
-              <label class="se-wide">Zo wissel je hem in (1 tot 3 zinnen)<textarea id="seGHow" rows="3" maxlength="400"></textarea></label>
-              <label class="se-wide">Verzendkosten<input id="seGShipping" type="text" maxlength="200" autocomplete="off"></label>
+              <label data-gkind="voucher">Online inwisselen<select id="seGOnline"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
+              <label data-gkind="voucher">In de winkel<select id="seGStore"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
+              <label data-gkind="loyalty" class="se-wide">Zo spaar je (1 tot 2 zinnen)<textarea id="seGEarn" rows="2" maxlength="400"></textarea></label>
+              <label data-gkind="loyalty" class="se-wide">Belangrijkste voordelen<textarea id="seGPerks" rows="2" maxlength="400"></textarea></label>
+              <label class="se-wide"><span id="seGHowLabel">Zo wissel je hem in (1 tot 3 zinnen)</span><textarea id="seGHow" rows="3" maxlength="400"></textarea></label>
+              <label data-gkind="voucher" class="se-wide">Verzendkosten<input id="seGShipping" type="text" maxlength="200" autocomplete="off"></label>
+              <label data-gkind="loyalty" class="se-wide">Programmapagina (https)<input id="seGProgram" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
               <label class="se-wide">Voorwaarden of FAQ (https)<input id="seGTerms" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
             </div>
           </fieldset>

@@ -61,6 +61,9 @@ Deno.test("cadeaubon-gids", () => {
   const r = cleanGuide({ validity: " 3 jaar ", online: true, store: false, how: "Bij de kassa.", terms_url: "https://www.bol.com/x", checked: "2026-11-21", foo: 1 });
   ok(r.ok && r.value?.validity === "3 jaar" && r.value.online === true && r.value.store === false && !("foo" in (r.value ?? {})), JSON.stringify(r));
   ok(!cleanGuide({ terms_url: "http://bol.com" }).ok, "alleen https");
+  ok(!cleanGuide({ program_url: "http://ah.nl" }).ok, "programma alleen https");
+  const loy = cleanGuide({ earn: "Scan je kaart.", perks: "Korting.", program_url: "https://www.ah.nl/bonuskaart" });
+  ok(loy.ok && loy.value?.earn === "Scan je kaart." && loy.value.program_url === "https://www.ah.nl/bonuskaart", JSON.stringify(loy));
   ok(!cleanGuide({ checked: "21-11-2026" }).ok, "datum");
   ok(!cleanGuide({ online: "ja" }).ok, "true/false");
   ok(!cleanGuide([1]).ok, "geen lijst");

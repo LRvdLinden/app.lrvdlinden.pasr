@@ -74,7 +74,7 @@ html:not(.js) .kf { display: none; }
 .kg-title span { color: var(--label); font-weight: 600; }
 .js .kg-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .kg-note { font-size: 15px; color: var(--ink-2); margin: -4px 0 16px; }
-.js .kg-block[data-kind="voucher"] .kg-note { margin-top: 6px; }
+.js .kg-block .kg-note { margin-top: 6px; }
 .js .kg-block.off { display: none; }
 .kg { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px var(--tile-gap); }
 .kc { min-width: 0; }
@@ -97,6 +97,10 @@ a.kc-saldo:hover { background: rgba(0, 0, 0, .78); }
 .kc-saldo:focus-visible { outline: 3px solid var(--iris); outline-offset: 2px; }
 .kc-name { display: block; margin-top: 7px; padding: 0 2px; font-size: 14px; font-weight: 500; color: var(--ink-2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+a.kc-name { text-decoration: none; }
+a.kc-name:hover { color: var(--ink); text-decoration: underline; }
+.kc-gids { color: var(--iris-deep); font-weight: 700; }
+footer nav { flex-wrap: wrap; gap: 8px 22px; }
 .kc.new .kc-card { animation: kc-in .35s ease both; }
 @keyframes kc-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 .kg-empty { text-align: center; color: var(--ink-2); padding: 30px 0 10px; margin: 0; }

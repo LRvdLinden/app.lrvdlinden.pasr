@@ -45,7 +45,7 @@
       case "bad_color": return "Kies een kaartkleur.";
       case "bad_domain": return "Dit is geen geldige website.";
       case "bad_guide": return "De cadeaubon-gids klopt niet (online en winkel: ja, nee of onbekend).";
-      case "bad_guide_url": return "Vul bij de voorwaarden een geldig https-adres in.";
+      case "bad_guide_url": return "Vul bij de gids (voorwaarden of programmapagina) een geldig https-adres in.";
       case "bad_guide_date": return "Vul bij 'Gecontroleerd op' een geldige datum in.";
       case "bad_logo": return "Dit logo kan niet worden gebruikt (PNG, JPEG of WebP, kleiner dan 300 kB).";
       case "too_large": return "Het logo is te groot. Kies een kleiner bestand.";
@@ -775,6 +775,7 @@
     const g = s.guide || {};
     $("seGValidity").value = g.validity || ""; $("seGHow").value = g.how || ""; $("seGShipping").value = g.shipping || "";
     $("seGTerms").value = g.terms_url || ""; $("seGChecked").value = g.checked || "";
+    $("seGEarn").value = g.earn || ""; $("seGPerks").value = g.perks || ""; $("seGProgram").value = g.program_url || "";
     $("seGOnline").value = typeof g.online === "boolean" ? String(g.online) : "";
     $("seGStore").value = typeof g.store === "boolean" ? String(g.store) : "";
     guideVisible();
@@ -794,17 +795,29 @@
     .observe($("storeEditor"), { attributes: true, attributeFilter: ["class"] });
   $("seClose").addEventListener("click", () => { $("storeEditor").classList.add("hidden"); editing = null; });
   ["seName", "seColor", "seKind"].forEach((id) => $(id).addEventListener("input", preview));
-  /** De cadeaubon-gids hoort alleen bij cadeaukaarten. */
-  function guideVisible() { $("seGuide").classList.toggle("hidden", $("seKind").value !== "voucher"); }
+  /** Gids: bij een cadeaukaart de cadeaubon-gids, bij een klantenkaart de programmagids (zo spaar je, voordelen). */
+  function guideVisible() {
+    const kind = $("seKind").value === "voucher" ? "voucher" : "loyalty";
+    $("seGuide").classList.remove("hidden");
+    $("seGTitle").textContent = kind === "voucher" ? "Cadeaubon-gids" : "Programmagids";
+    $("seGHowLabel").textContent = kind === "voucher" ? "Zo wissel je hem in (1 tot 3 zinnen)" : "Zo kom je aan de kaart (1 zin)";
+    document.querySelectorAll("#seGuide [data-gkind]").forEach((n) => n.classList.toggle("hidden", n.dataset.gkind !== kind));
+  }
   $("seKind").addEventListener("change", guideVisible);
-  /** Gids uit het formulier; leeg = null (wissen). Een gewone klantenkaart stuurt geen gids mee (de oude blijft staan). */
+  /** Gids uit het formulier (alleen de velden van deze soort kaart); leeg = null (wissen). */
   function guideBody() {
     const g = {}, t = (id) => $(id).value.trim(), b = (id) => ($(id).value === "" ? undefined : $(id).value === "true");
-    if (t("seGValidity")) g.validity = t("seGValidity");
-    if (b("seGOnline") !== undefined) g.online = b("seGOnline");
-    if (b("seGStore") !== undefined) g.store = b("seGStore");
+    if ($("seKind").value === "voucher") {
+      if (t("seGValidity")) g.validity = t("seGValidity");
+      if (b("seGOnline") !== undefined) g.online = b("seGOnline");
+      if (b("seGStore") !== undefined) g.store = b("seGStore");
+      if (t("seGShipping")) g.shipping = t("seGShipping");
+    } else {
+      if (t("seGEarn")) g.earn = t("seGEarn");
+      if (t("seGPerks")) g.perks = t("seGPerks");
+      if (t("seGProgram")) g.program_url = t("seGProgram");
+    }
     if (t("seGHow")) g.how = t("seGHow");
-    if (t("seGShipping")) g.shipping = t("seGShipping");
     if (t("seGTerms")) g.terms_url = t("seGTerms");
     if (t("seGChecked")) g.checked = t("seGChecked");
     return Object.keys(g).length ? g : null;
@@ -892,7 +905,7 @@
       id: editing.id || undefined, name: $("seName").value.trim(), domain: $("seDomain").value.trim(),
       category: $("seCategory").value, card_hex: $("seColor").value, format: $("seFormat").value, kind: $("seKind").value,
       aliases: $("seAliases").value.split(",").map((a) => a.trim()).filter(Boolean), logo: editing.logo,
-      ...($("seKind").value === "voucher" ? { guide: guideBody() } : {}),
+      guide: guideBody(),
     };
   }
   async function saveStore(publish) {

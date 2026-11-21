@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Vult de cadeaubon-gids (pasr_stores.guide) uit supabase/catalog/guides.json ({store_id: guide}).
+"""Vult de gids per winkel (cadeaubon-gids en, voor klantenkaarten, de programmagids) (pasr_stores.guide) uit supabase/catalog/guides.json ({store_id: guide}).
 Alleen waar guide nog leeg is: wat in het beheer is aangepast blijft staan. Een winkel die een gids krijgt, krijgt
 ook een nieuwe updated_at, zodat de apps hem opnieuw ophalen. Draait in de Backend-workflow na de catalogus-stap,
 met SUPABASE_ACCESS_TOKEN en REF. Zonder die variabelen (of met --check) controleert het alleen het bestand."""
 import json, os, re, sys, urllib.request
 from pathlib import Path
 
-KEYS = {"validity": str, "online": bool, "store": bool, "how": str, "shipping": str, "terms_url": str, "checked": str}
+KEYS = {"validity": str, "online": bool, "store": bool, "how": str, "shipping": str, "earn": str, "perks": str,
+        "program_url": str, "terms_url": str, "checked": str}
 
 
 def check(guides):
@@ -17,10 +18,11 @@ def check(guides):
         for k, v in g.items():
             assert k in KEYS, f"{sid}: onbekende sleutel {k!r}"
             assert isinstance(v, KEYS[k]), f"{sid}.{k}: verkeerd type"
-        for k, n in (("validity", 80), ("how", 400), ("shipping", 200), ("terms_url", 300)):
+        for k, n in (("validity", 80), ("how", 400), ("shipping", 200), ("earn", 400), ("perks", 400), ("program_url", 300), ("terms_url", 300)):
             assert len(g.get(k, "")) <= n, f"{sid}.{k}: te lang"
-        if "terms_url" in g:
-            assert g["terms_url"].startswith("https://"), f"{sid}.terms_url: geen https"
+        for k in ("terms_url", "program_url"):
+            if k in g:
+                assert g[k].startswith("https://"), f"{sid}.{k}: geen https"
         if "checked" in g:
             assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", g["checked"]), f"{sid}.checked: geen YYYY-MM-DD"
 

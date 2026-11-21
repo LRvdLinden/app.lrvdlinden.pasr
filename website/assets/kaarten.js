@@ -220,19 +220,58 @@
     apply();
   }
 
-  function fetchCatalog() {
-    if (!cfg.url || !cfg.key || !window.fetch || !window.JSON) return;
+  function rpc(name, body) {
     var ctrl = window.AbortController ? new AbortController() : null;
     var t = ctrl ? setTimeout(function () { ctrl.abort(); }, 8000) : 0;
-    fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/rpc/pasr_store_catalog', {
+    return fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/rpc/' + name, {
       method: 'POST',
       headers: { 'apikey': cfg.key, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ p_since: null }),
+      body: JSON.stringify(body || {}),
       credentials: 'omit',
       signal: ctrl ? ctrl.signal : undefined
-    }).then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (json) { clearTimeout(t); merge(json); })
-      .catch(function () { clearTimeout(t); /* offline of geblokkeerd: de gegenereerde lijst blijft staan */ });
+    }).then(function (r) { clearTimeout(t); return r.ok ? r.json() : null; },
+            function () { clearTimeout(t); return null; });
+  }
+
+  // Logo's los ophalen (pasr_store_logos, hoogstens 40 per keer) voor nieuwe winkels en winkels die sinds het maken
+  // van deze pagina zijn gewijzigd. Zo blijft de lijst zelf klein (pasr_store_index levert geen logo's).
+  function loadLogos(ids) {
+    for (var i = 0; i < ids.length; i += 40) {
+      rpc('pasr_store_logos', { p_ids: ids.slice(i, i + 40) }).then(function (logos) {
+        if (!logos || typeof logos !== 'object') return;
+        Object.keys(logos).forEach(function (id) {
+          var b64 = logos[id];
+          if (typeof b64 !== 'string' || !/^[A-Za-z0-9+/=\s]+$/.test(b64)) return;
+          Array.prototype.forEach.call(document.querySelectorAll('.kc[data-id="' + id.replace(/[^a-z0-9-]/g, '') + '"] .kc-card'), function (card) {
+            var word = card.querySelector('.kc-word'), box = card.querySelector('.kc-logo'), img = box && box.querySelector('img');
+            if (!img) {
+              box = document.createElement('span'); box.className = 'kc-logo';
+              img = document.createElement('img'); img.alt = ''; img.decoding = 'async';
+              box.appendChild(img);
+              card.insertBefore(box, card.firstChild);
+            }
+            img.removeAttribute('width'); img.removeAttribute('height');
+            img.src = 'data:image/png;base64,' + b64.replace(/\s+/g, '');
+            if (word) word.remove();
+          });
+        });
+      });
+    }
+  }
+
+  function fetchCatalog() {
+    if (!cfg.url || !cfg.key || !window.fetch || !window.JSON) return;
+    rpc('pasr_store_index').then(function (json) {
+      if (!json || !Array.isArray(json.stores)) return;   // offline of geblokkeerd: de gegenereerde lijst blijft staan
+      var built = Date.parse(cfg.built || '') || 0, need = [];
+      json.stores.forEach(function (s) {
+        if (!s || typeof s.id !== 'string' || s.removed || !s.has_logo) return;
+        var known = document.querySelector('.kc[data-id="' + s.id.replace(/[^a-z0-9-]/g, '') + '"]');
+        if (!known || (built && Date.parse(s.updated_at || '') > built)) need.push(s.id);
+      });
+      merge(json);
+      if (need.length) loadLogos(need);
+    });
   }
   if ('requestIdleCallback' in window) requestIdleCallback(fetchCatalog, { timeout: 2000 }); else setTimeout(fetchCatalog, 300);
 })();

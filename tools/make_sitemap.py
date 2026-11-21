@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Maakt website/sitemap.xml uit de pagina's zelf: alleen indexeerbare pagina's met een canonical-adres.
-lastmod = datum van de laatste git-commit die de pagina veranderde (geen datum van vandaag op alles).
+lastmod = datum van de laatste git-commit die de pagina veranderde (geen datum van vandaag op alles); een nieuwe of nog
+niet gecommitte pagina krijgt de datum van vandaag.
 Gebruik: python3 tools/make_sitemap.py"""
 import glob, os, re, subprocess, html
+from datetime import date
 from xml.sax.saxutils import escape
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "website")
@@ -19,8 +21,12 @@ for f in sorted(glob.glob(os.path.join(ROOT, "**", "index.html"), recursive=True
     try:
         day = subprocess.run(["git", "log", "-1", "--format=%cs", "--", rel], cwd=os.path.join(ROOT, ".."),
                              capture_output=True, text=True).stdout.strip()
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", rel], cwd=os.path.join(ROOT, ".."),
+                               capture_output=True, text=True).stdout.strip()
+        if dirty or not day:
+            day = date.today().isoformat()
     except Exception:
-        day = ""
+        day = date.today().isoformat()
     og = re.search(r'<meta property="og:image" content="([^"]+)"', t)
     entries.append((html.unescape(can.group(1)), day, og.group(1) if og else None))
 

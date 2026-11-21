@@ -1,4 +1,4 @@
-"""Renders the share images: python3 tools/og/render.py [og og-share kaarten] (needs: pip install playwright && playwright install chromium)."""
+"""Renders the share images: python3 tools/og/render.py [og og-share kaarten cadeaubon klantenkaart] (needs: pip install playwright && playwright install chromium)."""
 import asyncio
 import sys
 from pathlib import Path
@@ -12,7 +12,9 @@ async def main():
         browser = await p.chromium.launch()
         page = await browser.new_page(viewport={"width": 1200, "height": 630}, device_scale_factor=1)
         for name, out in [("og", OUT / "og.png"), ("og-share", OUT / "og-share.png"),
-                          ("kaarten", OUT.parent / "og" / "kaarten.png")]:   # /kaarten/ (tools/og/kaarten.html)
+                          ("kaarten", OUT.parent / "og" / "kaarten.png"),
+                          ("cadeaubon", OUT.parent / "og" / "cadeaubon.png"),          # /cadeaubon/ (gemaakt door make_gids.py)
+                          ("klantenkaart", OUT.parent / "og" / "klantenkaart.png")]:   # /klantenkaart/   # /kaarten/ (tools/og/kaarten.html)
             if len(sys.argv) > 1 and name not in sys.argv[1:]:
                 continue
             await page.goto((HERE / f"{name}.html").as_uri())

@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import verify_barcodes as v
 import store_catalog
 import make_kaarten
+import make_gids
 
 # Aantallen kaarten, uit de bronnen (StoreTemplates.swift en de catalogus-seeds in supabase/schema.sql): nooit met de hand.
 COUNTS = store_catalog.counts()
@@ -119,6 +120,12 @@ ICONS = {
     "pin": '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
     "history": '<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4M12 8v4l3 2"/>',
     "store": '<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/>',
+    "guide": '<path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM14 4v5h5M8 13h8M8 17h5"/>',
+    "mail": '<path d="M3 6h18v12H3zM3 7l9 6 9-6"/>',
+    "bell": '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/>',
+    "ticket": '<path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 0 0 0-4zM14 7v10" stroke-dasharray="0"/>',
+    "photo": '<path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 16l4.5-4.5 3.5 3.5 2.5-2.5L20 18M15.5 8.5h.01"/>',
+    "choice": '<path d="M4 5h7v14H4zM13 5h7v14h-7zM6.5 15h2M15.5 15h2"/>',
 }
 
 def icon(name):
@@ -131,13 +138,23 @@ FEATURES = [
     ("record", "#FF375F", "Overstappen met één opname", "Neem je scherm op terwijl je in je oude app je kaarten langsgaat. Pasr vindt ze allemaal.", 3, "record"),
     ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 3, "watch"),
     ("history", "#0A84FF", "Je gebruik en uitgaven, zoals in Wallet", "Zie wanneer en bij welk filiaal je een kaart liet zien. Bij een cadeaukaart vraagt Pasr na het tonen wat je uitgaf: je ziet het tegoed afnemen, met elke uitgave in de lijst. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar vanzelf bij.", 4, "history"),
-    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand. Met Saldo checken kijk je het tegoed na bij de uitgever, je kaartnummer staat klaar om te plakken.", 2, "gift"),
+    ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand. Met Saldo checken kijk je het tegoed na bij de uitgever, je kaartnummer staat klaar om te plakken. <a href=\"/cadeaubon/\">Cadeaubon-gids</a>", 2, "gift"),
     ("lock", "#17162A", "Versleuteld en met Face ID", "Kaartnummers versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID en blokkeer screenshots van je codes.", 3, "lock"),
     ("share", "#6A5CFF", "Samen of even delen", "Een gedeelde Pasr met je gezin, of een kaart tijdelijk uitlenen met een einddatum. <a href=\"#delen\">Zo werkt het</a>", 3, "share"),
     ("pin", "#FF6B57", "Je kaart verschijnt bij de winkel", "Loop je een winkel binnen, dan staat je kaart klaar met een melding. Zet je vaste filiaal zelf vast, kies welke filialen op je Wallet-pas komen, en met “Ook als Pasr dicht is” zet Pasr de winkels om je heen vanzelf klaar als je ergens anders bent. <a href=\"#waarom-verschijnt-mijn-kaart-niet-altijd-bij-de-winkel\">Zo werkt het</a>", 4, "near"),
     ("logo", "#1F9E6A", "Met het logo van je winkel", f"{N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers met hun eigen logo en kleur. <a href=\"/kaarten/\">Bekijk ze allemaal</a>. Mis je er een? Vraag hem aan in de app; hij komt erbij zonder update.", 2, "logos"),
     ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 3, "cloud"),
     ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 3, "theme"),
+]
+
+# Nieuw in versie 1.0.2 (afgesproken in features-102.md). Zelfde bento als FEATURES; breedtes per rij samen 6.
+NEW_102 = [
+    ("guide", "#E2683C", "Cadeaubon-gids per merk", "Bij je cadeaukaart zie je hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Lees ze ook hier: de <a href=\"/cadeaubon/\">Cadeaubon-gids</a> en de <a href=\"/klantenkaart/\">Klantenkaart-gids</a>.", 4, None),
+    ("bell", "#2ED3A6", "Tegoed-herinneringen", "Nog tegoed op een cadeaukaart? Pasr herinnert je eraan, ook als de kaart geen vervaldatum heeft.", 2, None),
+    ("mail", "#0A84FF", "Meldingen ook per e-mail", "Herinneringen en meldingen kun je nu ook per e-mail krijgen, naast pushmeldingen op je iPhone.", 2, None),
+    ("ticket", "#6A5CFF", "Kortingscodes, tickets en abonnementen", "Naast klantenkaarten en cadeaukaarten bewaar je nu ook kortingscodes, tickets en abonnementen in Pasr.", 4, None),
+    ("photo", "#FF6B57", "Tot 4 foto's per pas", "Bewaar tot vier foto's bij een pas en maak een eigen foto de voorkant: bijsnijden en positioneren doe je in de app.", 3, None),
+    ("choice", "#17162A", "Eerst kiezen: klantenkaart of cadeaukaart", "Bij Kaart toevoegen kies je eerst wat je toevoegt, een klantenkaart of een cadeaukaart, zodat je meteen de juiste lijst ziet.", 3, None),
 ]
 
 FAQ = [
@@ -149,6 +166,7 @@ FAQ = [
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kijk eerst op pasr.nl/kaarten of hij er al in staat. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Je kunt de winkel ook aanvragen in de app: tik op + › Kaart toevoegen › Mis je een winkel? (met een gratis Pasr-account). Dat kan ook voor cadeaukaarten en vouchers. Wij maken de kaart met het juiste logo en de juiste kleur en voegen hem toe zonder app-update; je krijgt een melding zodra hij erin staat."),
     ("Waar komen de logo's vandaan?", f"De logo's van ruim {N_LOGOS} bekende winkels zitten in Pasr, in de juiste merkkleur; je ziet ze allemaal op pasr.nl/kaarten. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
     ("Waarom verschijnt mijn kaart niet altijd bij de winkel?", "iOS laat een app hoogstens 20 plekken tegelijk in de gaten houden. Pasr kiest de 20 beste plekken rond waar je bent: eerst je eigen locaties, dan de dichtstbijzijnde filialen van je kaarten. Zet in Instellingen › Meldingen “Ook als Pasr dicht is” aan (locatie: Altijd); dan zet Pasr de winkels opnieuw klaar zodra je ergens anders bent, ook als je de app niet opent. Bij je vaste filiaal helpt het om bij de kaart onder Wijzig › Locaties op “Ik sta hier” te tikken. Voor Apple Wallet kies je zelf tot 10 filialen; of de pas op je toegangsscherm verschijnt, bepaalt iOS. Je locatie blijft altijd op je iPhone."),
+    ("Hoe lang is mijn cadeaukaart geldig?", "Dat verschilt per uitgever: van een jaar tot onbeperkt. In de Cadeaubon-gids op pasr.nl/cadeaubon staat per cadeaukaart hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Vanaf versie 1.0.2 zie je de gids ook bij je kaart in Pasr, en herinnert Pasr je aan tegoed dat je nog hebt."),
     ("Haalt Pasr het tegoed van mijn cadeaukaart vanzelf op?", "Nee, dat kan helaas niet: winkels en uitgevers van cadeaukaarten geven het tegoed niet door aan andere apps, en hun saldo-pagina's vragen om je pincode en een controle. Pasr houdt het daarom samen met jou bij: na het tonen van een cadeaukaart vraagt Pasr hoeveel je uitgaf, en het tegoed gaat omlaag met een regel in de geschiedenis. Met Saldo checken open je de saldo-pagina van de uitgever met je kaartnummer klaar om te plakken, en pas je het tegoed met één tik aan. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar bij."),
     ("Ziet Pasr wanneer ik een kaart heb gebruikt?", "Pasr ziet wanneer je een kaart laat zien, en bij welk filiaal als je locatie aanstaat. Dat staat in de geschiedenis van de kaart, met de laatste 30 dagen bovenaan. Of de kassa hem echt heeft gescand, weet Pasr niet. De geschiedenis blijft op je iPhone; uitgaven van cadeaukaarten gaan mee naar je andere apparaten."),
     ("Kan ik screenshots van mijn codes blokkeren?", "Ja. Zet in Instellingen › Privacy en beveiliging Screenshots van codes blokkeren aan; dan is de barcode zwart in een screenshot of schermopname. Bij tijdelijk gedeelde kaarten staat dit altijd aan."),
@@ -369,6 +387,7 @@ def page():
     _, watch_svg = bars(CARDS[-1][3])
     watch_num = CARDS[-1][3] + str(v.check(CARDS[-1][3]))
     features = "\n".join(feature_card(*f) for f in FEATURES)
+    new102 = "\n".join(feature_card(*f) for f in NEW_102)
     faq = "\n".join(f'''      <details id="{anchor(q)}">
         <summary>{q}</summary>
         <p>{a}</p>
@@ -381,7 +400,7 @@ def page():
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-itunes-app" content="app-id=6829229123">
   <title>Klantenkaarten-app voor iPhone en Apple Watch | Pasr</title>
-  <meta name="description" content="Al je klantenkaarten en cadeaukaarten in één app op iPhone, iPad en Apple Watch. Gratis, zonder reclame. Overstappen uit Klarna met één schermopname.">
+  <meta name="description" content="Al je klantenkaarten, cadeaukaarten, kortingscodes en tickets in één app op iPhone, iPad en Apple Watch. Gratis, zonder reclame, nu met cadeaubon-gids en tegoed-herinneringen.">
   <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, Klarna klantenkaarten overzetten, alternatief voor Klarna klantenkaarten, Supercards alternatief, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="author" content="Pasr">
@@ -417,7 +436,7 @@ def page():
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"Organization","@id":"https://pasr.nl/#org","name":"Pasr","url":"https://pasr.nl/","logo":"https://pasr.nl/assets/icon-512.png","email":"support@pasr.nl","sameAs":["https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"]}},
     {{"@type":"WebSite","@id":"https://pasr.nl/#site","url":"https://pasr.nl/","name":"Pasr","inLanguage":"nl-NL","publisher":{{"@id":"https://pasr.nl/#org"}}}},
-    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/og/home.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Met {N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers van winkels, elk met logo en kleur.","featureList":["Klantenkaarten en cadeaukaarten bewaren","{N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers met logo en kleur","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum","Kaart tonen bij de winkel, ook als de app dicht is","Tegoed van cadeaukaarten bijhouden","Geschiedenis per kaart","Apple Wallet-pas die zichzelf bijwerkt"],"downloadUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","installUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
+    {{"@type":"MobileApplication","name":"Pasr","operatingSystem":"iOS 17, iPadOS 17, watchOS 10","applicationCategory":"LifestyleApplication","inLanguage":"nl-NL","countriesSupported":"NL","url":"https://pasr.nl/","image":"https://pasr.nl/assets/icon-512.png","screenshot":"https://pasr.nl/og/home.png","description":"Klantenkaarten en cadeaukaarten op iPhone, iPad en Apple Watch. Gratis en zonder reclame. Met {N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers van winkels, elk met logo en kleur.","featureList":["Klantenkaarten en cadeaukaarten bewaren","{N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten en vouchers met logo en kleur","Barcode scannen met de camera","Kaarten overzetten uit Klarna via een schermopname of screenshots","Apple Watch-app","Widgets","Synchroniseren via iCloud","Beveiligen met Face ID","Kaarten delen","Gedeelde Pasr met tot 6 personen","Kaarten tijdelijk delen met een einddatum","Kaart tonen bij de winkel, ook als de app dicht is","Tegoed van cadeaukaarten bijhouden","Geschiedenis per kaart","Apple Wallet-pas die zichzelf bijwerkt","Cadeaubon-gids per merk: geldigheid, inwisselen en voorwaarden","Tegoed-herinneringen, ook zonder vervaldatum","Meldingen ook per e-mail","Kortingscodes, tickets en abonnementen bewaren","Tot 4 foto's per pas met een eigen voorkant","Bij toevoegen kiezen tussen klantenkaart en cadeaukaart"],"downloadUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","installUrl":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"}},"publisher":{{"@id":"https://pasr.nl/#org"}}}}
   ]}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
 </head>
@@ -429,6 +448,7 @@ def page():
         <li><a href="#functies">Functies</a></li>
         <li><a href="/kaarten/">Kaarten</a></li>
         <li><a href="#delen">Delen</a></li>
+        <li class="hide-sm"><a href="/cadeaubon/">Cadeaubons</a></li>
         <li class="hide-sm"><a href="#overstappen">Overstappen</a></li>
         <li><a href="#faq">Vragen</a></li>
         <li><a href="/support/">Support</a></li>
@@ -475,6 +495,18 @@ def page():
       <p class="stores-title"><span class="count" data-to="{N_LOYALTY}">{N_LOYALTY}</span> klantenkaarten en <span class="count" data-to="{N_VOUCHER}">{N_VOUCHER}</span> cadeaukaarten, met hun eigen logo en kleur</p>
 {marquee}
       <p class="stores-more"><a class="btn btn-ghost" href="/kaarten/">Bekijk alle kaarten</a></p>
+    </section>
+
+    <section class="wrap new102" id="nieuw" aria-labelledby="nieuw-title">
+      <div class="section-head">
+        <p class="pill coral">Update</p>
+        <h2 id="nieuw-title">Nieuw in versie 1.0.2</h2>
+        <p>Een gids bij elke cadeaukaart, herinneringen aan je tegoed, meldingen per e-mail en meer soorten passen.</p>
+      </div>
+      <div class="features">
+{new102}
+      </div>
+      <p class="moves"><a href="/cadeaubon/">Naar de Cadeaubon-gids</a> · <a href="/klantenkaart/">Naar de Klantenkaart-gids</a></p>
     </section>
 
     <div class="wrap">
@@ -545,6 +577,8 @@ def page():
     <div class="wrap">
       <span>&copy; 2026 Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels; Pasr is niet aan hen verbonden. Winkel en wil je je logo anders of niet in Pasr? Mail <a href="mailto:support@pasr.nl?subject=Logo%20in%20Pasr">support@pasr.nl</a>.</span>
       <nav aria-label="Voettekst">
+        <a href="/cadeaubon/">Cadeaubon-gids</a>
+        <a href="/klantenkaart/">Klantenkaart-gids</a>
         <a href="/privacy/">Privacy</a>
         <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>
@@ -657,6 +691,7 @@ def move_page(slug, m):
         <li><a href="/#functies">Functies</a></li>
         <li><a href="/kaarten/">Kaarten</a></li>
         <li><a href="/#delen">Delen</a></li>
+        <li class="hide-sm"><a href="/cadeaubon/">Cadeaubons</a></li>
         <li><a href="/#faq">Vragen</a></li>
         <li><a href="/support/">Support</a></li>
       </ul>
@@ -691,6 +726,8 @@ def move_page(slug, m):
     <div class="wrap">
       <span>&copy; 2026 Pasr · {m["name"]} is een merk van de eigenaar; Pasr is er niet aan verbonden.</span>
       <nav aria-label="Voettekst">
+        <a href="/cadeaubon/">Cadeaubon-gids</a>
+        <a href="/klantenkaart/">Klantenkaart-gids</a>
         <a href="/privacy/">Privacy</a>
         <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>
@@ -705,6 +742,8 @@ def move_page(slug, m):
 if __name__ == "__main__":
     n = make_kaarten.build()
     print(f"Wrote {ROOT / 'kaarten' / 'index.html'} ({n['loyalty']} klantenkaarten, {n['voucher']} cadeaukaarten/vouchers)")
+    g = make_gids.build()
+    print(f"Wrote {ROOT / 'cadeaubon'}/ ({len(g['voucher'])} gidsen) en {ROOT / 'klantenkaart'}/ ({len(g['loyalty'])} gidsen)")
     (ROOT / "index.html").write_text(page())
     print("Wrote", ROOT / "index.html")
     for slug, m in MOVES.items():
