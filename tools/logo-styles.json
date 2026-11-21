@@ -519,7 +519,7 @@
  },
  "schoenenreus.nl": {},
  "schoonenberg.nl": {
-  "bg": "#FFFFFF"
+  "src": "schoonenberg.nl"
  },
  "schuurman-schoenen.nl": {
   "src": "site"
@@ -617,7 +617,9 @@
  "trendhopper.nl": {
   "src": "trendhopper.nl"
  },
- "tuincentrumovervecht.nl": {},
+ "tuincentrumovervecht.nl": {
+  "src": "tuincentrumovervecht.nl"
+ },
  "tuinland.nl": {
   "src": "tuinland.nl"
  },
@@ -638,7 +640,9 @@
  "vvvcadeaukaarten.nl": {
   "bg": "#FFFFFF"
  },
- "walibi.nl": {},
+ "walibi.nl": {
+  "src": "walibi.nl"
+ },
  "waterstones.com": {
   "bg": "#FFFFFF"
  },
@@ -662,7 +666,9 @@
  "xenos.nl": {
   "src": "File:Logo-Xenos-Rubin-Red.png"
  },
- "yellowbrick.nl": {},
+ "yellowbrick.nl": {
+  "src": "yellowbrick.nl"
+ },
  "yourgift.nl": {},
  "yves-rocher.nl": {
   "src": "commons"
