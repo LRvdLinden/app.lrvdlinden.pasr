@@ -408,8 +408,8 @@ struct RemindersSettingsSection: View {
         }
         switch Reminders.Channel(rawValue: channel) ?? .push {
         case .push: return balanceText
-        case .mail: return balanceText + String(localized: "Je krijgt de herinneringen per e-mail van support@pasr.nl, niet als melding op dit apparaat. Alleen kaarten in je account tellen mee.")
-        case .both: return balanceText + String(localized: "Je krijgt de herinneringen als melding en per e-mail van support@pasr.nl. Voor e-mail tellen alleen kaarten in je account mee.")
+        case .mail: return balanceText + String(localized: "Je krijgt de herinneringen per e-mail van support@pasr.nl, niet als melding op dit apparaat. Alleen je eigen kaarten in je account tellen mee, niet die in een gedeelde Pasr.")
+        case .both: return balanceText + String(localized: "Je krijgt de herinneringen als melding en per e-mail van support@pasr.nl. Voor e-mail tellen alleen je eigen kaarten in je account mee, niet die in een gedeelde Pasr.")
         }
     }
 
