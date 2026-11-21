@@ -1,12 +1,32 @@
 #!/usr/bin/env python3
 """Eenmalige vulling van pasr_stores met alle winkels uit de app (supabase/catalog/stores.json, gemaakt door
-tools/build_catalog.py). Bestaat een winkel al in het beheer, dan blijft die zoals hij is: het beheer is leidend.
+tools/build_catalog.py) plus de aanvullingen in dezelfde map (bijv. new_loyalty.json, new_vouchers.json): elk
+*.json-bestand hier met een lijst winkels in hetzelfde formaat; guides*.json en balance*.json (andere structuur)
+worden overgeslagen. Bestaat een winkel al in het beheer, dan blijft die zoals hij is: het beheer is leidend.
 Draait in de Backend-workflow met SUPABASE_ACCESS_TOKEN en REF."""
 import json, os, urllib.request
 from pathlib import Path
 
 ref, token = os.environ["REF"], os.environ["SUPABASE_ACCESS_TOKEN"]
-rows = json.loads((Path(__file__).parent / "stores.json").read_text())
+here = Path(__file__).parent
+FIELDS = ["id", "name", "domain", "category", "card_hex", "format", "kind", "aliases", "logo", "published"]
+
+
+def catalog_files():
+    files = sorted(p for p in here.glob("*.json") if not p.name.startswith(("guides", "balance")))
+    return sorted(files, key=lambda p: p.name != "stores.json")  # stores.json eerst
+
+
+rows, seen = [], set()
+for path in catalog_files():
+    data = json.loads(path.read_text())
+    if not isinstance(data, list) or not all(isinstance(r, dict) and set(FIELDS) <= set(r) for r in data):
+        print(f"Overgeslagen: {path.name} (geen lijst winkels in het catalogusformaat)")
+        continue
+    new = [r for r in data if r["id"] not in seen]
+    seen.update(r["id"] for r in new)
+    rows += new
+    print(f"{path.name}: {len(new)} winkels")
 
 
 def lit(v):
@@ -31,7 +51,7 @@ cols = "id, name, domain, category, card_hex, format, kind, aliases, logo, publi
 done = 0
 for i in range(0, len(rows), 25):
     values = ",\n".join(
-        "(" + ", ".join(lit(r[c]) for c in ["id", "name", "domain", "category", "card_hex", "format", "kind", "aliases", "logo", "published"])
+        "(" + ", ".join(lit(r[c]) for c in FIELDS)
         + (", now())" if r["published"] else ", null)")
         for r in rows[i:i + 25])
     res = query(f"insert into public.pasr_stores ({cols}) values\n{values}\non conflict (id) do nothing returning id;")
