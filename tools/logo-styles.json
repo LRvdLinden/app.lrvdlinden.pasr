@@ -25,7 +25,9 @@
  "anwb.nl": {
   "src": "manual"
  },
- "anytimefitness.nl": {},
+ "anytimefitness.nl": {
+  "src": "manual"
+ },
  "apple.com": {},
  "argos-oil.com": {
   "src": "manual"
@@ -208,7 +210,7 @@
  },
  "dungelmann.nl": {},
  "efteling.com": {
-  "bg": "#FCF5ED"
+  "src": "manual"
  },
  "ekoplaza.nl": {
   "src": "manual"
@@ -294,7 +296,7 @@
   "src": "manual"
  },
  "hanos.nl": {
-  "bg": "#57004E"
+  "src": "manual"
  },
  "hansanders.nl": {
   "src": "File:Logo of Hans Anders.svg"

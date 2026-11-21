@@ -407,7 +407,7 @@
   "manual": true
  },
  "bagelsbeans.nl": {
-  "card": "#A64E17",
+  "card": "#ECD5AB",
   "manual": true
  },
  "beterhoren.nl": {
@@ -564,6 +564,18 @@
  },
  "centerparcs.nl": {
   "card": "#045E51",
+  "manual": true
+ },
+ "efteling.com": {
+  "card": "#AA182C",
+  "manual": true
+ },
+ "anytimefitness.nl": {
+  "card": "#6E38D5",
+  "manual": true
+ },
+ "hanos.nl": {
+  "card": "#56004E",
   "manual": true
  }
 }
