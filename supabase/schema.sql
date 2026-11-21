@@ -1119,6 +1119,52 @@ insert into public.pasr_balance_pages (store_id, url)
 values ('prenatal-cadeaukaart', 'https://www.prenatal.nl/cadeaukaart/')
 on conflict (store_id) do nothing;
 
+-- Saldo-pagina's uit de cadeaukaartendatabase (gecontroleerd 2026-11-21): alleen geverifieerde, directe saldocheckers.
+-- "do nothing": een adres dat in het beheer is aangepast blijft staan.
+insert into public.pasr_balance_pages (store_id, url)
+values ('action', 'https://www.action.com/nl-nl/saldo-cadeaukaart-checken/'),
+       ('action2', 'https://www.action.com/nl-nl/saldo-cadeaukaart-checken/'),
+       ('ah', 'https://service2.loyaltyinabox.com/CardBalanceChecker/2/paymentapi.aspx?cmd=showbalance&username=1379001&lang=nl-NL'),
+       ('ahcadeau', 'https://service2.loyaltyinabox.com/CardBalanceChecker/2/paymentapi.aspx?cmd=showbalance&username=1379001&lang=nl-NL'),
+       ('bijenkorf', 'https://www.debijenkorf.nl/klantenservice/De-Bijenkorf-Cadeaucard'),
+       ('bijenkorfgift', 'https://www.debijenkorf.nl/klantenservice/De-Bijenkorf-Cadeaucard'),
+       ('boekenbon', 'https://boekenbon.nl/bestellen/saldocheck'),
+       ('bol', 'https://www.bol.com/nl/nl/sf/cadeaubon-bestellen/'),
+       ('bol2', 'https://www.bol.com/nl/nl/sf/cadeaubon-bestellen/'),
+       ('coolblue', 'https://www.coolblue.nl/saldo-checker'),
+       ('decathlon', 'https://www.decathlon.nl/services/giftcard/balance'),
+       ('decathlon2', 'https://www.decathlon.nl/services/giftcard/balance'),
+       ('dirk', 'https://www.dirk.nl/meer/over-dirk/dirk-cadeaukaart/cadeaukaart-dirk'),
+       ('douglas', 'https://www.douglas.nl/nl/cp/gift-card-details-page/giftcarddetails'),
+       ('fashioncheque', 'https://www.fashioncheque.com/nl-nl/check-je-saldo'),
+       ('hm', 'https://www2.hm.com/nl_nl/customer-service/gift-card.html'),
+       ('hm2', 'https://www2.hm.com/nl_nl/customer-service/gift-card.html'),
+       ('hollandbarrett', 'https://www.hollandandbarrett.nl/gift-card/saldochecker'),
+       ('hunkemoller', 'https://giftcard.hunkemoller.nl/BalanceChecker'),
+       ('hunkemoller2', 'https://giftcard.hunkemoller.nl/BalanceChecker'),
+       ('ici', 'https://www.iciparisxl.nl/egiftcard'),
+       ('intertoys', 'https://kadokaart.intertoys.nl/BalanceChecker'),
+       ('intertoyscadeau', 'https://kadokaart.intertoys.nl/BalanceChecker'),
+       ('intratuin', 'https://www.intratuin.nl/cadeaukaart#saldochecker'),
+       ('jumbo', 'https://www.icpmimas.nl/jumbo/Default.aspx?culture=nl-NL'),
+       ('jumbofoodmarkt', 'https://www.icpmimas.nl/jumbo/Default.aspx?culture=nl-NL'),
+       ('kruidvat', 'https://www.kruidvat.nl/cadeaukaart'),
+       ('kruidvatv', 'https://www.kruidvat.nl/cadeaukaart'),
+       ('mediamarkt', 'https://www.mediamarkt.nl/nl/service/giftCard'),
+       ('nelson', 'https://www.nelson.nl/cadeaukaart/'),
+       ('omoda', 'https://www.omoda.nl/account/cadeaubon-saldo/'),
+       ('pathe', 'https://www.pathe.nl/nl/giftcard'),
+       ('plus', 'https://service2.loyaltyinabox.com/CardBalanceChecker/2/paymentapi.aspx?cmd=showbalance&username=2528001&lang=nl-NL'),
+       ('podiumcadeau', 'https://podiumcadeaukaart.nl/ik-heb-een-cadeaukaart/saldo-checken'),
+       ('praxis', 'https://www.praxis.nl/service/cadeaukaart#saldo-check'),
+       ('primera', 'https://www.primera.nl/saldo-checker'),
+       ('vvv', 'https://www.vvvcadeaukaarten.nl/saldocheck'),
+       ('wehkamp', 'https://www.wehkamp.nl/klantenservice/cadeaukaart/'),
+       ('xenos', 'https://www.xenos.nl/saldochecker'),
+       ('ytickets', 'https://www.yourgift.nl/saldochecker/'),
+       ('zara', 'https://www.zara.com/nl/nl/z-zara-card/balance?c=815540')
+on conflict (store_id) do nothing;
+
 -- ===============================================================================================================
 -- Review-account voor Apple App Review (beheer › Review-account maken). Het account zelf maakt de functie `admin`
 -- (auth admin API, met het wachtwoord dat de beheerder kiest; dat wordt nergens bewaard of gelogd). Deze functie zet
