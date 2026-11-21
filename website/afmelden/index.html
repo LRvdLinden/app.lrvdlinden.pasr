@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-itunes-app" content="app-id=6829229123">
+  <title>Herinneringen per e-mail uitzetten | Pasr</title>
+  <meta name="description" content="Zet de herinneringen per e-mail van Pasr uit.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://pasr.nl/afmelden/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pasr">
+  <meta property="og:url" content="https://pasr.nl/afmelden/">
+  <meta property="og:title" content="Herinneringen per e-mail uitzetten">
+  <meta property="og:description" content="Geen herinneringen van Pasr meer per e-mail.">
+  <meta property="og:image" content="https://pasr.nl/og/home.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="Pasr op een iPhone met een stapel klantenkaarten, naast de tekst: Al je klantenkaarten in één app, nu in de App Store">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pasr.nl/og/home.png">
+  <meta name="twitter:image:alt" content="Pasr op een iPhone met een stapel klantenkaarten, naast de tekst: Al je klantenkaarten in één app, nu in de App Store">
+  <meta name="theme-color" content="#F4F3FF">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <script src="/assets/consent.js" defer></script>
+  <link rel="stylesheet" href="/assets/style.css">
+  <style>
+    .stop { max-width: 640px; margin: 0 auto; padding: 30px 0 100px; text-align: center; }
+    .stop h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 6vw, 48px); letter-spacing: -0.04em; line-height: 1.05; margin: 10px 0 14px; }
+    .stop p { color: var(--ink-2); font-size: 18px; margin: 0 auto 26px; max-width: 36ch; }
+    .stop .actions { justify-content: center; }
+    .stop .note { font-size: 15px; margin-top: 28px; }
+    .stop [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="wrap nav">
+    <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span></a>
+    <nav aria-label="Hoofdmenu">
+      <ul>
+        <li><a href="/#functies">Functies</a></li>
+        <li><a href="/#delen">Delen</a></li>
+        <li><a href="/#overstappen">Overstappen</a></li>
+        <li><a href="/#faq">Vragen</a></li>
+        <li><a href="/support/">Support</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main class="wrap stop">
+    <div id="ask">
+      <h1>Herinneringen per e-mail uitzetten?</h1>
+      <p>Je krijgt dan geen mails meer van Pasr als een kaart bijna verloopt of als er nog tegoed op staat. Meldingen in de app blijven zoals ze zijn.</p>
+      <div class="actions"><button class="btn btn-primary" id="go" type="button">Zet uit</button></div>
+    </div>
+    <div id="done" hidden>
+      <h1>Uitgezet</h1>
+      <p>Je krijgt geen herinneringen per e-mail meer. Weer aanzetten kan in Pasr › Instellingen › Meldingen.</p>
+    </div>
+    <div id="fail" hidden>
+      <h1>Dat lukte niet</h1>
+      <p>Deze link werkt niet (meer). Zet de herinneringen per e-mail uit in Pasr › Instellingen › Meldingen › Herinneren via.</p>
+    </div>
+    <p class="note">Vragen? Mail naar <a href="mailto:support@pasr.nl">support@pasr.nl</a>.</p>
+    <noscript><p>Zet de herinneringen per e-mail uit in Pasr › Instellingen › Meldingen.</p></noscript>
+  </main>
+  <script>
+    (function () {
+      var cfg = { url: "https://xcfuiszcfgkpbixqzrjb.supabase.co", key: "sb_publishable_wFRG_22hV_8FJUX1JcS8SQ_2JHxQlzw" };
+      var t = new URLSearchParams(location.search).get("t") || "";
+      var show = function (id) { ["ask", "done", "fail"].forEach(function (x) { document.getElementById(x).hidden = x !== id; }); };
+      if (!/^[0-9a-f]{32}$/.test(t)) { show("fail"); return; }
+      // pas na een tik: virusscanners in mailprogramma's openen links vooraf
+      document.getElementById("go").addEventListener("click", function () {
+        this.disabled = true;
+        fetch(cfg.url + "/rest/v1/rpc/pasr_mail_unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: cfg.key, Authorization: "Bearer " + cfg.key },
+          body: JSON.stringify({ p_token: t })
+        }).then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { show(j && j.ok ? "done" : "fail"); })
+          .catch(function () { show("fail"); });
+      });
+    })();
+  </script>
+  <footer>
+    <div class="wrap">
+      <span>&copy; 2026 Pasr</span>
+      <nav aria-label="Voettekst">
+        <a href="/privacy/">Privacy</a>
+        <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
+        <a href="/support/">Support</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

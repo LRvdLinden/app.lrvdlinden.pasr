@@ -14,6 +14,17 @@ enum RemoteStores {
         var aliases: [String]
         /// Eerdere kaartkleuren uit het beheer: een kaart in zo'n kleur krijgt de nieuwe kleur mee.
         var previousHex: [String]?
+        /// Cadeaubon-gids (sinds 1.0.2): geldigheid, waar in te wisselen, voorwaarden.
+        var guide: StoreGuide?
+    }
+
+    /// De cadeaubon-gids van een winkel uit het beheer: op id, anders op naam.
+    static func guide(for templateID: String?, storeName: String = "") -> StoreGuide? {
+        let list = load()
+        if let id = templateID?.lowercased(), let g = list.first(where: { $0.id.lowercased() == id })?.guide { return g }
+        let name = storeName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return nil }
+        return list.first { $0.guide != nil && $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }?.guide
     }
 
     static var folder: URL? {

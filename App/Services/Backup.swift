@@ -39,6 +39,10 @@ struct PasrBackup: Codable {
         var places: [CardPlace]?
         var history: [CardEvent]?
         var balanceURL: String?
+        // sinds 1.0.2
+        var details: CardDetails?
+        var cover: Data?
+        var photos: [Data]?
     }
 
     init(cards: [Card]) {
@@ -49,7 +53,9 @@ struct PasrBackup: Codable {
                        balance: c.balance, currencyCode: c.currencyCode, pin: c.pin, expiresAt: c.expiresAt,
                        website: c.website, logoFromWebsite: c.logoFromWebsite, logo: c.logoData,
                        front: c.frontPhoto, back: c.backPhoto, places: c.places.isEmpty ? nil : c.places,
-                       history: c.history.isEmpty ? nil : c.history, balanceURL: c.balanceURL)
+                       history: c.history.isEmpty ? nil : c.history, balanceURL: c.balanceURL,
+                       details: c.detailsData == nil ? nil : c.details, cover: c.coverPhoto,
+                       photos: c.notePhotos.isEmpty ? nil : c.notePhotos)
         }
     }
 
@@ -84,6 +90,10 @@ struct PasrBackup: Codable {
             card.places = b.places ?? []
             card.history = b.history ?? []
             card.balanceURL = b.balanceURL
+            card.kindRaw = b.kind
+            if let details = b.details { card.details = details }
+            card.coverPhoto = b.cover
+            card.setNotePhotos(b.photos ?? [])
             card.refreshCodeImage()
             context.insert(card)
             added += 1

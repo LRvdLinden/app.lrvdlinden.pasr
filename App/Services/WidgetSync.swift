@@ -17,7 +17,7 @@ enum WidgetSync {
     /// A short fingerprint of everything the widgets show, so they only reload when it changes.
     static func fingerprint(of cards: [Card]) -> String {
         cards.map { card in
-            "\(card.id)|\(card.storeName)|\(card.number)|\(card.formatRaw)|\(card.colorHex)|\(card.isFavorite)|\(card.isLocked)|\(card.logoData?.count ?? 0)|\(card.balance ?? -1)|\(card.codeImage?.count ?? 0)|\(card.expiresAt?.timeIntervalSince1970 ?? 0)"
+            "\(card.id)|\(card.storeName)|\(card.number)|\(card.formatRaw)|\(card.colorHex)|\(card.isFavorite)|\(card.isLocked)|\(card.logoData?.count ?? 0)|\(card.balance ?? -1)|\(card.codeImage?.count ?? 0)|\(card.expiresAt?.timeIntervalSince1970 ?? 0)|\(card.kindRaw)|\(card.detailsData?.hashValue ?? 0)"
         }.joined(separator: ";")
     }
 }

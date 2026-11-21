@@ -1294,3 +1294,200 @@ begin
   return jsonb_build_object('ok', true, 'group_id', gid, 'cards', jsonb_array_length(priv), 'group_cards', jsonb_array_length(grp));
 end $$;
 revoke all on function public.pasr_admin_review_seed(uuid) from public, anon, authenticated;
+
+-- ============================================================================================================
+-- Herinneringen per e-mail (Pasr 1.0.2, app-agent). Wie dat in de app aanzet (Instellingen › Meldingen ›
+-- Herinneren via: E-mail of Beide) krijgt vanaf support@pasr.nl een mail als een voucher of kortingscode bijna
+-- verloopt (7 dagen ervoor en op de dag), twee dagen voor de verlenging van een abonnement, en (instelbaar: elke week,
+-- maand of kwartaal) een overzicht van het tegoed op cadeaukaarten. Alleen de eigen kaarten in het account tellen mee
+-- (niet die in een gedeelde Pasr). Elke ochtend kiest pasr_mail_due wat er te melden is (uit de versleutelde kaarten);
+-- de functie reminder-mail stuurt de mails via SMTP en schrijft met pasr_mail_sent weg wat er verstuurd is, zodat
+-- niets twee keer gaat. Afmelden: in de app, via de link in de mail (pasr.nl/afmelden/) of met één klik in het
+-- mailprogramma (List-Unsubscribe).
+-- ============================================================================================================
+create table if not exists public.pasr_mail_prefs (
+  user_id          uuid primary key references auth.users (id) on delete cascade,
+  expiry           boolean not null default true,
+  balance          boolean not null default true,
+  balance_interval text not null default 'month' check (balance_interval in ('week', 'month', 'quarter')),
+  tz               text not null default 'Europe/Amsterdam',
+  unsub_token      text not null default encode(extensions.gen_random_bytes(16), 'hex'),
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+create unique index if not exists pasr_mail_prefs_unsub on public.pasr_mail_prefs (unsub_token);
+create table if not exists public.pasr_mail_log (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  key     text not null,
+  sent_at timestamptz not null default now(),
+  primary key (user_id, key)
+);
+alter table public.pasr_mail_prefs enable row level security;
+alter table public.pasr_mail_log enable row level security;
+revoke all on public.pasr_mail_prefs, public.pasr_mail_log from anon, authenticated;
+alter table public.pasr_admin_config add column if not exists reminder_url text;
+
+-- Aan- of uitzetten vanuit de app (alleen voor jezelf). p_enabled false = geen mails meer (de rij gaat weg).
+create or replace function public.pasr_mail_prefs_set(p_enabled boolean, p_expiry boolean default true,
+                                                      p_balance boolean default true, p_interval text default 'month',
+                                                      p_tz text default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); zone text := 'Europe/Amsterdam';
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  if not coalesce(p_enabled, false) then
+    delete from public.pasr_mail_prefs where user_id = uid;
+    return jsonb_build_object('enabled', false);
+  end if;
+  if p_tz is not null and exists (select 1 from pg_timezone_names where name = p_tz) then zone := p_tz; end if;
+  insert into public.pasr_mail_prefs as m (user_id, expiry, balance, balance_interval, tz)
+  values (uid, coalesce(p_expiry, true), coalesce(p_balance, true),
+          case when p_interval in ('week', 'month', 'quarter') then p_interval else 'month' end, zone)
+  on conflict (user_id) do update set expiry = excluded.expiry, balance = excluded.balance,
+    balance_interval = excluded.balance_interval, tz = excluded.tz, updated_at = now();
+  return jsonb_build_object('enabled', true);
+end $$;
+
+create or replace function public.pasr_mail_prefs_get() returns jsonb
+language sql security definer set search_path = public as $$
+  select coalesce((select jsonb_build_object('enabled', true, 'expiry', m.expiry, 'balance', m.balance,
+                                             'interval', m.balance_interval)
+                   from public.pasr_mail_prefs m where m.user_id = auth.uid()),
+                  jsonb_build_object('enabled', false));
+$$;
+revoke all on function public.pasr_mail_prefs_set(boolean, boolean, boolean, text, text), public.pasr_mail_prefs_get()
+  from public, anon;
+grant execute on function public.pasr_mail_prefs_set(boolean, boolean, boolean, text, text), public.pasr_mail_prefs_get()
+  to authenticated;
+
+-- Afmelden met de code uit de mail (pasr.nl/afmelden/ en List-Unsubscribe). De code is 128 bits willekeurig.
+create or replace function public.pasr_mail_unsubscribe(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if coalesce(p_token, '') !~ '^[0-9a-f]{32}$' then return jsonb_build_object('ok', false); end if;
+  delete from public.pasr_mail_prefs where unsub_token = p_token;
+  get diagnostics n = row_count;
+  return jsonb_build_object('ok', true, 'removed', n > 0);
+end $$;
+revoke all on function public.pasr_mail_unsubscribe(text) from public;
+grant execute on function public.pasr_mail_unsubscribe(text) to anon, authenticated;
+
+-- Wat er vandaag te mailen is, per gebruiker: [{user_id, email, first_name, unsub, items:[…]}]. Een item:
+--   {key, type: expiry|renew|balance, kind, store, days, date, balance, currency, cost, period}
+-- Alleen voor de functie reminder-mail (service role). Items die al verstuurd zijn (pasr_mail_log) vallen weg.
+create or replace function public.pasr_mail_due(p_now timestamptz default now()) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  k text;
+  m record;
+  r record;
+  c jsonb;
+  today date;
+  d date;
+  days int;
+  bal numeric;
+  items jsonb;
+  balance_items jsonb;
+  balance_day boolean;
+  result jsonb := '[]'::jsonb;
+begin
+  select card_key into k from public.pasr_secret where id = 1;
+  for m in
+    select p.*, u.email, coalesce(u.raw_user_meta_data->>'first_name', '') as first_name
+    from public.pasr_mail_prefs p join auth.users u on u.id = p.user_id
+    where u.email is not null and u.email_confirmed_at is not null and (p.expiry or p.balance)
+  loop
+    today := (p_now at time zone m.tz)::date;
+    balance_day := m.balance and case m.balance_interval
+      when 'week' then extract(isodow from today) = 6
+      when 'quarter' then extract(day from today) = 1 and extract(month from today) in (1, 4, 7, 10)
+      else extract(day from today) = 1 end;
+    items := '[]'::jsonb;
+    balance_items := '[]'::jsonb;
+    for r in select pc.id, pc.payload from public.pasr_cards pc where pc.user_id = m.user_id and not pc.deleted loop
+      begin
+        c := pgp_sym_decrypt(r.payload, k)::jsonb;
+        -- vervaldatum: voucher en kortingscode, 7 dagen ervoor en op de dag
+        if m.expiry and c->>'kind' in ('voucher', 'code') and coalesce(c->>'expiresAt', '') <> '' then
+          d := ((c->>'expiresAt')::timestamptz at time zone m.tz)::date;
+          days := d - today;
+          if days in (7, 0) then
+            bal := case when c->>'kind' = 'voucher' and jsonb_typeof(c->'balance') = 'number' then (c->>'balance')::numeric end;
+            items := items || jsonb_build_object('key', 'exp:' || r.id || ':' || d || ':' || days, 'type', 'expiry',
+              'kind', c->>'kind', 'store', left(coalesce(c->>'storeName', ''), 60), 'days', days, 'date', d,
+              'balance', bal, 'currency', coalesce(c->>'currencyCode', 'EUR'));
+          end if;
+        end if;
+        -- abonnement: twee dagen voor de verlenging
+        if m.expiry and c->>'kind' = 'subscription' and coalesce(c->'details'->>'renewsAt', '') <> '' then
+          d := ((c->'details'->>'renewsAt')::timestamptz at time zone m.tz)::date;
+          if d - today = 2 then
+            items := items || jsonb_build_object('key', 'renew:' || r.id || ':' || d, 'type', 'renew',
+              'kind', 'subscription', 'store', left(coalesce(c->>'storeName', ''), 60), 'days', 2, 'date', d,
+              'cost', case when jsonb_typeof(c->'details'->'cost') = 'number' then (c->'details'->>'cost')::numeric end,
+              'period', coalesce(c->'details'->>'period', 'month'), 'currency', coalesce(c->>'currencyCode', 'EUR'));
+          end if;
+        end if;
+        -- tegoed: cadeaukaarten met tegoed die niet verlopen zijn, ook zonder vervaldatum
+        if balance_day and c->>'kind' = 'voucher' and jsonb_typeof(c->'balance') = 'number' and (c->>'balance')::numeric > 0
+           and (coalesce(c->>'expiresAt', '') = '' or ((c->>'expiresAt')::timestamptz at time zone m.tz)::date >= today) then
+          balance_items := balance_items || jsonb_build_object('type', 'balance', 'kind', 'voucher',
+            'store', left(coalesce(c->>'storeName', ''), 60), 'balance', (c->>'balance')::numeric,
+            'currency', coalesce(c->>'currencyCode', 'EUR'),
+            'date', case when coalesce(c->>'expiresAt', '') <> '' then ((c->>'expiresAt')::timestamptz at time zone m.tz)::date end);
+        end if;
+      exception when others then
+        continue;   -- een kaart met vreemde waarden slaan we over; de rest gaat gewoon door
+      end;
+    end loop;
+    if jsonb_array_length(balance_items) > 0 then
+      -- één overzicht per keer; de sleutel is de dag, zodat het niet twee keer gaat
+      select coalesce(jsonb_agg(e.value || jsonb_build_object('key', 'bal:' || today)), '[]'::jsonb) into balance_items
+      from jsonb_array_elements(balance_items) as e(value);
+      items := items || balance_items;
+    end if;
+    select coalesce(jsonb_agg(e.value), '[]'::jsonb) into items from jsonb_array_elements(items) as e(value)
+    where not exists (select 1 from public.pasr_mail_log l where l.user_id = m.user_id and l.key = e.value->>'key');
+    if jsonb_array_length(items) > 0 then
+      result := result || jsonb_build_object('user_id', m.user_id, 'email', m.email, 'first_name', left(m.first_name, 40),
+                                       'unsub', m.unsub_token, 'items', items);
+    end if;
+  end loop;
+  return result;
+end $$;
+
+-- Verstuurd: de sleutels wegschrijven (de functie reminder-mail, na een geslaagde mail).
+create or replace function public.pasr_mail_sent(p_user uuid, p_keys text[]) returns void
+language sql security definer set search_path = public as $$
+  insert into public.pasr_mail_log (user_id, key)
+  select p_user, unnest(p_keys) on conflict do nothing;
+$$;
+revoke all on function public.pasr_mail_due(timestamptz), public.pasr_mail_sent(uuid, text[]) from public, anon, authenticated;
+grant execute on function public.pasr_mail_due(timestamptz), public.pasr_mail_sent(uuid, text[]) to service_role;
+
+-- Elke ochtend (07:05 UTC, 08:05 of 09:05 in Nederland): seintje aan de functie reminder-mail. Het adres zet de workflow
+-- Backend (pasr_admin_config.reminder_url); leeg = er gebeurt niets. Het logboek houdt 400 dagen bij.
+create or replace function public.pasr_mail_kick() returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare u text; s text;
+begin
+  delete from public.pasr_mail_log where sent_at < now() - interval '400 days';
+  select reminder_url into u from public.pasr_admin_config where id = 1;
+  select hook_secret into s from public.pasr_secret where id = 1;
+  if coalesce(u, '') = '' or s is null then return; end if;
+  if not exists (select 1 from public.pasr_mail_prefs) then return; end if;
+  perform net.http_post(url := u, body := jsonb_build_object('action', 'run'),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-pasr-hook', s),
+    timeout_milliseconds := 120000);
+exception when others then
+  raise warning 'pasr_mail_kick: %', sqlerrm;
+end $$;
+revoke all on function public.pasr_mail_kick() from public, anon, authenticated;
+do $$
+begin
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-mail-reminders';
+  perform cron.schedule('pasr-mail-reminders', '5 7 * * *', 'select public.pasr_mail_kick()');
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;

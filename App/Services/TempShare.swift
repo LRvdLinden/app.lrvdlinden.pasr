@@ -50,6 +50,12 @@ enum TempShare {
         ]
         fields["templateID"] = card.templateID
         fields["website"] = card.website ?? card.logoDomain
+        if card.kind != .loyalty && card.kind != .voucher {
+            var details = card.details
+            details.captions = nil
+            if !details.isEmpty { fields["details"] = details.json }
+            fields["expiresAt"] = card.expiresAt.map { ISO8601DateFormatter().string(from: $0) }
+        }
         if card.kind == .voucher {
             fields["balance"] = card.balance
             fields["currencyCode"] = card.currencyCode
@@ -148,6 +154,8 @@ enum TempShare {
         card.currencyCode = f["currencyCode"] as? String
         card.pin = f["pin"] as? String
         card.expiresAt = (f["expiresAt"] as? String).flatMap(parse)
+        card.kindRaw = f["kind"] as? String ?? card.kindRaw
+        if let d = f["details"] as? [String: Any] { card.details = CardDetails(json: d) }
         card.shareToken = token
         card.sharedUntil = until
         card.refreshCodeImage()

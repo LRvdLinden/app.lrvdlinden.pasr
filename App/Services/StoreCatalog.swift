@@ -15,17 +15,30 @@ final class StoreCatalog {
     private(set) var version = 0
     private var lastCheck: Date?
     /// v2 (versie 1.0.2): één keer alles opnieuw ophalen, want sindsdien beheert het beheer ook de winkels in de app.
-    private let sinceKey = "pasr.storecatalog.since.v2"
+    /// v3 (build 40): nog één keer alles, voor de cadeaubon-gids (guide) per winkel.
+    private let sinceKey = "pasr.storecatalog.since.v3"
+    /// Of de server de gids al meestuurt. Zo niet, dan hoogstens één keer per dag alles opnieuw ophalen, zodat de gidsen
+    /// er vanzelf komen zodra het beheer ze heeft.
+    private let guideSeenKey = "pasr.storecatalog.guideSeen"
+    private let fullFetchKey = "pasr.storecatalog.fullFetch"
 
     func refresh(force: Bool = false) async {
         guard AccountConfig.isConfigured else { return }
         if !force, let lastCheck, Date.now.timeIntervalSince(lastCheck) < 900 { return }
         lastCheck = .now
+        let defaults = UserDefaults.standard
+        var since = defaults.string(forKey: sinceKey)
+        if since != nil, !defaults.bool(forKey: guideSeenKey),
+           Date.now.timeIntervalSince1970 - defaults.double(forKey: fullFetchKey) > 86_400 {
+            since = nil
+        }
         var body: [String: Any] = [:]
-        body["p_since"] = UserDefaults.standard.string(forKey: sinceKey) ?? NSNull()
+        body["p_since"] = since ?? NSNull()
         guard let json = try? await AccountService.shared.publicRPC("pasr_store_catalog", body: body) as? [String: Any] else { return }
+        if since == nil { defaults.set(Date.now.timeIntervalSince1970, forKey: fullFetchKey) }
         if let pages = json["balance_pages"] as? [String: String] { BalancePages.save(pages) }
         let rows = json["stores"] as? [[String: Any]] ?? []
+        if rows.contains(where: { $0.keys.contains("guide") }) { defaults.set(true, forKey: guideSeenKey) }
         if !rows.isEmpty {
             var list = Dictionary(RemoteStores.load().map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             var removed = RemoteStores.removedIDs()
@@ -42,6 +55,7 @@ final class StoreCatalog {
                 var past = list[id]?.previousHex ?? []
                 if let old = list[id]?.cardHex, old.caseInsensitiveCompare(store.cardHex) != .orderedSame { past.append(old) }
                 store.previousHex = past.isEmpty ? nil : past
+                store.guide = row.keys.contains("guide") ? StoreGuide(json: row["guide"]) : list[id]?.guide
                 list[id] = store
                 if let logo = (row["logo"] as? String).flatMap({ Data(base64Encoded: $0) }), let url = RemoteStores.logoURL(for: store.domain) {
                     try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

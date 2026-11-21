@@ -13,9 +13,74 @@ import SwiftData
 enum Reminders {
     static let voucherKey = "pasr.reminders.vouchers"
     static let nearbyKey = "pasr.reminders.nearby"
+    /// Tegoed-herinnering (cadeaukaarten met tegoed, ook zonder vervaldatum) en hoe vaak.
+    static let balanceKey = "pasr.reminders.balance"
+    static let balanceIntervalKey = "pasr.reminders.balanceInterval"
+    /// Hoe: "push", "mail" of "both". E-mail kan alleen met een Pasr-account.
+    static let channelKey = "pasr.reminders.channel"
 
     static var vouchersEnabled: Bool { UserDefaults.standard.object(forKey: voucherKey) as? Bool ?? true }
     static var nearbyEnabled: Bool { UserDefaults.standard.bool(forKey: nearbyKey) }
+    static var balanceEnabled: Bool { UserDefaults.standard.object(forKey: balanceKey) as? Bool ?? true }
+    static var balanceInterval: Interval {
+        UserDefaults.standard.string(forKey: balanceIntervalKey).flatMap(Interval.init(rawValue:)) ?? .month
+    }
+    static var channel: Channel {
+        UserDefaults.standard.string(forKey: channelKey).flatMap(Channel.init(rawValue:)) ?? .push
+    }
+
+    /// Meldingen op dit apparaat: altijd, behalve als je alleen e-mail koos (en een account hebt).
+    @MainActor static var pushEnabled: Bool { channel != .mail || !AccountService.shared.isSignedIn }
+
+    enum Interval: String, CaseIterable, Identifiable {
+        case week, month, quarter
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .week: String(localized: "Elke week")
+            case .month: String(localized: "Elke maand")
+            case .quarter: String(localized: "Elk kwartaal")
+            }
+        }
+
+        /// De volgende momenten (10:00): zaterdag, de 1e van de maand of de 1e van januari, april, juli en oktober.
+        /// De mails van de server volgen hetzelfde ritme.
+        func nextDates(after now: Date = .now, count: Int, calendar: Calendar = .current) -> [Date] {
+            var result: [Date] = []
+            var components: DateComponents
+            switch self {
+            case .week: components = DateComponents(hour: 10, minute: 0, weekday: 7)
+            case .month, .quarter: components = DateComponents(day: 1, hour: 10, minute: 0)
+            }
+            var cursor = now
+            while result.count < count {
+                guard let next = calendar.nextDate(after: cursor, matching: components, matchingPolicy: .nextTime) else { break }
+                cursor = next
+                if self == .quarter, ![1, 4, 7, 10].contains(calendar.component(.month, from: next)) { continue }
+                result.append(next)
+            }
+            return result
+        }
+    }
+
+    enum Channel: String, CaseIterable, Identifiable {
+        case push, mail, both
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .push: String(localized: "Pushmelding")
+            case .mail: String(localized: "E-mail")
+            case .both: String(localized: "Beide")
+            }
+        }
+        var symbol: String {
+            switch self {
+            case .push: "bell.fill"
+            case .mail: "envelope.fill"
+            case .both: "bell.and.waves.left.and.right.fill"
+            }
+        }
+    }
 
     /// Asks for permission to show notifications (once; iOS remembers the answer).
     @discardableResult
@@ -23,46 +88,105 @@ enum Reminders {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
-    // MARK: Vouchers
+    /// Cadeaukaarten die meetellen voor de tegoed-herinnering: tegoed boven nul, niet verlopen, niet tijdelijk gedeeld.
+    static func balanceCards(_ cards: [Card]) -> [Card] {
+        cards.filter { $0.deletedAt == nil && $0.kind == .voucher && ($0.balance ?? 0) > 0 && !$0.isExpired && !$0.isTemporary }
+            .alphabetical()
+    }
 
-    /// Plans the reminders for all vouchers with an expiry date again (cheap; runs whenever cards change).
+    /// "Je hebt nog € 25,00 bij Bol" of, bij meer kaarten, het totaal met de grootste tegoeden.
+    static func balanceMessage(_ cards: [Card]) -> (title: String, body: String)? {
+        let list = balanceCards(cards)
+        guard let first = list.first else { return nil }
+        func money(_ c: Card) -> String { CardAppearance(c).balanceText ?? "" }
+        if list.count == 1 {
+            let expiry = first.expiresAt.map { String(localized: " Geldig tot \($0.formatted(date: .abbreviated, time: .omitted)).") } ?? ""
+            return (String(localized: "Je hebt nog \(money(first)) bij \(first.storeName)"),
+                    String(localized: "Vergeet je cadeaukaart niet.") + expiry)
+        }
+        let codes = Set(list.map { $0.currencyCode ?? "EUR" })
+        let top = list.sorted { ($0.balance ?? 0) > ($1.balance ?? 0) }.prefix(3)
+        var body = top.map { "\($0.storeName) \(money($0))" }.joined(separator: ", ")
+        if list.count > 3 { body += String(localized: " en \(list.count - 3) meer") }
+        if codes.count == 1, let code = codes.first {
+            let total = list.reduce(0) { $0 + ($1.balance ?? 0) }.formatted(.currency(code: code))
+            return (String(localized: "Je hebt nog \(total) tegoed op \(list.count) cadeaukaarten"), body)
+        }
+        return (String(localized: "Je hebt nog tegoed op \(list.count) cadeaukaarten"), body)
+    }
+
+    // MARK: Plannen
+
+    /// Plant alle herinneringen opnieuw (goedkoop; gebeurt als kaarten veranderen): vervaldatums van vouchers en
+    /// kortingscodes, verlengingen van abonnementen en de tegoed-herinnering.
     @MainActor
     static func rescheduleVouchers(_ cards: [Card]) async {
         let center = UNUserNotificationCenter.current()
-        let pending = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix("voucher-") }
+        let pending = await center.pendingNotificationRequests().map(\.identifier)
+            .filter { $0.hasPrefix("voucher-") || $0.hasPrefix("balance-") || $0.hasPrefix("renew-") }
         center.removePendingNotificationRequests(withIdentifiers: pending)
-        guard vouchersEnabled else { return }
-        let vouchers = cards.filter { $0.deletedAt == nil && $0.kind == .voucher && $0.expiresAt != nil }
-        guard !vouchers.isEmpty else { return }
+        guard pushEnabled else { return }
+        let live = cards.filter { $0.deletedAt == nil && !$0.isTemporary }
+        let expiring = vouchersEnabled ? live.filter { $0.kind.hasExpiry && $0.expiresAt != nil } : []
+        let renewing = vouchersEnabled ? live.filter { $0.kind == .subscription && $0.details.renewsAt != nil } : []
+        let balance = balanceEnabled ? balanceMessage(live) : nil
+        guard !expiring.isEmpty || !renewing.isEmpty || balance != nil else { return }
         let settings = await center.notificationSettings()
         if settings.authorizationStatus == .notDetermined { await requestPermission() }
 
         let calendar = Calendar.current
-        for card in vouchers {
+        func add(_ id: String, title: String, body: String, at fire: Date, card: Card?, thread: String) async {
+            guard fire > .now else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+            if let card { content.userInfo = ["cardID": card.id.uuidString] }
+            content.threadIdentifier = thread
+            let trigger = UNCalendarNotificationTrigger(
+                dateMatching: calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fire), repeats: false)
+            try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
+        }
+
+        for card in expiring {
             guard let expires = card.expiresAt else { continue }
             let day = calendar.startOfDay(for: expires)
-            let balance = CardAppearance(card).balanceText
+            let balance = card.kind == .voucher ? CardAppearance(card).balanceText : nil
+            let isCode = card.kind == .code
             let moments: [(Int, String, String)] = [
-                (-7, String(localized: "\(card.storeName) verloopt over een week"),
+                (-7, isCode ? String(localized: "Kortingscode \(card.storeName) verloopt over een week")
+                            : String(localized: "\(card.storeName) verloopt over een week"),
                  balance.map { String(localized: "Je hebt nog \($0) tegoed. Gebruik je kaart op tijd.") }
-                    ?? String(localized: "Gebruik je kaart op tijd.")),
-                (0, String(localized: "\(card.storeName) verloopt vandaag"),
+                    ?? (isCode ? String(localized: "Gebruik je code op tijd.") : String(localized: "Gebruik je kaart op tijd."))),
+                (0, isCode ? String(localized: "Kortingscode \(card.storeName) verloopt vandaag")
+                           : String(localized: "\(card.storeName) verloopt vandaag"),
                  balance.map { String(localized: "Laatste dag om je \($0) te gebruiken.") }
-                    ?? String(localized: "Laatste dag om je kaart te gebruiken.")),
+                    ?? (isCode ? String(localized: "Laatste dag om je code te gebruiken.") : String(localized: "Laatste dag om je kaart te gebruiken."))),
             ]
             for (offset, title, body) in moments {
                 guard let date = calendar.date(byAdding: .day, value: offset, to: day),
-                      let fire = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: date), fire > .now else { continue }
-                let content = UNMutableNotificationContent()
-                content.title = title
-                content.body = body
-                content.sound = .default
-                content.userInfo = ["cardID": card.id.uuidString]
-                content.threadIdentifier = "vouchers"
-                let trigger = UNCalendarNotificationTrigger(
-                    dateMatching: calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fire), repeats: false)
-                try? await center.add(UNNotificationRequest(identifier: "voucher-\(card.id.uuidString)-\(offset)",
-                                                            content: content, trigger: trigger))
+                      let fire = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: date) else { continue }
+                await add("voucher-\(card.id.uuidString)-\(offset)", title: title, body: body, at: fire, card: card, thread: "vouchers")
+            }
+        }
+
+        for card in renewing {
+            guard let renews = card.details.renewsAt,
+                  let date = calendar.date(byAdding: .day, value: -2, to: calendar.startOfDay(for: renews)),
+                  let fire = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: date) else { continue }
+            let appearance = CardAppearance(card)
+            let cost = card.details.cost.map { $0.formatted(.currency(code: card.currencyCode ?? "EUR")) }
+            await add("renew-\(card.id.uuidString)",
+                      title: String(localized: "\(card.storeName) verlengt over 2 dagen"),
+                      body: cost.map { String(localized: "Je betaalt dan \($0). Opzeggen? Doe het op tijd.") }
+                        ?? (appearance.infoLine ?? String(localized: "Opzeggen? Doe het op tijd.")),
+                      at: fire, card: card, thread: "subscriptions")
+        }
+
+        if let balance {
+            let single = balanceCards(live).count == 1 ? balanceCards(live).first : nil
+            for (i, fire) in balanceInterval.nextDates(count: 3).enumerated() {
+                await add("balance-\(i)", title: balance.title, body: balance.body, at: fire, card: single, thread: "balance")
             }
         }
     }
@@ -138,22 +262,79 @@ extension View {
     func reminders() -> some View { modifier(RemindersModifier()) }
 }
 
-/// Settings: voucher reminders and the card at the store.
+/// Settings: herinneringen (vervaldatums, tegoed; push of e-mail) en de kaart bij de winkel.
 struct RemindersSettingsSection: View {
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
     @AppStorage(Reminders.voucherKey) private var vouchers = true
+    @AppStorage(Reminders.balanceKey) private var balance = true
+    @AppStorage(Reminders.balanceIntervalKey) private var interval = Reminders.Interval.month.rawValue
+    @AppStorage(Reminders.channelKey) private var channel = Reminders.Channel.push.rawValue
     @AppStorage(Reminders.nearbyKey) private var nearby = false
     @AppStorage(UserPush.newStoresKey) private var newStores = false
     @State private var note: String?
+    @State private var savingChannel = false
     private var stores: NearbyStores { .shared }
+    private var account: AccountService { .shared }
+
+    private func remindersChanged() {
+        Task {
+            await Reminders.rescheduleVouchers(cards)
+            await MailReminders.syncIfMailing()
+        }
+    }
+
+    private var channelBinding: Binding<String> {
+        Binding(get: { account.isSignedIn ? channel : Reminders.Channel.push.rawValue }, set: { new in
+            let old = channel
+            channel = new
+            savingChannel = true
+            Task {
+                defer { savingChannel = false }
+                do {
+                    try await MailReminders.save(enabled: new != Reminders.Channel.push.rawValue)
+                    note = nil
+                } catch {
+                    channel = old
+                    note = error.localizedDescription
+                }
+                await Reminders.rescheduleVouchers(cards)
+            }
+        })
+    }
 
     var body: some View {
         Section {
             Toggle(isOn: $vouchers) {
-                SettingsLabel("Herinnering als een voucher verloopt", symbol: "bell.badge.fill", color: .red)
+                SettingsLabel("Vervaldatums en verlengingen", symbol: "bell.badge.fill", color: .red)
             }
-            .onChange(of: vouchers) { _, _ in Task { await Reminders.rescheduleVouchers(cards) } }
+            .onChange(of: vouchers) { _, _ in remindersChanged() }
 
+            Toggle(isOn: $balance) {
+                SettingsLabel("Tegoed-herinnering", symbol: "eurosign.circle.fill", color: Brand.mint)
+            }
+            .onChange(of: balance) { _, _ in remindersChanged() }
+            if balance {
+                Picker(selection: $interval) {
+                    ForEach(Reminders.Interval.allCases) { Text($0.title).tag($0.rawValue) }
+                } label: {
+                    SettingsLabel("Hoe vaak", symbol: "calendar", color: .orange)
+                }
+                .onChange(of: interval) { _, _ in remindersChanged() }
+            }
+
+            if account.isSignedIn {
+                Picker(selection: channelBinding) {
+                    ForEach(Reminders.Channel.allCases) { c in
+                        Label(c.title, systemImage: c.symbol).tag(c.rawValue)
+                    }
+                } label: {
+                    HStack {
+                        SettingsLabel("Herinneren via", symbol: "envelope.badge.fill", color: Brand.iris)
+                        if savingChannel { ProgressView().controlSize(.small) }
+                    }
+                }
+                .disabled(savingChannel)
+            }
             Toggle(isOn: Binding(get: { nearby }, set: { on in
                 Task {
                     if on {
@@ -215,9 +396,28 @@ struct RemindersSettingsSection: View {
         } footer: {
             Text(note ?? footer)
         }
+        .task { await MailReminders.refreshChannel() }
+    }
+
+    private var remindersFooter: String {
+        let balanceText = balance
+            ? String(localized: "Heb je tegoed op een cadeaukaart, ook zonder vervaldatum, dan krijg je \((Reminders.Interval(rawValue: interval) ?? .month).title.lowercased()) een seintje. ")
+            : ""
+        guard account.isSignedIn else {
+            return balanceText + String(localized: "Herinneringen ook per e-mail? Dat kan met een Pasr-account.")
+        }
+        switch Reminders.Channel(rawValue: channel) ?? .push {
+        case .push: return balanceText
+        case .mail: return balanceText + String(localized: "Je krijgt de herinneringen per e-mail van support@pasr.nl, niet als melding op dit apparaat. Alleen kaarten in je account tellen mee.")
+        case .both: return balanceText + String(localized: "Je krijgt de herinneringen als melding en per e-mail van support@pasr.nl. Voor e-mail tellen alleen kaarten in je account mee.")
+        }
     }
 
     private var footer: String {
+        remindersFooter + (remindersFooter.isEmpty ? "" : "\n\n") + nearbyFooter
+    }
+
+    private var nearbyFooter: String {
         guard nearby else {
             return String(localized: "Sta je bij een winkel, dan verschijnt je kaart met een melding. Je locatie blijft op je iPhone.")
         }

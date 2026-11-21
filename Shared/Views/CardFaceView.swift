@@ -25,6 +25,12 @@ struct CardAppearance: Equatable {
     var tempExpired: Bool { tempUntil.map { tempRevoked || $0 <= .now } ?? false }
     /// Code beschermen tegen schermafbeeldingen (tijdelijke kaarten altijd, eigen kaarten met de instelling).
     var protectCode = false
+    /// Gegevens van ticket, abonnement of kortingscode.
+    var details = CardDetails()
+    /// Kortingscode als tekst in plaats van een barcode.
+    var codeAsText = false
+    /// Eigen voorkant (foto, al op kaartformaat bijgesneden).
+    var cover: Data?
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
@@ -57,6 +63,17 @@ struct CardAppearance: Equatable {
             tempRevoked = card.shareRevoked
         }
         protectCode = card.isTemporary || UserDefaults.standard.bool(forKey: "pasr.screenshotShield")
+        details = card.details
+        codeAsText = card.showsCodeAsText
+        cover = card.coverPhoto
+    }
+
+    /// Kopie met de gegevens van ticket, abonnement of kortingscode.
+    func with(details: CardDetails, codeAsText: Bool) -> CardAppearance {
+        var copy = self
+        copy.details = details
+        copy.codeAsText = codeAsText
+        return copy
     }
 
     var displayName: String { storeName.isEmpty ? String(localized: "Nieuwe kaart") : storeName }
@@ -75,6 +92,32 @@ struct CardAppearance: Equatable {
     var balanceText: String? {
         guard let balance else { return nil }
         return balance.formatted(.currency(code: currencyCode ?? Locale.current.currency?.identifier ?? "EUR"))
+    }
+
+    /// De regel onder de kop: tegoed en geldigheid (voucher), geldigheid (kortingscode), datum en plaats (ticket),
+    /// kosten en verlengdatum (abonnement).
+    var infoLine: String? {
+        var parts: [String] = []
+        switch kind {
+        case .loyalty:
+            return nil
+        case .voucher, .code:
+            if kind == .voucher, let balance = balanceText { parts.append(balance) }
+            if let expiresAt {
+                parts.append(String(localized: "geldig tot \(expiresAt.formatted(date: .abbreviated, time: .omitted))"))
+            }
+        case .ticket:
+            if let date = details.eventDate { parts.append(date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute())) }
+            if let venue = details.venue, !venue.isEmpty { parts.append(venue) }
+        case .subscription:
+            if let cost = details.cost {
+                parts.append(cost.formatted(.currency(code: currencyCode ?? "EUR")) + " " + details.periodValue.title)
+            }
+            if let renews = details.renewsAt {
+                parts.append(String(localized: "verlengt \(renews.formatted(.dateTime.day().month(.abbreviated)))"))
+            }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     var monogram: String {
@@ -108,7 +151,59 @@ struct CardFaceView: View {
 
     private var ink: Color { Color.onCard(appearance.colorHex) }
 
+    /// De voorkant is een eigen foto: die vult de hele kaart, met alleen een donkere rand onderaan voor het nummer.
+    private var coverImage: Image? {
+        guard !showsCode, let data = appearance.cover else { return nil }
+        return Image(data: data)
+    }
+
     var body: some View {
+        if let coverImage {
+            coverFront(coverImage)
+        } else {
+            standardFace
+        }
+    }
+
+    private func coverFront(_ image: Image) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            Color(hex: appearance.colorHex)
+            image.resizable().scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Spacer(minLength: 0)
+                    if appearance.isShared { Image(systemName: "person.2.fill").font(.caption) }
+                    if appearance.isFavorite { Image(systemName: "star.fill").font(.caption) }
+                    Text(appearance.kind.displayName)
+                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .textCase(.uppercase)
+                        .tracking(0.6)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.black.opacity(0.35), in: Capsule())
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                Spacer(minLength: 0)
+                if let info = voucherInfo {
+                    Text(info)
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .lineLimit(1)
+                }
+                frontFooter
+            }
+            .padding(14)
+            .foregroundStyle(.white)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(appearance.displayName))
+    }
+
+    private var standardFace: some View {
         ZStack(alignment: .topLeading) {
             background
             VStack(alignment: .leading, spacing: 8) {
@@ -149,25 +244,19 @@ struct CardFaceView: View {
             if appearance.tempExpired { return String(localized: "Verlopen op \(until.formatted(date: .abbreviated, time: .shortened))") }
             return String(localized: "Gedeeld tot \(until.formatted(date: .abbreviated, time: .shortened))")
         }
-        guard appearance.kind == .voucher else { return nil }
-        var parts: [String] = []
-        if let balance = appearance.balanceText { parts.append(balance) }
-        if let expires = appearance.expiresAt {
-            parts.append(String(localized: "geldig tot \(expires.formatted(date: .abbreviated, time: .omitted))"))
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        return appearance.infoLine
     }
 
     /// Front side: the number in print, like on the real card.
     private var frontFooter: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(appearance.kind == .voucher ? String(localized: "Kaartnummer") : String(localized: "Nummer"))
+                Text(appearance.kind == .loyalty ? String(localized: "Nummer") : appearance.kind.codeLabel)
                     .font(.system(size: 9, weight: .semibold, design: .rounded))
                     .textCase(.uppercase)
                     .tracking(0.6)
                     .opacity(0.7)
-                Text(appearance.isLocked || appearance.tempExpired ? "•••• ••••" : appearance.groupedNumber)
+                Text(appearance.isLocked || appearance.tempExpired ? "•••• ••••" : (appearance.number.isEmpty ? "–" : appearance.groupedNumber))
                     .font(.system(.subheadline, design: .monospaced).weight(.medium))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
@@ -206,8 +295,53 @@ struct CardFaceView: View {
         .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    /// White panel with the code, filling the lower part of the card.
-    private var codePanel: some View {
+    /// White panel with the code, filling the lower part of the card. Een kortingscode als tekst; een abonnement zonder
+    /// lidnummer krijgt zijn gegevens in plaats van een code.
+    @ViewBuilder private var codePanel: some View {
+        if appearance.number.isEmpty {
+            noCodePanel
+        } else if appearance.codeAsText {
+            textCodePanel
+        } else {
+            barcodePanel
+        }
+    }
+
+    private var textCodePanel: some View {
+        VStack(spacing: 6) {
+            Text(appearance.kind.codeLabel)
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .textCase(.uppercase)
+                .tracking(0.6)
+                .foregroundStyle(.black.opacity(0.55))
+            Text(appearance.number)
+                .font(.system(.title2, design: .monospaced).weight(.bold))
+                .foregroundStyle(.black)
+                .lineLimit(2)
+                .minimumScaleFactor(0.4)
+                .multilineTextAlignment(.center)
+                .textSelection(.enabled)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var noCodePanel: some View {
+        VStack(spacing: 6) {
+            Image(systemName: appearance.kind.symbol).font(.title3)
+            Text(appearance.infoLine ?? appearance.kind.displayName)
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 8)
+        .opacity(0.85)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var barcodePanel: some View {
         VStack(spacing: 4) {
             BarcodeView(value: appearance.number, format: appearance.format, codeImage: appearance.codeImage)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

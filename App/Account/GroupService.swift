@@ -214,7 +214,11 @@ extension Card {
     /// Dezelfde kaart met een nieuw id, voor een andere plek (nil = privé).
     func duplicate(in group: UUID?) -> Card {
         let c = Card(storeName: storeName, number: number, format: format, kind: kind, colorHex: colorHex)
+        c.kindRaw = kindRaw
         c.groupID = group
+        c.detailsData = detailsData
+        c.coverPhoto = coverPhoto
+        c.setNotePhotos(notePhotos)
         c.templateID = templateID
         c.note = note
         c.isFavorite = isFavorite

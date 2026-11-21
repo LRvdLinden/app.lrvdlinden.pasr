@@ -53,9 +53,21 @@ final class Card {
     /// Saldo-pagina van de uitgever (voucher); anders die van de winkel uit de catalogus.
     var balanceURL: String?
 
+    /// Extra gegevens per soort (JSON van CardDetails): ticket, abonnement, kortingscode en de onderschriften van de
+    /// foto's. Sinds 1.0.2; oudere versies laten het veld staan.
+    var detailsData: Data?
+
     @Attribute(.externalStorage) var logoData: Data?
     @Attribute(.externalStorage) var frontPhoto: Data?
     @Attribute(.externalStorage) var backPhoto: Data?
+    /// Eigen voorkant: een foto, bijgesneden op kaartformaat (JPEG, hoogstens 1000 pixels breed).
+    @Attribute(.externalStorage) var coverPhoto: Data?
+    /// Tot vier foto-notities (bonnetje, voorwaarden), elk een JPEG van hoogstens 1600 pixels. Blijven op je apparaten
+    /// (iCloud), net als de foto's van voor- en achterkant; ze gaan niet via het Pasr-account.
+    @Attribute(.externalStorage) var photo1: Data?
+    @Attribute(.externalStorage) var photo2: Data?
+    @Attribute(.externalStorage) var photo3: Data?
+    @Attribute(.externalStorage) var photo4: Data?
     /// A pre-rendered PNG of a 2D code, so the Watch (which has no Core Image) can show it.
     @Attribute(.externalStorage) var codeImage: Data?
 

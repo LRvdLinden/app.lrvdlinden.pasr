@@ -13,7 +13,8 @@ struct SharedCard: Codable, Equatable {
     var t: String?         // store template id
     var w: String?         // website for the logo
     var b: Double?         // voucher balance
-    var e: Int?            // voucher expiry, seconds since 1970
+    var e: Int?            // voucher or discount code expiry, seconds since 1970
+    var x: CardDetails?    // ticket, abonnement, kortingscode (sinds 1.0.2; oudere versies negeren het)
 
     init(_ card: Card) {
         n = card.storeName
@@ -24,7 +25,10 @@ struct SharedCard: Codable, Equatable {
         t = card.templateID
         w = card.website
         b = card.kind == .voucher ? card.balance : nil
-        e = card.kind == .voucher ? card.expiresAt.map { Int($0.timeIntervalSince1970) } : nil
+        e = card.kind.hasExpiry ? card.expiresAt.map { Int($0.timeIntervalSince1970) } : nil
+        var details = card.details
+        details.captions = nil
+        x = details.isEmpty ? nil : details
     }
 
     var format: BarcodeFormat { BarcodeFormat(rawValue: f) ?? .code128 }
@@ -34,10 +38,13 @@ struct SharedCard: Codable, Equatable {
     var appearance: CardAppearance {
         CardAppearance(storeName: n, number: c, format: format, colorHex: h, kind: kind,
                        balance: b, currencyCode: b == nil ? nil : "EUR", expiresAt: expiresAt)
+            .with(details: x ?? CardDetails(), codeAsText: kind == .code && x?.codeAsBarcode != true)
     }
 
     func makeCard() -> Card {
         let card = Card(storeName: n, number: c, format: format, kind: kind, colorHex: h)
+        card.kindRaw = k
+        if let x { card.details = x }
         card.templateID = t
         card.website = w
         card.balance = b

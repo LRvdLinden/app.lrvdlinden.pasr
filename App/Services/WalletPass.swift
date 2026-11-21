@@ -42,6 +42,15 @@ enum WalletPass {
         if !card.note.isEmpty { body["note"] = card.note }
         if let balance = card.balance { body["balance"] = balance; body["currency"] = card.currencyCode ?? "EUR" }
         if let expires = card.expiresAt { body["expiresAt"] = ISO8601DateFormatter().string(from: expires) }
+        // ticket, abonnement en kortingscode (sinds 1.0.2; een oudere functie negeert deze velden)
+        let details = card.details
+        let iso = ISO8601DateFormatter()
+        if let d = details.eventDate { body["eventDate"] = iso.string(from: d) }
+        if let v = details.venue, !v.isEmpty { body["venue"] = v }
+        if let v = details.seat, !v.isEmpty { body["seat"] = v }
+        if let d = details.renewsAt { body["renewsAt"] = iso.string(from: d) }
+        if let c = details.cost { body["cost"] = c; body["currency"] = card.currencyCode ?? "EUR"; body["period"] = details.periodValue.rawValue }
+        if card.showsCodeAsText { body["codeAsText"] = true }
         if let logo = logoPNG(for: card) { body["logo"] = logo.base64EncodedString() }
         let lines = historyLines(card)
         if !lines.isEmpty { body["history"] = lines }

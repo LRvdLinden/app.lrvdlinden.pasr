@@ -125,6 +125,17 @@ enum CardSync {
         card.expiresAt = (f["expiresAt"] as? String).flatMap(date)
         card.website = f["website"] as? String
         card.balanceURL = f["balanceURL"] as? String
+        // sinds 1.0.2; oudere versies sturen "details" niet mee: dan blijft wat hier staat
+        if let d = f["details"] as? [String: Any] {
+            var details = CardDetails(json: d)
+            details.captions = card.details.captions   // onderschriften horen bij de foto's, en die blijven op het apparaat
+            card.details = details
+        }
+        if let cover = (f["cover"] as? String).flatMap({ Data(base64Encoded: $0) }) {
+            card.coverPhoto = cover
+        } else if f["hasCover"] as? Bool == false {
+            card.coverPhoto = nil
+        }
         // geschiedenis: de nieuwere versie wint voor uitgaven en opwaarderingen (zo blijft ongedaan maken staan);
         // "getoond" synchroniseert niet en blijft per apparaat, net als regels ouder dan wat er meekwam
         let remote: [CardEvent] = (f["history"] as? [[String: Any]] ?? []).compactMap { e in
@@ -169,6 +180,13 @@ enum CardSync {
         p["expiresAt"] = c.expiresAt.map(iso)
         p["website"] = c.website
         p["balanceURL"] = c.balanceURL
+        // ticket, abonnement, kortingscode (zonder de onderschriften van foto's: die blijven op het apparaat)
+        var details = c.details
+        details.captions = nil
+        p["details"] = details.json
+        // eigen voorkant: mee als hij klein genoeg is (de server neemt hoogstens 400 kB per kaart)
+        p["hasCover"] = c.coverPhoto != nil
+        if let cover = c.coverPhoto, cover.count < 120_000 { p["cover"] = cover.base64EncodedString() }
         // altijd meesturen (ook leeg), zodat een ander apparaat weet dat de geschiedenis is bijgewerkt
         do {
             p["history"] = c.history.filter { $0.kind != .shown }.prefix(60).map { e -> [String: Any] in

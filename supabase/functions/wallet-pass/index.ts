@@ -31,7 +31,14 @@ type Card = {
   number: string;
   format: string;             // ean13, code128, qr, pdf417, aztec, ...
   colorHex: string;
-  kind?: string;              // loyalty | voucher
+  kind?: string;              // loyalty | voucher | code | ticket | subscription
+  codeAsText?: boolean;       // kortingscode: geen barcode, de code als tekst
+  eventDate?: string;         // ticket (ISO)
+  venue?: string;             // ticket
+  seat?: string;              // ticket
+  renewsAt?: string;          // abonnement (ISO)
+  cost?: number;              // abonnement
+  period?: string;            // week | month | quarter | year
   balance?: number;
   currency?: string;
   expiresAt?: string;         // ISO date
@@ -107,6 +114,26 @@ export function history(card: Card): string[] {
     .slice(0, 8);
 }
 
+/** Velden voor ticket en abonnement (sinds Pasr 1.0.2). */
+function extraFields(card: Card, kind: string, text: (s: unknown, n?: number) => string,
+                     validDate: (s?: string) => string | undefined): Record<string, unknown>[] {
+  const out: Record<string, unknown>[] = [];
+  if (kind === "ticket") {
+    if (validDate(card.eventDate)) {
+      out.push({ key: "event", label: "DATUM", value: card.eventDate, dateStyle: "PKDateStyleMedium", timeStyle: "PKDateStyleShort" });
+    }
+    if (card.venue) out.push({ key: "venue", label: "LOCATIE", value: text(card.venue) });
+    if (card.seat) out.push({ key: "seat", label: "PLAATS", value: text(card.seat, 40) });
+  } else if (kind === "subscription") {
+    if (typeof card.cost === "number" && isFinite(card.cost)) {
+      out.push({ key: "cost", label: ({ week: "PER WEEK", quarter: "PER KWARTAAL", year: "PER JAAR" } as Record<string, string>)[card.period ?? ""] ?? "PER MAAND",
+                 value: card.cost, currencyCode: card.currency ?? "EUR" });
+    }
+    if (validDate(card.renewsAt)) out.push({ key: "renews", label: "VERLENGT OP", value: card.renewsAt, dateStyle: "PKDateStyleMedium" });
+  }
+  return out;
+}
+
 async function buildPass(card: Card): Promise<Uint8Array> {
   const passTypeIdentifier = Deno.env.get("PASS_TYPE_ID") ?? "pass.nl.lrvdlinden.pasr";
   const teamIdentifier = Deno.env.get("PASS_TEAM_ID") ?? "EU3UY476T6";
@@ -116,6 +143,11 @@ async function buildPass(card: Card): Promise<Uint8Array> {
   const label = light ? "rgb(90, 90, 90)" : "rgba(255, 255, 255, 0.75)";
   const grouped = groupNumber(card.number);
   const voucher = card.kind === "voucher";
+  const kind = card.kind ?? "loyalty";
+  const numberLabel = ({ voucher: "KAARTNUMMER", code: "CODE", ticket: "TICKET", subscription: "LIDNUMMER" } as Record<string, string>)[kind] ?? "NUMMER";
+  const text = (s: unknown, n = 80) => String(s ?? "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, n);
+  const validDate = (s?: string) => (s && !isNaN(Date.parse(s)) ? s : undefined);
+  const extra = extraFields(card, kind, text, validDate);
 
   const pass: Record<string, unknown> = {
     formatVersion: 1,
@@ -127,12 +159,13 @@ async function buildPass(card: Card): Promise<Uint8Array> {
     backgroundColor: `rgb(${bg.join(", ")})`,
     foregroundColor: fg,
     labelColor: label,
-    barcodes: [{
+    // kortingscode als tekst: geen barcode op de pas, de code staat bij de velden
+    ...(card.codeAsText ? {} : { barcodes: [{
       format: walletFormat(card.format),
       message: card.number,
       messageEncoding: "iso-8859-1",
       altText: grouped,
-    }],
+    }] }),
     storeCard: {
       // Rechtsboven: het tegoed van een cadeaukaart en altijd het merk Pasr (Wallet staat daar alleen tekst toe).
       headerFields: [
@@ -142,10 +175,10 @@ async function buildPass(card: Card): Promise<Uint8Array> {
           : []),
         { key: "brand", label: " ", value: "pasr" },
       ],
-      secondaryFields: [{ key: "number", label: voucher ? "KAARTNUMMER" : "NUMMER", value: grouped }],
-      auxiliaryFields: voucher && card.expiresAt
-        ? [{ key: "expires", label: "GELDIG TOT", value: card.expiresAt, dateStyle: "PKDateStyleMedium" }]
-        : [],
+      secondaryFields: [{ key: "number", label: numberLabel, value: card.codeAsText ? card.number : grouped }],
+      auxiliaryFields: (voucher || kind === "code") && card.expiresAt
+        ? [{ key: "expires", label: "GELDIG TOT", value: card.expiresAt, dateStyle: "PKDateStyleMedium" }, ...extra]
+        : extra,
       backFields: [
         ...(card.note ? [{ key: "note", label: "Notitie", value: card.note }] : []),
         ...(history(card).length ? [{ key: "history", label: voucher ? "Laatste uitgaven" : "Laatst gebruikt", value: history(card).join("\n") }] : []),
@@ -154,7 +187,8 @@ async function buildPass(card: Card): Promise<Uint8Array> {
     },
   };
   if (!card.logo) pass.logoText = card.name;
-  if (voucher && card.expiresAt) pass.expirationDate = card.expiresAt;
+  if ((voucher || kind === "code") && card.expiresAt) pass.expirationDate = card.expiresAt;
+  if (kind === "ticket" && validDate(card.eventDate)) pass.relevantDate = card.eventDate;
   const locations = (card.locations ?? []).filter((l) => isFinite(l.latitude) && isFinite(l.longitude)).slice(0, 10);
   if (locations.length) {
     pass.locations = locations.map((l) => ({

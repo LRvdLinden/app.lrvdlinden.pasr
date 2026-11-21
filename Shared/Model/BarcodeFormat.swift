@@ -40,15 +40,53 @@ enum BarcodeFormat: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// Soort pas. Wordt als tekst bewaard (kindRaw) en gesynchroniseerd: een onbekende waarde (van een nieuwere versie)
+/// leest elke versie als klantenkaart, zonder dat er iets breekt. Kortingscode, ticket en abonnement zijn er sinds 1.0.2;
+/// oudere versies tonen die als klantenkaart.
 enum CardKind: String, CaseIterable, Identifiable, Codable {
-    case loyalty, voucher
+    case loyalty, voucher, code, ticket, subscription
 
     var id: String { rawValue }
+
+    /// De soorten die niet in de winkellijst staan (je voegt ze zelf toe).
+    static let others: [CardKind] = [.code, .ticket, .subscription]
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = CardKind(rawValue: raw) ?? .loyalty
+    }
 
     var displayName: String {
         switch self {
         case .loyalty: String(localized: "Klantenkaart")
         case .voucher: String(localized: "Voucher")
+        case .code: String(localized: "Kortingscode")
+        case .ticket: String(localized: "Ticket")
+        case .subscription: String(localized: "Abonnement")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .loyalty: "creditcard"
+        case .voucher: "giftcard"
+        case .code: "tag"
+        case .ticket: "ticket"
+        case .subscription: "arrow.triangle.2.circlepath"
+        }
+    }
+
+    /// Heeft een vervaldatum (en dus een herinnering als hij bijna verloopt).
+    var hasExpiry: Bool { self == .voucher || self == .code }
+
+    /// Hoe de code heet in het formulier en op de kaart.
+    var codeLabel: String {
+        switch self {
+        case .loyalty: String(localized: "Kaartnummer")
+        case .voucher: String(localized: "Kaartnummer")
+        case .code: String(localized: "Code")
+        case .ticket: String(localized: "Ticketcode")
+        case .subscription: String(localized: "Lidnummer")
         }
     }
 }
