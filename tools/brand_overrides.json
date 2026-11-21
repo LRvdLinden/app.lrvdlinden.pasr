@@ -457,5 +457,25 @@
  "sanquin.nl": {
   "manual": true,
   "card": "#FFFFFF"
+ },
+ "ranzijn.nl": {
+  "manual": true,
+  "card": "#FEED04"
+ },
+ "smullers.nl": {
+  "manual": true,
+  "card": "#E32C2E"
+ },
+ "readshop.nl": {
+  "manual": true,
+  "card": "#00AA13"
+ },
+ "swisssense.nl": {
+  "manual": true,
+  "card": "#1C2125"
+ },
+ "travelcard.nl": {
+  "manual": true,
+  "card": "#C6EF56"
  }
 }
