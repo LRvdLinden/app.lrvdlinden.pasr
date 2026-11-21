@@ -30,7 +30,42 @@ export function domainOf(input: unknown): string | null {
 export type StoreInput = {
   id: string; name: string; domain: string; category: string; card_hex: string; format: string; kind: string;
   aliases: string[]; logo: string | null;
+  /** Alleen aanwezig als de invoer een gids meestuurt (null = gids wissen); anders blijft de gids in de database staan. */
+  guide?: Guide | null;
 };
+
+/** Cadeaubon-gids per winkel (kolom pasr_stores.guide). Alle sleutels optioneel; onbekend = weglaten. */
+export type Guide = {
+  validity?: string; online?: boolean; store?: boolean; how?: string; shipping?: string; terms_url?: string; checked?: string;
+};
+
+/** Gids controleren: korte teksten, true/false, https-URL zonder login, datum YYYY-MM-DD. Leeg object -> null. */
+export function cleanGuide(v: unknown): { ok: true; value: Guide | null } | { ok: false; error: string } {
+  if (v === null || v === undefined || v === "") return { ok: true, value: null };
+  if (typeof v !== "object" || Array.isArray(v)) return { ok: false, error: "bad_guide" };
+  const b = v as J, g: Guide = {};
+  const text = (k: "validity" | "how" | "shipping", max: number) => {
+    const t = str(b[k], max).replace(/\s+/g, " ");
+    if (t) g[k] = t;
+  };
+  text("validity", 80); text("how", 400); text("shipping", 200);
+  for (const k of ["online", "store"] as const) {
+    if (b[k] === true || b[k] === false) g[k] = b[k] as boolean;
+    else if (b[k] !== undefined && b[k] !== null && b[k] !== "") return { ok: false, error: "bad_guide" };
+  }
+  const url = str(b.terms_url, 300);
+  if (url) {
+    const page = cleanBalancePage({ store_id: "xx", url });
+    if (!page.ok) return { ok: false, error: "bad_guide_url" };
+    g.terms_url = page.value.url;
+  }
+  const checked = str(b.checked, 10);
+  if (checked) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(checked) || isNaN(Date.parse(checked))) return { ok: false, error: "bad_guide_date" };
+    g.checked = checked;
+  }
+  return { ok: true, value: Object.keys(g).length ? g : null };
+}
 
 /** Invoer van store_save controleren. Logo = base64 van een PNG/JPEG/WebP, hoogstens 300 kB. */
 export function cleanStore(v: unknown): { ok: true; value: StoreInput } | { ok: false; error: string } {
@@ -53,7 +88,13 @@ export function cleanStore(v: unknown): { ok: true; value: StoreInput } | { ok: 
     if (!/^[A-Za-z0-9+/=]+$/.test(s) || s.length > 400_000) return { ok: false, error: "bad_logo" };
     logo = s;
   }
-  return { ok: true, value: { id, name, domain, category, card_hex, format, kind, aliases, logo } };
+  const value: StoreInput = { id, name, domain, category, card_hex, format, kind, aliases, logo };
+  if ("guide" in b) {
+    const g = cleanGuide(b.guide);
+    if (!g.ok) return g;
+    value.guide = g.value;
+  }
+  return { ok: true, value };
 }
 
 // ---- website opzoeken ----

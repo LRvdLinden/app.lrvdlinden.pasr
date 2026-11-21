@@ -17,7 +17,7 @@
 //   store_requests   {status?: open|added|rejected} -> {groups:[{key,name,website,kind,count,vouchers,ids,notes,first,last}]}
 //   store_lookup     {url}                          -> {domain,name,colors,logo,logo_type} | 404 not_found
 //   stores           {}                             -> {stores:[…]} (toegevoegde winkels, met logo)
-//   store_save       {store:{id?,name,domain,category,card_hex,format,kind,aliases,logo}} -> {store}
+//   store_save       {store:{id?,name,domain,category,card_hex,format,kind,aliases,logo,guide?}} -> {store}
 //   store_publish    {id, request_ids?, push?}      -> {ok, sent, closed}  (aanvragen dicht als "toegevoegd")
 //   store_unpublish  {id}                           -> {ok}
 //   store_reject     {request_ids}                  -> {ok, closed}

@@ -50,6 +50,9 @@ jobs:
       - name: Winkelcatalogus (eenmalige vulling; bestaande winkels in het beheer blijven zoals ze zijn)
         if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/stores.json') != ''
         run: python3 supabase/catalog/seed.py
+      - name: Cadeaubon-gids (alleen waar de gids nog leeg is; aanpassingen in het beheer blijven staan)
+        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/guides.json') != ''
+        run: python3 supabase/catalog/guides.py
       - name: Mails, anti-bot hook and Auth settings
         if: steps.check.outputs.skip != '1'
         env:

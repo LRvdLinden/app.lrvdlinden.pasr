@@ -193,6 +193,18 @@
               <span class="se-row"><input id="seLogoFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="seLogoClear" class="btn ghost sm" type="button">Geen logo</button></span></label>
             <label class="se-wide">Andere namen (komma's)<input id="seAliases" type="text" placeholder="bijv. kwantum wonen" autocomplete="off"></label>
           </div>
+          <fieldset id="seGuide" class="se-guide hidden">
+            <legend>Cadeaubon-gids <span class="muted sm">(in de app en op pasr.nl; alleen officiële bronnen, onbekend leeg laten)</span></legend>
+            <div class="se-grid">
+              <label>Geldigheid<input id="seGValidity" type="text" maxlength="80" placeholder="bijv. 3 jaar na aankoop" autocomplete="off"></label>
+              <label>Gecontroleerd op<input id="seGChecked" type="date"></label>
+              <label>Online inwisselen<select id="seGOnline"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
+              <label>In de winkel<select id="seGStore"><option value="">Onbekend</option><option value="true">Ja</option><option value="false">Nee</option></select></label>
+              <label class="se-wide">Zo wissel je hem in (1 tot 3 zinnen)<textarea id="seGHow" rows="3" maxlength="400"></textarea></label>
+              <label class="se-wide">Verzendkosten<input id="seGShipping" type="text" maxlength="200" autocomplete="off"></label>
+              <label class="se-wide">Voorwaarden of FAQ (https)<input id="seGTerms" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
+            </div>
+          </fieldset>
           <p class="muted sm" id="seRequests"></p>
           <label class="se-check"><input id="sePush" type="checkbox" checked> Pushmelding sturen (aan de aanvragers en wie "Nieuwe winkels" aan heeft)</label>
           <div class="row-btns">

@@ -44,6 +44,9 @@
       case "bad_name": return "Vul een naam in.";
       case "bad_color": return "Kies een kaartkleur.";
       case "bad_domain": return "Dit is geen geldige website.";
+      case "bad_guide": return "De cadeaubon-gids klopt niet (online en winkel: ja, nee of onbekend).";
+      case "bad_guide_url": return "Vul bij de voorwaarden een geldig https-adres in.";
+      case "bad_guide_date": return "Vul bij 'Gecontroleerd op' een geldige datum in.";
       case "bad_logo": return "Dit logo kan niet worden gebruikt (PNG, JPEG of WebP, kleiner dan 300 kB).";
       case "too_large": return "Het logo is te groot. Kies een kleiner bestand.";
       case "bad_email": return "Dit is geen geldig e-mailadres.";
@@ -769,6 +772,12 @@
     $("seKind").value = s.kind || "loyalty";
     $("seColor").value = s.card_hex || "#2B2F3A";
     $("seAliases").value = (s.aliases || []).join(", ");
+    const g = s.guide || {};
+    $("seGValidity").value = g.validity || ""; $("seGHow").value = g.how || ""; $("seGShipping").value = g.shipping || "";
+    $("seGTerms").value = g.terms_url || ""; $("seGChecked").value = g.checked || "";
+    $("seGOnline").value = typeof g.online === "boolean" ? String(g.online) : "";
+    $("seGStore").value = typeof g.store === "boolean" ? String(g.store) : "";
+    guideVisible();
     $("seSwatches").replaceChildren();
     $("seRequests").textContent = requestIds.length ? `Na publiceren worden ${requestIds.length === 1 ? "1 aanvraag" : requestIds.length + " aanvragen"} gesloten als toegevoegd.` : "";
     $("seReject").classList.toggle("hidden", !requestIds.length);
@@ -785,6 +794,21 @@
     .observe($("storeEditor"), { attributes: true, attributeFilter: ["class"] });
   $("seClose").addEventListener("click", () => { $("storeEditor").classList.add("hidden"); editing = null; });
   ["seName", "seColor", "seKind"].forEach((id) => $(id).addEventListener("input", preview));
+  /** De cadeaubon-gids hoort alleen bij cadeaukaarten. */
+  function guideVisible() { $("seGuide").classList.toggle("hidden", $("seKind").value !== "voucher"); }
+  $("seKind").addEventListener("change", guideVisible);
+  /** Gids uit het formulier; leeg = null (wissen). Een gewone klantenkaart stuurt geen gids mee (de oude blijft staan). */
+  function guideBody() {
+    const g = {}, t = (id) => $(id).value.trim(), b = (id) => ($(id).value === "" ? undefined : $(id).value === "true");
+    if (t("seGValidity")) g.validity = t("seGValidity");
+    if (b("seGOnline") !== undefined) g.online = b("seGOnline");
+    if (b("seGStore") !== undefined) g.store = b("seGStore");
+    if (t("seGHow")) g.how = t("seGHow");
+    if (t("seGShipping")) g.shipping = t("seGShipping");
+    if (t("seGTerms")) g.terms_url = t("seGTerms");
+    if (t("seGChecked")) g.checked = t("seGChecked");
+    return Object.keys(g).length ? g : null;
+  }
 
   function preview() {
     if (!editing) return;
@@ -868,6 +892,7 @@
       id: editing.id || undefined, name: $("seName").value.trim(), domain: $("seDomain").value.trim(),
       category: $("seCategory").value, card_hex: $("seColor").value, format: $("seFormat").value, kind: $("seKind").value,
       aliases: $("seAliases").value.split(",").map((a) => a.trim()).filter(Boolean), logo: editing.logo,
+      ...($("seKind").value === "voucher" ? { guide: guideBody() } : {}),
     };
   }
   async function saveStore(publish) {

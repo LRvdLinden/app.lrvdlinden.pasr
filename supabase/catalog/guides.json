@@ -1,0 +1,244 @@
+{
+  "action2": {
+    "validity": "Onbeperkt",
+    "online": false,
+    "store": true,
+    "how": "Betaal ermee aan de kassa in Action-winkels in alle eurolanden (niet bij de zelfscan). Je hoeft het saldo niet in één keer te besteden. Online betalen met een cadeaukaart kan niet.",
+    "terms_url": "https://www.action.com/nl-nl/saldo-cadeaukaart-checken/",
+    "checked": "2026-11-21"
+  },
+  "ahcadeau": {
+    "validity": "3 jaar na aankoop",
+    "online": false,
+    "store": true,
+    "how": "Betaal ermee aan de kassa van alle Albert Heijn-winkels in Nederland en België, ook AH to go. Je kunt het tegoed in delen gebruiken; niet voor online bestellingen en niet contant uit te betalen.",
+    "terms_url": "https://www.ah.nl/informatie/winkelservices/cadeaukaarten",
+    "checked": "2026-11-21"
+  },
+  "appstore": {
+    "validity": "Onbeperkt",
+    "online": true,
+    "store": true,
+    "how": "Wissel de code in op je Apple Account; daarna betaal je met het saldo in de App Store, bij Apple-diensten, op apple.com en in Nederlandse Apple Stores. Niet bij Apple-resellers te gebruiken en niet inwisselbaar voor geld.",
+    "terms_url": "https://www.apple.com/nl/shop/gift-cards",
+    "checked": "2026-11-21"
+  },
+  "bakkerscadeau": {
+    "validity": "1 jaar na activatie, tenzij anders vermeld op de kaart",
+    "store": true,
+    "how": "Te besteden bij deelnemende bakkerijen in heel Nederland. Let op: je besteedt de kaart in één keer; een restbedrag vervalt. Is je aankoop duurder, dan betaal je het verschil bij.",
+    "terms_url": "https://www.bakkerscadeaukaart.nl/algemenevoorwaarden",
+    "checked": "2026-11-21"
+  },
+  "bijenkorfgift": {
+    "validity": "2 jaar na aankoop",
+    "online": true,
+    "store": true,
+    "how": "Te besteden in alle winkels van de Bijenkorf en online: vul op debijenkorf.nl de 24-cijferige code in bij de winkelmand of als betaaloptie. Geldig op de hele collectie behalve boeken en cadeaucards; het restbedrag blijft op de kaart staan.",
+    "terms_url": "https://www.debijenkorf.nl/klantenservice/De-Bijenkorf-Cadeaucard",
+    "checked": "2026-11-21"
+  },
+  "bioscoopbon": {
+    "validity": "5 jaar na activatie",
+    "online": true,
+    "store": true,
+    "how": "Alleen in te wisselen voor bioscoopkaartjes, bij alle bioscopen en de meeste filmtheaters in Nederland: aan de kassa of bij online bestellen via de bioscoop. Je kunt het tegoed in delen besteden; niet inwisselbaar voor geld.",
+    "terms_url": "https://www.bioscoopbon.nl/algemene-voorwaarden",
+    "checked": "2026-11-21"
+  },
+  "blokkerb": {
+    "validity": "Niet meer in te wisselen",
+    "online": false,
+    "store": false,
+    "how": "Blokker verkoopt op dit moment geen cadeaubonnen en neemt ze ook niet aan. Ook Blokker-cadeaubonnen die vóór 1 januari 2025 zijn gekocht, kun je niet meer verzilveren.",
+    "terms_url": "https://www.blokker.nl/nl/veelgestelde-vragen/categorie/sparen-en-loyalty/",
+    "checked": "2026-11-21"
+  },
+  "boekenbon": {
+    "validity": "3 jaar na aankoop of activering (tenzij anders vermeld op de kaart)",
+    "online": true,
+    "store": true,
+    "how": "Te besteden bij aangesloten boekhandels en, bij een deel ervan, ook in de webshop. In de winkel is de pincode niet nodig; online heb je het 19-cijferige kaartnummer en de pincode nodig. De papieren Boekenbon kan niet online.",
+    "terms_url": "https://boekenbon.nl/veelgestelde-vragen/",
+    "checked": "2026-11-21"
+  },
+  "bol": {
+    "validity": "3 jaar na aankoop",
+    "online": true,
+    "store": false,
+    "how": "Alleen in te wisselen bij een bestelling op bol.com: vul de code in bij het afrekenen. Een gekoppelde kaart is alleen via dat account te gebruiken; niet inwisselbaar voor geld.",
+    "terms_url": "https://www.bol.com/nl/nl/tc/cadeaukaartvoorwaarden/",
+    "checked": "2026-11-21"
+  },
+  "decathlon2": {
+    "validity": "2 jaar na activatie",
+    "online": true,
+    "store": true,
+    "how": "Te gebruiken in Decathlon-winkels in Nederland (laat de barcode scannen aan de kassa) en op decathlon.nl: kies bij het betalen 'giftcard' en vul barcode en pincode in. Niet voor producten van Marketplace-partners.",
+    "terms_url": "https://www.decathlon.nl/c/legal/algemene-voorwaarden-giftcard_8cffba14-2f07-4163-b863-eeb63e269b70",
+    "checked": "2026-11-21"
+  },
+  "dinercadeau": {
+    "validity": "2 jaar na aankoop",
+    "store": true,
+    "how": "Te besteden bij ruim 3.000 aangesloten restaurants in Nederland en een deel van België; de ontvanger kiest zelf waar en wanneer. Niet inwisselbaar voor geld.",
+    "terms_url": "https://www.diner-cadeau.nl/algemene-voorwaarden/",
+    "checked": "2026-11-21"
+  },
+  "dreamland": {
+    "online": true,
+    "store": true,
+    "how": "Te gebruiken in de DreamLand-winkels en in de webshop op dreamland.nl. Met de saldochecker zie je hoeveel er nog op staat.",
+    "terms_url": "https://www.dreamland.nl/cadeaubonnen",
+    "checked": "2026-11-21"
+  },
+  "fashioncheque": {
+    "validity": "2 jaar na activatie",
+    "online": true,
+    "store": true,
+    "how": "Te besteden bij meer dan 10.000 aangesloten winkels en webshops, ook in delen. Zoek op fashioncheque.com welke (online) winkels hem accepteren.",
+    "terms_url": "https://www.fashioncheque.com/nl-nl/algemene-voorwaarden",
+    "checked": "2026-11-21"
+  },
+  "googleplay": {
+    "validity": "Geen vervaldatum",
+    "online": true,
+    "store": false,
+    "how": "Wissel de code in op je Google-account (Play Store of play.google.com); het saldo gebruik je daarna voor apps, games en andere aankopen op Google Play. Alleen voor gebruikers van 16 jaar en ouder die in Nederland wonen; niet inwisselbaar voor geld.",
+    "terms_url": "https://play.google/intl/nl_nl/card-terms/",
+    "checked": "2026-11-21"
+  },
+  "hemacadeau": {
+    "validity": "Onbeperkt, tenzij anders vermeld op de kaart",
+    "online": true,
+    "store": true,
+    "how": "Te besteden in alle HEMA-winkels in eurolanden en bij bijna alle online bestellingen: kies de cadeaukaart bij het betalen. Niet geldig op tickets en cadeaukaarten van derden.",
+    "terms_url": "https://www.hema.nl/klantenservice/cadeaukaarten",
+    "checked": "2026-11-21"
+  },
+  "hm2": {
+    "validity": "5 jaar na de laatste activering of aankoop",
+    "online": true,
+    "store": true,
+    "how": "Te gebruiken in H&M- en H&M HOME-winkels en online op hm.com, in het land van aankoop. Je kunt ook gedeeltelijk betalen; het restsaldo staat op je kassabon.",
+    "terms_url": "https://www2.hm.com/nl_nl/customer-service/gift-card.html",
+    "checked": "2026-11-21"
+  },
+  "hunkemoller2": {
+    "online": true,
+    "store": true,
+    "how": "Betaal ermee op hunkemoller.nl, in de app of in een Hunkemöller-winkel; je kunt meerdere kaarten en andere betaalmethoden combineren. Een online bestelde fysieke kaart moet je eerst activeren. Bewaar de kaart: terugbetalingen komen erop terug.",
+    "terms_url": "https://giftcard.hunkemoller.nl/Home/FAQ",
+    "checked": "2026-11-21"
+  },
+  "ikeacadeau": {
+    "validity": "Onbeperkt (geen vervaldatum)",
+    "online": true,
+    "store": true,
+    "how": "Te gebruiken in IKEA-woonwarenhuizen in Nederland, in het Zweeds restaurant, de bistro en Swedish Food Market, en op IKEA.nl. Een digitale cadeaukaart wordt binnen 24 uur geactiveerd.",
+    "terms_url": "https://www.ikea.com/nl/nl/customer-service/payment-options/gift-cards/",
+    "checked": "2026-11-21"
+  },
+  "intertoyscadeau": {
+    "validity": "3 jaar na aankoop",
+    "online": true,
+    "store": true,
+    "how": "Te besteden in alle Intertoys-winkels en op intertoys.nl, ook in delen. Neem een digitale kadokaart het liefst uitgeprint mee naar de winkel.",
+    "terms_url": "https://kadokaart.intertoys.nl/Home/FAQ",
+    "checked": "2026-11-21"
+  },
+  "kruidvatv": {
+    "validity": "Onbeperkt",
+    "online": true,
+    "store": true,
+    "how": "Te gebruiken in alle Kruidvat-filialen en bij online aankopen op kruidvat.nl, ook in delen. Niet te gebruiken voor fotoproducten en online diensten.",
+    "terms_url": "https://www.kruidvat.nl/cadeaukaart",
+    "checked": "2026-11-21"
+  },
+  "playstation": {
+    "online": true,
+    "store": false,
+    "how": "Wissel de 12-cijferige code in via de PlayStation Store (profiel > Codes inwisselen), op je PS5 of PS4 of in de PlayStation App; het tegoed komt op je account. De code moet passen bij de regio van je account.",
+    "terms_url": "https://www.playstation.com/nl-nl/support/store/redeem-ps-store-voucher-code/",
+    "checked": "2026-11-21"
+  },
+  "podiumcadeau": {
+    "validity": "3 jaar na aankoop",
+    "online": true,
+    "store": true,
+    "how": "Te besteden aan tickets bij ruim 300 theaters, concertzalen en poppodia in Nederland en België: aan de kassa of via de website van het podium, in één keer of in delen.",
+    "terms_url": "https://podiumcadeaukaart.nl/algemene-voorwaarden",
+    "checked": "2026-11-21"
+  },
+  "prenatal-cadeaukaart": {
+    "online": true,
+    "store": true,
+    "how": "Betaal ermee in de Prénatal-winkels (neem een fysieke kaart mee) en in de webshop op prenatal.nl, zodra de kaart is geactiveerd. Je hoeft het tegoed niet in één keer te besteden.",
+    "terms_url": "https://www.prenatal.nl/cadeaukaart/",
+    "checked": "2026-11-21"
+  },
+  "spotifygift": {
+    "validity": "Verzilveren binnen 24 maanden na aankoop",
+    "online": true,
+    "store": false,
+    "how": "Verzilver de code op je Spotify-account voor maanden Premium Individual tegen de volle prijs. Niet te gebruiken voor kortings- of groepsabonnementen zoals Student, Duo of Family.",
+    "terms_url": "https://www.spotify.com/nl/legal/gift-card/",
+    "checked": "2026-11-21"
+  },
+  "steam": {
+    "online": true,
+    "store": false,
+    "how": "Los de fysieke cadeaukaart op elk gewenst moment in op je Steam-account; het bedrag komt in je Steam-portemonnee en gebruik je voor aankopen op Steam.",
+    "terms_url": "https://store.steampowered.com/digitalgiftcards/?l=dutch",
+    "checked": "2026-11-21"
+  },
+  "vvv": {
+    "validity": "Minimaal 3 jaar",
+    "online": true,
+    "store": true,
+    "how": "Betaal direct bij een van de ruim 18.000 acceptanten: winkels, webshops, restaurants en uitjes. Online kun je hem ook omzetten naar een cadeaucode van een webshop. Na 3 jaar gaat er jaarlijks € 6 beheervergoeding af zolang er nog saldo op staat.",
+    "terms_url": "https://www.vvvcadeaukaarten.nl/beheervergoeding",
+    "checked": "2026-11-21"
+  },
+  "wefashion2": {
+    "online": false,
+    "how": "De Miss Etam Cadeaukaart kun je op dit moment niet meer verzilveren op missetam.nl, en cadeaukaarten zijn online niet te koop. Online kun je wel met een Fashioncheque betalen.",
+    "terms_url": "https://www.missetam.nl/nl/veelgestelde-vragen/categorie/betalen/",
+    "checked": "2026-11-21"
+  },
+  "wijncadeau": {
+    "validity": "2 jaar na aankoop",
+    "online": true,
+    "how": "Te besteden bij de aangesloten wijn(web)winkels die op wijn-cadeaukaart.nl staan, vooral in hun webshop; een enkele heeft ook fysieke winkels. Controleer eerst saldo en geldigheid met de saldocheck.",
+    "terms_url": "https://www.wijn-cadeaukaart.nl/algemene-voorwaarden",
+    "checked": "2026-11-21"
+  },
+  "xbox": {
+    "online": true,
+    "store": false,
+    "how": "Wissel de code van 25 tekens in via xbox.com/redeem, op je Xbox-console of in de Xbox-app. Controleer eerst dat je met het juiste Microsoft-account bent aangemeld; het tegoed komt op dat account.",
+    "terms_url": "https://support.xbox.com/nl-NL/help/subscriptions-billing/redeem-codes-gifting/redeem-prepaid-codes",
+    "checked": "2026-11-21"
+  },
+  "ytickets": {
+    "validity": "5 jaar na activatie",
+    "online": true,
+    "store": true,
+    "how": "Besteed het saldo, ook in delen, bij honderden aangesloten winkels en webshops, wissel het in voor een cadeaukaart van een merk naar keuze of doneer het aan een goed doel. Niet direct te gebruiken bij bol. Na 5 jaar gaat er € 5 per jaar beheervergoeding af.",
+    "terms_url": "https://www.yourgift.nl/veelgestelde-vragen/",
+    "checked": "2026-11-21"
+  },
+  "zalandogift": {
+    "validity": "5 jaar na aankoop",
+    "online": true,
+    "how": "Vul de code in bij het afrekenen op zalando.nl; wat overblijft staat in je account onder 'Mijn cadeaubon totaal' en gebruik je bij een volgende bestelling. Retouren worden teruggestort op dat tegoed.",
+    "terms_url": "https://www.zalando.nl/faq/Vouchere/gift-cards-and-vouchers-general-info.html",
+    "checked": "2026-11-21"
+  },
+  "zeeman2": {
+    "online": false,
+    "how": "Volgens Zeeman is er op dit moment geen Zeeman-cadeaukaart. In de webshop kun je niet met een online cadeaukaart betalen.",
+    "terms_url": "https://www.zeeman.com/nl-nl/faqs/betalen",
+    "checked": "2026-11-21"
+  }
+}
