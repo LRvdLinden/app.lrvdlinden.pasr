@@ -370,12 +370,14 @@
   "bg": "#DF0000",
   "src": "File:Mediamarkt.png"
  },
- "mediq.nl": {},
+ "mediq.nl": {
+  "src": "mediq.nl"
+ },
  "missetam.nl": {
   "src": "site"
  },
  "mitra.nl": {
-  "bg": "#393E35"
+  "src": "mitra.nl"
  },
  "montel.nl": {
   "src": "site"
@@ -384,7 +386,7 @@
   "src": "site"
  },
  "mr-fillet.shop": {
-  "bg": "#FFFFFF"
+  "src": "mrfillet.nl"
  },
  "msmode.nl": {},
  "museum.nl": {
@@ -461,7 +463,7 @@
   "bg": "#FFFFFF"
  },
  "pourvous.nl": {
-  "bg": "#000000"
+  "src": "pourvous.nl"
  },
  "praxis.nl": {
   "bg": "#FFDD00",
@@ -501,9 +503,11 @@
   "bg": "#FFFFFF"
  },
  "rotterdampas.nl": {
-  "bg": "#FFED00"
+  "src": "rotterdampas.nl"
  },
- "runnersworld.nl": {},
+ "runnersworld.nl": {
+  "src": "runnersworld.nl"
+ },
  "sanquin.nl": {
   "src": "site"
  },
