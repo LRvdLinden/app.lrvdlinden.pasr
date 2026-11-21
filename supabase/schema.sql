@@ -1059,6 +1059,27 @@ grant execute on function public.pasr_store_request(text, text, text, text), pub
   public.pasr_push_register(text, text, boolean, boolean), public.pasr_push_unregister(text) to authenticated;
 grant execute on function public.pasr_store_catalog(timestamptz) to anon, authenticated;
 
+-- Voor de website (pasr.nl/kaarten): de lijst zonder logo's (klein), en logo's alleen voor de winkels die erom vragen.
+create or replace function public.pasr_store_index() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('now', now(),
+    'balance_pages', (select coalesce(jsonb_object_agg(b.store_id, b.url), '{}'::jsonb) from public.pasr_balance_pages b),
+    'stores', coalesce(jsonb_agg(
+      case when s.published then jsonb_build_object('id', s.id, 'name', s.name, 'domain', s.domain, 'category', s.category,
+             'card_hex', s.card_hex, 'kind', s.kind, 'aliases', to_jsonb(s.aliases), 'has_logo', s.logo is not null,
+             'updated_at', s.updated_at)
+           else jsonb_build_object('id', s.id, 'removed', true) end), '[]'::jsonb))
+  from public.pasr_stores s;
+$$;
+create or replace function public.pasr_store_logos(p_ids text[]) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_object_agg(s.id, s.logo), '{}'::jsonb)
+  from public.pasr_stores s
+  where s.published and s.logo is not null and s.id = any(p_ids[1:40]);
+$$;
+revoke all on function public.pasr_store_index(), public.pasr_store_logos(text[]) from public;
+grant execute on function public.pasr_store_index(), public.pasr_store_logos(text[]) to anon, authenticated;
+
 -- Winkels die via deze repo zijn toegevoegd (zonder app-update). Alleen nieuw invoegen: wijzigingen in het beheer blijven staan.
 insert into public.pasr_stores (id, name, domain, category, card_hex, format, kind, aliases, logo, published, published_at)
 values ('bakkerscadeau', 'Bakkers Cadeau', 'bakkerscadeaukaart.nl', 'Cadeaukaarten', '#B5814A', 'code128', 'voucher',
