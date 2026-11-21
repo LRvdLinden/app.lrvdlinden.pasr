@@ -565,5 +565,29 @@
  "maxizoo.nl": {
   "manual": true,
   "card": "#196428"
+ },
+ "yourgift.nl": {
+  "manual": true,
+  "card": "#53123E"
+ },
+ "museum.nl": {
+  "manual": true,
+  "card": "#FADC64"
+ },
+ "natuurmonumenten.nl": {
+  "manual": true,
+  "card": "#36298B"
+ },
+ "lepainquotidien.com": {
+  "manual": true,
+  "card": "#FBF5EE"
+ },
+ "roompot.nl": {
+  "manual": true,
+  "card": "#26395F"
+ },
+ "denhaag.nl": {
+  "manual": true,
+  "card": "#F6D32B"
  }
 }

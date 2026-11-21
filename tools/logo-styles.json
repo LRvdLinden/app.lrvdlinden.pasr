@@ -135,7 +135,9 @@
  "dekamarkt.nl": {
   "src": "File:Logo of Dekamarkt.svg"
  },
- "denhaag.nl": {},
+ "denhaag.nl": {
+  "src": "ooievaarspas.nl"
+ },
  "didi.nl": {
   "bg": "#FFFFFF"
  },
@@ -329,7 +331,9 @@
  "lekkerland.nl": {
   "src": "site"
  },
- "lepainquotidien.com": {},
+ "lepainquotidien.com": {
+  "src": "lepainquotidien.com"
+ },
  "levi.com": {},
  "libris.nl": {
   "src": "site"
@@ -393,10 +397,10 @@
  },
  "msmode.nl": {},
  "museum.nl": {
-  "bg": "#FFFFFF"
+  "src": "museum.nl"
  },
  "natuurmonumenten.nl": {
-  "bg": "#051497"
+  "src": "natuurmonumenten.nl"
  },
  "natuurwinkel.nl": {
   "bg": "#641C75"
@@ -503,7 +507,7 @@
   "bg": "#1A1919"
  },
  "roompot.nl": {
-  "bg": "#FFFFFF"
+  "src": "roompot.nl"
  },
  "rotterdampas.nl": {
   "src": "rotterdampas.nl"
@@ -672,7 +676,9 @@
  "yellowbrick.nl": {
   "src": "yellowbrick.nl"
  },
- "yourgift.nl": {},
+ "yourgift.nl": {
+  "src": "yourgift.nl"
+ },
  "yves-rocher.nl": {
   "src": "commons"
  },
