@@ -124,11 +124,13 @@ struct CardEditorView: View {
         _draft = State(initialValue: d)
     }
 
-    init(storeName: String, number: String? = nil, format: BarcodeFormat? = nil, onSaved: (() -> Void)? = nil) {
+    init(storeName: String, kind: CardKind = .loyalty, number: String? = nil, format: BarcodeFormat? = nil,
+         onSaved: (() -> Void)? = nil) {
         existing = nil
         self.onSaved = onSaved
         var d = Draft()
         d.storeName = storeName
+        d.kind = kind
         d.number = number ?? ""
         if let format { d.format = format }
         d.colorHex = Brand.palette.randomElement() ?? "#6A5CFF"
