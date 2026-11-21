@@ -162,7 +162,9 @@
           <button type="button" data-status="rejected">Afgewezen</button>
           <button type="button" data-status="balance">Saldo-pagina's</button>
         </div>
+        <input id="storeSearch" class="search" type="search" placeholder="Zoek op naam, website, categorie of andere naam" aria-label="Zoek winkels" spellcheck="false" autocomplete="off">
       </div>
+      <p id="storeTally" class="muted sm hidden" aria-live="polite"></p>
       <div id="storeErr" class="banner hidden" role="alert"></div>
       <form id="bpForm" class="card bp-form hidden" novalidate autocomplete="off">
         <p class="muted sm">De knop &ldquo;Saldo checken&rdquo; bij een cadeaukaart of voucher in de app opent deze pagina, met het kaartnummer klaar om te plakken. Werkt ook voor winkels die al in de app zitten, zonder app-update.</p>

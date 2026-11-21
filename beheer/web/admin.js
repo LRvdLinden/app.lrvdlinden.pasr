@@ -621,6 +621,24 @@
   function badge(n) { const b = $("reqBadge"); b.textContent = n; b.classList.toggle("hidden", !n); }
   document.querySelectorAll("#reqFilter button").forEach((b) => b.addEventListener("click", () => { storeFilter = b.dataset.status; loadStores(); }));
 
+  // Zoeken in de lijst: naam, id, website, categorie en andere namen; zonder hoofdletters en accenten.
+  const fold = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  function applySearch() {
+    const q = fold($("storeSearch").value.trim());
+    const rows = [...$("reqList").querySelectorAll("[data-search]")];
+    let shown = 0;
+    for (const r of rows) { const hit = !q || r.dataset.search.includes(q); r.classList.toggle("hidden", !hit); if (hit) shown++; }
+    const t = $("storeTally");
+    if (storeFilter === "stores" && rows.length) {
+      const vis = rows.filter((r) => !r.classList.contains("hidden"));
+      const v = vis.filter((r) => r.dataset.kind === "voucher").length;
+      t.textContent = `${vis.length - v} klantenkaarten en ${v} cadeaukaarten` + (q ? ` gevonden (van ${rows.length})` : "");
+      t.classList.remove("hidden");
+    } else if (q && rows.length) { t.textContent = `${shown} van ${rows.length} gevonden`; t.classList.remove("hidden"); }
+    else t.classList.add("hidden");
+  }
+  $("storeSearch").addEventListener("input", applySearch);
+
   async function loadStores() {
     document.querySelectorAll("#reqFilter button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.status === storeFilter)));
     const list = $("reqList");
@@ -652,7 +670,7 @@
     } catch (err) {
       if (err.status === 401) return;
       $("storeErr").textContent = err.message; $("storeErr").classList.remove("hidden");
-    } finally { list.removeAttribute("aria-busy"); }
+    } finally { list.removeAttribute("aria-busy"); applySearch(); }
   }
 
   // ---- Saldo-pagina's ----
@@ -676,6 +694,7 @@
   function balanceRow(p) {
     const row = el("form", "acc bp-row");
     row.noValidate = true;
+    row.dataset.search = fold([storeName(p.store_id), p.store_id, p.url].join(" "));
     const who = el("div", "who");
     who.append(el("div", "mail", storeName(p.store_id)));
     const input = document.createElement("input");
@@ -725,6 +744,7 @@
 
   function requestRow(g) {
     const row = el("div", "acc req");
+    row.dataset.search = fold([g.name, g.website].join(" "));
     const av = el("div", "av", String(g.count));
     av.title = g.count === 1 ? "1 aanvraag" : `${g.count} aanvragen`;
     const who = el("div", "who"), meta = el("div", "meta");
@@ -747,9 +767,16 @@
 
   function storeRow(s) {
     const row = el("div", "acc");
-    const av = el("div", "av logo");
+    row.dataset.search = fold([s.name, s.id, s.domain, s.category, ...(s.aliases || [])].join(" "));
+    row.dataset.kind = s.kind === "voucher" ? "voucher" : "loyalty";
+    const voucherCover = s.kind === "voucher" && s.cover;
+    const av = el("div", voucherCover ? "av cover" : "av logo");
     av.style.background = s.card_hex;
-    if (s.logo) { const img = el("img"); img.src = "data:image/png;base64," + s.logo; img.alt = ""; av.append(img); } else av.textContent = s.name.charAt(0);
+    if (voucherCover) {
+      const img = el("img"); img.loading = "lazy"; img.decoding = "async"; img.alt = "";
+      img.src = (s.cover.startsWith("/9j/") ? "data:image/jpeg;base64," : "data:image/png;base64,") + s.cover; av.append(img);
+    } else if (s.logo) { const img = el("img"); img.loading = "lazy"; img.decoding = "async"; img.src = "data:image/png;base64," + s.logo; img.alt = ""; av.append(img); }
+    else av.textContent = s.name.charAt(0);
     const who = el("div", "who"), meta = el("div", "meta");
     who.append(el("div", "mail", s.name));
     meta.append(el("span", "badge " + (s.published ? "ok" : "wait"), s.published ? "Gepubliceerd" : "Concept"));

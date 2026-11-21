@@ -408,7 +408,7 @@ Deno.serve(async (req) => {
         return json(r);
       }
       case "stores": {
-        const { data, error } = await db.from("pasr_stores").select("*").order("updated_at", { ascending: false }).limit(500);
+        const { data, error } = await db.from("pasr_stores").select("*").order("updated_at", { ascending: false }).limit(2000);
         if (error) throw new Error(error.message);
         return json({ stores: data ?? [] });
       }
