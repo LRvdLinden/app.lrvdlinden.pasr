@@ -27,6 +27,9 @@
  },
  "anytimefitness.nl": {},
  "apple.com": {},
+ "argos-oil.com": {
+  "src": "manual"
+ },
  "artis.nl": {
   "src": "manual"
  },
@@ -65,7 +68,9 @@
  "beterhoren.nl": {
   "src": "manual"
  },
- "bever.nl": {},
+ "bever.nl": {
+  "src": "manual"
+ },
  "bibliotheek.nl": {
   "src": "manual"
  },
@@ -107,7 +112,9 @@
  "britishairways.com": {
   "src": "File:BRITISH AIRWAYS logo.svg"
  },
- "broekhuis.nl": {},
+ "broekhuis.nl": {
+  "src": "manual"
+ },
  "bruna.nl": {
   "src": "File:Bruna logo.png"
  },
@@ -124,11 +131,15 @@
  "casashops.com": {
   "bg": "#97C000"
  },
- "centerparcs.nl": {},
+ "centerparcs.nl": {
+  "src": "manual"
+ },
  "chasin.nl": {
   "src": "https://chasin.cdn.prismic.io/chasin/Zuvw0bVsGrYSvlPU_CHASIN%C2%B4_Performance-Jeanswear.svg"
  },
- "cineville.nl": {},
+ "cineville.nl": {
+  "src": "manual"
+ },
  "cjp.nl": {},
  "coffeecompany.nl": {
   "bg": "#FFFFFF"
@@ -200,7 +211,7 @@
   "bg": "#FCF5ED"
  },
  "ekoplaza.nl": {
-  "bg": "#651C77"
+  "src": "manual"
  },
  "ep.nl": {},
  "esprit.nl": {
@@ -214,7 +225,7 @@
   "src": "File:AD Etos Logo Positive.jpg"
  },
  "expert.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "eyewish.nl": {},
  "fashioncheque.com": {
@@ -271,7 +282,7 @@
   "bg": "#FFFFFF"
  },
  "greenwheels.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "groenrijk.nl": {
   "src": "manual"

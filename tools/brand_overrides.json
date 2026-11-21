@@ -533,5 +533,37 @@
  "hunkemoller.nl": {
   "card": "#000000",
   "manual": true
+ },
+ "bever.nl": {
+  "card": "#2C4D4B",
+  "manual": true
+ },
+ "broekhuis.nl": {
+  "card": "#0072CE",
+  "manual": true
+ },
+ "cineville.nl": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "ekoplaza.nl": {
+  "card": "#702483",
+  "manual": true
+ },
+ "expert.nl": {
+  "card": "#E95E0F",
+  "manual": true
+ },
+ "argos-oil.com": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "greenwheels.nl": {
+  "card": "#34AA52",
+  "manual": true
+ },
+ "centerparcs.nl": {
+  "card": "#045E51",
+  "manual": true
  }
 }
