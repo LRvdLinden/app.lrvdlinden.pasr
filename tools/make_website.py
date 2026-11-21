@@ -166,7 +166,7 @@ FAQ = [
     ("Mijn winkel staat er niet tussen. Kan ik die kaart toch toevoegen?", "Ja. Kijk eerst op pasr.nl/kaarten of hij er al in staat. Kies Andere winkel, geef hem een naam en een kleur, en scan de barcode. Je kunt de winkel ook aanvragen in de app: tik op + › Kaart toevoegen › Mis je een winkel? (met een gratis Pasr-account). Dat kan ook voor cadeaukaarten en vouchers. Wij maken de kaart met het juiste logo en de juiste kleur en voegen hem toe zonder app-update; je krijgt een melding zodra hij erin staat."),
     ("Waar komen de logo's vandaan?", f"De logo's van ruim {N_LOGOS} bekende winkels zitten in Pasr, in de juiste merkkleur; je ziet ze allemaal op pasr.nl/kaarten. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
     ("Waarom verschijnt mijn kaart niet altijd bij de winkel?", "iOS laat een app hoogstens 20 plekken tegelijk in de gaten houden. Pasr kiest de 20 beste plekken rond waar je bent: eerst je eigen locaties, dan de dichtstbijzijnde filialen van je kaarten. Zet in Instellingen › Meldingen “Ook als Pasr dicht is” aan (locatie: Altijd); dan zet Pasr de winkels opnieuw klaar zodra je ergens anders bent, ook als je de app niet opent. Bij je vaste filiaal helpt het om bij de kaart onder Wijzig › Locaties op “Ik sta hier” te tikken. Voor Apple Wallet kies je zelf tot 10 filialen; of de pas op je toegangsscherm verschijnt, bepaalt iOS. Je locatie blijft altijd op je iPhone."),
-    ("Hoe lang is mijn cadeaukaart geldig?", "Dat verschilt per uitgever: van een jaar tot onbeperkt. In de Cadeaubon-gids op pasr.nl/cadeaubon staat per cadeaukaart hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Vanaf versie 1.0.2 zie je de gids ook bij je kaart in Pasr, en herinnert Pasr je aan tegoed dat je nog hebt."),
+    ("Hoe lang is mijn cadeaukaart geldig?", "Dat verschilt per uitgever: van een jaar tot onbeperkt. In de Cadeaubon-gids op pasr.nl/cadeaubon staat per cadeaukaart hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Je ziet de gids ook bij je kaart in Pasr, en Pasr herinnert je aan tegoed dat je nog hebt."),
     ("Haalt Pasr het tegoed van mijn cadeaukaart vanzelf op?", "Nee, dat kan helaas niet: winkels en uitgevers van cadeaukaarten geven het tegoed niet door aan andere apps, en hun saldo-pagina's vragen om je pincode en een controle. Pasr houdt het daarom samen met jou bij: na het tonen van een cadeaukaart vraagt Pasr hoeveel je uitgaf, en het tegoed gaat omlaag met een regel in de geschiedenis. Met Saldo checken open je de saldo-pagina van de uitgever met je kaartnummer klaar om te plakken, en pas je het tegoed met één tik aan. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar bij."),
     ("Ziet Pasr wanneer ik een kaart heb gebruikt?", "Pasr ziet wanneer je een kaart laat zien, en bij welk filiaal als je locatie aanstaat. Dat staat in de geschiedenis van de kaart, met de laatste 30 dagen bovenaan. Of de kassa hem echt heeft gescand, weet Pasr niet. De geschiedenis blijft op je iPhone; uitgaven van cadeaukaarten gaan mee naar je andere apparaten."),
     ("Kan ik screenshots van mijn codes blokkeren?", "Ja. Zet in Instellingen › Privacy en beveiliging Screenshots van codes blokkeren aan; dan is de barcode zwart in een screenshot of schermopname. Bij tijdelijk gedeelde kaarten staat dit altijd aan."),
@@ -497,17 +497,6 @@ def page():
       <p class="stores-more"><a class="btn btn-ghost" href="/kaarten/">Bekijk alle kaarten</a></p>
     </section>
 
-    <section class="wrap new102" id="nieuw" aria-labelledby="nieuw-title">
-      <div class="section-head">
-        <p class="pill coral">Update</p>
-        <h2 id="nieuw-title">Nieuw in versie 1.0.2</h2>
-        <p>Een gids bij elke cadeaukaart, herinneringen aan je tegoed, meldingen per e-mail en meer soorten passen.</p>
-      </div>
-      <div class="features">
-{new102}
-      </div>
-      <p class="moves"><a href="/cadeaubon/">Naar de Cadeaubon-gids</a> · <a href="/klantenkaart/">Naar de Klantenkaart-gids</a></p>
-    </section>
 
     <div class="wrap">
       <section class="why" id="waarom" aria-labelledby="why-title">
