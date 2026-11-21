@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vult het kaartontwerp (voorkant) van cadeaukaarten (pasr_stores.cover) uit supabase/catalog/covers.json
+"""Vult het kaartontwerp (voorkant) van cadeaukaarten (pasr_stores.cover) uit supabase/catalog/covers*.json
 ({store_id: base64 JPEG/PNG}, gemaakt met tools/make_covers.py). Alleen waar cover nog leeg is en de winkel nog nooit een
 cover uit dit bestand kreeg (tabel pasr_store_cover_seeded): wat in het beheer is aangepast of verwijderd blijft zo.
 Een winkel die een cover krijgt, krijgt ook een nieuwe updated_at, zodat de apps hem opnieuw ophalen. Draait in de
@@ -32,11 +32,14 @@ def query(ref, token, sql):
 
 
 def main():
-    covers = json.loads((Path(__file__).parent / "covers.json").read_text(encoding="utf-8"))
+    covers = {}
+    for path in sorted(Path(__file__).parent.glob("covers*.json")):  # covers.json plus covers_<deel>.json
+        for k, v in json.loads(path.read_text(encoding="utf-8")).items():
+            covers.setdefault(k, v)
     check(covers)
     ref, token = os.environ.get("REF"), os.environ.get("SUPABASE_ACCESS_TOKEN")
     if "--check" in sys.argv or not (ref and token):
-        print(f"Covers: {len(covers)} in covers.json, bestand in orde.")
+        print(f"Covers: {len(covers)} in covers*.json, bestanden in orde.")
         return
     items, done = sorted(covers.items()), 0
     for i in range(0, len(items), 10):

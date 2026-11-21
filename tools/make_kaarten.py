@@ -94,11 +94,20 @@ COVERS = REPO / "supabase" / "catalog" / "covers.json"
 COVER_OUT = ROOT / "assets" / "covers"
 
 
+def load_covers():
+    """Alle kaartontwerpen: covers.json plus covers_<deel>.json in dezelfde map (eerste bestand wint)."""
+    data = {}
+    for path in sorted(COVERS.parent.glob("covers*.json")):
+        for k, v in json.loads(path.read_text(encoding="utf-8")).items():
+            data.setdefault(k, v)
+    return data
+
+
 def web_covers():
-    """Kaartontwerpen van cadeaukaarten (supabase/catalog/covers.json, gemaakt met tools/make_covers.py) als
+    """Kaartontwerpen van cadeaukaarten (supabase/catalog/covers*.json, gemaakt met tools/make_covers.py) als
     website/assets/covers/<id>.jpg (of .png). Geeft id -> bestandsnaam. Ontwerpen die er niet meer in staan gaan weg."""
     import base64
-    data = json.loads(COVERS.read_text(encoding="utf-8")) if COVERS.exists() else {}
+    data = load_covers()
     COVER_OUT.mkdir(parents=True, exist_ok=True)
     names = {}
     for sid, b64 in data.items():
@@ -118,7 +127,7 @@ def web_covers():
 
 def cover_names():
     """id -> bestandsnaam van de kaartontwerpen die al in website/assets/covers/ staan (zonder iets te schrijven)."""
-    data = json.loads(COVERS.read_text(encoding="utf-8")) if COVERS.exists() else {}
+    data = load_covers()
     return {sid: (f"{sid}.png" if b64.startswith("iVBOR") else f"{sid}.jpg") for sid, b64 in data.items()}
 
 

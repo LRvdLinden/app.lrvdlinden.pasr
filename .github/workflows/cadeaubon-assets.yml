@@ -71,6 +71,7 @@ jobs:
           cp -r assets-tmp /tmp/assets-tmp
           git checkout --orphan "$BRANCH"
           git rm -rfq .
+          rm -rf assets-tmp
           cp -r /tmp/assets-tmp assets-tmp
           git add -A assets-tmp
           git commit -qm "Cadeaubon assets"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Eenmalige vulling van pasr_stores met alle winkels uit de app (supabase/catalog/stores.json, gemaakt door
 tools/build_catalog.py) plus de aanvullingen in dezelfde map (bijv. new_loyalty.json, new_vouchers.json): elk
-*.json-bestand hier met een lijst winkels in hetzelfde formaat; guides*.json, balance*.json en covers.json (andere structuur)
+*.json-bestand hier met een lijst winkels in hetzelfde formaat; guides*.json, *balance*.json en covers*.json (andere structuur)
 worden overgeslagen. Bestaat een winkel al in het beheer, dan blijft die zoals hij is: het beheer is leidend.
 Draait in de Backend-workflow met SUPABASE_ACCESS_TOKEN en REF."""
 import json, os, urllib.request
@@ -13,7 +13,8 @@ FIELDS = ["id", "name", "domain", "category", "card_hex", "format", "kind", "ali
 
 
 def catalog_files():
-    files = sorted(p for p in here.glob("*.json") if not p.name.startswith(("guides", "balance", "covers")))
+    files = sorted(p for p in here.glob("*.json")
+                   if not p.name.startswith(("guides", "balance", "covers")) and "balance" not in p.name)
     return sorted(files, key=lambda p: p.name != "stores.json")  # stores.json eerst
 
 
@@ -58,12 +59,15 @@ for i in range(0, len(rows), 25):
     done += len(res) if isinstance(res, list) else 0
 print(f"Catalogus: {done} nieuwe winkels in het beheer gezet ({len(rows)} in het bestand; de rest stond er al).")
 
-# Saldo-checkers van de nieuwe cadeaukaarten (bestaat er al een, dan blijft die staan).
-balance_file = here / "new_vouchers_balance.json"
-if balance_file.exists():
-    pages = json.loads(balance_file.read_text())
-    if pages:
-        values = ",\n".join(f"({lit(k)}, {lit(v)})" for k, v in pages.items())
-        res = query(f"insert into public.pasr_balance_pages (store_id, url) values\n{values}\n"
-                    "on conflict (store_id) do nothing returning store_id;")
-        print(f"Saldo-checkers: {len(res) if isinstance(res, list) else 0} nieuw ({len(pages)} in het bestand).")
+# Saldo-checkers van de nieuwe cadeaukaarten uit alle *balance*.json ({store_id: url}); bestaat er al een, dan
+# blijft die staan.
+pages = {}
+for balance_file in sorted(here.glob("*balance*.json")):
+    data = json.loads(balance_file.read_text())
+    if isinstance(data, dict):
+        pages.update({k: v for k, v in data.items() if k not in pages})
+if pages:
+    values = ",\n".join(f"({lit(k)}, {lit(v)})" for k, v in pages.items())
+    res = query(f"insert into public.pasr_balance_pages (store_id, url) values\n{values}\n"
+                "on conflict (store_id) do nothing returning store_id;")
+    print(f"Saldo-checkers: {len(res) if isinstance(res, list) else 0} nieuw ({len(pages)} in de bestanden).")
