@@ -473,5 +473,25 @@
  "travelcard.nl": {
   "manual": true,
   "card": "#C6EF56"
+ },
+ "sissy-boy.com": {
+  "manual": true,
+  "card": "#1A1A1A"
+ },
+ "zooplus.nl": {
+  "manual": true,
+  "card": "#278403"
+ },
+ "sostrenegrene.com": {
+  "manual": true,
+  "card": "#504139"
+ },
+ "trendhopper.nl": {
+  "manual": true,
+  "card": "#FFD204"
+ },
+ "vuecinemas.nl": {
+  "manual": true,
+  "card": "#000000"
  }
 }

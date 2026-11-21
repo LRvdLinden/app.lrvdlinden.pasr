@@ -427,7 +427,7 @@
   "src": "commons"
  },
  "pathe.nl": {
-  "src": "site"
+  "src": "pathe.nl"
  },
  "payback.de": {
   "bg": "#003EB0",
@@ -535,18 +535,20 @@
  "shoeby.nl": {
   "src": "File:Shoeby-logo.svg"
  },
- "sissy-boy.com": {},
+ "sissy-boy.com": {
+  "src": "commons"
+ },
  "sligro.nl": {
   "src": "File:Logo of Sligro Food Group.svg"
  },
  "smullers.nl": {
-  "src": "site"
+  "src": "smullers.nl"
  },
  "snapfitness.com": {
   "src": "commons"
  },
  "sostrenegrene.com": {
-  "bg": "#FFFEF7"
+  "src": "sostrenegrene.com"
  },
  "spar.nl": {
   "src": "File:Wordmark SPAR.svg"
@@ -603,7 +605,7 @@
   "src": "File:Trekpleister Logo since 2024.webp"
  },
  "trendhopper.nl": {
-  "bg": "#FFFFFF"
+  "src": "trendhopper.nl"
  },
  "tuincentrumovervecht.nl": {},
  "valk.com": {
@@ -618,7 +620,7 @@
   "src": "File:Vomar logo.png"
  },
  "vuecinemas.nl": {
-  "bg": "#000000"
+  "src": "vuecinemas.nl"
  },
  "vvvcadeaukaarten.nl": {
   "bg": "#FFFFFF"
@@ -667,6 +669,6 @@
   "src": "site"
  },
  "zooplus.nl": {
-  "opaque": true
+  "src": "zooplus.nl"
  }
 }
