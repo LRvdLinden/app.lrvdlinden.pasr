@@ -361,7 +361,7 @@
   "bg": "#000000"
  },
  "mcd-supermarkt.nl": {
-  "bg": "#DB2F36"
+  "src": "mcd-supermarkt.nl"
  },
  "mcdonalds.nl": {
   "src": "commons"
@@ -455,7 +455,7 @@
   "src": "commons"
  },
  "podiumcadeaukaart.nl": {
-  "opaque": true
+  "src": "podiumcadeaukaart.nl"
  },
  "poiesz-supermarkten.nl": {
   "bg": "#FFFFFF"
@@ -585,18 +585,24 @@
  "texaco.nl": {
   "src": "File:Texaco logo.svg"
  },
+ "thebodyshop.com": {
+  "src": "thebodyshop.com"
+ },
  "thesting.com": {
-  "bg": "#FFFFFF"
+  "src": "thesting.com"
  },
  "ticketmaster.nl": {},
  "tinq.nl": {
   "src": "File:TinQ logo 01.gif"
  },
  "top1toys.nl": {
-  "bg": "#FFDA00"
+  "src": "top1toys.nl"
  },
  "totalenergies.nl": {
   "src": "commons"
+ },
+ "trainmore.nl": {
+  "src": "trainmore.com"
  },
  "travelcard.nl": {
   "src": "site"
@@ -608,6 +614,9 @@
   "src": "trendhopper.nl"
  },
  "tuincentrumovervecht.nl": {},
+ "tuinland.nl": {
+  "src": "tuinland.nl"
+ },
  "valk.com": {
   "bg": "#FFFFFF"
  },

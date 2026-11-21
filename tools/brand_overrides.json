@@ -493,5 +493,33 @@
  "vuecinemas.nl": {
   "manual": true,
   "card": "#000000"
+ },
+ "thebodyshop.com": {
+  "manual": true,
+  "card": "#004236"
+ },
+ "trainmore.nl": {
+  "manual": true,
+  "card": "#000000"
+ },
+ "tuinland.nl": {
+  "manual": true,
+  "card": "#538567"
+ },
+ "thesting.com": {
+  "manual": true,
+  "card": "#231F20"
+ },
+ "top1toys.nl": {
+  "manual": true,
+  "card": "#FFDA00"
+ },
+ "podiumcadeaukaart.nl": {
+  "manual": true,
+  "card": "#E30613"
+ },
+ "mcd-supermarkt.nl": {
+  "manual": true,
+  "card": "#FFFFFF"
  }
 }
