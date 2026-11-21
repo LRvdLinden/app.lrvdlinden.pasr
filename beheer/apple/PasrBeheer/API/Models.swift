@@ -155,6 +155,63 @@ struct RemoteStore: Decodable, Identifiable, Hashable {
     var logo: String?
     var published: Bool
     var updated_at: String?
+    /// Cadeaubon-gids (cadeaukaart) of programmagids (klantenkaart); kolom pasr_stores.guide.
+    var guide: StoreGuide? = nil
+    /// Kaartontwerp (voorkant) van een cadeaukaart: base64 JPEG/PNG, 1,586:1.
+    var cover: String? = nil
+
+    var isVoucher: Bool { kind == "voucher" }
+    /// Sleutel voor de afbeeldingencache: verandert zodra de winkel is opgeslagen.
+    func imageKey(_ part: String) -> String { "\(id)|\(updated_at ?? "")|\(part)" }
+}
+
+/// Gids bij een winkel. Alle velden optioneel; dezelfde sleutels en grenzen als cleanGuide in supabase/functions/admin/stores.ts.
+/// Lezen is vergevingsgezind: een onverwacht veld of type maakt de hele winkellijst niet onleesbaar.
+struct StoreGuide: Codable, Hashable {
+    // cadeaukaart
+    var validity: String?
+    var online: Bool?
+    var store: Bool?
+    var shipping: String?
+    // klantenkaart
+    var earn: String?
+    var perks: String?
+    var program_url: String?
+    // beide
+    var how: String?
+    var terms_url: String?
+    var checked: String?
+
+    init() {}
+
+    private enum K: String, CodingKey { case validity, online, store, shipping, earn, perks, program_url, how, terms_url, checked }
+
+    init(from decoder: Decoder) throws {
+        guard let c = try? decoder.container(keyedBy: K.self) else { return }
+        func s(_ k: K) -> String? { (try? c.decodeIfPresent(String.self, forKey: k)) ?? nil }
+        func b(_ k: K) -> Bool? { (try? c.decodeIfPresent(Bool.self, forKey: k)) ?? nil }
+        validity = s(.validity); online = b(.online); store = b(.store); shipping = s(.shipping)
+        earn = s(.earn); perks = s(.perks); program_url = s(.program_url)
+        how = s(.how); terms_url = s(.terms_url); checked = s(.checked)
+    }
+
+    var isEmpty: Bool { self == StoreGuide() }
+
+    /// Als JSON-object voor store_save (alleen ingevulde velden).
+    var json: [String: Any] {
+        var d: [String: Any] = [:]
+        if let validity { d["validity"] = validity }
+        if let online { d["online"] = online }
+        if let store { d["store"] = store }
+        if let shipping { d["shipping"] = shipping }
+        if let earn { d["earn"] = earn }
+        if let perks { d["perks"] = perks }
+        if let program_url { d["program_url"] = program_url }
+        if let how { d["how"] = how }
+        if let terms_url { d["terms_url"] = terms_url }
+        if let checked { d["checked"] = checked }
+        return d
+    }
 }
 struct StoresResponse: Decodable { let stores: [RemoteStore] }
 struct StoreSaveResponse: Decodable { let store: RemoteStore }

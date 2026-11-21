@@ -28,6 +28,14 @@ struct StoresView: View {
     @State private var pages: [BalancePage] = []
     @State private var newStore = ""
     @State private var newURL = ""
+    @State private var search = ""
+
+    private var shownStores: [RemoteStore] {
+        stores.filter { s in SearchText.matches(search, [s.name, s.id, s.domain, s.category] + s.aliases) }
+    }
+    private var shownGroups: [StoreRequestGroup] {
+        groups.filter { SearchText.matches(search, [$0.name, $0.website]) }
+    }
 
     var body: some View {
         List {
@@ -47,7 +55,7 @@ struct StoresView: View {
             if filter == .balance {
                 let filled = Dictionary(uniqueKeysWithValues: pages.map { ($0.store_id, $0.url) })
                 Section {
-                    ForEach(VoucherStores.all, id: \.id) { store in
+                    ForEach(VoucherStores.all.filter { SearchText.matches(search, [$0.name, $0.id]) }, id: \.id) { store in
                         BalancePageRow(storeID: store.id, name: store.name, url: filled[store.id] ?? "") { await load() }
                     }
                 } header: {
@@ -55,7 +63,7 @@ struct StoresView: View {
                 } footer: {
                     Text("\(VoucherStores.all.filter { filled[$0.id] == nil }.count) van \(VoucherStores.all.count) hebben nog geen saldo-pagina. De knop Saldo checken in de app opent dit adres, met het kaartnummer klaar om te plakken.")
                 }
-                let others = pages.filter { p in !VoucherStores.all.contains { $0.id == p.store_id } }
+                let others = pages.filter { p in !VoucherStores.all.contains { $0.id == p.store_id } && SearchText.matches(search, [p.store_id, p.url]) }
                 Section {
                     ForEach(others) { p in
                         BalancePageRow(storeID: p.store_id, name: p.store_id, url: p.url) { await load() }
@@ -78,15 +86,28 @@ struct StoresView: View {
                 }
             } else if filter == .stores {
                 if stores.isEmpty && !loading { Text("Nog geen winkels toegevoegd via het beheer.").foregroundStyle(Theme.muted) }
-                ForEach(stores) { s in
-                    Button { editing = StoreDraft(store: s) } label: { storeRow(s) }
-                        .buttonStyle(.plain)
+                let shown = shownStores
+                Section {
+                    ForEach(shown) { s in
+                        Button { editing = StoreDraft(store: s) } label: { storeRow(s) }
+                            .buttonStyle(.plain)
+                    }
+                    if shown.isEmpty && !stores.isEmpty {
+                        Text("Geen winkel gevonden voor \u{201C}\(search)\u{201D}.").foregroundStyle(Theme.muted)
+                    }
+                } footer: {
+                    if !stores.isEmpty {
+                        let vouchers = stores.filter(\.isVoucher).count
+                        Text(search.isEmpty
+                             ? "\(Fmt.plural(stores.count, "winkel", "winkels")): \(Fmt.plural(stores.count - vouchers, "klantenkaart", "klantenkaarten")), \(Fmt.plural(vouchers, "cadeaukaart", "cadeaukaarten"))."
+                             : "\(shown.count) van \(stores.count) winkels.")
+                    }
                 }
             } else {
                 if groups.isEmpty && !loading {
                     Text(filter == .open ? "Geen open aanvragen. Mooi zo." : "Niets afgewezen.").foregroundStyle(Theme.muted)
                 }
-                ForEach(groups) { g in
+                ForEach(shownGroups) { g in
                     Button {
                         if filter == .open { editing = StoreDraft(request: g) }
                     } label: { requestRow(g) }
@@ -97,6 +118,7 @@ struct StoresView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
         .navigationTitle("Winkels")
+        .searchable(text: $search, prompt: filter == .balance ? "Zoek cadeaukaart" : "Zoek op naam, website of categorie")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { editing = StoreDraft() } label: { Label("Nieuwe winkel", systemImage: "plus") }
@@ -134,10 +156,15 @@ struct StoresView: View {
 
     private func storeRow(_ s: RemoteStore) -> some View {
         HStack(spacing: 12) {
-            LogoTile(hex: s.card_hex, logo: s.logo, name: s.name)
+            if s.isVoucher, let cover = s.cover, !cover.isEmpty {
+                CoverTile(key: s.imageKey("cover"), cover: cover, hex: s.card_hex)
+            } else {
+                LogoTile(hex: s.card_hex, logo: s.logo, name: s.name, key: s.imageKey("logo"))
+            }
             VStack(alignment: .leading, spacing: 3) {
                 Text(s.name).font(.body.weight(.semibold))
-                Text([s.published ? "Gepubliceerd" : "Concept", s.domain, s.category].filter { !$0.isEmpty }.joined(separator: " · "))
+                Text([s.published ? "Gepubliceerd" : "Concept", s.isVoucher ? "Cadeaukaart" : nil, s.domain, s.category]
+                    .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                     .font(.caption).foregroundStyle(s.published ? Theme.mint : Theme.muted)
             }
             Spacer()
@@ -285,6 +312,22 @@ struct StoreDraft: Identifiable {
     var published = false
     var requestIDs: [String] = []
     var fromRequest = false
+    /// Kaartontwerp (base64 JPEG/PNG); alleen meesturen als `coverChanged`.
+    var cover: String?
+    var coverChanged = false
+    // gids (zie StoreGuide)
+    var gValidity = ""
+    var gOnline: Bool?
+    var gStore: Bool?
+    var gShipping = ""
+    var gEarn = ""
+    var gPerks = ""
+    var gProgram = ""
+    var gHow = ""
+    var gTerms = ""
+    var gChecked = ""
+    /// Gids zoals geladen (voor "alleen meesturen als gewijzigd").
+    var originalGuide: StoreGuide?
 
     init() {}
     init(request g: StoreRequestGroup) {
@@ -297,6 +340,46 @@ struct StoreDraft: Identifiable {
     init(store s: RemoteStore) {
         storeID = s.id; name = s.name; domain = s.domain; category = s.category; hex = s.card_hex
         format = s.format; kind = s.kind; aliases = s.aliases.joined(separator: ", "); logo = s.logo; published = s.published
+        cover = s.cover
+        let g = s.guide ?? StoreGuide()
+        gValidity = g.validity ?? ""; gOnline = g.online; gStore = g.store; gShipping = g.shipping ?? ""
+        gEarn = g.earn ?? ""; gPerks = g.perks ?? ""; gProgram = g.program_url ?? ""
+        gHow = g.how ?? ""; gTerms = g.terms_url ?? ""; gChecked = g.checked ?? ""
+        originalGuide = guide()
+    }
+
+    /// Gids uit het formulier, alleen de velden van deze soort kaart (zoals guideBody in beheer/web); leeg = nil.
+    func guide() -> StoreGuide? {
+        func t(_ v: String, _ max: Int) -> String? {
+            let s = v.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+            return s.isEmpty ? nil : String(s.prefix(max))
+        }
+        func url(_ v: String) -> String? {
+            guard var s = t(v, 300) else { return nil }
+            if !s.contains("://") { s = "https://" + s }
+            return s
+        }
+        var g = StoreGuide()
+        if kind == "voucher" {
+            g.validity = t(gValidity, 80)
+            g.online = gOnline
+            g.store = gStore
+            g.shipping = t(gShipping, 200)
+        } else {
+            g.earn = t(gEarn, 400)
+            g.perks = t(gPerks, 400)
+            g.program_url = url(gProgram)
+        }
+        g.how = t(gHow, 400)
+        g.terms_url = url(gTerms)
+        g.checked = t(gChecked, 10)
+        return g.isEmpty ? nil : g
+    }
+
+    /// Wat store_save krijgt als `guide`: alleen als hij is gewijzigd en niet leeg (leeg laten = de bestaande gids blijft staan).
+    var guideToSend: StoreGuide? {
+        guard let g = guide(), g != originalGuide else { return nil }
+        return g
     }
 }
 
@@ -312,6 +395,10 @@ struct StoreEditorView: View {
     @State private var photo: PhotosPickerItem?
     @State private var confirmPublish = false
     @State private var confirmReject = false
+    @State private var coverPhoto: PhotosPickerItem?
+    @State private var coverImage: CGImage?
+    @State private var coverBusy = false
+    @State private var pickCoverFile = false
 
     static let categories = ["Supermarkt", "Drogist en beauty", "Warenhuis en wonen", "Mode en schoenen", "Elektronica",
                              "Doe-het-zelf en tuin", "Sport en vrije tijd", "Tanken en reizen", "Eten en drinken",
@@ -323,7 +410,8 @@ struct StoreEditorView: View {
         NavigationStack {
             Form {
                 Section {
-                    CardPreview(hex: draft.hex, logo: draft.logo, name: draft.name, voucher: draft.kind == "voucher")
+                    CardPreview(hex: draft.hex, logo: draft.logo, name: draft.name, voucher: draft.kind == "voucher",
+                                cover: draft.kind == "voucher" ? coverImage : nil)
                         .frame(maxWidth: 360)
                         .frame(maxWidth: .infinity)
                         .listRowBackground(Color.clear)
@@ -370,6 +458,8 @@ struct StoreEditorView: View {
                         Button("Geen logo", role: .destructive) { draft.logo = nil }
                     }
                 }
+                if draft.kind == "voucher" { coverSection }
+                guideSection
                 Section {
                     if !draft.requestIDs.isEmpty {
                         Text("Na publiceren worden \(Fmt.plural(draft.requestIDs.count, "aanvraag", "aanvragen")) gesloten als toegevoegd.")
@@ -389,9 +479,30 @@ struct StoreEditorView: View {
             }
             .formStyle(.grouped)
             .navigationTitle(draft.storeID == nil ? "Nieuwe winkel" : draft.name)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Sluit") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: { Label("Sluit", systemImage: "xmark") }
+                }
+            }
             .task { if draft.fromRequest, !draft.domain.isEmpty, draft.logo == nil { await lookup() } }
+            .task { await showCover() }
             .onChange(of: photo) { _, item in Task { await loadPhoto(item) } }
+            .onChange(of: coverPhoto) { _, item in
+                guard let item else { return }
+                Task {
+                    coverPhoto = nil
+                    guard let data = try? await item.loadTransferable(type: Data.self) else { message = "Deze foto kan niet worden geladen."; return }
+                    await setCover(data)
+                }
+            }
+            .fileImporter(isPresented: $pickCoverFile, allowedContentTypes: [.png, .jpeg, .heic, .webP, .image]) { result in
+                guard case .success(let url) = result else { return }
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+                guard size <= 30_000_000, let data = try? Data(contentsOf: url) else { message = "Dit bestand is te groot of kan niet worden gelezen."; return }
+                Task { await setCover(data) }
+            }
             .confirmationDialog("Winkel publiceren?", isPresented: $confirmPublish, titleVisibility: .visible) {
                 Button("Publiceren") { Task { await save(publish: true) } }
             } message: {
@@ -406,6 +517,112 @@ struct StoreEditorView: View {
         #if os(macOS)
         .frame(minWidth: 480, minHeight: 640)
         #endif
+    }
+
+    /// Kaartontwerp: alleen bij een cadeaukaart; dan is dat de voorkant (zoals in de app en op pasr.nl/kaarten).
+    @ViewBuilder private var coverSection: some View {
+        Section {
+            HStack(spacing: 14) {
+                CoverThumb(image: coverImage, hex: draft.hex)
+                    .frame(width: 120)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(draft.cover == nil ? "Geen ontwerp" : (draft.coverChanged ? "Nieuw ontwerp, nog niet opgeslagen" : "Huidig ontwerp"))
+                        .font(.subheadline.weight(.semibold))
+                    Text("Wordt bijgesneden tot kaartverhouding 1,586:1 en verkleind tot 640 x 404.")
+                        .font(.caption).foregroundStyle(Theme.muted)
+                }
+                if coverBusy { Spacer(); ProgressView() }
+            }
+            PhotosPicker(selection: $coverPhoto, matching: .images) { Label("Kies afbeelding", systemImage: "photo.on.rectangle") }
+                .disabled(coverBusy)
+            Button { pickCoverFile = true } label: { Label("Kies bestand", systemImage: "folder") }
+                .disabled(coverBusy)
+            if draft.cover != nil {
+                Button(role: .destructive) {
+                    draft.cover = nil
+                    draft.coverChanged = true
+                    coverImage = nil
+                } label: { Label("Geen ontwerp", systemImage: "trash") }
+            }
+        } header: {
+            Text("Kaartontwerp")
+        } footer: {
+            Text("De voorkant van de cadeaukaart in Pasr en op pasr.nl/kaarten. Alleen een gewijzigd ontwerp wordt opgeslagen.")
+        }
+    }
+
+    /// Gids: bij een cadeaukaart de cadeaubon-gids, bij een klantenkaart de programmagids (zoals beheer/web).
+    @ViewBuilder private var guideSection: some View {
+        let voucher = draft.kind == "voucher"
+        Section {
+            if voucher {
+                TextField("Geldigheid, bijv. 3 jaar na aankoop", text: $draft.gValidity)
+                Picker("Online inwisselen", selection: $draft.gOnline) {
+                    Text("Onbekend").tag(Bool?.none)
+                    Text("Ja").tag(Bool?.some(true))
+                    Text("Nee").tag(Bool?.some(false))
+                }
+                Picker("In de winkel", selection: $draft.gStore) {
+                    Text("Onbekend").tag(Bool?.none)
+                    Text("Ja").tag(Bool?.some(true))
+                    Text("Nee").tag(Bool?.some(false))
+                }
+            } else {
+                TextField("Zo spaar je (1 tot 2 zinnen)", text: $draft.gEarn, axis: .vertical).lineLimit(2...5)
+                TextField("Belangrijkste voordelen", text: $draft.gPerks, axis: .vertical).lineLimit(2...5)
+            }
+            TextField(voucher ? "Zo wissel je hem in (1 tot 3 zinnen)" : "Zo kom je aan de kaart (1 zin)", text: $draft.gHow, axis: .vertical)
+                .lineLimit(2...6)
+            if voucher {
+                TextField("Verzendkosten", text: $draft.gShipping)
+            } else {
+                urlField("Programmapagina (https)", text: $draft.gProgram)
+            }
+            urlField("Voorwaarden of FAQ (https)", text: $draft.gTerms)
+            Toggle("Gecontroleerd", isOn: Binding(get: { !draft.gChecked.isEmpty },
+                                                   set: { draft.gChecked = $0 ? GuideDate.string(Date()) : "" }))
+            if !draft.gChecked.isEmpty {
+                DatePicker("Gecontroleerd op", selection: Binding(get: { GuideDate.date(draft.gChecked) ?? Date() },
+                                                                  set: { draft.gChecked = GuideDate.string($0) }),
+                           in: ...Date(), displayedComponents: .date)
+            }
+        } header: {
+            Text(voucher ? "Gids: cadeaubon-gids" : "Gids: programmagids")
+        } footer: {
+            Text("In de app en op pasr.nl. Alleen officiële bronnen; onbekend leeg laten. Alleen een gewijzigde gids wordt opgeslagen; leeg laten houdt de bestaande gids.")
+        }
+    }
+
+    private func urlField(_ title: String, text: Binding<String>) -> some View {
+        TextField(title, text: text)
+            .autocorrectionDisabled()
+            #if os(iOS)
+            .keyboardType(.URL)
+            .textInputAutocapitalization(.never)
+            #endif
+    }
+
+    private func showCover() async {
+        guard let cover = draft.cover, !cover.isEmpty else { coverImage = nil; return }
+        let box = await Task.detached(priority: .userInitiated) { CoverBox(image: ImageCache.decode(cover, maxPixel: 800)) }.value
+        coverImage = box.image
+    }
+
+    private func setCover(_ data: Data) async {
+        coverBusy = true
+        defer { coverBusy = false }
+        let result = await Task.detached(priority: .userInitiated) { () -> Result<String, Error> in
+            Result { try CoverMaker.make(data) }
+        }.value
+        switch result {
+        case .success(let b64):
+            draft.cover = b64
+            draft.coverChanged = true
+            message = nil
+            await showCover()
+        case .failure(let error):
+            message = error.localizedDescription
+        }
     }
 
     private func lookup() async {
@@ -441,6 +658,9 @@ struct StoreEditorView: View {
         ]
         if let id = draft.storeID { store["id"] = id }
         store["logo"] = draft.logo ?? NSNull()
+        // gids en kaartontwerp alleen meesturen als ze zijn gewijzigd; weglaten = de backend laat ze staan
+        if let guide = draft.guideToSend { store["guide"] = guide.json }
+        if draft.coverChanged { store["cover"] = draft.cover ?? NSNull() }
         return ["store": store]
     }
 
@@ -448,8 +668,12 @@ struct StoreEditorView: View {
         busy = true
         defer { busy = false }
         do {
+            let sentGuide = draft.guideToSend
             let saved = try await session.call("store_save", params(), as: StoreSaveResponse.self).store
             draft.storeID = saved.id
+            if let sentGuide { draft.originalGuide = sentGuide }
+            draft.cover = saved.cover
+            draft.coverChanged = false
             if publish {
                 let r = try await session.call("store_publish", ["id": saved.id, "request_ids": draft.requestIDs, "push": push && !draft.published],
                                                as: StorePublishResponse.self)
@@ -491,10 +715,24 @@ struct CardPreview: View {
     let logo: String?
     let name: String
     var voucher = false
+    /// Kaartontwerp van een cadeaukaart: dan is dat de hele voorkant.
+    var cover: CGImage? = nil
 
     var body: some View {
+        if let cover {
+            Color.clear
+                .aspectRatio(1.586, contentMode: .fit)
+                .overlay { Image(decorative: cover, scale: 1).resizable().scaledToFill() }
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .shadow(color: .black.opacity(0.4), radius: 14, y: 8)
+        } else {
+            plain
+        }
+    }
+
+    private var plain: some View {
         let light = LogoColor.isLight(hex)
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        return RoundedRectangle(cornerRadius: 18, style: .continuous)
             .fill(Color(hexString: hex))
             .aspectRatio(1.586, contentMode: .fit)
             .overlay(alignment: .topLeading) {
@@ -520,19 +758,63 @@ struct LogoTile: View {
     let hex: String
     let logo: String?
     let name: String
+    /// Cachesleutel (winkel-id en bijgewerkt-tijd); het logo wordt pas gedecodeerd als de rij in beeld komt.
+    var key: String
     var body: some View {
         RoundedRectangle(cornerRadius: 9, style: .continuous)
             .fill(Color(hexString: hex))
             .frame(width: 54, height: 34)
             .overlay {
-                if let image = logo.flatMap({ Data(base64Encoded: $0) }).flatMap(LogoColor.cgImage) {
-                    Image(decorative: image, scale: 1).resizable().scaledToFit().padding(5)
-                } else {
-                    Text(String(name.prefix(1))).font(.caption.bold()).foregroundStyle(.white)
+                CachedImage(key: key, base64: logo, maxPixel: 120) { image in
+                    if let image {
+                        Image(decorative: image, scale: 1).resizable().scaledToFit().padding(5)
+                    } else {
+                        Text(String(name.prefix(1))).font(.caption.bold())
+                            .foregroundStyle(LogoColor.isLight(hex) ? Color(hex: 0x111216) : .white)
+                    }
                 }
             }
     }
 }
+
+/// Miniatuur van het kaartontwerp van een cadeaukaart in de lijst (zelfde maat als LogoTile).
+struct CoverTile: View {
+    let key: String
+    let cover: String
+    let hex: String
+    var body: some View {
+        CachedImage(key: key, base64: cover, maxPixel: 120) { image in
+            CoverThumb(image: image, hex: hex)
+        }
+        .frame(width: 54, height: 34)
+    }
+}
+
+/// Kaartontwerp in kaartverhouding met afgeronde hoeken; zonder ontwerp de kaartkleur met een fotosymbool.
+struct CoverThumb: View {
+    let image: CGImage?
+    let hex: String
+    var body: some View {
+        GeometryReader { geo in
+            let radius = max(4, geo.size.width * 0.06)
+            Group {
+                if let image {
+                    Image(decorative: image, scale: 1).resizable().scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                } else {
+                    Color(hexString: hex).overlay {
+                        Image(systemName: "photo").foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(.white.opacity(0.12)))
+        }
+        .aspectRatio(1.586, contentMode: .fit)
+    }
+}
+
+private struct CoverBox: @unchecked Sendable { let image: CGImage? }
 
 /// Logo's lezen en de merkkleur eruit halen (zonder UIKit/AppKit, dus op iPhone, iPad en Mac gelijk).
 enum LogoColor {
