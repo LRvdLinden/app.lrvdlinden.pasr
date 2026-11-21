@@ -405,5 +405,53 @@
  "bakkerbart.nl": {
   "card": "#CB007C",
   "manual": true
+ },
+ "bagelsbeans.nl": {
+  "card": "#A64E17",
+  "manual": true
+ },
+ "beterhoren.nl": {
+  "card": "#C5003E",
+  "manual": true
+ },
+ "bibliotheek.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "intratuin.nl": {
+  "card": "#47A23F",
+  "manual": true
+ },
+ "biggym.nl": {
+  "card": "#E6007E",
+  "manual": true
+ },
+ "bouwmaat.nl": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "anwb.nl": {
+  "card": "#FFCC00",
+  "manual": true
+ },
+ "asadventure.nl": {
+  "card": "#2E5E3E",
+  "manual": true
+ },
+ "dirk.nl": {
+  "card": "#E20613",
+  "manual": true
+ },
+ "gamemania.nl": {
+  "card": "#FFDD3E",
+  "manual": true
+ },
+ "boekenbon.nl": {
+  "card": "#FFDD00",
+  "manual": true
+ },
+ "healthcity.nl": {
+  "card": "#000000",
+  "manual": true
  }
 }

@@ -23,18 +23,22 @@
   "src": "manual"
  },
  "anwb.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "anytimefitness.nl": {},
  "apple.com": {},
  "artis.nl": {
   "bg": "#FFFFFF"
  },
- "asadventure.nl": {},
+ "asadventure.nl": {
+  "src": "manual"
+ },
  "avia.nl": {
   "src": "File:AVIA International logo.svg"
  },
- "bagelsbeans.nl": {},
+ "bagelsbeans.nl": {
+  "src": "manual"
+ },
  "bakkerbart.nl": {
   "src": "manual"
  },
@@ -58,7 +62,13 @@
  "benu.nl": {
   "src": "manual"
  },
+ "beterhoren.nl": {
+  "src": "manual"
+ },
  "bever.nl": {},
+ "bibliotheek.nl": {
+  "src": "manual"
+ },
  "bidfood.nl": {
   "src": "manual"
  },
@@ -66,14 +76,14 @@
   "src": "File:Big Bazar Logo.svg"
  },
  "biggym.nl": {
-  "opaque": true
+  "src": "manual"
  },
  "bioscoopbon.nl": {},
  "blokker.nl": {
   "src": "File:Blokker-Logo.svg"
  },
  "boekenbon.nl": {
-  "opaque": true
+  "src": "manual"
  },
  "bol.com": {
   "bg": "#0000A5"
@@ -85,7 +95,7 @@
   "bg": "#FFFFFF"
  },
  "bouwmaat.nl": {
-  "opaque": true
+  "src": "manual"
  },
  "bp.com": {
   "src": "File:Bp logo89.svg"
@@ -167,7 +177,7 @@
   "bg": "#FFFFFF"
  },
  "dirk.nl": {
-  "opaque": true
+  "src": "manual"
  },
  "discus.nl": {
   "src": "https://www.discus.nl/image/logo/6ab9ff80-de7a-11e7-8c26-88a08bd89a7b?rev=1793442265&extension=png"
@@ -245,7 +255,7 @@
   "src": "File:Logo Gall & Gall.png"
  },
  "gamemania.nl": {
-  "opaque": true
+  "src": "manual"
  },
  "gamma.nl": {
   "bg": "#003978",
@@ -269,7 +279,9 @@
  "hansanders.nl": {
   "src": "File:Logo of Hans Anders.svg"
  },
- "healthcity.nl": {},
+ "healthcity.nl": {
+  "src": "manual"
+ },
  "hema.nl": {
   "bg": "#E3191C",
   "src": "File:HEMA Logo.svg"
@@ -300,6 +312,9 @@
  },
  "intertoys.nl": {
   "bg": "#FFDD00"
+ },
+ "intratuin.nl": {
+  "src": "manual"
  },
  "jackjones.com": {
   "opaque": true
