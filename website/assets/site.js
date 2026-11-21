@@ -42,7 +42,7 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
 
-// Animations: cards that slide in while scrolling, a counting "300+", a phone that floats and tilts
+// Animations: cards that slide in while scrolling, counting store numbers, a phone that floats and tilts
 // with the mouse, and one card that shows its barcode by itself after the page has loaded.
 (function () {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -64,23 +64,23 @@
     items.forEach(el => io.observe(el));
   }
 
-  // 0 → 300 when the store band comes into view
-  const count = document.querySelector('.stores .count');
-  if (count && !reduce && 'IntersectionObserver' in window) {
-    const to = +count.dataset.to;
-    count.textContent = '0';
+  // 0 → n when the store band comes into view (the counts of loyalty and gift cards)
+  const counts = document.querySelectorAll('.stores .count');
+  if (counts.length && !reduce && 'IntersectionObserver' in window) {
+    const targets = Array.prototype.map.call(counts, c => +c.dataset.to);
+    counts.forEach(c => { c.textContent = '0'; });
     const io = new IntersectionObserver(entries => {
       if (!entries[0].isIntersecting) return;
       io.disconnect();
       const start = performance.now();
       const step = now => {
         const t = Math.min(1, (now - start) / 1400);
-        count.textContent = String(Math.round(to * (1 - Math.pow(1 - t, 3))));
+        counts.forEach((c, i) => { c.textContent = String(Math.round(targets[i] * (1 - Math.pow(1 - t, 3)))); });
         if (t < 1) requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
     }, { threshold: 0.6 });
-    io.observe(count);
+    io.observe(counts[0]);
   }
 
   const stage = document.querySelector('.stage');

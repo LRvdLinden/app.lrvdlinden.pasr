@@ -191,6 +191,7 @@ footer a:hover { color: var(--ink); }
   body { font-size: 17px; }
   .nav ul { gap: 16px; }
   .nav ul li:nth-child(1), .nav ul li:nth-child(3) { display: none; }
+  .nav ul li.hide-sm { display: none; }
   .steps, .compare { grid-template-columns: 1fr; }
   .compare div:nth-child(even) { padding-left: 0; border-left: 0; }
   .compare div:nth-child(odd) { padding-bottom: 6px; border-bottom: 0; }
@@ -254,6 +255,8 @@ footer a:hover { color: var(--ink); }
 .stores { padding: 10px 0 90px; overflow: hidden; }
 .stores-title { text-align: center; font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: -.01em; margin: 0 auto 26px; color: var(--ink); max-width: 90%; }
 .stores-title .count { color: var(--iris); font-variant-numeric: tabular-nums; }
+.stores-more { text-align: center; margin: 26px 0 0; }
+.stores-more .btn { font-size: 16px; padding: 11px 20px; }
 .marquee-row { overflow: hidden; padding: 7px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
 .marquee-track { display: flex; gap: 14px; width: max-content; animation: drift 46s linear infinite; }
 .marquee-row.reverse .marquee-track { animation-direction: reverse; animation-duration: 52s; }
