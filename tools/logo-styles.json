@@ -667,6 +667,6 @@
   "src": "site"
  },
  "zooplus.nl": {
-  "src": "commons"
+  "opaque": true
  }
 }
