@@ -18,6 +18,7 @@ struct CardScanView: View {
     @State private var added: Card?
     @State private var duplicate: Card?
     @State private var scanID = UUID()
+    @StateObject private var control = ScannerControl()
 
     var body: some View {
         ZStack {
@@ -43,7 +44,20 @@ struct CardScanView: View {
             }
             .pasrGlassButton()
             .padding(20)
+            .accessibilityLabel(Text("Sluit"))
         }
+        .overlay(alignment: .topTrailing) {
+            if added == nil && duplicate == nil && control.hasTorch {
+                Button { control.setTorch(!control.torchOn) } label: {
+                    Image(systemName: control.torchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                        .font(.headline).frame(width: 44, height: 44)
+                }
+                .pasrGlassButton(prominent: control.torchOn)
+                .padding(20)
+                .accessibilityLabel(Text(control.torchOn ? "Zaklamp uit" : "Zaklamp aan"))
+            }
+        }
+        .onDisappear { if control.torchOn { control.setTorch(false) } }
         .preferredColorScheme(.dark)
     }
 
@@ -144,6 +158,8 @@ struct CardScanner: UIViewControllerRepresentable {
             qualityLevel: .accurate,
             recognizesMultipleItems: true,
             isHighFrameRateTrackingEnabled: false,
+            isPinchToZoomEnabled: true,
+            isGuidanceEnabled: true,
             isHighlightingEnabled: false
         )
         controller.delegate = context.coordinator

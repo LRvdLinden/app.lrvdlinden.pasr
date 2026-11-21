@@ -110,7 +110,15 @@ struct WatchWalletView: View {
         let known = Set(fromPhone.map(\.id))
         let since = phone.receivedAt ?? .distantPast
         let newer = stored.filter { !known.contains($0.id.uuidString) && $0.createdAt > since }.map(WatchCard.init)
-        return (fromPhone + newer).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        // de volgorde van de iPhone (A tot Z, meest gebruikt of in de buurt); nieuwe kaarten zonder plek A tot Z erachter
+        return (fromPhone + newer).sorted { a, b in
+            switch (a.rank, b.rank) {
+            case let (x?, y?) where x != y: return x < y
+            case (.some, nil): return true
+            case (nil, .some): return false
+            default: return a.name.localizedStandardCompare(b.name) == .orderedAscending
+            }
+        }
     }
 
     var body: some View {

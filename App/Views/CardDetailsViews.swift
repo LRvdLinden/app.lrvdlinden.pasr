@@ -71,6 +71,61 @@ struct GiftGuideRows: View {
     }
 }
 
+/// "Haal meer uit je kaart": de programmagids van een klantenkaart (sparen, voordelen, officiële pagina).
+struct ProgramGuideSection: View {
+    let guide: StoreGuide?
+
+    var body: some View {
+        if let guide, guide.hasProgramInfo {
+            Section {
+                if let earn = guide.earn {
+                    HStack(alignment: .top, spacing: 12) {
+                        guideIcon("star.circle.fill", .orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Zo spaar je").font(.footnote).foregroundStyle(.secondary)
+                            Text(earn)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+                ForEach(guide.perks ?? [], id: \.self) { perk in
+                    HStack(alignment: .top, spacing: 12) {
+                        guideIcon("checkmark.seal.fill", Brand.mint)
+                        Text(perk)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(Text("Voordeel: \(perk)"))
+                }
+                if let program = guide.program {
+                    Link(destination: program) {
+                        HStack(spacing: 12) {
+                            guideIcon("arrow.up.forward.app.fill", Brand.iris)
+                            Text("Officiële programmapagina").foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Haal meer uit je kaart")
+            } footer: {
+                if let checked = guide.checkedText {
+                    Text("Uit de officiële informatie van de winkel, gecontroleerd op \(checked). Voorwaarden kunnen veranderen.")
+                }
+            }
+        }
+    }
+}
+
+func guideIcon(_ symbol: String, _ color: Color) -> some View {
+    Image(systemName: symbol)
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(.white)
+        .frame(width: 28, height: 28)
+        .background(color.gradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .accessibilityHidden(true)
+}
+
 /// De gids als sectie in een formulier of lijst, met (als die er is) de saldo-checker.
 struct GiftGuideSection: View {
     let guide: StoreGuide?
@@ -78,9 +133,9 @@ struct GiftGuideSection: View {
     var onCheckBalance: ((URL) -> Void)? = nil
 
     var body: some View {
-        if guide != nil || (balancePage != nil && onCheckBalance != nil) {
+        if guide?.hasGiftInfo == true || (balancePage != nil && onCheckBalance != nil) {
             Section {
-                if let guide { GiftGuideRows(guide: guide) }
+                if let guide, guide.hasGiftInfo { GiftGuideRows(guide: guide) }
                 if let balancePage, let onCheckBalance {
                     Button { onCheckBalance(balancePage) } label: {
                         Label("Saldo checken bij \(balancePage.host() ?? String(localized: "de uitgever"))", systemImage: "safari")
@@ -148,6 +203,9 @@ struct CardInfoSheet: View {
                     kindRows
                 }
 
+                if card.kind == .loyalty {
+                    ProgramGuideSection(guide: RemoteStores.guide(for: card.templateID, storeName: card.storeName))
+                }
                 if card.kind == .voucher {
                     GiftGuideSection(guide: RemoteStores.guide(for: card.templateID, storeName: card.storeName),
                                      balancePage: card.isTemporary ? nil : card.balancePage,

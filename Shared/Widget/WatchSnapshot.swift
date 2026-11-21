@@ -19,6 +19,8 @@ struct WatchCard: Codable, Identifiable, Hashable {
     var logoDomain: String? = nil
     var logo: Data?
     var code: Data?
+    /// Plaats in de volgorde van de iPhone (nil = A tot Z). Sinds 1.0.2.
+    var rank: Int? = nil
     /// Kortingscode als tekst (sinds 1.0.2).
     var codeAsText: Bool? = nil
     /// Regel onder de kop voor ticket en abonnement (sinds 1.0.2), al opgemaakt op de iPhone.

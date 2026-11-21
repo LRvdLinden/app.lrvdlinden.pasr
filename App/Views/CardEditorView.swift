@@ -278,7 +278,7 @@ struct CardEditorView: View {
             case .code: discountSection
             case .ticket: ticketSection
             case .subscription: subscriptionSection
-            case .loyalty: EmptyView()
+            case .loyalty: ProgramGuideSection(guide: RemoteStores.guide(for: draft.templateID, storeName: draft.storeName))
             }
             logoSection
             photosSection

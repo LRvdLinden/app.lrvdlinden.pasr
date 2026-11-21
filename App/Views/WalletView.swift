@@ -18,8 +18,9 @@ struct WalletView: View {
     /// Filter naast de plusknop (blijft bewaard): alle, favorieten, klantenkaarten, cadeaukaarten, privé, gedeeld, tijdelijk.
     @AppStorage("pasr.walletFilter") private var filterRaw = WalletFilter.all.rawValue
     private var groups = GroupService.shared
-    /// Volgorde: "az" (A tot Z) of "near" (dichtstbijzijnde winkel eerst; zonder bekende afstand daarna A tot Z).
-    @AppStorage("pasr.walletOrder") private var order = "az"
+    /// Volgorde (CardOrder): standaard A tot Z; of meest gebruikt, dichtstbij, of in de buurt en dan meest gebruikt.
+    @AppStorage(CardOrder.key) private var order = CardOrder.az.rawValue
+    private var cardOrder: CardOrder { CardOrder(rawValue: order) ?? .az }
     @State private var distances: [UUID: CLLocationDistance] = [:]
     @Environment(\.scenePhase) private var scenePhase
     @State private var search = ""
@@ -54,18 +55,7 @@ struct WalletView: View {
     private var filter: WalletFilter { WalletFilter(rawValue: filterRaw) ?? .all }
 
     private var visibleCards: [Card] {
-        var sorted = cards.alphabetical().filter { filter.matches($0) }
-        if order == "near", !distances.isEmpty {
-            let d = distances
-            sorted = sorted.enumerated().sorted { a, b in
-                switch (d[a.element.id], d[b.element.id]) {
-                case let (x?, y?) where x != y: return x < y
-                case (.some, nil): return true
-                case (nil, .some): return false
-                default: return a.offset < b.offset
-                }
-            }.map(\.element)
-        }
+        let sorted = cards.ordered(cardOrder, distances: distances).filter { filter.matches($0) }
         let query = search.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return sorted }
         return sorted.filter {
@@ -144,7 +134,7 @@ struct WalletView: View {
 
     /// Afstanden voor "Dichtstbij eerst" (uit wat Pasr al weet; met `search` ook filialen opzoeken).
     private func updateDistances(search: Bool) async {
-        guard order == "near" else { distances = [:]; return }
+        guard cardOrder.usesLocation else { distances = [:]; return }
         let stores = NearbyStores.shared
         var here = await stores.currentLocation(maxAge: 300)
         if let h = here { distances = stores.knownDistances(for: cards, from: h) }
@@ -152,11 +142,12 @@ struct WalletView: View {
             here = await stores.updateBranches(cards: cards) ?? here
             if let h = here { distances = stores.knownDistances(for: cards, from: h) }
         }
+        WidgetSync.update(with: cards)   // widgets en Watch in dezelfde volgorde
     }
 
     /// Omlaag trekken: account en gedeelde Pasrs synchroniseren en de winkels om je heen opnieuw zoeken.
     private func pullToRefresh() async {
-        if order == "near" { await updateDistances(search: true) } else { await NearbyStores.shared.refresh(cards: cards, force: true) }
+        if cardOrder.usesLocation { await updateDistances(search: true) } else { await NearbyStores.shared.refresh(cards: cards, force: true) }
         if AccountService.shared.isSignedIn {
             await CardSync.sync(in: context)
             await GroupService.shared.sync(in: context)
@@ -403,10 +394,12 @@ struct WalletView: View {
             }
             Picker("Volgorde", selection: Binding(get: { order }, set: { new in
                 withAnimation(.snappy) { order = new }
-                if new == "near" { Task { _ = await NearbyStores.shared.locationForPin(); await updateDistances(search: true) } }
+                if CardOrder(rawValue: new)?.usesLocation == true {
+                    Task { _ = await NearbyStores.shared.locationForPin(); await updateDistances(search: true) }
+                }
+                WidgetSync.update(with: cards)
             })) {
-                Label("A tot Z", systemImage: "textformat").tag("az")
-                Label("Dichtstbij eerst", systemImage: "location").tag("near")
+                ForEach(CardOrder.allCases) { o in Label(o.title, systemImage: o.symbol).tag(o.rawValue) }
             }
             let shared = cards.contains { $0.groupID != nil }
             let temporary = cards.contains(where: \.isTemporary)

@@ -226,3 +226,73 @@ extension Card {
         updatedAt = .now
     }
 }
+
+/// Volgorde van de kaarten. Standaard altijd A tot Z; in Instellingen (of het filtermenu) kun je kiezen voor meest
+/// gebruikt of de winkel in de buurt bovenaan. Widgets en Watch volgen dezelfde keuze (de iPhone geeft de volgorde mee).
+enum CardOrder: String, CaseIterable, Identifiable {
+    case az, used, near, nearUsed
+
+    static let key = "pasr.walletOrder"
+    static var current: CardOrder { UserDefaults.standard.string(forKey: key).flatMap(CardOrder.init(rawValue:)) ?? .az }
+
+    var id: String { rawValue }
+    var usesLocation: Bool { self == .near || self == .nearUsed }
+
+    var title: String {
+        switch self {
+        case .az: String(localized: "A tot Z")
+        case .used: String(localized: "Meest gebruikt bovenaan")
+        case .near: String(localized: "Dichtstbij eerst")
+        case .nearUsed: String(localized: "In de buurt, dan meest gebruikt")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .az: "textformat"
+        case .used: "chart.bar.fill"
+        case .near: "location"
+        case .nearUsed: "location.magnifyingglass"
+        }
+    }
+
+    /// Binnen deze afstand telt een winkel als "in de buurt" (voor In de buurt, dan meest gebruikt).
+    static let nearbyMeters: Double = 1_000
+}
+
+extension Array where Element == Card {
+    /// In de gekozen volgorde. Gelijke plaatsen (en alles zonder afstand of gebruik) blijven A tot Z.
+    func ordered(_ order: CardOrder, distances: [UUID: Double] = [:]) -> [Card] {
+        let az = alphabetical()
+        func stable(_ before: (Card, Card) -> Bool?) -> [Card] {
+            az.enumerated().sorted { a, b in before(a.element, b.element) ?? (a.offset < b.offset) }.map(\.element)
+        }
+        func byScore(_ a: Card, _ b: Card) -> Bool? {
+            let x = Card.score(a), y = Card.score(b)
+            return abs(x - y) < 0.0001 ? nil : x > y
+        }
+        switch order {
+        case .az:
+            return az
+        case .used:
+            return stable(byScore)
+        case .near:
+            return stable { a, b in
+                switch (distances[a.id], distances[b.id]) {
+                case let (x?, y?) where x != y: x < y
+                case (.some, nil): true
+                case (nil, .some): false
+                default: nil
+                }
+            }
+        case .nearUsed:
+            return stable { a, b in
+                let na = distances[a.id].map { $0 <= CardOrder.nearbyMeters } ?? false
+                let nb = distances[b.id].map { $0 <= CardOrder.nearbyMeters } ?? false
+                if na != nb { return na }
+                if na, let x = distances[a.id], let y = distances[b.id], x != y { return x < y }
+                return byScore(a, b)
+            }
+        }
+    }
+}

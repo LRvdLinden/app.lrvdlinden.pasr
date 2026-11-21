@@ -91,10 +91,10 @@ enum WidgetStore {
 }
 
 extension Array where Element == Card {
-    /// The snapshot the widgets read, in smart order.
-    func widgetSnapshot() -> ([WidgetCard], [String: Data]) {
+    /// The snapshot the widgets read, in de gekozen volgorde (standaard A tot Z).
+    func widgetSnapshot(order: CardOrder = .az, distances: [UUID: Double] = [:]) -> ([WidgetCard], [String: Data]) {
         var logos: [String: Data] = [:]
-        let cards = filter { $0.deletedAt == nil && !$0.isTemporary }.alphabetical().map { card -> WidgetCard in
+        let cards = filter { $0.deletedAt == nil && !$0.isTemporary }.ordered(order, distances: distances).map { card -> WidgetCard in
             if let logo = card.logoData { logos[card.id.uuidString] = logo }
             return WidgetCard(id: card.id.uuidString, name: card.storeName, colorHex: card.colorHex,
                               number: card.number, formatRaw: card.formatRaw, kindRaw: card.kindRaw,

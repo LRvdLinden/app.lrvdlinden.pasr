@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage(Biometrics.appLockKey) private var appLock = false
     @AppStorage(ScreenShield.settingKey) private var blockScreenshots = false
     @AppStorage(AppAppearance.key) private var appearance = AppAppearance.auto.rawValue
+    @AppStorage(CardOrder.key) private var order = CardOrder.az.rawValue
     @State private var exportDoc: BackupDocument?
     @State private var showExporter = false
     @State private var showImporter = false
@@ -81,8 +82,19 @@ struct SettingsView: View {
                     } label: {
                         SettingsLabel("Weergave", symbol: "circle.lefthalf.filled", color: .gray)
                     }
+                    Picker(selection: $order) {
+                        ForEach(CardOrder.allCases) { o in Label(o.title, systemImage: o.symbol).tag(o.rawValue) }
+                    } label: {
+                        SettingsLabel("Volgorde van kaarten", symbol: "arrow.up.arrow.down", color: Brand.iris)
+                    }
+                    .onChange(of: order) { _, new in
+                        Task {
+                            if CardOrder(rawValue: new)?.usesLocation == true { _ = await NearbyStores.shared.locationForPin() }
+                            WidgetSync.update(with: active)
+                        }
+                    }
                 } footer: {
-                    Text("Automatisch volgt de instelling van je iPhone of iPad. Kaarten houden altijd hun eigen kleur.")
+                    Text("Automatisch volgt de instelling van je iPhone of iPad. Kaarten houden altijd hun eigen kleur. De volgorde is standaard A tot Z; met Meest gebruikt of In de buurt staan die kaarten bovenaan, ook in de widgets en op je Apple Watch. Bij gelijke plaatsen blijft het A tot Z.")
                 }
 
                 Section {

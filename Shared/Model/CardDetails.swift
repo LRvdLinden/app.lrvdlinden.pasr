@@ -110,14 +110,33 @@ struct StoreGuide: Codable, Hashable {
     var shipping: String?
     var termsURL: String?
     var checked: String?
+    // Klantenkaart (programmagids): zo spaar je, voordelen, officiële programmapagina.
+    var earn: String?
+    var perks: [String]?
+    var programURL: String?
 
     enum CodingKeys: String, CodingKey {
-        case validity, online, store, how, shipping, checked
+        case validity, online, store, how, shipping, checked, earn, perks
         case termsURL = "terms_url"
+        case programURL = "program_url"
     }
 
     var isEmpty: Bool {
         validity == nil && online == nil && store == nil && how == nil && shipping == nil && terms == nil
+            && earn == nil && (perks ?? []).isEmpty && program == nil
+    }
+
+    /// Heeft iets voor een cadeaukaart (geldigheid, waar, uitleg, verzendkosten, voorwaarden).
+    var hasGiftInfo: Bool {
+        validity != nil || online != nil || store != nil || how != nil || shipping != nil || terms != nil
+    }
+
+    /// Heeft iets voor een klantenkaart (sparen, voordelen, programmapagina).
+    var hasProgramInfo: Bool { earn != nil || !(perks ?? []).isEmpty || program != nil }
+
+    var program: URL? {
+        guard let programURL, let url = URL(string: programURL), url.scheme == "https" else { return nil }
+        return url
     }
 
     /// Alleen https-adressen.
@@ -136,6 +155,16 @@ struct StoreGuide: Codable, Hashable {
         shipping = (dict["shipping"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         termsURL = dict["terms_url"] as? String
         checked = dict["checked"] as? String
+        earn = (dict["earn"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+        // voordelen: een lijst, of één tekst (met regels of puntkomma's)
+        if let list = dict["perks"] as? [String] {
+            perks = list.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        } else if let text = dict["perks"] as? String {
+            perks = text.split(whereSeparator: { $0 == "\n" || $0 == ";" })
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        }
+        if perks?.isEmpty == true { perks = nil }
+        programURL = dict["program_url"] as? String
         if isEmpty { return nil }
     }
 

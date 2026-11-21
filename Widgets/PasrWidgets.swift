@@ -134,10 +134,11 @@ struct MostUsedProvider: TimelineProvider {
                             policy: .after(.now.addingTimeInterval(6 * 3600))))
     }
 
-    /// The 8 cards you use most, shown A to Z like everywhere else.
+    /// The 8 cards you use most, in dezelfde volgorde als in de app (standaard A tot Z).
     private func mostUsed() -> [WidgetCard] {
-        WidgetStore.load().sorted { $0.score > $1.score }.prefix(8)
-            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        let all = WidgetStore.load()
+        let top = Set(all.sorted { $0.score > $1.score }.prefix(8).map(\.id))
+        return all.filter { top.contains($0.id) }
     }
 }
 
