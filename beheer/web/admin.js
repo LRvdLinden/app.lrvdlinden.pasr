@@ -847,9 +847,9 @@
   /** Kaartontwerp bijsnijden tot 1,586:1 en verkleinen tot 640 px breed (JPEG 0,8); zelfde als tools/make_covers.py. */
   function makeCover(file) {
     return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file), img = new Image();
+      // Via een data-URL (FileReader), niet blob: — de CSP staat alleen img-src 'self' data: toe.
+      const img = new Image(), reader = new FileReader();
       img.onload = () => {
-        URL.revokeObjectURL(url);
         const ratio = 1.586, W = 640, H = Math.round(W / ratio);
         let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0;
         if (sw / sh > ratio) { const nw = Math.round(sh * ratio); sx = (sw - nw) / 2; sw = nw; }
@@ -861,8 +861,10 @@
         while (out.length > 200_000 && q > 0.4) { q -= 0.1; out = c.toDataURL("image/jpeg", q).split(",")[1]; }
         out.length > 200_000 ? reject(new Error("Het kaartontwerp is te groot.")) : resolve(out);
       };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Dit bestand is geen afbeelding.")); };
-      img.src = url;
+      img.onerror = () => reject(new Error("Dit bestand is geen afbeelding."));
+      reader.onload = () => { img.src = reader.result; };
+      reader.onerror = () => reject(new Error("Dit bestand kan niet worden gelezen."));
+      reader.readAsDataURL(file);
     });
   }
   function luminance(hex) {

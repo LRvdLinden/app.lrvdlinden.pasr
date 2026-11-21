@@ -301,8 +301,9 @@
         if (s.kind === 'voucher') {
           var hasStatic = known && known.querySelector('.kc-cover');
           var file = cfg.covers && cfg.covers[s.id];
-          // Staat het ontwerp als bestand op de site, dan dat (klein en gecachet); anders live ophalen.
-          if (s.has_cover && file) { if (!hasStatic) staticCovers.push([s.id, file]); }
+          // Staat het ontwerp als bestand op de site, dan dat (klein en gecachet); anders, of als de winkel na het maken
+          // van de site is gewijzigd (mogelijk een nieuw ontwerp), live ophalen.
+          if (s.has_cover && file && !changed) { if (!hasStatic) staticCovers.push([s.id, file]); }
           else if (s.has_cover) covers.push(s.id);
           // ontwerp in het beheer weggehaald: weer logo en kleur
           if (s.has_cover === false && hasStatic) {
