@@ -383,7 +383,7 @@
   "manual": true
  },
  "diergaardeblijdorp.nl": {
-  "card": "#00843D",
+  "card": "#0B8443",
   "manual": true
  },
  "groenrijk.nl": {
@@ -576,6 +576,22 @@
  },
  "hanos.nl": {
   "card": "#56004E",
+  "manual": true
+ },
+ "coffeecompany.nl": {
+  "card": "#2E0700",
+  "manual": true
+ },
+ "goossens.nl": {
+  "card": "#492D23",
+  "manual": true
+ },
+ "dungelmann.nl": {
+  "card": "#1A1A1A",
+  "manual": true
+ },
+ "argos.nl": {
+  "card": "#FFFFFF",
   "manual": true
  }
 }

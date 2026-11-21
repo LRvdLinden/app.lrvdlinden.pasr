@@ -32,6 +32,9 @@
  "argos-oil.com": {
   "src": "manual"
  },
+ "argos.nl": {
+  "src": "manual"
+ },
  "artis.nl": {
   "src": "manual"
  },
@@ -144,7 +147,7 @@
  },
  "cjp.nl": {},
  "coffeecompany.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "coolblue.nl": {
   "bg": "#0090E3",
@@ -208,7 +211,9 @@
  "douglas.nl": {
   "src": "File:Douglas Logo 06.2018.svg"
  },
- "dungelmann.nl": {},
+ "dungelmann.nl": {
+  "src": "manual"
+ },
  "efteling.com": {
   "src": "manual"
  },
@@ -281,7 +286,7 @@
   "src": "File:GAMMA Logo.svg"
  },
  "goossens.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "greenwheels.nl": {
   "src": "manual"
