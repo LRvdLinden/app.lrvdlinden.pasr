@@ -485,5 +485,53 @@
  "kwantum.nl": {
   "card": "#FF5C00",
   "manual": true
+ },
+ "artis.nl": {
+  "card": "#001E07",
+  "manual": true
+ },
+ "didi.nl": {
+  "card": "#717657",
+  "manual": true
+ },
+ "costesfashion.com": {
+  "card": "#000000",
+  "manual": true
+ },
+ "bataviastad.nl": {
+  "card": "#1C2B4A",
+  "manual": true
+ },
+ "hudsonsbay.nl": {
+  "card": "#000000",
+  "manual": true
+ },
+ "fashioncheque.com": {
+  "card": "#000000",
+  "manual": true
+ },
+ "fletcher.nl": {
+  "card": "#00437D",
+  "manual": true
+ },
+ "halfords.nl": {
+  "card": "#F28C00",
+  "manual": true
+ },
+ "kfc.nl": {
+  "card": "#E4002B",
+  "manual": true
+ },
+ "play.google.com": {
+  "card": "#FFFFFF",
+  "manual": true
+ },
+ "donner.nl": {
+  "card": "#EB5D17",
+  "manual": true
+ },
+ "hunkemoller.nl": {
+  "card": "#000000",
+  "manual": true
  }
 }

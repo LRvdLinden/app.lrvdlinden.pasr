@@ -28,7 +28,7 @@
  "anytimefitness.nl": {},
  "apple.com": {},
  "artis.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "asadventure.nl": {
   "src": "manual"
@@ -50,7 +50,7 @@
   "src": "File:Basic-Fit logo.png"
  },
  "bataviastad.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "bauhaus.nl": {},
  "bcc.nl": {
@@ -148,7 +148,7 @@
   "src": "manual"
  },
  "costesfashion.com": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "crisp.nl": {
   "bg": "#003B40"
@@ -169,7 +169,7 @@
  },
  "denhaag.nl": {},
  "didi.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "diergaardeblijdorp.nl": {
   "src": "manual"
@@ -189,7 +189,9 @@
  "dominos.nl": {
   "src": "File:Domino's pizza logo.svg"
  },
- "donner.nl": {},
+ "donner.nl": {
+  "src": "manual"
+ },
  "douglas.nl": {
   "src": "File:Douglas Logo 06.2018.svg"
  },
@@ -216,7 +218,7 @@
  },
  "eyewish.nl": {},
  "fashioncheque.com": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "fastnedcharging.com": {
   "src": "manual"
@@ -237,7 +239,7 @@
   "src": "manual"
  },
  "fletcher.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "flyingblue.com": {
   "opaque": true
@@ -277,6 +279,9 @@
  "gulf.nl": {
   "src": "manual"
  },
+ "halfords.nl": {
+  "src": "manual"
+ },
  "hanos.nl": {
   "bg": "#57004E"
  },
@@ -302,8 +307,12 @@
   "src": "File:Hornbach Logo black.svg"
  },
  "hubo.nl": {},
- "hudsonsbay.nl": {},
- "hunkemoller.nl": {},
+ "hudsonsbay.nl": {
+  "src": "manual"
+ },
+ "hunkemoller.nl": {
+  "src": "manual"
+ },
  "iciparisxl.nl": {
   "bg": "#0E0506"
  },
@@ -341,7 +350,7 @@
   "src": "File:Karwei logo (2017).png"
  },
  "kfc.nl": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "kikocosmetics.com": {
   "src": "manual"
@@ -473,7 +482,7 @@
   "src": "File:Picnic logo.svg"
  },
  "play.google.com": {
-  "bg": "#FFFFFF"
+  "src": "manual"
  },
  "playstation.com": {
   "bg": "#FFFFFF"
