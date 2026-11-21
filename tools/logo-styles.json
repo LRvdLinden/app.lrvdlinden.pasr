@@ -482,8 +482,12 @@
  "q8.nl": {
   "src": "File:Q8 logo.svg"
  },
- "ranzijn.nl": {},
- "readshop.nl": {},
+ "ranzijn.nl": {
+  "src": "site"
+ },
+ "readshop.nl": {
+  "src": "site"
+ },
  "restaurantorange.nl": {
   "src": "https://www.restaurantorange.nl/wp-content/uploads/2018/12/orange-logo.svg"
  },
@@ -535,7 +539,9 @@
  "sligro.nl": {
   "src": "File:Logo of Sligro Food Group.svg"
  },
- "smullers.nl": {},
+ "smullers.nl": {
+  "src": "site"
+ },
  "snapfitness.com": {
   "src": "commons"
  },
@@ -568,7 +574,7 @@
  },
  "subway.com": {},
  "swisssense.nl": {
-  "bg": "#1C2125"
+  "src": "site"
  },
  "tango.nl": {},
  "terstal.nl": {
@@ -591,7 +597,7 @@
   "src": "commons"
  },
  "travelcard.nl": {
-  "bg": "#C6EF56"
+  "src": "site"
  },
  "trekpleister.nl": {
   "src": "File:Trekpleister Logo since 2024.webp"
