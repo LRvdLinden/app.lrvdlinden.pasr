@@ -2,36 +2,37 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://pasr.nl/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/account/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/kaarten/</loc>
+    <lastmod>2026-11-21</lastmod>
     <image:image><image:loc>https://pasr.nl/og/kaarten.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/overstappen/klarna/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <image:image><image:loc>https://pasr.nl/og/overstappen.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/overstappen/supercards/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <image:image><image:loc>https://pasr.nl/og/overstappen.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/privacy/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
   <url>
     <loc>https://pasr.nl/support/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
 </urlset>
