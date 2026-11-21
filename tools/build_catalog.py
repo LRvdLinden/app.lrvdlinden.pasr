@@ -17,12 +17,13 @@ TEMPLATES = ROOT / "Shared" / "Model" / "StoreTemplates.swift"
 STYLES = ROOT / "Shared" / "Model" / "StoreLogoStyles.swift"
 LOGOS = ROOT / "App" / "StoreLogos"
 OUT = ROOT / "supabase" / "catalog" / "stores.json"
-MAX = 320          # langste zijde van het logo in px
+MAX = 256          # langste zijde van het logo in px
 # Winkels die uit de lijst zijn gehaald (in het beheer: niet gepubliceerd). Bestaande kaarten blijven werken.
 REMOVED = {
     "perrysport": "Perry Sport", "sportdirect": "Sports Direct", "firezone": "Firezone", "aktiesport": "Aktiesport",
     "blushy": "Blushy", "coop": "Coop", "janlinders": "Jan Linders", "fitforfree": "Fit For Free",
-    "fun": "Fun Speelgoed", "jumper": "Jumper",
+    "fun": "Fun Speelgoed", "jumper": "Jumper", "euroscoop": "Euroscoop", "deen": "Deen", "ako": "AKO",
+    "hobbydos": "Hobbydos", "boerenbond": "Boerenbond", "vanhaaren2": "Schoenenreus", "intratuincadeau": "Tuinbon",
 }
 
 
