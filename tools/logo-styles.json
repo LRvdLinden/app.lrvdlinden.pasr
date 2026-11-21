@@ -427,7 +427,7 @@
   "src": "commons"
  },
  "pathe.nl": {
-  "opaque": true
+  "src": "site"
  },
  "payback.de": {
   "bg": "#003EB0",
@@ -451,7 +451,9 @@
  "playstation.com": {
   "bg": "#FFFFFF"
  },
- "plus.nl": {},
+ "plus.nl": {
+  "src": "commons"
+ },
  "podiumcadeaukaart.nl": {
   "opaque": true
  },
@@ -468,9 +470,11 @@
  "primark.com": {
   "src": "File:Primark Logo 2024.svg"
  },
- "primera.nl": {},
+ "primera.nl": {
+  "src": "site"
+ },
  "profile.nl": {
-  "bg": "#FFFFFF"
+  "src": "site"
  },
  "q-park.nl": {
   "bg": "#FFFFFF"
@@ -497,7 +501,7 @@
  },
  "runnersworld.nl": {},
  "sanquin.nl": {
-  "bg": "#FFFFFF"
+  "src": "site"
  },
  "scapino.nl": {
   "src": "File:Scapino logo 04.png"
@@ -532,7 +536,9 @@
   "src": "File:Logo of Sligro Food Group.svg"
  },
  "smullers.nl": {},
- "snapfitness.com": {},
+ "snapfitness.com": {
+  "src": "commons"
+ },
  "sostrenegrene.com": {
   "bg": "#FFFEF7"
  },
@@ -543,7 +549,7 @@
   "src": "File:Specsavers logo.svg"
  },
  "sportcity.nl": {
-  "opaque": true
+  "src": "site"
  },
  "sportsdirect.com": {
   "src": "commons"
@@ -581,7 +587,9 @@
  "top1toys.nl": {
   "bg": "#FFDA00"
  },
- "totalenergies.nl": {},
+ "totalenergies.nl": {
+  "src": "commons"
+ },
  "travelcard.nl": {
   "bg": "#C6EF56"
  },
@@ -653,6 +661,6 @@
   "src": "site"
  },
  "zooplus.nl": {
-  "opaque": true
+  "src": "commons"
  }
 }
