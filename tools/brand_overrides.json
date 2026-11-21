@@ -561,5 +561,9 @@
  "yellowbrick.nl": {
   "manual": true,
   "card": "#000000"
+ },
+ "maxizoo.nl": {
+  "manual": true,
+  "card": "#196428"
  }
 }
