@@ -1,7 +1,4 @@
 {
- "acsi.eu": {
-  "src": "manual"
- },
  "action.com": {
   "src": "File:Action Nederland Logo 2020.svg"
  },
@@ -195,9 +192,6 @@
  "dille-kamille.nl": {
   "bg": "#FFFFFF"
  },
- "dinercadeau.nl": {
-  "bg": "#FFFFFF"
- },
  "dirk.nl": {
   "src": "manual"
  },
@@ -307,9 +301,6 @@
  },
  "hansanders.nl": {
   "src": "File:Logo of Hans Anders.svg"
- },
- "healthcity.nl": {
-  "src": "manual"
  },
  "hema.nl": {
   "bg": "#E3191C",
@@ -781,5 +772,11 @@
  },
  "zooplus.nl": {
   "src": "zooplus.nl"
+ },
+ "healthcityzuid.nl": {
+  "src": "manual"
+ },
+ "diner-cadeau.nl": {
+  "bg": "#FFFFFF"
  }
 }

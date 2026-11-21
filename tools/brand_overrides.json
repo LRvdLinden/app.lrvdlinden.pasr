@@ -650,10 +650,6 @@
   "card": "#492C64",
   "manual": true
  },
- "acsi.eu": {
-  "card": "#FFFFFF",
-  "manual": true
- },
  "costco.nl": {
   "card": "#FFFFFF",
   "manual": true
@@ -724,10 +720,6 @@
  },
  "boekenbon.nl": {
   "card": "#FFDD00",
-  "manual": true
- },
- "healthcity.nl": {
-  "card": "#000000",
   "manual": true
  },
  "janlinders.nl": {
@@ -868,6 +860,10 @@
  },
  "argos.nl": {
   "card": "#FFFFFF",
+  "manual": true
+ },
+ "healthcityzuid.nl": {
+  "card": "#000000",
   "manual": true
  }
 }

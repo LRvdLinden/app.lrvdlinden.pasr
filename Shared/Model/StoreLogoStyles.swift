@@ -19,7 +19,6 @@ enum StoreLogoStyles {
     }
 
     static let all: [String: StoreLogoStyle] = [
-        "acsi.eu": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "action.com": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "ah.nl": .init(card: "#00A0E2", tint: nil, plate: nil, opaque: false),
         "airmiles.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
@@ -86,7 +85,7 @@ enum StoreLogoStyles {
         "didi.nl": .init(card: "#717657", tint: nil, plate: nil, opaque: false),
         "diergaardeblijdorp.nl": .init(card: "#0B8443", tint: nil, plate: nil, opaque: false),
         "dille-kamille.nl": .init(card: "#2E5E3E", tint: nil, plate: nil, opaque: false),
-        "dinercadeau.nl": .init(card: "#7F1734", tint: nil, plate: nil, opaque: false),
+        "diner-cadeau.nl": .init(card: "#7F1734", tint: nil, plate: nil, opaque: false),
         "dirk.nl": .init(card: "#E20613", tint: nil, plate: nil, opaque: false),
         "discus.nl": .init(card: "#00A13A", tint: nil, plate: nil, opaque: false),
         "dominos.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
@@ -122,7 +121,7 @@ enum StoreLogoStyles {
         "halfords.nl": .init(card: "#F28C00", tint: nil, plate: nil, opaque: false),
         "hanos.nl": .init(card: "#56004E", tint: nil, plate: nil, opaque: false),
         "hansanders.nl": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
-        "healthcity.nl": .init(card: "#000000", tint: nil, plate: nil, opaque: false),
+        "healthcityzuid.nl": .init(card: "#000000", tint: nil, plate: nil, opaque: false),
         "hema.nl": .init(card: "#E3191C", tint: nil, plate: nil, opaque: false),
         "hm.com": .init(card: "#FFFFFF", tint: nil, plate: nil, opaque: false),
         "hollandandbarrett.nl": .init(card: "#00563F", tint: nil, plate: nil, opaque: false),

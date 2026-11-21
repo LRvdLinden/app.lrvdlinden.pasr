@@ -23,7 +23,7 @@ REMOVED = {
     "perrysport": "Perry Sport", "sportdirect": "Sports Direct", "firezone": "Firezone", "aktiesport": "Aktiesport",
     "blushy": "Blushy", "coop": "Coop", "janlinders": "Jan Linders", "fitforfree": "Fit For Free",
     "fun": "Fun Speelgoed", "jumper": "Jumper", "euroscoop": "Euroscoop", "deen": "Deen", "ako": "AKO",
-    "hobbydos": "Hobbydos", "boerenbond": "Boerenbond", "vanhaaren2": "Schoenenreus", "intratuincadeau": "Tuinbon",
+    "hobbydos": "Hobbydos", "boerenbond": "Boerenbond", "vanhaaren2": "Schoenenreus", "intratuincadeau": "Tuinbon", "anwbcamping": "ACSI CampingCard",
 }
 
 
