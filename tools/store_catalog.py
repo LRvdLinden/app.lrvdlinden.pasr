@@ -6,6 +6,7 @@
 Kaarten zonder website ("Kapper (eigen kaart)" en dergelijke) zijn geen winkel en tellen niet mee.
 Gebruik: python3 tools/store_catalog.py  (toont de aantallen)"""
 import base64
+import json
 import re
 from pathlib import Path
 
@@ -135,11 +136,35 @@ def catalog_seeds():
                             color=r.get("card_hex") or "#2B2F3A", aliases=list(r.get("aliases") or []),
                             kind=r.get("kind") or "loyalty", source="catalogus",
                             logo_png=base64.b64decode(logo) if logo else None)
+    # Later aan het beheer toegevoegde winkels (supabase/catalog/new_*.json, eenmalig ingevoegd door seed.py).
+    for f in sorted((REPO / "supabase" / "catalog").glob("new_*.json")):
+        try:
+            rows = json.loads(f.read_text())
+        except ValueError:
+            continue
+        if not isinstance(rows, list):
+            continue
+        for r in rows:
+            if not isinstance(r, dict) or not r.get("id") or not r.get("published", True) or r["id"] in out:
+                continue
+            logo = r.get("logo")
+            out[r["id"]] = dict(id=r["id"], name=r["name"], domain=r.get("domain") or "", category=r.get("category") or "Overig",
+                                color=r.get("card_hex") or "#2B2F3A", aliases=list(r.get("aliases") or []),
+                                kind=r.get("kind") or "loyalty", source="catalogus",
+                                logo_png=base64.b64decode(logo) if logo else None)
     return list(out.values())
 
 
 def balance_pages():
-    return {r["store_id"]: r["url"] for r in _inserts("pasr_balance_pages") if r.get("url", "").startswith("https://")}
+    pages = {r["store_id"]: r["url"] for r in _inserts("pasr_balance_pages") if r.get("url", "").startswith("https://")}
+    for f in sorted((REPO / "supabase" / "catalog").glob("*balance*.json")):
+        try:
+            extra = json.loads(f.read_text())
+        except ValueError:
+            continue
+        if isinstance(extra, dict):
+            pages.update({k: v for k, v in extra.items() if isinstance(v, str) and v.startswith("https://") and k not in pages})
+    return pages
 
 
 def all_cards():
