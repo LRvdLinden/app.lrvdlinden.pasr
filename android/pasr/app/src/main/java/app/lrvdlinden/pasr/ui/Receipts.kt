@@ -198,7 +198,7 @@ suspend fun readText(pages: List<ByteArray>): ReceiptParser.Result {
     val lines = mutableListOf<String>()
     for (bytes in pages) {
         val bmp = withContext(Dispatchers.IO) { ReceiptStore.decode(bytes, 2000) } ?: continue
-        val text = suspendCancellableCoroutine { cont ->
+        val text = suspendCancellableCoroutine<com.google.mlkit.vision.text.Text?> { cont ->
             recognizer.process(InputImage.fromBitmap(bmp, 0))
                 .addOnSuccessListener { cont.resume(it) }
                 .addOnFailureListener { cont.resume(null) }
