@@ -163,7 +163,14 @@
     { key: "confirmed", label: "Bevestigd", detail: "e-mailadres bevestigd", kind: "bar", color: "#2ED3A6" },
     { key: "deleted", label: "Verwijderd", detail: "door de gebruiker zelf", kind: "bar", color: "#FF6B57" },
     { key: "cards", label: "Kaarten in accounts", detail: "totaal (elk uur gemeten)", kind: "line", color: "#FF8A78" },
-    { key: "wallet", label: "Wallet-passen", detail: "gemaakt", kind: "bar", color: "#4FB3FF" },
+    { key: "wallet", label: "Apple Wallet-passen", detail: "gemaakt", kind: "bar", color: "#4FB3FF" },
+    { key: "gwallet", label: "Google Wallet-passen", detail: "gemaakt (Android)", kind: "bar", color: "#0E8A62" },
+    { key: "pasr_ios", label: "Pasr actief op iOS", detail: "toestellen die de app openden", kind: "bar", color: "#8A7FFF" },
+    { key: "pasr_android", label: "Pasr actief op Android", detail: "toestellen die de app openden", kind: "bar", color: "#2BB38A" },
+    { key: "new_android", label: "Nieuwe Android-toestellen", detail: "installaties (Pasr + Zakelijk)", kind: "bar", color: "#0E8A62" },
+    { key: "new_ios", label: "Nieuwe iOS-toestellen", detail: "installaties (Pasr + Zakelijk)", kind: "bar", color: "#6A5CFF" },
+    { key: "zakelijk_android", label: "Pasr Zakelijk actief op Android", detail: "toestellen", kind: "bar", color: "#2ED3A6" },
+    { key: "zakelijk_ios", label: "Pasr Zakelijk actief op iOS", detail: "toestellen", kind: "bar", color: "#C77DFF" },
     { key: "groups", label: "Gedeelde Pasrs", detail: "nieuw gemaakt", kind: "bar", color: "#2ED3A6" },
     { key: "temp_shares", label: "Tijdelijk gedeeld", detail: "kaarten tijdelijk gedeeld", kind: "bar", color: "#C77DFF" },
     { key: "store_requests", label: "Winkels aangevraagd", detail: "aanvragen uit de app", kind: "bar", color: "#FFB547" },
@@ -182,8 +189,17 @@
     loading = key;
     $("ovErr").classList.add("hidden"); $("insErr").classList.add("hidden");
     try {
-      const s = await api("stats", range);
+      const [s, p] = await Promise.all([api("stats", range), api("platforms", { days: range.days }).catch(() => null)]);
       if (loading !== key) return;
+      // platformen (iOS/Android, Google Wallet) per dag erbij; alleen voor de huidige periode
+      if (p && range.offset === 0) {
+        const byDay = Object.fromEntries((p.series || []).map((d) => [d.day, d]));
+        for (const d of s.per_day || []) {
+          const x = byDay[d.day];
+          if (x) for (const k of ["gwallet", "pasr_ios", "pasr_android", "new_android", "new_ios", "zakelijk_android", "zakelijk_ios"]) d[k] = x[k] ?? 0;
+        }
+      }
+      s.platforms = p;
       stats = s;
       renderAll();
     } catch (err) {
@@ -230,7 +246,8 @@
       kpi("Bevestigd", num(t.confirmed), txt(`${num(t.unconfirmed)} wachten nog`), "#2ED3A6"),
       kpi("Kaarten in accounts", num(t.cards), txt(`${num(t.with_cards)} accounts met kaarten`), "#FF6B57"),
       kpi("Actief", num(t.active_30d), txt("ingelogd, 30 dagen"), "#8A7FFF"),
-      kpi("Wallet-passen", num(s.wallet_total), txt("gemaakt, totaal"), "#4FB3FF"),
+      kpi("Wallet-passen", num(s.wallet_total), txt(`Apple · ${num(s.platforms?.gwallet?.objects)} in Google Wallet`), "#4FB3FF"),
+      kpi("Android", num(s.platforms?.apps?.pasr?.android?.active_30), txt(`actief, 30 dagen · iOS ${num(s.platforms?.apps?.pasr?.ios?.active_30)}`), "#2BB38A"),
       kpi("Landen", num(Object.keys(s.countries || {}).filter((c) => c !== "?").length), txt("waar accounts vandaan komen"), "#FFB547"),
       kpi("Gedeelde Pasrs", num(s.shared?.groups), txt(`${num(s.shared?.people)} personen · ${num(s.shared?.cards)} kaarten`), "#2ED3A6"),
       kpi("Tijdelijk gedeeld", num(s.temp?.active), txt(`nu geldig · +${num(s.temp?.new_7d)} deze week`), "#C77DFF"),
@@ -239,7 +256,7 @@
   function skeleton() {
     const box = $("kpis");
     if (box.children.length) return;
-    for (let i = 0; i < 8; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
+    for (let i = 0; i < 9; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
   }
 
   const fmtDay = (d, opts) => new Date(d + "T00:00:00Z").toLocaleDateString("nl-NL", { timeZone: "UTC", ...opts });
@@ -488,7 +505,7 @@
     if (!entries.some(([, n]) => n > 0)) { box.append(el("p", "empty", emptyText)); return; }
     for (const [label, n] of entries) {
       const row = el("div", "row fact");
-      row.append(el("span", null, label), el("span", "n", num(n)));
+      row.append(el("span", null, label), el("span", "n", typeof n === "string" ? n : num(n)));
       box.append(row);
     }
   }
@@ -500,6 +517,23 @@
     dist($("perAccount"), order.filter((k) => c[k]).map((k) => [k === "0" ? "Nog geen kaarten" : `${k} kaarten`, c[k]]), "#6A5CFF", "Nog geen accounts.");
     const co = Object.entries(stats.countries || {}).sort((x, y) => (x[0] === "?") - (y[0] === "?") || y[1] - x[1]);
     dist($("countries"), co.slice(0, 12).map(([k, n]) => [`${flag(k)}  ${countryName(k)}`, n]), "#2ED3A6", "Nog geen accounts.");
+    const pl = stats.platforms;
+    const APPS = [["pasr", "Pasr"], ["zakelijk", "Pasr Zakelijk"]], OS = [["ios", "iOS"], ["android", "Android"]];
+    dist($("platforms"), pl ? APPS.flatMap(([a, an]) => OS.map(([o, on]) => [`${an} · ${on}`, pl.apps?.[a]?.[o]?.active_30 || 0])) : [],
+      "#2BB38A", pl ? "Nog geen toestellen gemeld (vanaf Pasr voor Android en nieuwe iOS-versies)." : "Niet beschikbaar: draai de workflow Backend.");
+    const acc = pl?.accounts || {};
+    facts($("platformFacts"), pl ? [
+      ["Accounts aangemaakt op iOS", acc.ios || 0], ["Accounts aangemaakt op Android", acc.android || 0],
+      ["Accounts aangemaakt op het web", acc.web || 0], ["Accounts van voor de platformtelling", acc.other || 0],
+      ["Toestellen Pasr (iOS / Android)", `${num(pl.apps?.pasr?.ios?.devices)} / ${num(pl.apps?.pasr?.android?.devices)}`],
+      ["Nieuwe installaties in de periode (iOS / Android)", `${num(pl.apps?.pasr?.ios?.new_period)} / ${num(pl.apps?.pasr?.android?.new_period)}`],
+      ["Ingelogd op Android", pl.apps?.pasr?.android?.signed_in || 0],
+      ["Google Wallet-passen (bijgewerkt in 30 dagen)", `${num(pl.gwallet?.objects)} (${num(pl.gwallet?.updated_30)})`],
+      ["Google Wallet", pl.gwallet_ready ? "ingericht" : "nog niet ingericht (secrets ontbreken)"],
+    ] : [], "Nog geen gegevens.");
+    const vers = (pl?.versions || []).slice().sort((x, y) => (y.active_30 || 0) - (x.active_30 || 0)).slice(0, 10);
+    dist($("versions"), vers.map((v) => [`${v.app === "zakelijk" ? "Zakelijk" : "Pasr"} ${v.platform === "android" ? "Android" : "iOS"} ${v.version}${v.build ? ` (${v.build})` : ""}`, v.active_30 || v.devices || 0]),
+      "#8A7FFF", "Nog geen versies gemeld.");
     const sh = stats.shared || {}, tp = stats.temp || {};
     facts($("sharing"), [
       ["Gedeelde Pasrs", sh.groups || 0], ["Personen in een gedeelde Pasr", sh.people || 0],
