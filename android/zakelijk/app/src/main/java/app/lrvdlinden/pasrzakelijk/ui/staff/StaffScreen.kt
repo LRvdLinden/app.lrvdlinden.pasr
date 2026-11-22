@@ -226,7 +226,8 @@ fun InviteStaffSheet(business: Business, demoInvite: StaffInvite? = null, onDism
                     if (qr != null) Image(qr, L("QR-code van de uitnodiging"), filterQuality = FilterQuality.None,
                         modifier = Modifier.width(180.dp).aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(Color.White).padding(10.dp))
                     BigButton(L("Link delen"), {
-                        context.shareText(L("Je bent uitgenodigd om stempels te zetten voor %@ in de app Pasr Zakelijk.", business.name) + "\n" + inv.link,
+                        context.shareText(L("Je bent uitgenodigd om stempels te zetten voor %@ in de app Pasr Zakelijk.", business.name) + "\n" + inv.link +
+                            "\n\n" + L("Pasr Zakelijk voor Android: %@", app.lrvdlinden.pasrzakelijk.core.Links.DOWNLOADS),
                             L("Uitnodiging Pasr Zakelijk"))
                     }, icon = Icons.Filled.Share)
                 }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PanTool
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Verified
@@ -108,6 +109,8 @@ fun SettingsScreen(business: Business) {
     var appearanceMenu by remember { mutableStateOf(false) }
     val inspection = isPreview()
     val bioAvailable = remember { inspection || Biometrics.isAvailable(context) }
+    var update by remember { mutableStateOf<app.lrvdlinden.pasrzakelijk.core.UpdateCheck.Update?>(null) }
+    LaunchedEffect(Unit) { if (!inspection) update = app.lrvdlinden.pasrzakelijk.core.UpdateCheck.check() }
 
     fun save() {
         saving = true; message = null
@@ -248,6 +251,13 @@ fun SettingsScreen(business: Business) {
                     SettingsRow(L("Wat is nieuw"), Icons.Filled.AutoAwesome, Pz.coral, onClick = { whatsNew = true })
                     GroupDivider()
                     // Geen Play Store: geen beoordelingsvraag en geen "Beoordeel"-link (afspraak Léon).
+                    // Geen Play Store: updates staan op pasr.nl/zakelijk/download/
+                    SettingsRow(
+                        if (update != null) L("Nieuwe versie %@ downloaden", update!!.version) else L("Nieuwste versie downloaden"),
+                        Icons.Filled.SystemUpdate, if (update != null) Pz.mint else Pz.sky, external = true,
+                        titleColor = if (update != null) Pz.mint else Pz.text,
+                        onClick = { open(app.lrvdlinden.pasrzakelijk.core.Links.DOWNLOADS) })
+                    GroupDivider()
                     SettingsRow(L("Pasr Zakelijk op pasr.nl"), Icons.Filled.Language, Pz.mint, external = true, onClick = { open("https://pasr.nl/zakelijk/") })
                 }
                 // Ontdekken

@@ -4,7 +4,7 @@ package app.lrvdlinden.pasrzakelijk.core
 // Niet met de hand wijzigen.
 
 internal object EnStrings {
-    val map: Map<String, String> = HashMap<String, String>(618).apply {
+    val map: Map<String, String> = HashMap<String, String>(624).apply {
         part0(this)
         part1(this)
         part2(this)
@@ -211,6 +211,8 @@ internal object EnStrings {
         m["Nieuw lid"] = "New member"
         m["Nieuwe kaart"] = "New card"
         m["Nieuwe leden"] = "New members"
+        m["Nieuwe versie %@ downloaden"] = "Download new version %@"
+        m["Nieuwste versie downloaden"] = "Download the latest version"
         m["Nodig je team uit met een link. Medewerkers zien alleen de scanner."] = "Invite your team with a link. Staff only see the scanner."
         m["Nodig je team uit; zij zien alleen de scanner."] = "Invite your team; they only see the scanner."
         m["Nog geen gegevens in deze periode"] = "No data in this period yet"
@@ -243,6 +245,7 @@ internal object EnStrings {
         m["Overzicht en logboek"] = "Overview and log"
         m["Pasr Zakelijk is vergrendeld"] = "Pasr Zakelijk is locked"
         m["Pasr Zakelijk op pasr.nl"] = "Pasr Zakelijk on pasr.nl"
+        m["Pasr Zakelijk voor Android: %@"] = "Pasr Zakelijk for Android: %@"
         m["Pasr heeft deze zaak voor je klaargezet. Na het accepteren ben je eigenaar en kun je kaarten maken en scannen."] = "Pasr has set up this business for you. After accepting you are the owner and can create cards and scan."
         m["Pasr kijkt je aanmelding zo snel mogelijk na. Je krijgt een mail als je zaak is goedgekeurd. Daarna kun je stempelkaarten publiceren en scannen."] = "Pasr reviews your sign-up as soon as possible. You'll get an email when your business is approved. After that you can publish stamp cards and scan."
         m["Pasr-gebruikers zoeken stempelkaarten in een lijst in de app. Met een adres staat je zaak ook bij \"In de buurt\". Pasr zoekt de plek op via de kaartdienst van je telefoon."] = "Pasr users search for stamp cards in a list in the app. With an address, your business also appears under \"Nearby\". Pasr looks up the location with your phone's map service."
@@ -255,12 +258,12 @@ internal object EnStrings {
         m["QR-code van de kaart"] = "QR code of the card"
         m["QR-code van de uitnodiging"] = "QR code of the invitation"
         m["Richt de camera op de QR-code van je klant"] = "Point the camera at your customer's QR code"
-        m["Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen."] = "Scan your customer's QR code, choose the number of stamps and tap Add stamps."
-        m["Scan de kaart van je klant en zet een stempel. Alleen jij en je medewerkers kunnen stempels zetten."] = "Scan your customer's card and add a stamp. Only you and your staff can add stamps."
-        m["Scan met je camera"] = "Scan with your camera"
     }
 
     private fun part3(m: HashMap<String, String>) {
+        m["Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen."] = "Scan your customer's QR code, choose the number of stamps and tap Add stamps."
+        m["Scan de kaart van je klant en zet een stempel. Alleen jij en je medewerkers kunnen stempels zetten."] = "Scan your customer's card and add a stamp. Only you and your staff can add stamps."
+        m["Scan met je camera"] = "Scan with your camera"
         m["Scannen"] = "Scan"
         m["Scannen aan de kassa"] = "Scanning at the till"
         m["Spaar bij %@"] = "Collect stamps at %@"

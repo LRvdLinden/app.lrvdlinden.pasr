@@ -38,7 +38,8 @@ max per scan, vergrendelen met vingerafdruk of gezicht, Meer apps-kaart). Nederl
   Na een tekstwijziging: `python3 tools/make_strings.py` in `android/zakelijk` (CI controleert dit).
 - CI: `.github/workflows/android-zakelijk.yml` bouwt bij elke push op `gedeelde-pasr` die `android/zakelijk/` raakt een
   ondertekende APK, maakt release `android-zakelijk-<versie>-<code>` (pasr-zakelijk.apk + .json, schermafbeeldingen) en
-  het artifact `PasrZakelijk-Android`. De workflow Website zet hem op `pasr.nl/download/pasr-zakelijk.apk`.
+  het artifact `PasrZakelijk-Android`. De APK staat op `pasr.nl/zakelijk/download/` (bestand `pasr-zakelijk.apk`); de app
+  linkt daar ook naar in Instellingen ("Nieuwste versie downloaden") en in de uitnodigingstekst.
 - Ondertekenen: altijd dezelfde sleutel (versleuteld in `android/zakelijk/signing/pasrzakelijk.jks.enc`, ontgrendeld met
   de secret `PASR_APNS_KEY_P8`). Vingerafdruk: `android/zakelijk/signing/cert-sha256.txt` (staat ook in
   `website/.well-known/assetlinks.json`). Geen Play Store: geen beoordelingsvraag of "Beoordeel"-link.
