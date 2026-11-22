@@ -258,6 +258,10 @@ struct NewsOverview: Decodable {
     let stores: [StoreCount]
     let history: [NewsCampaign]
     let push_ready: Bool?
+    /// Iedereen met meldingen aan, per app en platform (sinds "Bericht sturen aan iedereen").
+    struct PlatformCount: Decodable, Hashable { var ios: Int? = nil; var android: Int? = nil }
+    struct Everyone: Decodable, Hashable { var pasr: PlatformCount? = nil; var zakelijk: PlatformCount? = nil }
+    var everyone: Everyone? = nil
 }
 struct NewsCampaign: Decodable, Identifiable, Hashable {
     let id: String
@@ -265,6 +269,10 @@ struct NewsCampaign: Decodable, Identifiable, Hashable {
     let body: String
     let audience: String
     let store_id: String?
+    /// all | ios | android, pasr | zakelijk | both, en de link onder de melding (oudere berichten: leeg)
+    var platform: String? = nil
+    var app: String? = nil
+    var url: String? = nil
     let recipients: Int
     let sent: Int
     let failed: Int
@@ -285,7 +293,7 @@ struct NewsSendResponse: Decodable {
 
 /// Doelgroepen van "Bericht sturen" (zelfde sleutels als supabase/functions/admin/news.ts).
 enum NewsAudience: String, CaseIterable, Identifiable {
-    case all, store, new, inactive
+    case all, store, new, inactive, everyone
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -293,6 +301,33 @@ enum NewsAudience: String, CaseIterable, Identifiable {
         case .store: "Heeft een kaart van"
         case .new: "Nieuwe gebruikers (7 dagen)"
         case .inactive: "Inactief (30 dagen)"
+        case .everyone: "Iedereen met meldingen aan"
+        }
+    }
+}
+
+/// Platform van "Bericht sturen": alles, alleen Apple (APNs) of alleen Android (FCM).
+enum NewsPlatform: String, CaseIterable, Identifiable {
+    case all, ios, android
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .all: "Alles"
+        case .ios: "Apple"
+        case .android: "Android"
+        }
+    }
+}
+
+/// App van "Bericht sturen" (alleen bij Iedereen met meldingen aan).
+enum NewsApp: String, CaseIterable, Identifiable {
+    case pasr, zakelijk, both
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .pasr: "Pasr"
+        case .zakelijk: "Pasr Zakelijk"
+        case .both: "Beide"
         }
     }
 }
