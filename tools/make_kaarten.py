@@ -100,6 +100,9 @@ def load_covers():
     for path in sorted(COVERS.parent.glob("covers*.json")):
         for k, v in json.loads(path.read_text(encoding="utf-8")).items():
             data.setdefault(k, v)
+    live = sc.live_catalog()
+    if live:   # kaartontwerpen uit het beheer gaan voor
+        data.update({k: v for k, v in (live.get("covers") or {}).items() if isinstance(v, str) and v})
     return data
 
 

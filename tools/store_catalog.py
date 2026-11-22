@@ -189,7 +189,56 @@ def all_cards():
         out.append(dict(id=s["id"], name=s["name"], domain=s["domain"], category=s["category"], kind=s["kind"],
                         aliases=s["aliases"], card=card.upper(), style=st if s["source"] == "app" else None, logo=logo,
                         balance=pages.get(s["id"]) if s["kind"] == "voucher" else None, source=s["source"]))
-    return out
+    return apply_live(out, pages)
+
+
+LIVE = REPO / ".cache" / "live-catalog.json"
+
+
+def live_catalog():
+    """De live catalogus van de server (tools/fetch_live_catalog.py), of None."""
+    try:
+        data = json.loads(LIVE.read_text(encoding="utf-8"))
+        return data if isinstance(data.get("stores"), list) else None
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def apply_live(out, pages):
+    """Zoals de app: winkels van de server gaan voor (naam, kleur, logo uit het beheer); catalogus-winkels die de server
+    niet (meer) publiceert vallen weg; nieuwe winkels uit het beheer komen erbij."""
+    live = live_catalog()
+    if not live:
+        return out
+    logos = live.get("logos") or {}
+    by_id = {s["id"].lower(): s for s in live["stores"] if isinstance(s, dict) and s.get("id")}
+    seen, result = set(), []
+    for c in out:
+        s = by_id.get(c["id"].lower())
+        if s is None:
+            if c["source"] != "app":
+                continue          # niet (meer) gepubliceerd
+            result.append(c)
+            continue
+        seen.add(s["id"].lower())
+        b64 = logos.get(s["id"])
+        c = dict(c, name=s.get("name") or c["name"], domain=s.get("domain") or c["domain"],
+                 category=s.get("category") or c["category"], kind=s.get("kind") or c["kind"],
+                 aliases=list(s.get("aliases") or c["aliases"]), card=(s.get("card_hex") or c["card"]).upper())
+        if b64:
+            c["logo"], c["style"] = base64.b64decode(b64), None   # logo's van de server hebben de stijl al ingebakken
+        c["balance"] = pages.get(c["id"]) if c["kind"] == "voucher" else None
+        result.append(c)
+    for key, s in by_id.items():
+        if key in seen or not s.get("domain"):
+            continue
+        b64 = logos.get(s["id"])
+        kind = s.get("kind") or "loyalty"
+        result.append(dict(id=s["id"], name=s.get("name") or s["id"], domain=s["domain"], category=s.get("category") or "Overig",
+                           kind=kind, aliases=list(s.get("aliases") or []), card=(s.get("card_hex") or "#2B2F3A").upper(),
+                           style=None, logo=base64.b64decode(b64) if b64 else None,
+                           balance=pages.get(s["id"]) if kind == "voucher" else None, source="live"))
+    return result
 
 
 def counts(cards=None):
