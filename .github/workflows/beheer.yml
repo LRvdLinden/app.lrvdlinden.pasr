@@ -127,6 +127,7 @@ jobs:
           run "mirror -R --verbose --parallel=4 --only-newer --exclude-glob .DS_Store beheer/web/ \"$TARGET\""
           run "put beheer/web/.htaccess -o \"$TARGET/.htaccess\""
           code=$(curl -s -o /dev/null -w '%{http_code}' https://beheer.pasr.nl/ || true)
+          note "Dashboard uploaded (port $PORT, certificate checked). https://beheer.pasr.nl answers HTTP ${code:-?}."
       - name: Report on the commit
         if: always()
         env:
