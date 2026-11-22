@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -97,6 +98,17 @@ fun AppShell() {
         onDispose { lifecycle.removeObserver(observer) }
     }
     ShellState.locked = showSplash || locked
+    // link uit een pushmelding: pas na splash en ontgrendelen, in Custom Tabs (anders de browser)
+    val web by app.lrvdlinden.pasrzakelijk.push.Push.pendingWeb.collectAsState()
+    LaunchedEffect(web, showSplash, locked) {
+        val uri = web ?: return@LaunchedEffect
+        if (showSplash || locked) return@LaunchedEffect
+        app.lrvdlinden.pasrzakelijk.push.Push.pendingWeb.value = null
+        val ok = runCatching {
+            androidx.browser.customtabs.CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(context, uri)
+        }.isSuccess
+        if (!ok) runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) }
+    }
 
     Box(Modifier.fillMaxSize().background(Pz.bg)) {
         if (!showSplash && !locked) RootScreen()

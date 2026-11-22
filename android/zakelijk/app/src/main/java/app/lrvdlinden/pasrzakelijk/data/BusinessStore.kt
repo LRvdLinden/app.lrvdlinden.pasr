@@ -60,13 +60,17 @@ object BusinessStore {
     }
 
     /** Een link uit de browser, berichten of de camera. */
-    fun handle(uri: Uri?) {
-        uri ?: return
+    /** Kent de app deze link zelf (uitnodiging voor medewerkers)? */
+    fun isAppLink(uri: Uri): Boolean {
         val host = uri.host ?: ""
         val path = uri.path ?: ""
-        val isInvite = (uri.scheme == "pasrzakelijk" && (host == "uitnodiging" || path.contains("uitnodiging")))
+        return (uri.scheme == "pasrzakelijk" && (host == "uitnodiging" || path.contains("uitnodiging")))
             || (host.endsWith("pasr.nl") && path.contains("/zakelijk/uitnodiging"))
-        if (!isInvite) return
+    }
+
+    fun handle(uri: Uri?) {
+        uri ?: return
+        if (!isAppLink(uri)) return
         val code = (uri.fragment ?: runCatching { uri.getQueryParameter("code") }.getOrNull())?.trim()
         if (!code.isNullOrEmpty() && code.length <= 80) pendingInvite = code
     }

@@ -29,6 +29,8 @@ object Push {
     const val CHANNEL = "zakelijk"
     const val EXTRA_BUSINESS = "pasr.business_id"
     const val EXTRA_URL = "pasr.url"
+    /** https-link uit een getikte melding die de app zelf niet kent; AppShell opent hem in Custom Tabs na het slot. */
+    val pendingWeb = kotlinx.coroutines.flow.MutableStateFlow<android.net.Uri?>(null)
 
     fun isAvailable(context: Context): Boolean = runCatching { FirebaseApp.getApps(context).isNotEmpty() }.getOrDefault(false)
 
@@ -63,12 +65,13 @@ object Push {
 
     /** Melding tonen (ook als de app open is). */
     fun show(context: Context, title: String, body: String, businessId: String?, url: String?) {
+        val link = url?.takeIf { (it.startsWith("https://", ignoreCase = true) || it.startsWith("pasrzakelijk://")) && it.length <= 500 }
         ensureChannel(context)
         if (needsPermission(context)) return
         val open = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             businessId?.let { putExtra(EXTRA_BUSINESS, it) }
-            url?.let { putExtra(EXTRA_URL, it) }
+            link?.let { putExtra(EXTRA_URL, it) }
         }
         val pending = PendingIntent.getActivity(
             context, (System.currentTimeMillis() and 0xFFFFFF).toInt(), open,

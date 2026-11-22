@@ -47,7 +47,11 @@ class MainActivity : FragmentActivity() {
     private fun handle(intent: Intent?) {
         intent ?: return
         BusinessStore.handle(intent.data)
-        intent.getStringExtra(Push.EXTRA_URL)?.let { BusinessStore.handle(android.net.Uri.parse(it)) }
+        // link uit een melding: een uitnodiging opent in de app, een andere https-link in Custom Tabs (na het slot)
+        intent.getStringExtra(Push.EXTRA_URL)?.let { android.net.Uri.parse(it) }?.let { uri ->
+            if (BusinessStore.isAppLink(uri)) BusinessStore.handle(uri)
+            else if (uri.scheme == "https") Push.pendingWeb.value = uri
+        }
         intent.getStringExtra(Push.EXTRA_BUSINESS)?.let { BusinessStore.select(it) }
     }
 
