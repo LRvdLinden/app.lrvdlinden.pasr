@@ -16,13 +16,9 @@ N_LOGOS = COUNTS["logos"] // 10 * 10   # "ruim 250"
 
 ROOT = Path(__file__).resolve().parent.parent / "website"
 
-# Download-banner voor Android in Pasr-huisstijl (mint), naast de Apple-badge. Eigen icoon (telefoon met pijl),
-# geen Google Play-logo: de APK staat direct op pasr.nl.
-ANDROID_BADGE = ('<a class="android-badge" href="/android/" aria-label="Download voor Android">'
-                 '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.6" fill="none" '
-                 'stroke="currentColor" stroke-width="1.7"/><path d="M12 7v7m-3-3 3 3 3-3" fill="none" stroke="currentColor" '
-                 'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 18.2h3" stroke="currentColor" '
-                 'stroke-width="1.7" stroke-linecap="round"/></svg><span><small>Download voor</small>Android</span></a>')
+# Download-badge voor Android zoals de standaardbadge (zwart, "Download for Android"), met de Android-robot in Pasr-mint.
+# Geen Google Play-logo: de APK staat direct op pasr.nl.
+ANDROID_BADGE = '<a class="android-badge" href="/android/" aria-label="Download for Android"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#2ED3A6"><path d="M6.2 9.3a5.8 5.8 0 0 1 11.6 0z"/><path d="M8.3 4.4 7 2.4M15.7 4.4 17 2.4" stroke="#2ED3A6" stroke-width=".9" stroke-linecap="round"/><path d="M6.2 10h11.6v7.6a1.4 1.4 0 0 1-1.4 1.4H7.6a1.4 1.4 0 0 1-1.4-1.4z"/><rect x="3.4" y="10" width="2.1" height="6.6" rx="1.05"/><rect x="18.5" y="10" width="2.1" height="6.6" rx="1.05"/><rect x="8.4" y="17.6" width="2.1" height="4.4" rx="1.05"/><rect x="13.5" y="17.6" width="2.1" height="4.4" rx="1.05"/></g><circle cx="9.4" cy="7.1" r=".65" fill="#000"/><circle cx="14.6" cy="7.1" r=".65" fill="#000"/></svg><span><small>Download for</small>Android</span></a>'
 
 def bars(digits12):
     bits = v.ean13(digits12)
