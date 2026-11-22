@@ -1,5 +1,5 @@
 // business-brand: ophalen met SSRF-beveiliging en de huisstijl bepalen. Zonder Supabase, zodat het los te testen is.
-import { decode, GIF, Image } from "npm:imagescript@1.3.0";
+import { contain, decodeImage, encodePng } from "./image.ts";
 import {
   b64, type Candidate, cleanUrl, dominant, imageType, isPrivateIp, parseHead, parseManifest, pickColor, rankCandidates, textColor,
 } from "./brand.ts";
@@ -79,18 +79,16 @@ export async function fetchSafe(start: string, accept: string): Promise<{ bytes:
 async function logoFrom(c: Candidate): Promise<{ png: Uint8Array; color: string | null; side: number } | null> {
   const f = await fetchSafe(c.href, "image/png,image/jpeg,image/webp,image/gif;q=0.8,*/*;q=0.1");
   if (!f || !imageType(f.bytes)) return null;
-  let img: Image;
-  try {
-    const d = await decode(f.bytes, true);
-    img = d instanceof GIF ? d[0] as unknown as Image : d as Image;
-  } catch { return null; }   // bijv. WebP-varianten die we niet kunnen lezen: volgende kandidaat
+  // PNG en JPEG (puur JavaScript, zie image.ts); WebP en GIF: volgende kandidaat
+  let img = decodeImage(f.bytes);
+  if (!img) return null;
   const ratio = img.width / img.height;
   if (ratio < 0.75 || ratio > 1.34 || Math.min(img.width, img.height) < 32) return null;
-  if (Math.max(img.width, img.height) > LOGO_MAX) img = img.contain(LOGO_MAX, LOGO_MAX);
-  const color = dominant(new Uint8Array(img.bitmap.buffer, img.bitmap.byteOffset, img.bitmap.byteLength));
-  let png = await img.encode(3);
+  img = contain(img, LOGO_MAX);
+  const color = dominant(img.data);
+  let png = encodePng(img);
   // past in een kaart (de database neemt tot ca. 210 kB base64)
-  if (png.length > 150_000) png = await img.contain(256, 256).encode(3);
+  if (png.length > 150_000) png = encodePng(contain(img, 256));
   if (png.length > 150_000) return null;
   return { png, color, side: Math.min(img.width, img.height) };
 }
