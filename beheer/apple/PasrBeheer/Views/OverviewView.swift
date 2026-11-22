@@ -31,7 +31,8 @@ struct OverviewView: View {
                     }
                     VStack(spacing: 16) { botsCard; perAccountCard; countriesCard; sharingCard }
                 }
-                Text("Alleen tellingen en accountgegevens. De inhoud van kaarten staat versleuteld op de server en is hier niet te zien. Dagen in UTC.")
+                PlatformsCard(days: days)
+                Text("Alleen tellingen en accountgegevens, van Pasr op iOS, Android en het web. De inhoud van kaarten staat versleuteld op de server en is hier niet te zien. Dagen in UTC.")
                     .font(.caption).foregroundStyle(Theme.muted)
             }
             .padding(16)
@@ -75,7 +76,7 @@ struct OverviewView: View {
                 KPITile(title: "Bevestigd", value: Fmt.n(t.confirmed), detail: "\(Fmt.n(t.unconfirmed)) wachten nog", color: Theme.mint)
                 KPITile(title: "Kaarten in accounts", value: Fmt.n(t.cards), detail: "\(Fmt.plural(t.with_cards, "account", "accounts")) met kaarten", color: Theme.coral)
                 KPITile(title: "Actief", value: Fmt.n(t.active_30d), detail: "ingelogd, 30 dagen", color: Theme.iris2)
-                KPITile(title: "Wallet-passen", value: Fmt.n(stats?.wallet_total ?? 0), detail: "gemaakt, totaal", color: Theme.sky)
+                KPITile(title: "Apple Wallet-passen", value: Fmt.n(stats?.wallet_total ?? 0), detail: "gemaakt, totaal (Google Wallet: zie iOS en Android)", color: Theme.sky)
                 KPITile(title: "Landen", value: Fmt.n((stats?.countries ?? [:]).keys.filter { $0 != "?" }.count), detail: "waar accounts vandaan komen", color: Theme.amber)
                 KPITile(title: "Gedeelde Pasrs", value: Fmt.n(stats?.shared?.groups ?? 0),
                         detail: "\(Fmt.plural(stats?.shared?.people ?? 0, "persoon", "personen")) · \(Fmt.plural(stats?.shared?.cards ?? 0, "kaart", "kaarten"))", color: Theme.mint)

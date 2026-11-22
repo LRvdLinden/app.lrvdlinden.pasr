@@ -82,7 +82,7 @@ enum Metric: String, CaseIterable, Identifiable, Codable {
         case .confirmed: "Bevestigd"
         case .deleted: "Verwijderd"
         case .cards: "Kaarten in accounts"
-        case .wallet: "Wallet-passen"
+        case .wallet: "Apple Wallet-passen"
         case .groups: "Gedeelde Pasrs"
         case .tempShares: "Tijdelijk gedeeld"
         case .bots: "Bots tegengehouden"
