@@ -1,13 +1,6 @@
-• Shared Pasr: share cards with your family or housemates, up to 6 people.
-• Temporary sharing: lend a card until an end date; then the code disappears. Extend or stop early at any time.
-• Switch with one screen recording: Pasr finds all cards from your old app.
-• Missing a store or gift card? Request it in the app; it is added without an update.
-• Filter by card type.
-• Light, dark or automatic, and now on Mac and Apple Vision Pro.
-• Block screenshots of your codes.
-• Your card shows up more reliably at the store: also when Pasr is closed, with your own locations per card.
-• Nearest first and pull to refresh.
-• Choose which branches go on your Wallet pass, several at once on the map.
-• History per card: when and at which branch you used it.
-• Gift cards: after showing one, Pasr asks what you spent, so you see the balance go down. Check balance opens the issuer's page.
-• Cards in Apple Wallet are updated automatically.
+• Stamp cards from your favourite shop: have the QR code scanned at the till and collect stamps towards your reward. The shop sets the stamps, Pasr always shows the current count.
+• Already have a stamp card in your browser? With Save in Pasr your stamps move to the app.
+• Your own stamp cards are now loyalty cards; your count is in the note. From now on only the shop itself sets stamps.
+• Birthday perks: add your birthday (day and month only) and get a reminder for cards with a birthday offer.
+• News about my cards: turn it on to hear when there is something new at your stores.
+• Passes in Apple Wallet are now also updated on your other devices.

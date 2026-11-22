@@ -106,7 +106,7 @@ struct RootView: View {
             if let url = note.object as? URL { handle(url) }
         }
         .sheet(item: $incomingBusiness) { item in
-            JoinBusinessSheet(cardID: item.cardID)
+            JoinBusinessSheet(cardID: item.cardID, memberCode: item.memberCode)
         }
         .sheet(item: $newStore) { item in
             AddCardView(store: item.template)
@@ -124,6 +124,8 @@ struct RootView: View {
         .onChange(of: locked) { _, _ in offerInvite() }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
+            // eigen stempelkaarten (build 42) worden klantenkaarten; alleen de zaak zet nog stempels
+            if OwnStampMigration.run(cards) > 0 { try? context.save() }
             TempShare.scrubExpired(in: context)
             await StoreCatalog.shared.refresh()
             await TempShare.refreshStatuses(in: context)
@@ -165,7 +167,8 @@ extension RootView {
         }
         // zakelijke stempelkaart: pasr.nl/zakelijk/kaart/#<id> of pasr://zakelijk/kaart#<id>
         if let businessID = BusinessLink.cardID(from: url) {
-            present { incomingBusiness = IncomingBusinessCard(cardID: businessID) }
+            let code = BusinessLink.memberCode(from: url)
+            present { incomingBusiness = IncomingBusinessCard(cardID: businessID, memberCode: code) }
             return
         }
         let isTemp = (url.host() == "pasr.nl" && url.path().hasPrefix("/tijdelijk")) || (url.scheme == "pasr" && url.host() == "tijdelijk")

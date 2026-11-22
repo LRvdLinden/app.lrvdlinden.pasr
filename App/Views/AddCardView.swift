@@ -88,7 +88,7 @@ struct AddCardView: View {
         .labelStyle(.titleAndIcon)
     }
 
-    /// Onder de keuze: stempelkaart, kortingscode, ticket en abonnement voeg je zelf toe (ze staan niet in de
+    /// Onder de keuze: kortingscode, ticket en abonnement voeg je zelf toe (een stempelkaart komt alleen van een zaak) (ze staan niet in de
     /// winkellijst). Twee per rij, zodat ze ook op een smalle iPhone (of het buitenscherm van een iPhone Duo) passen.
     private var otherKinds: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {

@@ -103,6 +103,15 @@ enum BusinessLink {
 
     static func url(for businessCardID: String) -> URL? { URL(string: webBase + "#" + businessCardID.lowercased()) }
 
+    /// Lidcode uit de browser: ?code=PZ… in de link ("Bewaar in Pasr" op pasr.nl, sinds build 43). De app neemt die
+    /// over met pasr_business_claim, zodat de stempels uit de browser meegaan.
+    static func memberCode(from url: URL) -> String? {
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        guard let raw = items.first(where: { $0.name == "code" || $0.name == "lid" })?.value else { return nil }
+        let code = raw.trimmingCharacters(in: .whitespaces).uppercased()
+        return code.range(of: "^PZ([A-HJ-NP-Z2-9]{10}|[A-HJ-NP-Z2-9]{14})$", options: .regularExpression) != nil ? code : nil
+    }
+
     /// Leest https://pasr.nl/zakelijk/kaart/#<uuid> (ook www. en ?id=) en pasr://zakelijk/kaart#<uuid>.
     static func cardID(from url: URL) -> String? {
         let host = url.host()?.lowercased() ?? ""

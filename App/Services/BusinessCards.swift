@@ -107,6 +107,34 @@ enum BusinessCards {
         return card
     }
 
+    /// Een lidcode uit de browser overnemen (pasr_business_claim): dezelfde code, dus de stempels gaan mee. Ingelogd
+    /// wordt het lidmaatschap aan je account gekoppeld. Kent de server de code niet: nil (dan gewoon aansluiten).
+    static func claim(code: String, cardID: String, preview: Info?, in context: ModelContext) async throws -> Card? {
+        let json = try await AccountService.shared.publicRPC("pasr_business_claim", body: ["p_code": code])
+        guard let info = Info(json: json), info.active, info.memberCode != nil else {
+            if let d = json as? [String: Any], (d["status"] as? String) == "blocked" {
+                throw Failure(message: String(localized: "Deze stempelkaart is niet meer beschikbaar."))
+            }
+            return nil
+        }
+        let id = (info.cardID ?? cardID).lowercased()
+        let card = Card(storeName: info.displayName, number: code, format: .qr, kind: .stamps,
+                        colorHex: info.color ?? preview?.color ?? Brand.palette.first ?? "#6A5CFF")
+        var d = CardDetails()
+        d.issuer = "business"
+        d.businessCardId = id
+        d.memberCode = code
+        d.stampsTotal = info.stampsTotal ?? preview?.stampsTotal ?? CardDetails.defaultStamps
+        d.stampsCount = info.stampsCount ?? 0
+        d.reward = info.reward ?? preview?.reward
+        card.details = d
+        if let logo = await logoData(info.logo ?? preview?.logo) { card.logoData = logo }
+        card.refreshCodeImage()
+        context.insert(card)
+        try? context.save()
+        return card
+    }
+
     /// Stand van één zakelijke kaart bijwerken. Geeft true als er iets veranderde.
     @discardableResult
     static func refresh(_ card: Card) async -> Bool {

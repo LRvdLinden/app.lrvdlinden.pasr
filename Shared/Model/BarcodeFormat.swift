@@ -50,8 +50,12 @@ enum CardKind: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
-    /// De soorten die niet in de winkellijst staan (je voegt ze zelf toe).
-    static let others: [CardKind] = [.stamps, .code, .ticket, .subscription]
+    /// De soorten die niet in de winkellijst staan (je voegt ze zelf toe). Een stempelkaart maak je sinds build 43 niet
+    /// meer zelf: die komt alleen van een zaak (Pasr voor ondernemers), en alleen de zaak zet stempels.
+    static let others: [CardKind] = [.code, .ticket, .subscription]
+
+    /// Wat je in Kaart wijzigen kunt kiezen: alles behalve stempelkaart (die blijft alleen staan als de kaart er al een is).
+    static func choosable(current: CardKind) -> [CardKind] { allCases.filter { $0 != .stamps || current == .stamps } }
 
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)

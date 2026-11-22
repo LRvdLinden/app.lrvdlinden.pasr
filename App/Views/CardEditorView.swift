@@ -442,7 +442,7 @@ struct CardEditorView: View {
         Section("Kaart") {
             TextField("Winkel", text: $draft.storeName)
             Picker(selection: $draft.kind.animation()) {
-                ForEach(CardKind.allCases) { Label($0.displayName, systemImage: $0.symbol).tag($0) }
+                ForEach(CardKind.choosable(current: existing?.kind ?? .loyalty)) { Label($0.displayName, systemImage: $0.symbol).tag($0) }
             } label: {
                 Label("Soort", systemImage: draft.kind.symbol)
             }
@@ -589,34 +589,16 @@ struct CardEditorView: View {
         }
     }
 
-    /// Stempelkaart: aantal vakjes, de beloning en hoeveel stempels er al op staan. Een zakelijke kaart volgt de zaak.
+    /// Stempelkaart: alleen-lezen. De stand en de beloning komen van de zaak; alleen de zaak zet stempels.
     private var stampsSection: some View {
         Section {
-            if draft.details.isBusiness {
-                LabeledContent("Stempels", value: "\(draft.details.stampsCountValue) van \(draft.details.stampsTotalValue)")
-                if let reward = draft.details.reward, !reward.isEmpty { LabeledContent("Beloning", value: reward) }
-            } else {
-                Stepper(value: Binding(get: { draft.details.stampsTotalValue }, set: { new in
-                    draft.details.stampsTotal = new
-                    draft.details.stampsCount = min(draft.details.stampsCountValue, new)
-                }), in: CardDetails.stampsRange) {
-                    LabeledContent("Vakjes", value: "\(draft.details.stampsTotalValue)")
-                }
-                TextField("Beloning, bijv. 1 gratis koffie", text: Binding(get: { draft.details.reward ?? "" },
-                                                                         set: { draft.details.reward = String($0.prefix(60)) }))
-                Stepper(value: Binding(get: { draft.details.stampsCountValue }, set: { draft.details.stampsCount = $0 }),
-                        in: 0...draft.details.stampsTotalValue) {
-                    LabeledContent("Stempels nu", value: "\(draft.details.stampsCountValue)")
-                }
-            }
+            LabeledContent("Stempels", value: "\(draft.details.stampsCountValue) van \(draft.details.stampsTotalValue)")
+            if let reward = draft.details.reward, !reward.isEmpty { LabeledContent("Beloning", value: reward) }
+            if let code = draft.details.memberCode, !code.isEmpty { LabeledContent("Klantcode", value: code) }
         } header: {
             Text("Stempelkaart")
         } footer: {
-            if draft.details.isBusiness {
-                Text("Deze kaart komt van de zaak zelf. De zaak zet de stempels; Pasr haalt de stand op als je de kaart opent of omlaag trekt.")
-            } else {
-                Text("Tik op de kaart op + bij elke aankoop. Is hij vol, dan krijg je een melding; na het inwisselen begint hij weer leeg.")
-            }
+            Text("Deze kaart komt van de zaak zelf. De zaak zet de stempels; Pasr haalt de stand op als je de kaart opent of omlaag trekt.")
         }
     }
 

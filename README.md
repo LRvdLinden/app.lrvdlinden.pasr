@@ -38,7 +38,9 @@ Een gedeelde kaart is een link `https://pasr.nl/kaart/#<gegevens>`. De kaart sta
 
 ## Pasr voor ondernemers (1.0.3)
 
-Zaken maken op `pasr.nl/zakelijk/` gratis een digitale stempelkaart. Ze melden zich aan met een Pasr-account; Léon keurt ze goed in het beheer (tab Ondernemers). Daarna: kaart ontwerpen (naam, logo, kleur, 2 tot 30 stempels, beloning), QR-code/link/flyer (`/zakelijk/flyer/#<id>`), leden en stempels per dag, en de web-scanner `/zakelijk/scan/` (camera via BarcodeDetector of jsQR, stempel erbij of beloning inwisselen). Klanten sluiten aan via `https://pasr.nl/zakelijk/kaart/#<kaart-id>` (universal link naar de app, anders in de browser) met een anonieme lidcode (`PZ` + 10 tekens). Database: `pasr_businesses`, `pasr_business_cards`, `pasr_business_members`, `pasr_business_events` en de functies `pasr_business_*` in `supabase/schema.sql` (blok `-- 1.0.3 web`).
+Zaken maken op `pasr.nl/zakelijk/` gratis een digitale stempelkaart. Ze melden zich aan met een Pasr-account; Léon keurt ze goed in het beheer (tab Ondernemers). Daarna: kaart ontwerpen (naam, logo, kleur, 2 tot 30 stempels, beloning), QR-code/link/flyer (`/zakelijk/flyer/#<id>`), leden en stempels per dag, en de web-scanner `/zakelijk/scan/` (camera via BarcodeDetector of jsQR, stempel erbij of beloning inwisselen). Klanten sluiten aan via `https://pasr.nl/zakelijk/kaart/#<kaart-id>` (universal link naar de app, anders in de browser) met een anonieme lidcode (`PZ` + 14 tekens; oude codes van 12 blijven geldig). Database: `pasr_businesses`, `pasr_business_cards`, `pasr_business_members`, `pasr_business_events`, `pasr_business_staff` en de functies `pasr_business_*` in `supabase/schema.sql` (blokken `-- 1.0.3 web` en `-- zakelijk 1.0`).
+
+Zakelijk 1.0 (voor de app Pasr Zakelijk en de website): rollen per zaak (eigenaar en medewerkers met een uitnodigingslink `pasr.nl/zakelijk/uitnodiging/#<code>`), afkoeltijd (0–1440 min, standaard 5) en max stempels per scan (1–30, standaard 10) per zaak, ongedaan maken binnen 2 minuten, een log die ondernemers niet kunnen wissen en stats per dag. De fouten van de scanner hebben een Nederlandse `message` en een vaste `hint`-code; alle namen en velden staan in `/zakelijk/`-spec en in het schema-blok.
 
 In de app: de join-link of QR-code (ook via de scanner in Kaart toevoegen) opent het venster Stempelkaart; aanmelden
 geeft een kaart van de soort Stempelkaart met de lidcode als QR op de achterkant. De stand komt van
@@ -47,11 +49,19 @@ stempels, de app niet.
 
 ## Stempelkaarten (1.0.3)
 
-Soort `stamps` (in `detailsData`: `stampsTotal`, `stampsCount`, `reward`; zakelijk ook `issuer`, `businessCardId`,
-`memberCode`). Toevoegen via Kaart toevoegen › Stempelkaart. Op de kaart de vakjes en "nog 3 tot je beloning"; onder
-de kaart een stempel erbij of eraf, en bij een volle kaart een melding en "Ingewisseld" (begint weer leeg). Ook op de
-Watch (+/-), in de widgets (stand, en een meter op het toegangsscherm), bij delen, in het account, de back-up en de
-Wallet-pas. Oudere Pasr-versies tonen hem als klantenkaart.
+Soort `stamps` (in `detailsData`: `stampsTotal`, `stampsCount`, `reward`, `issuer: "business"`, `businessCardId`,
+`memberCode`). Sinds build 43 alleen nog zakelijk: een stempelkaart komt van een zaak (Pasr voor ondernemers) en
+**alleen de zaak zet stempels of wisselt in** (Pasr Zakelijk of `pasr.nl/zakelijk/scan/`). In Pasr is hij alleen-lezen:
+stand en beloning, de QR met je klantcode op de achterkant, en verversen. Geen +/- meer onder de kaart, in de editor,
+de widgets of op de Watch; Kaart toevoegen heeft geen soort Stempelkaart meer.
+
+Migratie (build 43, `OwnStampMigration` in `Shared/Model/StampCard.swift`): eigen stempelkaarten uit build 42 worden bij
+het openen van de app klantenkaarten met de notitie "Stempelkaart: X van Y, beloning: …". Idempotent (de notitie komt er
+nooit twee keer bij), dus veilig met iCloud-sync, back-ups en gedeelde links. Oudere Pasr-versies tonen een
+stempelkaart als klantenkaart.
+
+"Bewaar in Pasr" vanuit de browser (`pasr://zakelijk?code=<lidcode>#<kaart-id>`): de app neemt de lidcode over met
+`pasr_business_claim`, zodat de stempels uit de browser meegaan (anders `pasr_business_join`).
 
 ## Verjaardagsvoordeel (1.0.3)
 

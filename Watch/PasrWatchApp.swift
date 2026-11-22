@@ -121,16 +121,6 @@ struct WatchWalletView: View {
         }
     }
 
-    /// Eigen stempelkaart: ook op de Watch een stempel erbij of eraf; gaat via iCloud naar de iPhone.
-    private func stamper(_ live: Card?) -> ((Int) -> CardDetails?)? {
-        guard let live, live.stampsEditable else { return nil }
-        return { delta in
-            live.changeStamps(by: delta)
-            try? live.modelContext?.save()
-            return live.details
-        }
-    }
-
     var body: some View {
         NavigationStack {
             let cards = cards
@@ -164,7 +154,7 @@ struct WatchWalletView: View {
                 let live = stored.first { $0.id.uuidString == card.id }
                 WatchPassView(card: card, onShown: {
                     live?.markUsed()
-                }, onStamp: stamper(live))
+                })
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -177,16 +167,10 @@ struct WatchWalletView: View {
 struct WatchPassView: View {
     let card: WatchCard
     var onShown: () -> Void = {}
-    /// Stempel erbij (+1) of eraf (-1); geeft de nieuwe stand terug. Nil = niet aan te passen (zakelijke kaart).
-    var onStamp: ((Int) -> CardDetails?)? = nil
     @State private var codeOnly = false
-    @State private var stamps: CardDetails?
 
-    private var appearance: CardAppearance {
-        var a = card.appearance
-        if let stamps { a.details = stamps }
-        return a
-    }
+    /// Stempelkaart: alleen de stand (de zaak zet de stempels, sinds build 43).
+    private var appearance: CardAppearance { card.appearance }
 
     var body: some View {
         Group {
@@ -212,17 +196,6 @@ struct WatchPassView: View {
                         Text(appearance.details.stampsProgressText)
                             .font(.footnote)
                             .multilineTextAlignment(.center)
-                        if let onStamp {
-                            HStack {
-                                Button { stamps = onStamp(-1) ?? stamps } label: { Image(systemName: "minus") }
-                                    .disabled(appearance.details.stampsCountValue == 0)
-                                    .accessibilityLabel(Text("Stempel eraf"))
-                                Button { stamps = onStamp(1) ?? stamps } label: { Image(systemName: "plus") }
-                                    .disabled(appearance.details.stampsFull)
-                                    .tint(Brand.iris)
-                                    .accessibilityLabel(Text("Stempel erbij"))
-                            }
-                        }
                     }
                 }
             } else {

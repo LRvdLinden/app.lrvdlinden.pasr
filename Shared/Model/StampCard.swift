@@ -1,7 +1,8 @@
 import Foundation
 
 /// Stempelkaart (sinds 1.0.3): een aantal vakjes, een stempel per aankoop, en bij een volle kaart de beloning.
-/// Eigen kaarten zet je zelf af (een tik); een zakelijke kaart (Pasr voor ondernemers) volgt de stand van de zaak.
+/// Alleen een zakelijke kaart (Pasr voor ondernemers): de zaak zet de stempels, de app toont alleen de stand.
+/// Eigen stempelkaarten (build 42) worden bij het opstarten eenmalig een klantenkaart (OwnStampMigration).
 extension CardDetails {
     static let stampsRange = 2...30
     static let defaultStamps = 10
@@ -31,27 +32,46 @@ extension CardDetails {
 }
 
 extension Card {
-    /// Een stempelkaart die je zelf bijhoudt (geen zakelijke kaart, niet tijdelijk gedeeld).
-    var stampsEditable: Bool { kind == .stamps && !details.isBusiness && !isTemporary }
+    /// Een eigen stempelkaart uit build 42 (geen zakelijke kaart). Die bestaat na de migratie niet meer.
+    var isOwnStampCard: Bool { kind == .stamps && !details.isBusiness }
 
-    /// Stempel erbij (+1) of eraf (-1). Geeft true als de kaart nu vol is geworden.
-    @discardableResult
-    func changeStamps(by delta: Int) -> Bool {
-        var d = details
-        let wasFull = d.stampsFull
-        d.stampsTotal = d.stampsTotalValue
-        d.stampsCount = min(max(d.stampsCountValue + delta, 0), d.stampsTotalValue)
-        details = d
-        updatedAt = .now
-        return !wasFull && d.stampsFull
+    /// De notitie die een eigen stempelkaart bij de migratie krijgt: "Stempelkaart: 4 van 10, beloning: 1 gratis koffie".
+    static func ownStampNote(_ d: CardDetails) -> String {
+        let reward = d.reward?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        let stand = String(localized: "Stempelkaart: \(d.stampsCountValue) van \(d.stampsTotalValue)")
+        return reward.map { stand + String(localized: ", beloning: \($0)") } ?? stand
     }
 
-    /// Beloning ingewisseld: de kaart begint weer leeg.
-    func redeemStamps() {
+    /// Eigen stempelkaart -> klantenkaart met de stand in de notitie. Geeft true als er iets veranderde.
+    /// Idempotent: staat de notitie er al (bijv. via iCloud van een ander apparaat), dan komt hij er niet nog eens bij.
+    @discardableResult
+    func convertOwnStampCard() -> Bool {
+        guard isOwnStampCard else { return false }
+        let line = Self.ownStampNote(details)
+        if !note.contains(line) {
+            note = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? line : note + "\n" + line
+        }
+        kind = .loyalty
         var d = details
-        d.stampsTotal = d.stampsTotalValue
-        d.stampsCount = 0
+        d.stampsTotal = nil
+        d.stampsCount = nil
+        d.reward = nil
         details = d
         updatedAt = .now
+        return true
+    }
+}
+
+/// Eenmalig bij het opstarten (en elke keer als de app naar voren komt, voor kaarten die later via iCloud, een back-up
+/// of een gedeelde link binnenkomen): eigen stempelkaarten worden klantenkaarten. De klant kan nergens meer zelf
+/// stempels zetten; dat doet alleen de zaak (Pasr Zakelijk of pasr.nl/zakelijk/scan).
+enum OwnStampMigration {
+    @MainActor
+    static func run(_ cards: [Card]) -> Int {
+        var n = 0
+        for card in cards where card.deletedAt == nil && card.isOwnStampCard {
+            if card.convertOwnStampCard() { n += 1 }
+        }
+        return n
     }
 }
