@@ -967,3 +967,24 @@ html, body { overflow-x: clip; max-width: 100%; }
 .apk-steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 30px; height: 30px; border-radius: 50%;
   background: linear-gradient(135deg, #2BB38A, #0E8A62); color: #fff; font-weight: 700; display: grid; place-items: center; }
 .zk-apps { margin-top: 18px; align-items: center; }
+
+/* Functies naast elkaar: top 5, de rest achter een knop (zonder JS alles zichtbaar) */
+.ft-lead { color: #C9C6E8; margin: -10px 0 14px; font-size: 16px; }
+.ft-wrap { overflow: hidden; }
+.ft.ft-collapsible:not(.ft-open) .ft-more { display: none; }
+.ft.ft-collapsible:not(.ft-open) .ft-top tr:last-child td.ft-pasr { border-radius: 0 0 16px 16px; }
+.ft-top tr:last-child th, .ft-top tr:last-child td { border-bottom-color: rgba(255,255,255,.12); }
+.ft-toggle-wrap { text-align: center; margin: 20px 0 0; }
+.ft-toggle { display: inline-flex; align-items: center; gap: 8px; font: 700 16px var(--body); color: #fff; background: rgba(255,255,255,.1);
+  border: 1.5px solid rgba(255,255,255,.28); border-radius: 999px; padding: 12px 22px; min-height: 48px; cursor: pointer; transition: background .2s, transform .2s; }
+.ft-toggle[hidden] { display: none; }
+.ft-toggle:hover { background: rgba(255,255,255,.18); transform: translateY(-1px); }
+.ft-toggle:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.ft-toggle svg { width: 18px; height: 18px; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.ft-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+@media (max-width: 620px) {
+  .ft-toggle { width: 100%; justify-content: center; }
+  .ft tbody th { font-size: 13px; line-height: 1.35; }
+}
+@media (prefers-reduced-motion: reduce) { .ft-toggle, .ft-toggle svg { transition: none; } }
+.js .ft.in .ft-more .ft-y { animation-delay: calc(var(--r, 0) * 25ms + 80ms); }

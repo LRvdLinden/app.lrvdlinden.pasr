@@ -171,6 +171,34 @@
     const y = tr.querySelector('.ft-y');
     if (y) y.style.setProperty('--r', tr.style.getPropertyValue('--r'));
   });
+  // Top 5 eerst; de rest achter "Toon alle functies (+N)". Zonder JavaScript staan alle rijen er (de knop blijft verborgen).
+  const btn = document.querySelector('.ft-toggle');
+  const more = btn && document.getElementById(btn.getAttribute('aria-controls'));
+  if (btn && more) {
+    const wrap = t.closest('.ft-wrap');
+    const label = btn.querySelector('span');
+    const still = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    t.classList.add('ft-collapsible');
+    btn.hidden = false;
+    btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      const from = wrap.offsetHeight;
+      btn.setAttribute('aria-expanded', String(open));
+      label.textContent = open ? btn.dataset.less : btn.dataset.more;
+      t.classList.toggle('ft-open', open);
+      if (!open) {
+        // inklappen: terug naar de tabel, zodat je niet ergens onderaan de pagina blijft hangen
+        const top = wrap.getBoundingClientRect().top;
+        if (top < 0) wrap.scrollIntoView({ block: 'start', behavior: still() ? 'auto' : 'smooth' });
+      }
+      if (still() || !wrap.animate) return;
+      const to = wrap.offsetHeight;
+      wrap.animate([{ height: from + 'px' }, { height: to + 'px' }], { duration: Math.min(700, 250 + Math.abs(to - from) * 0.4), easing: 'cubic-bezier(.2,.8,.2,1)' });
+      if (open) more.querySelectorAll('tr').forEach((tr, i) => tr.animate(
+        [{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 380, delay: Math.min(i, 20) * 22, easing: 'ease-out', fill: 'backwards' }));
+    });
+  }
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return t.classList.add('in');
   const io = new IntersectionObserver(e => { if (e[0].isIntersecting) { t.classList.add('in'); io.disconnect(); } }, { threshold: 0.2 });
   io.observe(t);

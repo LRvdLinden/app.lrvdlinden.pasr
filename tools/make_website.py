@@ -185,29 +185,49 @@ FAQ = [
 ]
 
 # Functies naast elkaar. Andere apps alleen ingevuld waar het openbaar en controleerbaar is (App Store-pagina's en
-# bijdehandapp.nl, november 2026). "-" = niet aanwezig of niet bekend; tekst = staat letterlijk in de cel.
+# bijdehandapp.nl, november 2026). "-" = niet aanwezig of niet bekend (neutraal: twijfel = "-"); tekst = staat letterlijk in de cel.
+# TABLE_TOP: de 5 grootste verschillen, altijd zichtbaar. TABLE_MORE: achter de knop "Toon alle functies (+N)"
+# (zonder JavaScript staan alle rijen er gewoon). Google Wallet hier niet noemen zolang die uit staat.
 COLUMNS = ["Pasr", "Bijdehand", "Klarna", "Andere apps"]
-TABLE = [
+TABLE_TOP = [
+    ("Geen reclame en geen tracking", "y", "-", "-", "soms"),
+    ("Werkt zonder account, kaarten versleuteld", "y", "-", "n", "soms"),
+    ("iPhone, Apple Watch-app én Android", "y", "-", "n", "soms"),
+    ("Stempelkaarten van zaken: zoeken in de app, alleen de zaak stempelt", "y", "-", "-", "-"),
+    ("Nieuwe winkels erbij zonder app-update", "y", "-", "-", "-"),
+]
+TABLE_MORE = [
     ("Gratis", "y", "y", "y", "soms"),
     ("Werkt zonder account", "y", "y", "n", "soms"),
     ("Alleen kaarten, geen betalen of lenen", "y", "y", "n", "soms"),
     ("Geen reclame", "y", "y", "-", "soms"),
     ("Geen gebruiksstatistieken", "y", "Optioneel", "-", "soms"),
+    ("Kaartnummers versleuteld op je apparaten", "y", "-", "-", "-"),
+    ("Android-app", "y", "-", "y", "soms"),
     ("Apple Watch-app", "y", "Via Wallet", "n", "soms"),
+    ("Ook op Mac en Vision Pro", "y", "y", "Vision Pro", "soms"),
     ("Widgets op je beginscherm", "y", "y", "-", "soms"),
     ("Naar Apple Wallet", "y", "y", "-", "soms"),
+    ("Apple Wallet-pas werkt zichzelf bij", "y", "-", "-", "-"),
     ("Kaart bij de winkel, ook als de app dicht is", "y", "-", "-", "soms"),
     ("Eigen locaties en Wallet-filialen kiezen", "y", "-", "-", "soms"),
-    ("Overzetten met een schermopname", "y", "y", "-", "-"),
-    ("Tegoed bijhouden met uitgaven", "y", "-", "-", "soms"),
-    ("Geschiedenis: wanneer en waar gebruikt", "y", "-", "-", "-"),
-    ("Saldo checken bij de uitgever", "y", "-", "-", "soms"),
-    ("Wallet-pas werkt zichzelf bij", "y", "-", "-", "-"),
+    ("Pushmeldingen: nieuws over je kaarten en bij een stempel", "y", "-", "-", "-"),
+    ("Verjaardagsvoordeel bij je kaart", "y", "-", "-", "-"),
+    ("Pasr Zakelijk: gratis stempelkaart voor ondernemers", "y", "-", "-", "-"),
+    ("Kaart delen via een link of QR-code", "y", "-", "-", "-"),
     ("Gedeelde Pasr, tot 6 personen", "y", "-", "-", "-"),
     ("Tijdelijk delen met einddatum", "y", "-", "-", "-"),
+    ("Cadeaukaarten: tegoed bijhouden met uitgaven", "y", "-", "-", "soms"),
+    ("Tegoed-herinneringen, ook per e-mail", "y", "-", "-", "-"),
+    ("Saldo checken bij de uitgever", "y", "-", "-", "soms"),
+    ("Cadeaubon- en klantenkaart-gids per merk", "y", "-", "-", "-"),
+    ("Geschiedenis: wanneer en waar gebruikt", "y", "-", "-", "-"),
+    ("Tickets, abonnementen en kortingscodes", "y", "-", "-", "soms"),
+    ("Tot 4 foto's en een eigen voorkant", "y", "-", "-", "-"),
+    ("Overzetten met een schermopname (bijv. uit Klarna)", "y", "y", "-", "-"),
+    ("Importeren uit een CSV-bestand", "y", "-", "-", "soms"),
     ("Vergrendelen met Face ID", "y", "y", "-", "soms"),
     ("Screenshots van codes blokkeren", "y", "-", "-", "-"),
-    ("Ook op Mac en Vision Pro", "y", "y", "Vision Pro", "soms"),
     ("Licht en donker", "y", "y", "-", "soms"),
     ("App-grootte", "ca. 17 MB", "22 MB", "288 MB", "Wisselend"),
 ]
@@ -219,18 +239,25 @@ def feature_table():
         return {"y": yes, "n": no, "-": '<span class="ft-d" aria-label="Niet aanwezig of niet bekend">–</span>',
                 "soms": '<span class="ft-s">Soms</span>'}.get(v, f'<span class="ft-s">{v}</span>')
     head = "".join(f'<th scope="col"{" class=\"ft-pasr\"" if i == 0 else ""}>{c}</th>' for i, c in enumerate(COLUMNS))
-    rows = "\n".join(
-        f'            <tr style="--r:{i}"><th scope="row">{row[0]}</th>'
-        + "".join(f'<td{" class=\"ft-pasr\"" if k == 0 else ""}>{cell(v)}</td>' for k, v in enumerate(row[1:])) + "</tr>"
-        for i, row in enumerate(TABLE))
+    def rows(table):
+        return "\n".join(
+            f'            <tr style="--r:{i}"><th scope="row">{row[0]}</th>'
+            + "".join(f'<td{" class=\"ft-pasr\"" if k == 0 else ""}>{cell(v)}</td>' for k, v in enumerate(row[1:])) + "</tr>"
+            for i, row in enumerate(table))
+    n = len(TABLE_MORE)
     return f'''        <div class="ft-wrap" id="vergelijking">
           <h3 class="ft-title">Functies naast elkaar</h3>
+          <p class="ft-lead">De vijf grootste verschillen eerst.</p>
           <table class="ft">
             <thead><tr><th scope="col"><span class="sr-only">Functie</span></th>{head}</tr></thead>
-            <tbody>
-{rows}
+            <tbody class="ft-top">
+{rows(TABLE_TOP)}
+            </tbody>
+            <tbody class="ft-more" id="ft-more">
+{rows(TABLE_MORE)}
             </tbody>
           </table>
+          <p class="ft-toggle-wrap"><button type="button" class="ft-toggle" aria-expanded="false" aria-controls="ft-more" data-more="Toon alle functies (+{n})" data-less="Minder tonen" hidden><span>Toon alle functies (+{n})</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></p>
           <p class="ft-note">– betekent niet aanwezig of niet bekend. Op basis van de App Store en de websites van de makers, november 2026; de grootte is zoals de App Store hem toont. Merknamen zijn van hun eigenaars; Pasr is niet aan hen verbonden.</p>
         </div>'''
 
