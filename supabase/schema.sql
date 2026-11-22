@@ -1637,3 +1637,479 @@ begin
 end $$;
 revoke all on function public.pasr_birthday_get(), public.pasr_birthday_set(int, int) from public, anon;
 grant execute on function public.pasr_birthday_get(), public.pasr_birthday_set(int, int) to authenticated;
+
+-- 1.0.3 web
+-- ============================================================================================================
+-- Pasr 1.0.3, agent WEB: gerichte pushberichten (opt-in), Pasr voor ondernemers (stempelkaarten) en de gids-sleutel
+-- `birthday`. Alles via security definer-functies; de tabellen zelf zijn dicht voor anon en authenticated.
+-- ============================================================================================================
+
+-- Rem per internetadres (gehasht met het hook-geheim, nooit het adres zelf) per soort per dag.
+create table if not exists public.pasr_web_rate (
+  bucket text not null,
+  ip_hash text not null,
+  day date not null,
+  n int not null default 0,
+  primary key (bucket, ip_hash, day)
+);
+alter table public.pasr_web_rate enable row level security;
+revoke all on public.pasr_web_rate from anon, authenticated;
+
+create or replace function public.pasr_web_rate_hit(p_bucket text, p_per_ip int, p_total int) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare ip text; used int; today date := (now() at time zone 'utc')::date;
+begin
+  ip := split_part(coalesce(current_setting('request.headers', true)::json->>'x-forwarded-for', 'unknown'), ',', 1);
+  ip := encode(digest(ip || coalesce((select hook_secret from public.pasr_secret where id = 1), ''), 'sha256'), 'hex');
+  insert into public.pasr_web_rate as r (bucket, ip_hash, day, n) values (p_bucket, ip, today, 1)
+    on conflict (bucket, ip_hash, day) do update set n = r.n + 1 returning n into used;
+  if used > p_per_ip or (select coalesce(sum(n), 0) from public.pasr_web_rate where bucket = p_bucket and day = today) > p_total then
+    raise exception 'rate_limited' using errcode = '22023';
+  end if;
+end $$;
+revoke all on function public.pasr_web_rate_hit(text, int, int) from public, anon, authenticated;
+
+-- ------------------------------------------------------------------------------------------------------------
+-- Gerichte pushberichten (5). Alleen wie in de app "Nieuws over mijn kaarten" aanzet, staat hierin: het apparaat
+-- (willekeurige id), het APNs-token en de winkel-id's (template-id's) van de kaarten. Geen kaartnummers, geen namen.
+-- Werkt ook zonder Pasr-account. Het beheer (functie admin) kiest een doelgroep en stuurt via APNs.
+-- ------------------------------------------------------------------------------------------------------------
+create table if not exists public.pasr_news_devices (
+  device_id text primary key check (device_id ~ '^[A-Za-z0-9_-]{8,80}$'),
+  token text not null check (token ~ '^[0-9a-f]{64,200}$'),
+  sandbox boolean not null default false,
+  stores text[] not null default '{}',
+  user_id uuid references auth.users (id) on delete set null,
+  first_seen timestamptz not null default now(),
+  last_seen timestamptz not null default now()
+);
+create index if not exists pasr_news_devices_stores on public.pasr_news_devices using gin (stores);
+create index if not exists pasr_news_devices_last on public.pasr_news_devices (last_seen);
+create index if not exists pasr_news_devices_first on public.pasr_news_devices (first_seen);
+create table if not exists public.pasr_news_campaigns (
+  id uuid primary key default gen_random_uuid(),
+  title text check (title is null or char_length(title) <= 60),
+  body text not null check (char_length(body) between 1 and 240),
+  audience text not null check (audience in ('all', 'store', 'new', 'inactive')),
+  store_id text,
+  recipients int not null default 0,
+  sent int not null default 0,
+  failed int not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.pasr_news_devices enable row level security;
+alter table public.pasr_news_campaigns enable row level security;
+revoke all on public.pasr_news_devices, public.pasr_news_campaigns from anon, authenticated;
+
+create or replace function public.pasr_news_register(p_device text, p_token text, p_sandbox boolean default false,
+                                                     p_stores text[] default '{}') returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare t text := lower(trim(coalesce(p_token, ''))); s text[];
+begin
+  if coalesce(p_device, '') !~ '^[A-Za-z0-9_-]{8,80}$' then raise exception 'bad_device' using errcode = '22023'; end if;
+  if t !~ '^[0-9a-f]{64,200}$' then raise exception 'bad_token' using errcode = '22023'; end if;
+  -- alleen geldige winkel-id's, uniek, hoogstens 300
+  select coalesce(array_agg(x order by x), '{}') into s
+  from (select distinct lower(x) x from unnest(coalesce(p_stores, '{}')) x where lower(x) ~ '^[a-z0-9-]{2,40}$' limit 300) q;
+  if not exists (select 1 from public.pasr_news_devices where device_id = p_device) then
+    perform public.pasr_web_rate_hit('news', 30, 50000);
+  end if;
+  insert into public.pasr_news_devices as d (device_id, token, sandbox, stores, user_id)
+  values (p_device, t, coalesce(p_sandbox, false), s, auth.uid())
+  on conflict (device_id) do update set token = excluded.token, sandbox = excluded.sandbox, stores = excluded.stores,
+    user_id = coalesce(auth.uid(), d.user_id), last_seen = now();
+  -- één token hoort bij één apparaat
+  delete from public.pasr_news_devices where token = t and device_id <> p_device;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function public.pasr_news_unregister(p_device text) returns jsonb
+language sql security definer set search_path = public as $$
+  delete from public.pasr_news_devices where device_id = p_device;
+  select jsonb_build_object('ok', true);
+$$;
+
+-- Voor de functie admin: de apparaten van een doelgroep. new = de laatste p_days dagen aangezet, inactive = al
+-- p_days dagen de app niet geopend, store = heeft een kaart van die winkel.
+create or replace function public.pasr_admin_news_targets(p_audience text, p_store text default null, p_days int default null)
+returns table (device_id text, token text, sandbox boolean)
+language sql stable security definer set search_path = public as $$
+  select d.device_id, d.token, d.sandbox from public.pasr_news_devices d
+  where case p_audience
+    when 'all' then true
+    when 'store' then d.stores @> array[lower(coalesce(p_store, ''))]
+    when 'new' then d.first_seen > now() - make_interval(days => coalesce(p_days, 7))
+    when 'inactive' then d.last_seen < now() - make_interval(days => coalesce(p_days, 30))
+    else false end;
+$$;
+-- Tellingen voor het scherm "Bericht sturen": per doelgroep, en de winkels die het vaakst voorkomen.
+create or replace function public.pasr_admin_news_overview() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'all', (select count(*) from public.pasr_news_devices),
+    'new', (select count(*) from public.pasr_news_devices where first_seen > now() - interval '7 days'),
+    'inactive', (select count(*) from public.pasr_news_devices where last_seen < now() - interval '30 days'),
+    'stores', (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'count', n) order by n desc, id), '[]'::jsonb)
+               from (select x id, count(*) n from public.pasr_news_devices, unnest(stores) x group by x order by n desc, x limit 400) q));
+$$;
+revoke all on function public.pasr_news_register(text, text, boolean, text[]), public.pasr_news_unregister(text),
+  public.pasr_admin_news_targets(text, text, int), public.pasr_admin_news_overview() from public;
+grant execute on function public.pasr_news_register(text, text, boolean, text[]), public.pasr_news_unregister(text) to anon, authenticated;
+grant execute on function public.pasr_admin_news_targets(text, text, int), public.pasr_admin_news_overview() to service_role;
+
+-- ------------------------------------------------------------------------------------------------------------
+-- Pasr voor ondernemers (8). Een zaak meldt zich aan op pasr.nl/zakelijk met een Pasr-account (e-mail + wachtwoord);
+-- Léon keurt hem goed in het beheer. Daarna ontwerpt de zaak een stempelkaart, deelt de join-link/QR
+-- (pasr.nl/zakelijk/kaart/#<kaart-id>) en zet stempels met de web-scanner (pasr.nl/zakelijk/scan). Klanten hebben
+-- een lidcode (member_code); daar hangt niets persoonlijks aan, ook geen account als ze zonder inloggen aansluiten.
+-- ------------------------------------------------------------------------------------------------------------
+create table if not exists public.pasr_businesses (
+  id uuid primary key default gen_random_uuid(),
+  owner uuid not null unique references auth.users (id) on delete cascade,
+  name text not null check (char_length(name) between 2 and 60),
+  city text not null default '' check (char_length(city) <= 60),
+  email text not null default '' check (char_length(email) <= 200),
+  website text check (website is null or char_length(website) <= 200),
+  note text check (note is null or char_length(note) <= 300),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'blocked')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  reviewed_at timestamptz
+);
+create table if not exists public.pasr_business_cards (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.pasr_businesses (id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 40),
+  logo text check (logo is null or (octet_length(logo) <= 210000 and logo ~ '^(/9j/|iVBORw0KGgo)[A-Za-z0-9+/]+=*$')),
+  color text not null default '#6A5CFF' check (color ~ '^#[0-9A-F]{6}$'),
+  kind text not null default 'stamps' check (kind in ('stamps', 'points')),
+  stamps_total int not null default 10 check (stamps_total between 2 and 30),
+  reward text not null check (char_length(reward) between 1 and 80),
+  published boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists pasr_business_cards_business on public.pasr_business_cards (business_id);
+create table if not exists public.pasr_business_members (
+  id uuid primary key default gen_random_uuid(),
+  business_card_id uuid not null references public.pasr_business_cards (id) on delete cascade,
+  member_code text not null unique check (member_code ~ '^PZ[A-HJ-NP-Z2-9]{10}$'),
+  stamps_count int not null default 0 check (stamps_count between 0 and 1000),
+  rewards_redeemed int not null default 0 check (rewards_redeemed >= 0),
+  user_id uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  last_stamp_at timestamptz
+);
+create index if not exists pasr_business_members_card on public.pasr_business_members (business_card_id, created_at);
+create table if not exists public.pasr_business_events (
+  id bigint generated always as identity primary key,
+  business_card_id uuid not null references public.pasr_business_cards (id) on delete cascade,
+  member_id uuid references public.pasr_business_members (id) on delete cascade,
+  kind text not null check (kind in ('join', 'stamp', 'redeem')),
+  amount int not null default 1,
+  by_user uuid,
+  at timestamptz not null default now()
+);
+create index if not exists pasr_business_events_card on public.pasr_business_events (business_card_id, at);
+alter table public.pasr_businesses enable row level security;
+alter table public.pasr_business_cards enable row level security;
+alter table public.pasr_business_members enable row level security;
+alter table public.pasr_business_events enable row level security;
+revoke all on public.pasr_businesses, public.pasr_business_cards, public.pasr_business_members, public.pasr_business_events
+  from anon, authenticated;
+
+-- Wallet-passen van zakelijke stempelkaarten bijwerken (blok "1.0.3 app", functie pasr_wallet_business_kick): de trigger
+-- hier ook zetten, zodat hij er meteen bij de eerste keer is (dat blok staat eerder in dit bestand dan deze tabel).
+do $$
+begin
+  if to_regprocedure('public.pasr_wallet_business_kick()') is not null then
+    drop trigger if exists pasr_wallet_business on public.pasr_business_members;
+    create trigger pasr_wallet_business after update of stamps_count on public.pasr_business_members
+      for each row execute function public.pasr_wallet_business_kick();
+  end if;
+exception when others then
+  raise notice 'pasr_wallet_business trigger: %', sqlerrm;
+end $$;
+
+-- Wat iedereen van een kaart mag zien (join-pagina, app, Wallet-pas): geen e-mail, geen eigenaar.
+create or replace function public.pasr_business_card_json(c public.pasr_business_cards, b public.pasr_businesses) returns jsonb
+language sql immutable as $$
+  select jsonb_build_object('id', c.id, 'name', c.name, 'business', b.name, 'city', b.city, 'logo', c.logo, 'color', c.color,
+    'kind', c.kind, 'stamps_total', c.stamps_total, 'reward', c.reward);
+$$;
+
+create or replace function public.pasr_business_card_public(p_card uuid) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select public.pasr_business_card_json(c, b) from public.pasr_business_cards c join public.pasr_businesses b on b.id = c.business_id
+  where c.id = p_card and c.published and b.status = 'approved';
+$$;
+
+create or replace function public.pasr_business_new_code() returns text
+language plpgsql volatile security definer set search_path = public, extensions as $$
+declare alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; code text; bytes bytea; i int;
+begin
+  loop
+    bytes := gen_random_bytes(10); code := 'PZ';
+    for i in 0..9 loop code := code || substr(alphabet, (get_byte(bytes, i) % 32) + 1, 1); end loop;
+    exit when not exists (select 1 from public.pasr_business_members where member_code = code);
+  end loop;
+  return code;
+end $$;
+
+create or replace function public.pasr_business_member_json(m public.pasr_business_members, c public.pasr_business_cards,
+                                                            b public.pasr_businesses) returns jsonb
+language sql immutable as $$
+  select jsonb_build_object('status', 'ok', 'member_code', m.member_code, 'stamps_count', m.stamps_count,
+    'stamps_total', c.stamps_total, 'reward', c.reward, 'rewards_redeemed', m.rewards_redeemed, 'updated_at', m.updated_at,
+    'card', public.pasr_business_card_json(c, b));
+$$;
+
+-- Aansluiten bij een kaart: nieuwe lidcode. Zonder account kan; ingelogd wordt het lidmaatschap aan je account gekoppeld.
+create or replace function public.pasr_business_join(p_card uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare c public.pasr_business_cards; b public.pasr_businesses; m public.pasr_business_members;
+begin
+  select * into c from public.pasr_business_cards where id = p_card and published;
+  select * into b from public.pasr_businesses where id = c.business_id and status = 'approved';
+  if c.id is null or b.id is null then raise exception 'not_found' using errcode = 'P0002'; end if;
+  perform public.pasr_web_rate_hit('join', 40, 100000);
+  if (select count(*) from public.pasr_business_events where business_card_id = c.id and kind = 'join'
+        and at > now() - interval '1 hour') >= 500 then
+    raise exception 'rate_limited' using errcode = '22023';
+  end if;
+  insert into public.pasr_business_members (business_card_id, member_code, user_id)
+  values (c.id, public.pasr_business_new_code(), auth.uid()) returning * into m;
+  insert into public.pasr_business_events (business_card_id, member_id, kind, amount, by_user) values (c.id, m.id, 'join', 0, auth.uid());
+  return public.pasr_business_member_json(m, c, b);
+end $$;
+
+-- Actuele stand met de lidcode (app, Wallet-pas, webpagina). Niets persoonlijks.
+create or replace function public.pasr_business_member(p_code text) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare m public.pasr_business_members; c public.pasr_business_cards; b public.pasr_businesses;
+begin
+  select * into m from public.pasr_business_members where member_code = upper(trim(coalesce(p_code, '')));
+  if m.id is null then return jsonb_build_object('status', 'not_found'); end if;
+  select * into c from public.pasr_business_cards where id = m.business_card_id;
+  select * into b from public.pasr_businesses where id = c.business_id;
+  if not c.published or b.status <> 'approved' then return jsonb_build_object('status', 'blocked'); end if;
+  return public.pasr_business_member_json(m, c, b);
+end $$;
+
+-- ---- voor de ondernemer (ingelogd) ----
+create or replace function public.pasr_business_json(b public.pasr_businesses) returns jsonb
+language sql immutable as $$
+  select jsonb_build_object('id', b.id, 'name', b.name, 'city', b.city, 'email', b.email, 'website', b.website, 'note', b.note,
+    'status', b.status, 'created_at', b.created_at, 'reviewed_at', b.reviewed_at);
+$$;
+
+create or replace function public.pasr_business_register(p_name text, p_city text default '', p_website text default null,
+                                                         p_note text default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); n text; b public.pasr_businesses; mail text; isnew boolean;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  select email into mail from auth.users where id = uid and email_confirmed_at is not null;
+  if mail is null then raise exception 'not_confirmed' using errcode = '28000'; end if;
+  n := left(regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g'), 60);
+  if char_length(n) < 2 then raise exception 'bad_name' using errcode = '22023'; end if;
+  select * into b from public.pasr_businesses where owner = uid;
+  if b.status = 'blocked' then raise exception 'blocked' using errcode = '42501'; end if;
+  isnew := b.id is null;
+  insert into public.pasr_businesses as x (owner, name, city, email, website, note)
+  values (uid, n, left(trim(coalesce(p_city, '')), 60), mail, nullif(left(trim(coalesce(p_website, '')), 200), ''),
+          nullif(left(trim(coalesce(p_note, '')), 300), ''))
+  on conflict (owner) do update set name = excluded.name, city = excluded.city, email = excluded.email,
+    website = excluded.website, note = excluded.note, updated_at = now()
+  returning * into b;
+  if isnew then perform public.pasr_admin_notify('business', jsonb_build_object('name', n)); end if;
+  return public.pasr_business_json(b);
+end $$;
+
+create or replace function public.pasr_business_me() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare uid uuid := auth.uid(); b public.pasr_businesses;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  select * into b from public.pasr_businesses where owner = uid;
+  if b.id is null then return jsonb_build_object('business', null, 'cards', '[]'::jsonb); end if;
+  return jsonb_build_object('business', public.pasr_business_json(b), 'cards', coalesce((
+    select jsonb_agg(public.pasr_business_card_json(c, b) || jsonb_build_object('published', c.published,
+      'updated_at', c.updated_at,
+      'members', (select count(*) from public.pasr_business_members m where m.business_card_id = c.id),
+      'stamps', (select coalesce(sum(amount), 0) from public.pasr_business_events e where e.business_card_id = c.id and e.kind = 'stamp'),
+      'rewards', (select count(*) from public.pasr_business_events e where e.business_card_id = c.id and e.kind = 'redeem'))
+      order by c.created_at)
+    from public.pasr_business_cards c where c.business_id = b.id), '[]'::jsonb));
+end $$;
+
+-- Kaart opslaan (nieuw zonder id). Publiceren kan pas als de zaak is goedgekeurd. Hoogstens 5 kaarten per zaak.
+create or replace function public.pasr_business_card_save(p_card jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); b public.pasr_businesses; c public.pasr_business_cards; cid uuid; lg text;
+        nm text; rw text; col text; tot int; pub boolean;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  select * into b from public.pasr_businesses where owner = uid;
+  if b.id is null then raise exception 'no_business' using errcode = '42501'; end if;
+  if b.status = 'blocked' then raise exception 'blocked' using errcode = '42501'; end if;
+  if jsonb_typeof(p_card) <> 'object' or octet_length(p_card::text) > 230000 then raise exception 'bad_card' using errcode = '22023'; end if;
+  nm := left(regexp_replace(trim(coalesce(p_card->>'name', '')), '\s+', ' ', 'g'), 40);
+  rw := left(regexp_replace(trim(coalesce(p_card->>'reward', '')), '\s+', ' ', 'g'), 80);
+  col := upper(coalesce(p_card->>'color', '#6A5CFF'));
+  tot := coalesce((p_card->>'stamps_total')::int, 10);
+  if nm = '' then raise exception 'bad_name' using errcode = '22023'; end if;
+  if rw = '' then raise exception 'bad_reward' using errcode = '22023'; end if;
+  if col !~ '^#[0-9A-F]{6}$' then raise exception 'bad_color' using errcode = '22023'; end if;
+  if tot not between 2 and 30 then raise exception 'bad_total' using errcode = '22023'; end if;
+  lg := nullif(regexp_replace(coalesce(p_card->>'logo', ''), '^data:image/[a-z]+;base64,', ''), '');
+  if lg is not null and (octet_length(lg) > 210000 or lg !~ '^(/9j/|iVBORw0KGgo)[A-Za-z0-9+/]+=*$') then
+    raise exception 'bad_logo' using errcode = '22023';
+  end if;
+  pub := coalesce((p_card->>'published')::boolean, false) and b.status = 'approved';
+  cid := nullif(p_card->>'id', '')::uuid;
+  if cid is null then
+    if (select count(*) from public.pasr_business_cards where business_id = b.id) >= 5 then
+      raise exception 'card_limit' using errcode = '22023';
+    end if;
+    insert into public.pasr_business_cards (business_id, name, logo, color, stamps_total, reward, published)
+    values (b.id, nm, lg, col, tot, rw, pub) returning * into c;
+  else
+    update public.pasr_business_cards set name = nm, logo = case when p_card ? 'logo' then lg else logo end, color = col,
+      stamps_total = tot, reward = rw, published = pub, updated_at = now()
+    where id = cid and business_id = b.id returning * into c;
+    if c.id is null then raise exception 'not_found' using errcode = 'P0002'; end if;
+  end if;
+  return public.pasr_business_card_json(c, b) || jsonb_build_object('published', c.published);
+end $$;
+
+create or replace function public.pasr_business_card_delete(p_card uuid) returns jsonb
+language sql security definer set search_path = public as $$
+  delete from public.pasr_business_cards c using public.pasr_businesses b
+  where c.id = p_card and c.business_id = b.id and b.owner = auth.uid();
+  select jsonb_build_object('ok', true);
+$$;
+
+-- Leden van een kaart (alleen de laatste 4 tekens van de code) en stempels per dag (30 dagen).
+create or replace function public.pasr_business_members_list(p_card uuid, p_limit int default 200) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare c public.pasr_business_cards;
+begin
+  select c2.* into c from public.pasr_business_cards c2 join public.pasr_businesses b on b.id = c2.business_id
+  where c2.id = p_card and b.owner = auth.uid();
+  if c.id is null then raise exception 'not_found' using errcode = 'P0002'; end if;
+  return jsonb_build_object(
+    'total', (select count(*) from public.pasr_business_members where business_card_id = c.id),
+    'members', coalesce((select jsonb_agg(jsonb_build_object('code', '…' || right(m.member_code, 4), 'stamps_count', m.stamps_count,
+        'rewards_redeemed', m.rewards_redeemed, 'created_at', m.created_at, 'last_stamp_at', m.last_stamp_at, 'app', m.user_id is not null)
+        order by coalesce(m.last_stamp_at, m.created_at) desc)
+      from (select * from public.pasr_business_members where business_card_id = c.id
+            order by coalesce(last_stamp_at, created_at) desc limit least(greatest(coalesce(p_limit, 200), 1), 1000)) m), '[]'::jsonb),
+    'days', coalesce((select jsonb_agg(jsonb_build_object('day', d, 'stamps', s, 'rewards', r, 'joins', j) order by d)
+      from (select (at at time zone 'Europe/Amsterdam')::date d,
+                   coalesce(sum(amount) filter (where kind = 'stamp'), 0) s, count(*) filter (where kind = 'redeem') r,
+                   count(*) filter (where kind = 'join') j
+            from public.pasr_business_events where business_card_id = c.id and at > now() - interval '30 days' group by 1) q), '[]'::jsonb));
+end $$;
+
+-- ---- scanner: alleen de eigenaar van een goedgekeurde zaak, alleen voor de eigen kaarten ----
+create or replace function public.pasr_business_scan_member(p_code text, out m public.pasr_business_members,
+                                                            out c public.pasr_business_cards, out b public.pasr_businesses)
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  select * into b from public.pasr_businesses where owner = auth.uid();
+  if b.id is null or b.status <> 'approved' then raise exception 'not_approved' using errcode = '42501'; end if;
+  select * into m from public.pasr_business_members where member_code = upper(trim(coalesce(p_code, ''))) for update;
+  if m.id is null then raise exception 'not_found' using errcode = 'P0002'; end if;
+  select * into c from public.pasr_business_cards where id = m.business_card_id;
+  if c.business_id <> b.id then raise exception 'other_business' using errcode = '42501'; end if;
+end $$;
+revoke all on function public.pasr_business_scan_member(text) from public, anon, authenticated;
+
+create or replace function public.pasr_business_scan(p_code text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare r record;
+begin
+  select * into r from public.pasr_business_scan_member(p_code);
+  return public.pasr_business_member_json(r.m, r.c, r.b) || jsonb_build_object('last_stamp_at', (r.m).last_stamp_at);
+end $$;
+
+create or replace function public.pasr_business_stamp(p_code text, p_amount int default 1) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare r record; m public.pasr_business_members; amt int := coalesce(p_amount, 1);
+begin
+  if amt not between 1 and 10 then raise exception 'bad_amount' using errcode = '22023'; end if;
+  select * into r from public.pasr_business_scan_member(p_code);
+  -- dubbel scannen: binnen 5 seconden niet nog een keer
+  if (r.m).last_stamp_at > now() - interval '5 seconds' then raise exception 'too_soon' using errcode = '22023'; end if;
+  update public.pasr_business_members set stamps_count = least(stamps_count + amt, 1000), last_stamp_at = now(), updated_at = now()
+  where id = (r.m).id returning * into m;
+  insert into public.pasr_business_events (business_card_id, member_id, kind, amount, by_user) values ((r.c).id, m.id, 'stamp', amt, auth.uid());
+  return public.pasr_business_member_json(m, r.c, r.b);
+end $$;
+
+create or replace function public.pasr_business_redeem(p_code text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare r record; m public.pasr_business_members;
+begin
+  select * into r from public.pasr_business_scan_member(p_code);
+  if (r.m).stamps_count < (r.c).stamps_total then raise exception 'not_enough' using errcode = '22023'; end if;
+  update public.pasr_business_members set stamps_count = stamps_count - (r.c).stamps_total, rewards_redeemed = rewards_redeemed + 1,
+    updated_at = now()
+  where id = (r.m).id returning * into m;
+  insert into public.pasr_business_events (business_card_id, member_id, kind, amount, by_user) values ((r.c).id, m.id, 'redeem', 1, auth.uid());
+  return public.pasr_business_member_json(m, r.c, r.b);
+end $$;
+
+-- ---- beheer (functie admin, service role) ----
+create or replace function public.pasr_admin_businesses() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(public.pasr_business_json(b) || jsonb_build_object('cards', coalesce((
+      select jsonb_agg(public.pasr_business_card_json(c, b) || jsonb_build_object('published', c.published, 'updated_at', c.updated_at,
+        'members', (select count(*) from public.pasr_business_members m where m.business_card_id = c.id),
+        'stamps', (select coalesce(sum(amount), 0) from public.pasr_business_events e where e.business_card_id = c.id and e.kind = 'stamp'),
+        'rewards', (select count(*) from public.pasr_business_events e where e.business_card_id = c.id and e.kind = 'redeem'))
+        order by c.created_at)
+      from public.pasr_business_cards c where c.business_id = b.id), '[]'::jsonb))
+    order by case b.status when 'pending' then 0 when 'approved' then 1 else 2 end, b.created_at desc), '[]'::jsonb)
+  from public.pasr_businesses b;
+$$;
+
+revoke all on function public.pasr_business_card_json(public.pasr_business_cards, public.pasr_businesses),
+  public.pasr_business_member_json(public.pasr_business_members, public.pasr_business_cards, public.pasr_businesses),
+  public.pasr_business_json(public.pasr_businesses), public.pasr_business_new_code(),
+  public.pasr_business_card_public(uuid), public.pasr_business_join(uuid), public.pasr_business_member(text),
+  public.pasr_business_register(text, text, text, text), public.pasr_business_me(), public.pasr_business_card_save(jsonb),
+  public.pasr_business_card_delete(uuid), public.pasr_business_members_list(uuid, int), public.pasr_business_scan(text),
+  public.pasr_business_stamp(text, int), public.pasr_business_redeem(text), public.pasr_admin_businesses() from public;
+grant execute on function public.pasr_business_card_public(uuid), public.pasr_business_join(uuid), public.pasr_business_member(text)
+  to anon, authenticated;
+grant execute on function public.pasr_business_register(text, text, text, text), public.pasr_business_me(),
+  public.pasr_business_card_save(jsonb), public.pasr_business_card_delete(uuid), public.pasr_business_members_list(uuid, int),
+  public.pasr_business_scan(text), public.pasr_business_stamp(text, int), public.pasr_business_redeem(text) to authenticated;
+grant execute on function public.pasr_admin_businesses() to service_role;
+
+-- Opruimen: de rem van gisteren en eerder, en pushapparaten die al 400 dagen niets van zich lieten horen.
+create or replace function public.pasr_web_cleanup() returns void
+language sql security definer set search_path = public as $$
+  delete from public.pasr_web_rate where day < (now() at time zone 'utc')::date - 1;
+  delete from public.pasr_news_devices where last_seen < now() - interval '400 days';
+$$;
+revoke all on function public.pasr_web_cleanup() from public, anon, authenticated;
+do $$
+begin
+  create extension if not exists pg_cron;
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-web-cleanup';
+  perform cron.schedule('pasr-web-cleanup', '41 3 * * *', 'select public.pasr_web_cleanup()');
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;
+
+-- Gids-sleutel birthday (verjaardagsvoordeel, tekst tot 160 tekens): gevuld uit supabase/catalog/birthdays.json door
+-- supabase/catalog/guides.py, één keer per winkel (pasr_store_birthday_seeded); haalt het beheer hem weg, dan komt hij
+-- niet terug.
+create table if not exists public.pasr_store_birthday_seeded (id text primary key, at timestamptz not null default now());
+alter table public.pasr_store_birthday_seeded enable row level security;
+revoke all on public.pasr_store_birthday_seeded from anon, authenticated;

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Onderdelen (tabs op de iPhone, zijbalk op iPad en Mac).
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case overview, insights, accounts, stores, settings
+    case overview, insights, accounts, stores, news, businesses, settings
     var id: String { rawValue }
 
     var title: String {
@@ -13,6 +13,8 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .insights: "Insights"
         case .accounts: "Accounts"
         case .stores: "Winkels"
+        case .news: "Berichten"
+        case .businesses: "Ondernemers"
         case .settings: "Instellingen"
         }
     }
@@ -23,6 +25,8 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .insights: "chart.xyaxis.line"
         case .accounts: "person.2"
         case .stores: "storefront"
+        case .news: "megaphone"
+        case .businesses: "rectangle.stack.badge.person.crop"
         case .settings: "gearshape"
         }
     }

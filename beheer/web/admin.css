@@ -317,3 +317,21 @@ html, body { overflow-x: clip; max-width: 100%; }
 #storeTally { margin: 6px 0 10px; }
 .acc .av.cover { overflow: hidden; padding: 0; background: #2B2F3A; }
 .acc .av.cover img { width: 100%; height: 100%; object-fit: cover; max-width: none; max-height: none; }
+
+/* Berichten (gerichte push) */
+.news-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; margin-bottom: 16px; align-items: start; }
+.news-layout textarea, .news-layout select { width: 100%; }
+.news-count b { font-size: 22px; margin-left: 6px; }
+.news-preview .push { display: flex; gap: 10px; background: rgba(255,255,255,.08); border-radius: 18px; padding: 12px; margin: 10px 0; }
+.news-preview .push img { border-radius: 9px; flex: none; }
+.news-preview .push-h { display: flex; justify-content: space-between; gap: 8px; }
+.news-preview .push p { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
+.hist { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 12px; border-radius: 12px; background: var(--card-2); }
+.hist p { margin: 0; white-space: pre-wrap; }
+.hist .n { text-align: right; }
+/* Ondernemers */
+.biz-cards { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.biz-card { display: flex; gap: 8px; align-items: center; border-radius: 12px; padding: 6px 10px 6px 6px; color: #fff; font-size: 13px; }
+.biz-card.light { color: #17162A; }
+.biz-card img, .biz-card .mono { width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,.9); object-fit: contain; display: grid; place-items: center; color: #17162A; font-weight: 700; }
+@media (max-width: 860px) { .news-layout { grid-template-columns: 1fr; } }

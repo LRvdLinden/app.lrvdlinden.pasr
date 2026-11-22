@@ -54,6 +54,8 @@ export type Guide = {
   validity?: string; online?: boolean; store?: boolean; how?: string; shipping?: string; terms_url?: string; checked?: string;
   /** Klantenkaarten (spaarprogramma): zo spaar je, de belangrijkste voordelen en de officiële programmapagina. */
   earn?: string; perks?: string; program_url?: string;
+  /** Verjaardagsvoordeel (1.0.3), bijv. "Gratis taartje in je verjaardagsmaand"; alleen als de officiële site het noemt. */
+  birthday?: string;
 };
 
 /** Gids controleren: korte teksten, true/false, https-URL zonder login, datum YYYY-MM-DD. Leeg object -> null. */
@@ -61,11 +63,11 @@ export function cleanGuide(v: unknown): { ok: true; value: Guide | null } | { ok
   if (v === null || v === undefined || v === "") return { ok: true, value: null };
   if (typeof v !== "object" || Array.isArray(v)) return { ok: false, error: "bad_guide" };
   const b = v as J, g: Guide = {};
-  const text = (k: "validity" | "how" | "shipping" | "earn" | "perks", max: number) => {
+  const text = (k: "validity" | "how" | "shipping" | "earn" | "perks" | "birthday", max: number) => {
     const t = str(b[k], max).replace(/\s+/g, " ");
     if (t) g[k] = t;
   };
-  text("validity", 80); text("how", 400); text("shipping", 200); text("earn", 400); text("perks", 400);
+  text("validity", 80); text("how", 400); text("shipping", 200); text("earn", 400); text("perks", 400); text("birthday", 160);
   for (const k of ["online", "store"] as const) {
     if (b[k] === true || b[k] === false) g[k] = b[k] as boolean;
     else if (b[k] !== undefined && b[k] !== null && b[k] !== "") return { ok: false, error: "bad_guide" };

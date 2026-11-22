@@ -13,6 +13,9 @@ Het beheer van Pasr: tellingen, accounts en pushmeldingen. Twee onderdelen, éé
 
 - **Overzicht:** accounts (nieuw, bevestigd, actief), kaarten in accounts, Wallet-passen, een grafiek per dag (week, maand, kwartaal, jaar) met nieuwe, bevestigde en verwijderde accounts, Wallet-passen en tegengehouden bots, de redenen waarom bots zijn tegengehouden, en hoeveel kaarten mensen in hun account hebben.
 - **Accounts:** zoeken op e-mail of voornaam, filters, aantal kaarten, laatste login en sync, bevestigingsmail opnieuw sturen, account verwijderen.
+- **Berichten (1.0.3):** een pushmelding sturen aan gebruikers die in de app "Nieuws over mijn kaarten" aanzetten. Doelgroep: iedereen met opt-in, heeft een kaart van winkel X, nieuwe gebruikers (7 dagen) of inactief (30 dagen). Met voorbeeld, aantal ontvangers, bevestiging en geschiedenis. Alleen winkel-id's per apparaat, nooit kaartnummers.
+- **Ondernemers (1.0.3):** zaken die zich aanmeldden op pasr.nl/zakelijk goedkeuren, blokkeren (kaarten gaan offline) of terugzetten, met hun stempelkaarten (leden, stempels, beloningen). Een nieuwe aanmelding geeft een pushmelding (schakelaar "Winkel aangevraagd of nieuwe ondernemer").
+- **Gids:** ook het verjaardagsvoordeel (`birthday`), alleen als de officiële site het noemt.
 - **Instellingen:** Face ID, pushmeldingen per soort, testmelding, uitloggen en overal uitloggen.
 
 De inhoud van kaarten is nergens te zien: die staat versleuteld in de database en het beheer leest alleen aantallen.

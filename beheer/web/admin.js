@@ -56,6 +56,12 @@
       case "bad_id": return "Kies een winkel uit de lijst (of typ het winkel-id).";
       case "weak_password": return "Kies een wachtwoord van minimaal 10 tekens met letters en cijfers.";
       case "exists": return "Dit account bestaat al. Vink aan dat je het wachtwoord wilt vervangen.";
+      case "bad_body": return "Schrijf een bericht.";
+      case "bad_audience": return "Kies een doelgroep.";
+      case "bad_store": return "Kies een winkel (het winkel-id, bijv. ah).";
+      case "duplicate": return "Dit bericht is in de laatste 10 minuten al verstuurd.";
+      case "apns_not_configured": return "Pushmeldingen zijn nog niet ingericht (APNS_KEY_P8 / APNS_KEY_ID).";
+      case "bad_status": return "Onbekende status.";
       case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs.";
       case "create_failed": case "update_failed": case "seed_failed": return "Het review-account kon niet worden gemaakt. Probeer het opnieuw.";
       default: return `Er ging iets mis op de server (${code}).`;
@@ -128,6 +134,8 @@
     if (t === "accounts") loadUsers(true);
     if (t === "settings") showSettings();
     if (t === "stores") loadStores();
+    if (t === "news") loadNews();
+    if (t === "business") loadBusinesses();
     try { history.replaceState(null, "", "#" + t); } catch {}
   }
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -805,6 +813,7 @@
     $("seGValidity").value = g.validity || ""; $("seGHow").value = g.how || ""; $("seGShipping").value = g.shipping || "";
     $("seGTerms").value = g.terms_url || ""; $("seGChecked").value = g.checked || "";
     $("seGEarn").value = g.earn || ""; $("seGPerks").value = g.perks || ""; $("seGProgram").value = g.program_url || "";
+    $("seGBirthday").value = g.birthday || "";
     $("seGOnline").value = typeof g.online === "boolean" ? String(g.online) : "";
     $("seGStore").value = typeof g.store === "boolean" ? String(g.store) : "";
     guideVisible();
@@ -848,6 +857,7 @@
       if (t("seGProgram")) g.program_url = t("seGProgram");
     }
     if (t("seGHow")) g.how = t("seGHow");
+    if (t("seGBirthday")) g.birthday = t("seGBirthday");
     if (t("seGTerms")) g.terms_url = t("seGTerms");
     if (t("seGChecked")) g.checked = t("seGChecked");
     return Object.keys(g).length ? g : null;
@@ -1007,13 +1017,150 @@
     catch (err) { $("seMsg").textContent = err.message; }
   });
 
+  // ---- Berichten: gerichte push aan gebruikers met de opt-in "Nieuws over mijn kaarten" ----
+  const AUD = { all: "Iedereen met opt-in", store: "Heeft kaart", new: "Nieuwe gebruikers (7 dagen)", inactive: "Inactief (30 dagen)" };
+  let newsData = null, countTimer;
+  async function loadNews() {
+    $("newsErr").classList.add("hidden");
+    try {
+      await loadBuiltin();
+      newsData = await api("news_overview");
+      $("newsInfo").textContent = `${num(newsData.all)} ${newsData.all === 1 ? "apparaat" : "apparaten"} met de opt-in, ${num(newsData.new)} nieuw deze week, ${num(newsData.inactive)} inactief.` +
+        (newsData.push_ready ? "" : " Pushmeldingen zijn nog niet ingericht.");
+      $("nStores").replaceChildren(...(newsData.stores || []).map((x) => { const o = document.createElement("option"); o.value = x.id; o.label = `${storeName(x.id)} (${num(x.count)})`; return o; }));
+      const h = $("newsHistory");
+      h.replaceChildren();
+      if (!(newsData.history || []).length) h.append(el("p", "empty", "Nog geen berichten verstuurd."));
+      for (const c of newsData.history || []) {
+        const row = el("div", "hist");
+        const left = el("div");
+        left.append(el("b", null, c.title || "Pasr"), el("p", null, c.body),
+          el("span", "muted sm", `${AUD[c.audience] || c.audience}${c.store_id ? " " + storeName(c.store_id) : ""} · ${new Date(c.created_at).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`));
+        const n = el("div", "n");
+        n.append(el("b", null, num(c.sent)), el("div", "muted sm", `van ${num(c.recipients)}${c.failed ? `, ${num(c.failed)} mislukt` : ""}`));
+        row.append(left, n);
+        h.append(row);
+      }
+      updateCount();
+    } catch (err) {
+      if (err.status === 401) return;
+      $("newsErr").textContent = err.message; $("newsErr").classList.remove("hidden");
+    }
+  }
+  function newsPreview() {
+    $("pTitle").textContent = $("nTitle").value.trim() || "Pasr";
+    $("pBody").textContent = $("nBody").value.trim() || "Je bericht verschijnt hier.";
+    $("nLeft").textContent = `${240 - $("nBody").value.length} tekens over`;
+  }
+  function audienceParams() {
+    const audience = $("nAudience").value, p = { audience };
+    if (audience === "store") p.store = resolveStore($("nStore").value);
+    return p;
+  }
+  function updateCount() {
+    clearTimeout(countTimer);
+    const p = audienceParams();
+    $("nStoreRow").classList.toggle("hidden", p.audience !== "store");
+    if (newsData && p.audience !== "store") { $("nCount").textContent = num(newsData[p.audience]); return; }
+    if (!p.store) { $("nCount").textContent = "–"; return; }
+    countTimer = setTimeout(async () => {
+      try { $("nCount").textContent = num((await api("news_count", p)).count); } catch { $("nCount").textContent = "–"; }
+    }, 250);
+  }
+  ["nTitle", "nBody"].forEach((id) => $(id).addEventListener("input", newsPreview));
+  $("nAudience").addEventListener("change", updateCount);
+  $("nStore").addEventListener("input", updateCount);
+  $("newsForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("nMsg"); msg.className = "err"; msg.textContent = "";
+    const body = $("nBody").value.trim();
+    if (!body) { msg.textContent = "Schrijf een bericht."; return; }
+    const p = audienceParams();
+    let n;
+    try { n = (await api("news_count", p)).count; } catch (err) { msg.textContent = err.message; return; }
+    if (!n) { msg.textContent = "Er zijn geen ontvangers in deze doelgroep."; return; }
+    const who = p.audience === "store" ? `iedereen met een kaart van ${storeName(p.store)}` : AUD[p.audience].toLowerCase();
+    if (!(await ask("Bericht versturen?", `Naar ${num(n)} ${n === 1 ? "apparaat" : "apparaten"} (${who}). Dit kan niet worden teruggedraaid.`, "Versturen"))) return;
+    $("nSend").disabled = true;
+    try {
+      const r = await api("news_send", { title: $("nTitle").value.trim() || null, body, ...p });
+      msg.className = "err ok";
+      msg.textContent = `Verstuurd naar ${num(r.sent)} van ${num(r.recipients)} apparaten${r.failed ? ` (${num(r.failed)} mislukt)` : ""}.`;
+      $("nBody").value = ""; $("nTitle").value = ""; newsPreview(); loadNews();
+    } catch (err) { msg.textContent = err.message; }
+    finally { $("nSend").disabled = false; }
+  });
+
+  // ---- Ondernemers (Pasr voor ondernemers) ----
+  let bizFilter = "pending";
+  function bizBadge(n) { const b = $("bizBadge"); b.textContent = n; b.classList.toggle("hidden", !n); }
+  document.querySelectorAll("#bizFilter button").forEach((b) => b.addEventListener("click", () => { bizFilter = b.dataset.status; loadBusinesses(); }));
+  const BIZ = { pending: ["Wacht op goedkeuring", "wait"], approved: ["Goedgekeurd", "ok"], blocked: ["Geblokkeerd", "wait"] };
+  async function loadBusinesses() {
+    document.querySelectorAll("#bizFilter button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.status === bizFilter)));
+    const list = $("bizList");
+    list.setAttribute("aria-busy", "true");
+    $("bizErr").classList.add("hidden");
+    try {
+      const all = (await api("businesses")).businesses || [];
+      bizBadge(all.filter((b) => b.status === "pending").length);
+      const shown = bizFilter === "all" ? all : all.filter((b) => b.status === bizFilter);
+      $("bizCount").textContent = `${num(all.length)} ${all.length === 1 ? "zaak" : "zaken"}, ${num(all.filter((b) => b.status === "pending").length)} wachten op goedkeuring.`;
+      list.replaceChildren();
+      if (!shown.length) list.append(el("p", "empty", bizFilter === "pending" ? "Geen aanmeldingen die wachten." : "Geen zaken in deze lijst."));
+      for (const b of shown) list.append(bizRow(b));
+    } catch (err) {
+      if (err.status === 401) return;
+      $("bizErr").textContent = err.message; $("bizErr").classList.remove("hidden");
+    } finally { list.removeAttribute("aria-busy"); }
+  }
+  function bizRow(b) {
+    const row = el("div", "acc");
+    const who = el("div", "who"), meta = el("div", "meta");
+    who.append(el("div", "mail", b.name + (b.city ? ` · ${b.city}` : "")));
+    const st = BIZ[b.status] || BIZ.pending;
+    meta.append(el("span", "badge " + st[1], st[0]), el("span", null, b.email || "—"));
+    if (b.website) meta.append(el("span", null, b.website));
+    meta.append(el("span", null, "Aangemeld " + ago(b.created_at)));
+    who.append(meta);
+    if (b.note) who.append(el("p", "muted sm", b.note));
+    const cards = el("div", "biz-cards");
+    for (const c of b.cards || []) {
+      const chip = el("div", "biz-card");
+      chip.style.background = c.color;
+      if (luminance(c.color) > 0.45) chip.classList.add("light");
+      if (c.logo) { const i = document.createElement("img"); i.alt = ""; i.src = "data:image/" + (c.logo.startsWith("/9j/") ? "jpeg" : "png") + ";base64," + c.logo; chip.append(i); }
+      else chip.append(el("span", "mono", (c.name || "?").charAt(0).toUpperCase()));
+      chip.append(el("span", null, `${c.name}: ${c.stamps_total} stempels, ${c.reward} · ${c.published ? "online" : "concept"} · ${num(c.members)} leden, ${num(c.stamps)} stempels, ${num(c.rewards)} beloningen`));
+      cards.append(chip);
+    }
+    if ((b.cards || []).length) who.append(cards);
+    const acts = el("div", "acts");
+    const btn = (label, cls, status, q, t) => {
+      const x = el("button", "btn sm " + cls, label); x.type = "button";
+      x.addEventListener("click", async () => {
+        if (q && !(await ask(q, t, label))) return;
+        x.disabled = true;
+        try { await api("business_status", { id: b.id, status }); toast(`${b.name}: ${BIZ[status][0].toLowerCase()}`); loadBusinesses(); }
+        catch (err) { toast(err.message); x.disabled = false; }
+      });
+      return x;
+    };
+    if (b.status !== "approved") acts.append(btn("Goedkeuren", "", "approved"));
+    if (b.status !== "blocked") acts.append(btn("Blokkeren", "danger", "blocked", "Zaak blokkeren?", `${b.name} kan niet meer scannen en de kaarten gaan offline. Leden zien dat de kaart niet meer actief is.`));
+    if (b.status === "blocked") acts.append(btn("Terug naar wachten", "ghost", "pending"));
+    row.append(el("div", "avatar", b.name.charAt(0).toUpperCase()), who, acts);
+    return row;
+  }
+
   // ---- start ----
   function start() {
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
     const want = (location.hash || "").slice(1);
-    setTab(["overview", "insights", "accounts", "stores", "settings"].includes(want) ? want : "overview");
+    setTab(["overview", "insights", "accounts", "stores", "news", "business", "settings"].includes(want) ? want : "overview");
     api("store_requests", { status: "open" }).then((r) => badge((r.groups || []).length)).catch(() => {});
+    api("businesses").then((r) => bizBadge((r.businesses || []).filter((b) => b.status === "pending").length)).catch(() => {});
   }
   if (token && expires > Date.now() && URL_ADMIN) start(); else signOut();
   // sessie verloopt: terug naar inloggen

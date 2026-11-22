@@ -181,10 +181,12 @@ struct StoreGuide: Codable, Hashable {
     var how: String?
     var terms_url: String?
     var checked: String?
+    /// Verjaardagsvoordeel (1.0.3), alleen als de officiële site het noemt.
+    var birthday: String?
 
     init() {}
 
-    private enum K: String, CodingKey { case validity, online, store, shipping, earn, perks, program_url, how, terms_url, checked }
+    private enum K: String, CodingKey { case validity, online, store, shipping, earn, perks, program_url, how, terms_url, checked, birthday }
 
     init(from decoder: Decoder) throws {
         guard let c = try? decoder.container(keyedBy: K.self) else { return }
@@ -192,7 +194,7 @@ struct StoreGuide: Codable, Hashable {
         func b(_ k: K) -> Bool? { (try? c.decodeIfPresent(Bool.self, forKey: k)) ?? nil }
         validity = s(.validity); online = b(.online); store = b(.store); shipping = s(.shipping)
         earn = s(.earn); perks = s(.perks); program_url = s(.program_url)
-        how = s(.how); terms_url = s(.terms_url); checked = s(.checked)
+        how = s(.how); terms_url = s(.terms_url); checked = s(.checked); birthday = s(.birthday)
     }
 
     var isEmpty: Bool { self == StoreGuide() }
@@ -210,6 +212,7 @@ struct StoreGuide: Codable, Hashable {
         if let how { d["how"] = how }
         if let terms_url { d["terms_url"] = terms_url }
         if let checked { d["checked"] = checked }
+        if let birthday { d["birthday"] = birthday }
         return d
     }
 }
@@ -244,3 +247,79 @@ enum DateParse {
 
     static func day(_ s: String) -> Date? { dayFormatter.date(from: s) }
 }
+
+// MARK: Berichten (gerichte push, 1.0.3)
+
+struct NewsOverview: Decodable {
+    struct StoreCount: Decodable, Hashable { let id: String; let count: Int }
+    let all: Int
+    let new: Int
+    let inactive: Int
+    let stores: [StoreCount]
+    let history: [NewsCampaign]
+    let push_ready: Bool?
+}
+struct NewsCampaign: Decodable, Identifiable, Hashable {
+    let id: String
+    let title: String?
+    let body: String
+    let audience: String
+    let store_id: String?
+    let recipients: Int
+    let sent: Int
+    let failed: Int
+    let created_at: String
+}
+struct NewsCount: Decodable { let count: Int }
+struct NewsSendResponse: Decodable { let id: String; let recipients: Int; let sent: Int; let failed: Int }
+
+/// Doelgroepen van "Bericht sturen" (zelfde sleutels als supabase/functions/admin/news.ts).
+enum NewsAudience: String, CaseIterable, Identifiable {
+    case all, store, new, inactive
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .all: "Iedereen met opt-in"
+        case .store: "Heeft een kaart van"
+        case .new: "Nieuwe gebruikers (7 dagen)"
+        case .inactive: "Inactief (30 dagen)"
+        }
+    }
+}
+
+// MARK: Ondernemers (Pasr voor ondernemers, 1.0.3)
+
+struct BusinessCard: Decodable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let logo: String?
+    let color: String
+    let stamps_total: Int
+    let reward: String
+    let published: Bool?
+    let members: Int?
+    let stamps: Int?
+    let rewards: Int?
+    let updated_at: String?
+}
+struct Business: Decodable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let city: String?
+    let email: String?
+    let website: String?
+    let note: String?
+    let status: String
+    let created_at: String?
+    let reviewed_at: String?
+    let cards: [BusinessCard]
+
+    var statusTitle: String {
+        switch status {
+        case "approved": "Goedgekeurd"
+        case "blocked": "Geblokkeerd"
+        default: "Wacht op goedkeuring"
+        }
+    }
+}
+struct BusinessesResponse: Decodable { let businesses: [Business] }

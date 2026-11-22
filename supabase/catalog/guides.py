@@ -7,7 +7,7 @@ import json, os, re, sys, urllib.request
 from pathlib import Path
 
 KEYS = {"validity": str, "online": bool, "store": bool, "how": str, "shipping": str, "earn": str, "perks": str,
-        "program_url": str, "terms_url": str, "checked": str}
+        "program_url": str, "terms_url": str, "checked": str, "birthday": str}
 
 
 def check(guides):
@@ -18,7 +18,7 @@ def check(guides):
         for k, v in g.items():
             assert k in KEYS, f"{sid}: onbekende sleutel {k!r}"
             assert isinstance(v, KEYS[k]), f"{sid}.{k}: verkeerd type"
-        for k, n in (("validity", 80), ("how", 400), ("shipping", 200), ("earn", 400), ("perks", 400), ("program_url", 300), ("terms_url", 300)):
+        for k, n in (("validity", 80), ("how", 400), ("shipping", 200), ("earn", 400), ("perks", 400), ("birthday", 160), ("program_url", 300), ("terms_url", 300)):
             assert len(g.get(k, "")) <= n, f"{sid}.{k}: te lang"
         for k in ("terms_url", "program_url"):
             if k in g:
@@ -31,12 +31,50 @@ def lit(v):
     return "'" + str(v).replace("'", "''") + "'"
 
 
+def check_birthdays(b):
+    """birthdays.json: {store_id: {"birthday": tekst (hoogstens 160), "source": https-adres van de officiële site, "checked": YYYY-MM-DD}}."""
+    for sid, v in b.items():
+        assert re.fullmatch(r"[a-z0-9-]{2,40}", sid), f"ongeldig id {sid!r}"
+        assert set(v) <= {"birthday", "source", "checked"}, f"{sid}: onbekende sleutel"
+        assert isinstance(v.get("birthday"), str) and 0 < len(v["birthday"]) <= 160, f"{sid}.birthday"
+        assert str(v.get("source", "")).startswith("https://"), f"{sid}.source: geen https"
+        assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", v.get("checked", "")), f"{sid}.checked"
+
+
+def query(ref, token, sql):
+    req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", method="POST",
+                                 data=json.dumps({"query": sql}).encode(),
+                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return json.loads(r.read() or b"[]")
+
+
+def birthdays(ref, token, b):
+    """Verjaardagsvoordeel (1.0.3) in de gids zetten, één keer per winkel: pasr_store_birthday_seeded onthoudt het, zodat
+    een tekst die in het beheer is weggehaald of aangepast niet terugkomt."""
+    if not b:
+        return 0
+    values = ",\n".join(f"({lit(k)}, {lit(v['birthday'])})" for k, v in sorted(b.items()))
+    sql = (f"with src(id, birthday) as (values\n{values}\n),\n"
+           f"todo as (select src.* from src join public.pasr_stores s on s.id = src.id\n"
+           f"         where not exists (select 1 from public.pasr_store_birthday_seeded x where x.id = src.id)),\n"
+           f"upd as (update public.pasr_stores s set guide = coalesce(s.guide, '{{}}'::jsonb) || jsonb_build_object('birthday', t.birthday),\n"
+           f"        updated_at = now() from todo t where s.id = t.id and coalesce(s.guide->>'birthday', '') = '' returning s.id),\n"
+           f"seen as (insert into public.pasr_store_birthday_seeded (id) select id from todo on conflict do nothing)\n"
+           f"select id from upd;")
+    res = query(ref, token, sql)
+    return len(res) if isinstance(res, list) else 0
+
+
 def main():
     guides = json.loads((Path(__file__).parent / "guides.json").read_text(encoding="utf-8"))
     check(guides)
+    bfile = Path(__file__).parent / "birthdays.json"
+    bdays = json.loads(bfile.read_text(encoding="utf-8")) if bfile.exists() else {}
+    check_birthdays(bdays)
     ref, token = os.environ.get("REF"), os.environ.get("SUPABASE_ACCESS_TOKEN")
     if "--check" in sys.argv or not (ref and token):
-        print(f"Gidsen: {len(guides)} in guides.json, bestand in orde.")
+        print(f"Gidsen: {len(guides)} in guides.json, {len(bdays)} in birthdays.json, bestanden in orde.")
         return
     values = ",\n".join(f"({lit(k)}, {lit(json.dumps(v, ensure_ascii=False))}::jsonb)" for k, v in sorted(guides.items()))
     sql = (f"update public.pasr_stores s set guide = g.guide, updated_at = now()\n"
@@ -48,6 +86,7 @@ def main():
         res = json.loads(r.read() or b"[]")
     n = len(res) if isinstance(res, list) else 0
     print(f"Gidsen: {n} winkels kregen een gids ({len(guides)} in het bestand; de rest had er al een of bestaat niet).")
+    print(f"Verjaardagsvoordeel: {birthdays(ref, token, bdays)} winkels kregen het in hun gids ({len(bdays)} in birthdays.json).")
 
 
 if __name__ == "__main__":

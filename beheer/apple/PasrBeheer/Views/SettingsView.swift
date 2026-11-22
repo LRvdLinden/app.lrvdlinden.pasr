@@ -31,7 +31,7 @@ struct SettingsView: View {
                     Toggle("Account bevestigd", isOn: pref(\.confirmed))
                     Toggle("Account verwijderd", isOn: pref(\.deleted))
                     Toggle("Bot tegengehouden (max. 1 per uur)", isOn: pref(\.bots))
-                    Toggle("Winkel aangevraagd", isOn: pref(\.requests))
+                    Toggle("Winkel aangevraagd of nieuwe ondernemer", isOn: pref(\.requests))
                     Button {
                         Task {
                             testState = "Versturen…"

@@ -36,6 +36,14 @@ De app schrijft na elke wijziging een overzicht van je kaarten naar de App Group
 
 Een gedeelde kaart is een link `https://pasr.nl/kaart/#<gegevens>`. De kaart staat na het `#`, dus de server ziet hem nooit. Met Pasr geïnstalleerd opent de link de app (universal link, `applinks:pasr.nl`); zonder Pasr toont `website/kaart/` de kaart met een werkende barcode. In de app: Deel bij een kaart, als link of als QR-code.
 
+## Pasr voor ondernemers (1.0.3)
+
+Zaken maken op `pasr.nl/zakelijk/` gratis een digitale stempelkaart. Ze melden zich aan met een Pasr-account; Léon keurt ze goed in het beheer (tab Ondernemers). Daarna: kaart ontwerpen (naam, logo, kleur, 2 tot 30 stempels, beloning), QR-code/link/flyer (`/zakelijk/flyer/#<id>`), leden en stempels per dag, en de web-scanner `/zakelijk/scan/` (camera via BarcodeDetector of jsQR, stempel erbij of beloning inwisselen). Klanten sluiten aan via `https://pasr.nl/zakelijk/kaart/#<kaart-id>` (universal link naar de app, anders in de browser) met een anonieme lidcode (`PZ` + 10 tekens). Database: `pasr_businesses`, `pasr_business_cards`, `pasr_business_members`, `pasr_business_events` en de functies `pasr_business_*` in `supabase/schema.sql` (blok `-- 1.0.3 web`).
+
+## Gerichte pushberichten (1.0.3)
+
+Opt-in in de app ("Nieuws over mijn kaarten"): het apparaat meldt zich met `pasr_news_register` (token en alleen winkel-id's, ook zonder account). In het beheer (tab Berichten, ook in PasrBeheer en LRbeheer) kies je een doelgroep en stuur je via de functie `admin` (`news_send`) en APNs.
+
 ## Website
 
 De site staat in `website/` en heeft schone adressen (`/privacy/`, `/support/`, geen `.html`). De homepage wordt gemaakt met `python3 tools/make_website.py` (met echte barcodes voor de voorbeeldkaarten).

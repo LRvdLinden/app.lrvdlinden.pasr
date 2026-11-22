@@ -70,9 +70,9 @@ export function cleanRegister(body: unknown): { ok: true; value: RegisterInput }
 // ---- meldingen ----
 
 /** Seintjes van de database (pasr_admin_notify). */
-export const KINDS = ["signup", "confirmed", "deleted", "bot", "store_request"] as const;
+export const KINDS = ["signup", "confirmed", "deleted", "bot", "store_request", "business"] as const;
 export type Kind = typeof KINDS[number];
-export const prefFor: Record<Kind, PrefKey> = { signup: "signups", confirmed: "confirmed", deleted: "deleted", bot: "bots", store_request: "requests" };
+export const prefFor: Record<Kind, PrefKey> = { signup: "signups", confirmed: "confirmed", deleted: "deleted", bot: "bots", store_request: "requests", business: "requests" };
 /** Bots: hoogstens één melding per uur (de rest staat in het overzicht). */
 export const BOT_QUIET_MS = 3600_000;
 
@@ -114,6 +114,15 @@ export function message(kind: Kind, c: Counts, reason?: unknown) {
       title = "Winkel aangevraagd";
       body = store ? `Iemand mist ${store} in Pasr.` : "Iemand mist een winkel in Pasr.";
       url = "pasrbeheer://stores";
+      break;
+    }
+    case "business": {
+      // reason = naam van de zaak (bedrijfsnaam, geen persoonsgegevens; nooit het e-mailadres)
+      const name = typeof reason === "string" ? reason.replace(/[\r\n]+/g, " ").slice(0, 60) : "";
+      title = "Nieuwe ondernemer";
+      body = name ? `${name} wil Pasr voor ondernemers gebruiken. Keur de aanmelding goed in het beheer.`
+        : "Een zaak wil Pasr voor ondernemers gebruiken. Keur de aanmelding goed in het beheer.";
+      url = "pasrbeheer://businesses";
       break;
     }
   }

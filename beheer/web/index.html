@@ -49,6 +49,10 @@
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg><span>Accounts</span></button>
         <button role="tab" id="tab-stores" data-tab="stores" aria-controls="view-stores" aria-selected="false">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/></svg><span>Winkels</span><b id="reqBadge" class="tab-badge hidden"></b></button>
+        <button role="tab" id="tab-news" data-tab="news" aria-controls="view-news" aria-selected="false">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11v2a1 1 0 0 0 1 1h2l5 4V6L7 10H5a1 1 0 0 0-1 1zM16 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><span>Berichten</span></button>
+        <button role="tab" id="tab-business" data-tab="business" aria-controls="view-business" aria-selected="false">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="8" cy="10" r="1.4"/><circle cx="12" cy="10" r="1.4"/><circle cx="16" cy="10" r="1.4"/><path d="M7 15h10"/></svg><span>Ondernemers</span><b id="bizBadge" class="tab-badge hidden"></b></button>
         <button role="tab" id="tab-settings" data-tab="settings" aria-controls="view-settings" aria-selected="false">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Instellingen</span></button>
       </nav>
@@ -210,6 +214,7 @@
               <label class="se-wide"><span id="seGHowLabel">Zo wissel je hem in (1 tot 3 zinnen)</span><textarea id="seGHow" rows="3" maxlength="400"></textarea></label>
               <label data-gkind="voucher" class="se-wide">Verzendkosten<input id="seGShipping" type="text" maxlength="200" autocomplete="off"></label>
               <label data-gkind="loyalty" class="se-wide">Programmapagina (https)<input id="seGProgram" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
+              <label class="se-wide">Verjaardagsvoordeel (alleen als de officiële site het noemt)<input id="seGBirthday" type="text" maxlength="160" placeholder="bijv. Gratis taartje in je verjaardagsmaand" autocomplete="off"></label>
               <label class="se-wide">Voorwaarden of FAQ (https)<input id="seGTerms" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
             </div>
           </fieldset>
@@ -224,6 +229,54 @@
           <div id="seMsg" class="err" role="status"></div>
         </article>
       </div>
+    </section>
+
+    <!-- Berichten: gerichte pushmeldingen aan gebruikers met de opt-in "Nieuws over mijn kaarten" -->
+    <section id="view-news" class="view hidden" role="tabpanel" aria-labelledby="tab-news">
+      <div class="head">
+        <div><h1>Bericht sturen</h1><p class="muted" id="newsInfo">Alleen aan wie in de app &ldquo;Nieuws over mijn kaarten&rdquo; aanzette.</p></div>
+      </div>
+      <div id="newsErr" class="banner hidden" role="alert"></div>
+      <div class="news-layout">
+        <form id="newsForm" class="card se-grid" novalidate autocomplete="off">
+          <label class="se-wide">Titel (optioneel)<input id="nTitle" type="text" maxlength="60" placeholder="Pasr"></label>
+          <label class="se-wide">Bericht<textarea id="nBody" rows="4" maxlength="240" placeholder="Bijvoorbeeld: Bij HEMA tel je nu ook je stempels in Pasr."></textarea><span class="muted sm" id="nLeft">240 tekens over</span></label>
+          <label>Doelgroep<select id="nAudience">
+            <option value="all">Iedereen met opt-in</option>
+            <option value="store">Heeft een kaart van een winkel</option>
+            <option value="new">Nieuwe gebruikers (7 dagen)</option>
+            <option value="inactive">Inactief (30 dagen)</option></select></label>
+          <label id="nStoreRow" class="hidden">Winkel<input id="nStore" list="nStores" placeholder="bijv. ah of hema" spellcheck="false"></label>
+          <datalist id="nStores"></datalist>
+          <div class="se-wide news-count"><span class="muted">Ontvangers</span> <b id="nCount">–</b></div>
+          <div class="row-btns se-wide"><button id="nSend" class="btn" type="submit">Versturen</button></div>
+          <div id="nMsg" class="err se-wide" role="status"></div>
+        </form>
+        <aside class="card news-preview" aria-label="Voorbeeld">
+          <h2>Voorbeeld</h2>
+          <div class="push"><img src="icon.png" alt="" width="38" height="38"><div><div class="push-h"><b id="pTitle">Pasr</b><span class="muted sm">nu</span></div><p id="pBody">Je bericht verschijnt hier.</p></div></div>
+          <p class="muted sm">Een tik opent Pasr; bij de doelgroep &ldquo;heeft een kaart van&rdquo; opent de kaart van die winkel. Er gaan geen kaartnummers of namen mee.</p>
+        </aside>
+      </div>
+      <article class="card">
+        <header class="card-h"><h2>Geschiedenis</h2><span class="muted sm">laatste 100</span></header>
+        <div id="newsHistory" class="acc-list"></div>
+      </article>
+    </section>
+
+    <!-- Ondernemers: Pasr voor ondernemers (pasr.nl/zakelijk) -->
+    <section id="view-business" class="view hidden" role="tabpanel" aria-labelledby="tab-business">
+      <div class="head">
+        <div><h1>Ondernemers</h1><p class="muted" id="bizCount">Zaken die zich aanmeldden op pasr.nl/zakelijk. Keur ze goed of blokkeer ze.</p></div>
+        <div id="bizFilter" class="seg" role="group" aria-label="Filter">
+          <button type="button" data-status="pending">Wacht</button>
+          <button type="button" data-status="approved">Goedgekeurd</button>
+          <button type="button" data-status="blocked">Geblokkeerd</button>
+          <button type="button" data-status="all">Alle</button>
+        </div>
+      </div>
+      <div id="bizErr" class="banner hidden" role="alert"></div>
+      <div id="bizList" class="acc-list" aria-busy="true"></div>
     </section>
 
     <!-- Instellingen -->

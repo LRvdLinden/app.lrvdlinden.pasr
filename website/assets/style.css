@@ -907,3 +907,37 @@ html, body { overflow-x: clip; max-width: 100%; }
   .fv-choice .o1 { border-color: var(--iris); background: rgba(106,92,255,.32); }
 }
 .nw { white-space: nowrap; }
+/* Stempelkaarten: stempels komen er een voor een bij */
+.fv-stamps { background: linear-gradient(135deg, #F6E9DE, #FFF6EF); }
+.fv-stamps .sc2 { width: 230px; height: 128px; border-radius: 16px; padding: 10px 12px; color: #fff; display: grid; grid-template-rows: auto 1fr auto; gap: 6px;
+  background: linear-gradient(135deg, #9A6A48, #7B4B2A 55%, #5E3920); box-shadow: 0 14px 26px -16px rgba(80,40,10,.7); transform: rotate(-3deg); }
+.fv-stamps .hd { display: flex; align-items: center; gap: 7px; font: 700 13px var(--display); }
+.fv-stamps .hd b { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 11px; }
+.fv-stamps .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; align-content: center; justify-items: center; }
+.fv-stamps .st { width: 24px; height: 24px; border-radius: 50%; border: 2px dashed rgba(255,255,255,.55); display: grid; place-items: center; }
+.fv-stamps .st.on { border: 0; background: #fff; color: #7B4B2A; animation: fvStamp 7s cubic-bezier(.2,1.6,.4,1) infinite both; animation-delay: calc(var(--i) * 180ms); }
+.fv-stamps .st svg { width: 14px; height: 14px; }
+.fv-stamps .rw { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; }
+.fv-stamps .rw em { font-style: normal; opacity: .8; }
+.fv-stamps .scan-chip { position: absolute; right: 16px; top: 18px; background: #12A77E; color: #fff; font: 700 11px var(--body); border-radius: 999px; padding: 4px 10px;
+  box-shadow: 0 8px 16px -10px rgba(10,80,60,.8); animation: fvChip 7s ease-in-out infinite; }
+@keyframes fvStamp { 0%, 3% { transform: scale(0) rotate(-40deg); } 8%, 90% { transform: none; } 96%, 100% { transform: scale(0); } }
+@keyframes fvChip { 0%, 20% { opacity: 0; transform: translateY(8px); } 26%, 86% { opacity: 1; transform: none; } 92%, 100% { opacity: 0; } }
+
+/* Verjaardagsvoordeel: melding met confetti */
+.fv-bday { background: linear-gradient(135deg, #FFE1E8, #FFF3F6); grid-auto-flow: column; gap: 14px; padding: 0 14px; }
+.fv-bday .bc { width: 92px; height: 60px; border-radius: 11px; display: grid; place-items: center; align-content: center; gap: 2px; color: #fff;
+  background: linear-gradient(135deg, #FF6F8F, #FF375F); box-shadow: 0 10px 20px -14px rgba(160,20,60,.7); transform: rotate(-5deg); }
+.fv-bday .bc svg { width: 24px; height: 24px; }
+.fv-bday .bc small { font-size: 9px; font-weight: 700; opacity: .9; }
+.fv-bday .nt { max-width: 230px; display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(255,255,255,.96);
+  box-shadow: 0 10px 20px -14px rgba(160,20,60,.6); font-size: 11px; line-height: 1.3; color: #4B4966; animation: fvNt1 6s ease-in-out infinite; }
+.fv-bday .nt b { display: block; color: #17162A; font-size: 12px; }
+.fv-bday .nt img { width: 26px; height: 26px; border-radius: 7px; flex: none; }
+.fv-bday .cf { position: absolute; width: 7px; height: 11px; border-radius: 2px; top: -14px; animation: fvConf 6s linear infinite; }
+.fv-bday .c1 { left: 12%; background: #FF375F; animation-delay: .2s; } .fv-bday .c2 { left: 30%; background: #6A5CFF; animation-delay: 1.1s; }
+.fv-bday .c3 { left: 52%; background: #2ED3A6; animation-delay: .6s; } .fv-bday .c4 { left: 72%; background: #F2B705; animation-delay: 1.6s; }
+.fv-bday .c5 { left: 88%; background: #0A84FF; animation-delay: .9s; }
+@keyframes fvConf { 0% { transform: translateY(0) rotate(0); opacity: 0; } 8% { opacity: 1; } 45% { transform: translateY(170px) rotate(320deg); opacity: 1; } 46%, 100% { opacity: 0; transform: translateY(170px); } }
+@media (max-width: 420px) { .fv-bday .bc { display: none; } }
+@media (prefers-reduced-motion: reduce) { .fv-stamps .st.on, .fv-stamps .scan-chip, .fv-bday .nt { animation: none !important; } .fv-bday .cf { display: none; } }

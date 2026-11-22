@@ -258,7 +258,7 @@ Deno.serve(async (req) => {
     if (action === "notify") {
       if (!(await hookOk(req.headers.get("x-pasr-hook")))) return json({ error: "forbidden" }, 403);
       if (!(KINDS as readonly unknown[]).includes(body.kind)) return json({ error: "bad_kind" }, 400);
-      return json({ sent: await notify(body.kind as Kind, body.kind === "store_request" ? body.name : body.reason) });
+      return json({ sent: await notify(body.kind as Kind, body.kind === "store_request" || body.kind === "business" ? body.name : body.reason) });
     }
 
     if (!configured()) return json({ error: "not_configured" }, 503);

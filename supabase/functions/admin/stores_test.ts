@@ -64,6 +64,10 @@ Deno.test("cadeaubon-gids", () => {
   ok(!cleanGuide({ program_url: "http://ah.nl" }).ok, "programma alleen https");
   const loy = cleanGuide({ earn: "Scan je kaart.", perks: "Korting.", program_url: "https://www.ah.nl/bonuskaart" });
   ok(loy.ok && loy.value?.earn === "Scan je kaart." && loy.value.program_url === "https://www.ah.nl/bonuskaart", JSON.stringify(loy));
+  const bd = cleanGuide({ birthday: "  Gratis   taartje in je verjaardagsmaand " });
+  ok(bd.ok && bd.value?.birthday === "Gratis taartje in je verjaardagsmaand", JSON.stringify(bd));
+  const longBd = cleanGuide({ birthday: "x".repeat(400) });
+  ok(longBd.ok && longBd.value?.birthday?.length === 160, "verjaardag hoogstens 160 tekens");
   ok(!cleanGuide({ checked: "21-11-2026" }).ok, "datum");
   ok(!cleanGuide({ online: "ja" }).ok, "true/false");
   ok(!cleanGuide([1]).ok, "geen lijst");

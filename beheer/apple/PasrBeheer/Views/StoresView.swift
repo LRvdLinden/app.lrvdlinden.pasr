@@ -326,6 +326,7 @@ struct StoreDraft: Identifiable {
     var gHow = ""
     var gTerms = ""
     var gChecked = ""
+    var gBirthday = ""
     /// Gids zoals geladen (voor "alleen meesturen als gewijzigd").
     var originalGuide: StoreGuide?
 
@@ -344,7 +345,7 @@ struct StoreDraft: Identifiable {
         let g = s.guide ?? StoreGuide()
         gValidity = g.validity ?? ""; gOnline = g.online; gStore = g.store; gShipping = g.shipping ?? ""
         gEarn = g.earn ?? ""; gPerks = g.perks ?? ""; gProgram = g.program_url ?? ""
-        gHow = g.how ?? ""; gTerms = g.terms_url ?? ""; gChecked = g.checked ?? ""
+        gHow = g.how ?? ""; gTerms = g.terms_url ?? ""; gChecked = g.checked ?? ""; gBirthday = g.birthday ?? ""
         originalGuide = guide()
     }
 
@@ -373,6 +374,7 @@ struct StoreDraft: Identifiable {
         g.how = t(gHow, 400)
         g.terms_url = url(gTerms)
         g.checked = t(gChecked, 10)
+        g.birthday = t(gBirthday, 160)
         return g.isEmpty ? nil : g
     }
 
@@ -578,6 +580,8 @@ struct StoreEditorView: View {
             } else {
                 urlField("Programmapagina (https)", text: $draft.gProgram)
             }
+            TextField("Verjaardagsvoordeel (alleen als de officiële site het noemt)", text: $draft.gBirthday, axis: .vertical)
+                .lineLimit(1...3)
             urlField("Voorwaarden of FAQ (https)", text: $draft.gTerms)
             Toggle("Gecontroleerd", isOn: Binding(get: { !draft.gChecked.isEmpty },
                                                    set: { draft.gChecked = $0 ? GuideDate.string(Date()) : "" }))

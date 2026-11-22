@@ -118,6 +118,8 @@ struct SectionContent: View {
         case .insights: InsightsView()
         case .accounts: AccountsView()
         case .stores: StoresView()
+        case .news: NewsView()
+        case .businesses: BusinessesView()
         case .settings: SettingsView()
         }
     }

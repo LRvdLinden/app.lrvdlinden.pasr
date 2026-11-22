@@ -61,7 +61,7 @@
         const s = await call("auth/v1/verify", { type, token_hash: hash });
         history.replaceState(null, "", location.pathname);
         if (isRecovery) return newPassword(s.access_token);
-        card("ok", "ok", "Gelukt!", type === "email_change" ? "Je nieuwe e-mailadres is bevestigd." : "Je e-mailadres is bevestigd. Ga terug naar Pasr en log in met je e-mailadres en wachtwoord.",
+        card("ok", "ok", "Gelukt!", type === "email_change" ? "Je nieuwe e-mailadres is bevestigd." : "Je e-mailadres is bevestigd. Ga terug naar Pasr en log in met je e-mailadres en wachtwoord. Meld je een zaak aan? Log dan in op pasr.nl/zakelijk.",
           '<p class="small">Je kunt dit venster sluiten.</p>');
       } catch (e) { btn.disabled = false; setMsg(nice(e)); }
     });

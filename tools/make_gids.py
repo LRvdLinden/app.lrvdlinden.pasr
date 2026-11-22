@@ -39,7 +39,14 @@ def slug(card):
 
 
 def guides():
-    return json.loads(GUIDES.read_text(encoding="utf-8"))
+    """guides.json, met het verjaardagsvoordeel uit birthdays.json erbij (alleen bij winkels die al een gids hebben)."""
+    g = json.loads(GUIDES.read_text(encoding="utf-8"))
+    bfile = GUIDES.parent / "birthdays.json"
+    if bfile.exists():
+        for sid, b in json.loads(bfile.read_text(encoding="utf-8")).items():
+            if sid in g and "birthday" not in g[sid]:
+                g[sid] = {**g[sid], "birthday": b["birthday"]}
+    return g
 
 
 def load(kind, all_guides=None):
@@ -105,6 +112,8 @@ def faq_items(c, g, kind):
             out.append((f"Hoe spaar je met {n}?", g["earn"]))
         if g.get("perks"):
             out.append((f"Wat zijn de voordelen van {n}?", g["perks"]))
+        if g.get("birthday"):
+            out.append((f"Krijg je iets op je verjaardag bij {n}?", g["birthday"]))
         if g.get("how"):
             out.append((f"Hoe kom ik aan de klantenkaart van {n}?", g["how"]))
         out.append((f"Kan ik mijn {n}-kaart in Pasr bewaren?",
@@ -310,6 +319,8 @@ def guide_page(c, g, items, kind, year):
             body += f'<h3 class="gd-sub">Zo spaar je</h3><p class="gd-how">{esc(g["earn"])}</p>'
         if g.get("perks"):
             body += f'<h3 class="gd-sub">Voordelen</h3><p class="gd-how">{esc(g["perks"])}</p>'
+        if g.get("birthday"):
+            body += f'<h3 class="gd-sub">Op je verjaardag</h3><p class="gd-how">{esc(g["birthday"])}</p>'
         if g.get("how"):
             body += f'<h3 class="gd-sub">Zo kom je aan de kaart</h3><p>{esc(g["how"])}</p>'
         panels.append(panel("kort", "In het kort", body))

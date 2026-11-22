@@ -120,6 +120,8 @@ ICONS = {
     "pin": '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
     "history": '<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4M12 8v4l3 2"/>',
     "store": '<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/>',
+    "stamp": '<circle cx="7" cy="8" r="2.4"/><circle cx="12" cy="8" r="2.4"/><circle cx="17" cy="8" r="2.4"/><circle cx="7" cy="15" r="2.4"/><path d="M10.3 15.2l1.4 1.4 2.8-2.8M18.5 13v4h-3"/><rect x="2.5" y="4" width="19" height="16" rx="3"/>',
+    "cake": '<path d="M4 21h16v-8a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1zM4 16c2 0 2-1.5 4-1.5S10 16 12 16s2-1.5 4-1.5 2 1.5 4 1.5M8 12V9M12 12V9M16 12V9M8 6.5c0-1 1-2 1-2.5M12 6.5c0-1 1-2 1-2.5M16 6.5c0-1 1-2 1-2.5"/>',
     "guide": '<path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM14 4v5h5M8 13h8M8 17h5"/>',
     "mail": '<path d="M3 6h18v12H3zM3 7l9 6 9-6"/>',
     "bell": '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/>',
@@ -153,6 +155,8 @@ FEATURES = [
     ("sort", "#0A84FF", "Slim sorteren", "Standaard staan je kaarten van A tot Z. Kies Meest gebruikt of In de buurt, en die kaarten staan bovenaan, ook in je widgets en op je Apple Watch.", 4, "sort"),
     ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 3, "cloud"),
     ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 3, "theme"),
+    ("stamp", "#7B4B2A", "Stempelkaarten", "Spaar stempels voor een gratis koffie of broodje, zonder papieren kaartje. Maak zelf een stempelkaart, of sluit aan bij de kaart van je zaak: de stempels komen er vanzelf bij, ook op je Wallet-pas. Heb je een zaak? <a href=\"/zakelijk/\">Pasr voor ondernemers</a>", 3, "stamps"),
+    ("cake", "#FF375F", "Verjaardagsvoordeel", "Veel winkels geven je iets op je verjaardag. Pasr zet het bij de kaart, van de officiële site, en herinnert je eraan in je verjaardagsmaand. Je verjaardag vul je zelf in, als je dat wilt, en blijft op je iPhone.", 3, "birthday"),
 ]
 
 FAQ = [
@@ -342,6 +346,17 @@ def feature_visual(kind):
                         for d, n, a, b, c, x, y in rows)
         return ('<div class="fv fv-sort" aria-hidden="true"><span class="seg"><i></i><span>A tot Z</span><span>Meest gebruikt</span><span>In de buurt</span></span>'
                 f'<ul>{items}</ul></div>')
+    if kind == "stamps":
+        tick = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        dots = "".join(f'<i class="st{" on" if k < 8 else ""}" style="--i:{k}">{tick if k < 8 else ""}</i>' for k in range(10))
+        return ('<div class="fv fv-stamps" aria-hidden="true"><span class="sc2"><span class="hd"><b>K</b>Koffiekaart</span>'
+                f'<span class="grid">{dots}</span><span class="rw">1 gratis koffie<em>nog 2</em></span></span>'
+                '<span class="scan-chip">+1 stempel</span></div>')
+    if kind == "birthday":
+        return ('<div class="fv fv-bday" aria-hidden="true">'
+                f'<span class="bc">{icon("cake")}<small>Klantenkaart</small></span>'
+                '<span class="nt"><img src="/assets/icon.png" alt=""><span><b>Gefeliciteerd!</b>Je verjaardagscadeau staat klaar</span></span>'
+                '<span class="cf c1"></span><span class="cf c2"></span><span class="cf c3"></span><span class="cf c4"></span><span class="cf c5"></span></div>')
     if kind == "theme":
         return '<div class="fv fv-theme"><span class="fv-toggle"><b></b></span></div>'
     return ""
@@ -611,6 +626,7 @@ def page():
       <nav aria-label="Voettekst">
         <a href="/cadeaubon/">Cadeaubon-gids</a>
         <a href="/klantenkaart/">Klantenkaart-gids</a>
+        <a href="/zakelijk/">Voor ondernemers</a>
         <a href="/privacy/">Privacy</a>
         <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>
@@ -760,6 +776,7 @@ def move_page(slug, m):
       <nav aria-label="Voettekst">
         <a href="/cadeaubon/">Cadeaubon-gids</a>
         <a href="/klantenkaart/">Klantenkaart-gids</a>
+        <a href="/zakelijk/">Voor ondernemers</a>
         <a href="/privacy/">Privacy</a>
         <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>
