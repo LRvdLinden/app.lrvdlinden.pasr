@@ -35,8 +35,13 @@ struct StampCardView: View {
     let total: Int
     let filled: Int
     let reward: String
+    var textColor: String? = nil
 
-    private var fg: Color { Color.onCard(color) }
+    private var fg: Color { textColor.map { Color(hex: $0) } ?? Color.onCard(color) }
+    private var initial: String {
+        let source = (business?.isEmpty == false ? business : nil) ?? name
+        return source.trimmingCharacters(in: .whitespaces).first.map { String($0).uppercased() } ?? "P"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -47,6 +52,13 @@ struct StampCardView: View {
                         .frame(width: 38, height: 38)
                         .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .accessibilityHidden(true)
+                } else {
+                    // geen logo: de initiaal van de zaak
+                    Text(verbatim: initial)
+                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        .frame(width: 38, height: 38)
+                        .background(fg.opacity(0.18), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                         .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 1) {

@@ -88,6 +88,12 @@ final class Account {
         return try await requestAny("rest/v1/rpc/\(name)", body: body, token: token)
     }
 
+    /// Roept een Edge Function aan (POST /functions/v1/<naam>) als de ingelogde gebruiker.
+    func function(_ name: String, _ body: [String: Any]) async throws -> Any {
+        let token = try await validAccessToken()
+        return try await requestAny("functions/v1/\(name)", body: body, token: token)
+    }
+
     private func validAccessToken() async throws -> String {
         guard let current = session else { throw APIError(String(localized: "Je bent niet ingelogd.")) }
         if current.expiresAt.timeIntervalSinceNow > 60 { return current.accessToken }

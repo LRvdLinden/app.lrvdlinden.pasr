@@ -1,0 +1,4422 @@
+{
+  "sourceLanguage": "nl",
+  "strings": {
+    "%@ kan dan geen stempels meer zetten voor %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ will no longer be able to add stamps for %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kan dan geen stempels meer zetten voor %@."
+          }
+        }
+      }
+    },
+    "%@: %lld van %lld stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %lld of %lld stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %lld van %lld stempels"
+          }
+        }
+      }
+    },
+    "%lld leden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld members"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld leden"
+          }
+        }
+      }
+    },
+    "%lld min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
+          }
+        }
+      }
+    },
+    "%lld stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stempels"
+          }
+        }
+      }
+    },
+    "%lld stempels = %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stamps = %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stempels = %@"
+          }
+        }
+      }
+    },
+    "%lld stempels gezet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stamps added"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stempels gezet"
+          }
+        }
+      }
+    },
+    "%lld stempels toevoegen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %lld stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stempels toevoegen"
+          }
+        }
+      }
+    },
+    "%lld uur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld hours"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld uur"
+          }
+        }
+      }
+    },
+    "%lld van %lld stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld van %lld stempels"
+          }
+        }
+      }
+    },
+    "%lld van %lld, beloning klaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld, reward ready"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld van %lld, beloning klaar"
+          }
+        }
+      }
+    },
+    "%lldx beloning gehad": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld× reward received"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldx beloning gehad"
+          }
+        }
+      }
+    },
+    "1 dag": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 day"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 dag"
+          }
+        }
+      }
+    },
+    "1 stempel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 stamp"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 stempel"
+          }
+        }
+      }
+    },
+    "1. Scan de QR-code met de camera van je telefoon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. Scan the QR code with your phone's camera."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. Scan de QR-code met de camera van je telefoon."
+          }
+        }
+      }
+    },
+    "2. Bewaar de kaart in de gratis app Pasr, of gebruik hem in je browser.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2. Save the card in the free Pasr app, or use it in your browser."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2. Bewaar de kaart in de gratis app Pasr, of gebruik hem in je browser."
+          }
+        }
+      }
+    },
+    "3. Laat bij elke aankoop je kaart scannen voor een stempel.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3. Have your card scanned with every purchase to get a stamp."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3. Laat bij elke aankoop je kaart scannen voor een stempel."
+          }
+        }
+      }
+    },
+    "Aanmelden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign up"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanmelden"
+          }
+        }
+      }
+    },
+    "Aantal stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number of stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aantal stempels"
+          }
+        }
+      }
+    },
+    "Accepteren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepteren"
+          }
+        }
+      }
+    },
+    "Account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        }
+      }
+    },
+    "Account maken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create account"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account maken"
+          }
+        }
+      }
+    },
+    "Account verwijderen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete account"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account verwijderen"
+          }
+        }
+      }
+    },
+    "Account verwijderen?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete account?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account verwijderen?"
+          }
+        }
+      }
+    },
+    "Adres (straat, huisnummer, plaats)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Address (street, number, city)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres (straat, huisnummer, plaats)"
+          }
+        }
+      }
+    },
+    "Afkoeltijd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cooldown"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afkoeltijd"
+          }
+        }
+      }
+    },
+    "Afkoeltijd: zo lang moet een klant wachten voor de volgende stempel. Bij scannen kies je zelf het aantal stempels, tot het maximum.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cooldown: how long a customer has to wait for the next stamp. When scanning you choose the number of stamps yourself, up to the maximum."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afkoeltijd: zo lang moet een klant wachten voor de volgende stempel. Bij scannen kies je zelf het aantal stempels, tot het maximum."
+          }
+        }
+      }
+    },
+    "Alleen de laatste actie bij deze klant kan ongedaan worden gemaakt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the latest action for this customer can be undone."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen de laatste actie bij deze klant kan ongedaan worden gemaakt."
+          }
+        }
+      }
+    },
+    "Als er een account is met dit adres, krijg je een mail met een link om een nieuw wachtwoord te kiezen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If there is an account with this address, you'll receive an email with a link to choose a new password."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als er een account is met dit adres, krijg je een mail met een link om een nieuw wachtwoord te kiezen."
+          }
+        }
+      }
+    },
+    "Ander logo kiezen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose another logo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ander logo kiezen"
+          }
+        }
+      }
+    },
+    "Annuleer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuleer"
+          }
+        }
+      }
+    },
+    "Automatisch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch"
+          }
+        }
+      }
+    },
+    "Beloning (bijv. 1 gratis koffie)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reward (e.g. 1 free coffee)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloning (bijv. 1 gratis koffie)"
+          }
+        }
+      }
+    },
+    "Beloning ingewisseld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reward redeemed"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloning ingewisseld"
+          }
+        }
+      }
+    },
+    "Beloning inwisselen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeem reward"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloning inwisselen"
+          }
+        }
+      }
+    },
+    "Beloning inwisselen?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeem reward?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloning inwisselen?"
+          }
+        }
+      }
+    },
+    "Beloningen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewards"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloningen"
+          }
+        }
+      }
+    },
+    "Bevestig eerst je e-mailadres. Kijk in je inbox (en bij ongewenste mail).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please confirm your email address first. Check your inbox (and spam folder)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bevestig eerst je e-mailadres. Kijk in je inbox (en bij ongewenste mail)."
+          }
+        }
+      }
+    },
+    "Bewerken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewerken"
+          }
+        }
+      }
+    },
+    "Camera niet beschikbaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera not available"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera niet beschikbaar"
+          }
+        }
+      }
+    },
+    "Check je mail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your email"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check je mail"
+          }
+        }
+      }
+    },
+    "Code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code"
+          }
+        }
+      }
+    },
+    "Concept": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concept"
+          }
+        }
+      }
+    },
+    "DIGITALE STEMPELKAART": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DIGITAL STAMP CARD"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DIGITALE STEMPELKAART"
+          }
+        }
+      }
+    },
+    "De kaart is nog niet vol. Inwisselen kan pas bij een volle kaart.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The card isn't full yet. You can only redeem a full card."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De kaart is nog niet vol. Inwisselen kan pas bij een volle kaart."
+          }
+        }
+      }
+    },
+    "De naam en plaats komen op je stempelkaart. Pasr kijkt je aanmelding na; daarna kun je kaarten publiceren en stempels zetten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The name and city appear on your stamp card. Pasr reviews your sign-up; after that you can publish cards and add stamps."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De naam en plaats komen op je stempelkaart. Pasr kijkt je aanmelding na; daarna kun je kaarten publiceren en stempels zetten."
+          }
+        }
+      }
+    },
+    "Deel de QR-code of hang de flyer op.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the QR code or put up the flyer."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel de QR-code of hang de flyer op."
+          }
+        }
+      }
+    },
+    "Deel de QR-code of maak een A4-flyer voor op de toonbank.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the QR code or make an A4 flyer for your counter."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel de QR-code of maak een A4-flyer voor op de toonbank."
+          }
+        }
+      }
+    },
+    "Deze code is niet bekend. Laat de klant de kaart opnieuw tonen of typ de code over.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This code is unknown. Ask the customer to show the card again or type the code."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze code is niet bekend. Laat de klant de kaart opnieuw tonen of typ de code over."
+          }
+        }
+      }
+    },
+    "Deze instellingen kloppen niet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These settings aren't valid."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze instellingen kloppen niet."
+          }
+        }
+      }
+    },
+    "Deze kaart hoort bij een andere zaak.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This card belongs to another business."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze kaart hoort bij een andere zaak."
+          }
+        }
+      }
+    },
+    "Deze klant kreeg net al een stempel. Probeer het over %lld min opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This customer just got a stamp. Try again in %lld min."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze klant kreeg net al een stempel. Probeer het over %lld min opnieuw."
+          }
+        }
+      }
+    },
+    "Deze klant kreeg net al een stempel. Probeer het straks opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This customer just got a stamp. Try again later."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze klant kreeg net al een stempel. Probeer het straks opnieuw."
+          }
+        }
+      }
+    },
+    "Deze maand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This month"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze maand"
+          }
+        }
+      }
+    },
+    "Deze uitnodiging bestaat niet (meer). Vraag de eigenaar om een nieuwe.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invitation doesn't exist (anymore). Ask the owner for a new one."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze uitnodiging bestaat niet (meer). Vraag de eigenaar om een nieuwe."
+          }
+        }
+      }
+    },
+    "Deze week": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze week"
+          }
+        }
+      }
+    },
+    "Deze zaak is geblokkeerd. Neem contact op met Pasr.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This business has been blocked. Please contact Pasr."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze zaak is geblokkeerd. Neem contact op met Pasr."
+          }
+        }
+      }
+    },
+    "Deze zaak kan Pasr Zakelijk niet meer gebruiken. Neem contact op via pasr.nl/support als je denkt dat dit niet klopt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This business can no longer use Pasr Zakelijk. Contact us via pasr.nl/support if you think this is a mistake."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze zaak kan Pasr Zakelijk niet meer gebruiken. Neem contact op via pasr.nl/support als je denkt dat dit niet klopt."
+          }
+        }
+      }
+    },
+    "Digitale stempelkaarten voor je zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital stamp cards for your business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digitale stempelkaarten voor je zaak"
+          }
+        }
+      }
+    },
+    "Dit apparaat kan hier geen QR-codes scannen. Typ de code van de klant hieronder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device can't scan QR codes here. Type the customer's code below."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit apparaat kan hier geen QR-codes scannen. Typ de code van de klant hieronder."
+          }
+        }
+      }
+    },
+    "Dit bestand is geen afbeelding.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file isn't an image."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit bestand is geen afbeelding."
+          }
+        }
+      }
+    },
+    "Dit e-mailadres klopt niet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This email address isn't valid."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit e-mailadres klopt niet."
+          }
+        }
+      }
+    },
+    "Dit is een uitnodiging voor je eigen zaak.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is an invitation for your own business."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit is een uitnodiging voor je eigen zaak."
+          }
+        }
+      }
+    },
+    "Dit kwartaal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This quarter"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit kwartaal"
+          }
+        }
+      }
+    },
+    "Dit logo is te groot of geen afbeelding. Kies een kleinere afbeelding.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This logo is too large or not an image. Choose a smaller image."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit logo is te groot of geen afbeelding. Kies een kleinere afbeelding."
+          }
+        }
+      }
+    },
+    "Dit mag je niet (meer) bij deze zaak. Vraag de eigenaar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're not (or no longer) allowed to do this for this business. Ask the owner."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit mag je niet (meer) bij deze zaak. Vraag de eigenaar."
+          }
+        }
+      }
+    },
+    "Donker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Donker"
+          }
+        }
+      }
+    },
+    "E-mailadres": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email address"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mailadres"
+          }
+        }
+      }
+    },
+    "E-mailadres (optioneel)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email address (optional)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mailadres (optioneel)"
+          }
+        }
+      }
+    },
+    "E-mailadres of wachtwoord klopt niet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email address or password is incorrect."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mailadres of wachtwoord klopt niet."
+          }
+        }
+      }
+    },
+    "Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A code starts with PZ. Type it exactly as shown below the QR code."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat."
+          }
+        }
+      }
+    },
+    "Een concept zie je alleen zelf. Zet de kaart online om de QR-code en flyer te gebruiken.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only you can see a draft. Put the card online to use the QR code and flyer."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een concept zie je alleen zelf. Zet de kaart online om de QR-code en flyer te gebruiken."
+          }
+        }
+      }
+    },
+    "Een klant krijgt niet twee keer kort na elkaar een stempel. Je kiest zelf hoe lang.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A customer can't get two stamps in quick succession. You choose how long."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een klant krijgt niet twee keer kort na elkaar een stempel. Je kiest zelf hoe lang."
+          }
+        }
+      }
+    },
+    "Een vierkant logo werkt het best. Pasr verkleint het tot 256 pixels.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A square logo works best. Pasr scales it down to 256 pixels."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een vierkant logo werkt het best. Pasr verkleint het tot 256 pixels."
+          }
+        }
+      }
+    },
+    "Eigen kleur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom colour"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eigen kleur"
+          }
+        }
+      }
+    },
+    "Eigenaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owner"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eigenaar"
+          }
+        }
+      }
+    },
+    "Elke stempel, inwisseling en ongedaanmaking met wie, wat en wanneer. Het logboek kan niet worden gewist.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every stamp, redemption and undo with who, what and when. The log can't be erased."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elke stempel, inwisseling en ongedaanmaking met wie, wat en wanneer. Het logboek kan niet worden gewist."
+          }
+        }
+      }
+    },
+    "Er gaan %lld stempels af.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stamps will be deducted."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er gaan %lld stempels af."
+          }
+        }
+      }
+    },
+    "Er ging iets mis. Probeer het opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong. Please try again."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er ging iets mis. Probeer het opnieuw."
+          }
+        }
+      }
+    },
+    "Er is al een account met dit e-mailadres. Log in of vraag een nieuw wachtwoord aan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's already an account with this email address. Sign in or request a new password."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is al een account met dit e-mailadres. Log in of vraag een nieuw wachtwoord aan."
+          }
+        }
+      }
+    },
+    "Flyer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flyer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flyer"
+          }
+        }
+      }
+    },
+    "Flyer (A4, PDF)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flyer (A4, PDF)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flyer (A4, PDF)"
+          }
+        }
+      }
+    },
+    "Geef Pasr Zakelijk toegang tot de camera in Instellingen, of typ de code van de klant hieronder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give Pasr Zakelijk access to the camera in Settings, or type the customer's code below."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef Pasr Zakelijk toegang tot de camera in Instellingen, of typ de code van de klant hieronder."
+          }
+        }
+      }
+    },
+    "Geen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen"
+          }
+        }
+      }
+    },
+    "Geen huisstijl gevonden. Kies zelf een logo en kleur.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No brand style found. Choose a logo and colour yourself."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen huisstijl gevonden. Kies zelf een logo en kleur."
+          }
+        }
+      }
+    },
+    "Geen verbinding. Controleer je internet en probeer het opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection. Check your internet and try again."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen verbinding. Controleer je internet en probeer het opnieuw."
+          }
+        }
+      }
+    },
+    "Gegevens van de zaak wijzigen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit business details"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegevens van de zaak wijzigen"
+          }
+        }
+      }
+    },
+    "Gegevens van je zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business details"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegevens van je zaak"
+          }
+        }
+      }
+    },
+    "Gegevens wijzigen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit details"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegevens wijzigen"
+          }
+        }
+      }
+    },
+    "Hier komt elke stempel en inwisseling te staan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every stamp and redemption will appear here."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier komt elke stempel en inwisseling te staan."
+          }
+        }
+      }
+    },
+    "Huisstijl ophalen…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetching brand style…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huisstijl ophalen…"
+          }
+        }
+      }
+    },
+    "Huisstijl opnieuw ophalen?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch brand style again?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huisstijl opnieuw ophalen?"
+          }
+        }
+      }
+    },
+    "Huisstijl van je website": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brand style from your website"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huisstijl van je website"
+          }
+        }
+      }
+    },
+    "Ik heb al een account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb al een account"
+          }
+        }
+      }
+    },
+    "Ik heb een uitnodiging als medewerker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I have a staff invitation"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb een uitnodiging als medewerker"
+          }
+        }
+      }
+    },
+    "In de app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the app"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In de app"
+          }
+        }
+      }
+    },
+    "Ingelogd als": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in as"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingelogd als"
+          }
+        }
+      }
+    },
+    "Ingetrokken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoked"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingetrokken"
+          }
+        }
+      }
+    },
+    "Inloggen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inloggen"
+          }
+        }
+      }
+    },
+    "Instellingen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instellingen"
+          }
+        }
+      }
+    },
+    "Instellingen opslaan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save settings"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instellingen opslaan"
+          }
+        }
+      }
+    },
+    "Intrekken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoke"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intrekken"
+          }
+        }
+      }
+    },
+    "Inwisselen: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeem: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inwisselen: %@"
+          }
+        }
+      }
+    },
+    "Is de kaart vol, dan wissel je de beloning in met één tik.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the card is full, redeem the reward with one tap."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is de kaart vol, dan wissel je de beloning in met één tik."
+          }
+        }
+      }
+    },
+    "Je Pasr-account wordt verwijderd, ook in de app Pasr. Ben je eigenaar, dan verdwijnen je zaak, kaarten en leden ook. Dit kan niet ongedaan worden gemaakt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Pasr account will be deleted, also in the Pasr app. If you're an owner, your business, cards and members are deleted too. This can't be undone."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je Pasr-account wordt verwijderd, ook in de app Pasr. Ben je eigenaar, dan verdwijnen je zaak, kaarten en leden ook. Dit kan niet ongedaan worden gemaakt."
+          }
+        }
+      }
+    },
+    "Je accepteert met %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're accepting with %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je accepteert met %@."
+          }
+        }
+      }
+    },
+    "Je beloning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your reward"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je beloning"
+          }
+        }
+      }
+    },
+    "Je bent eigenaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're the owner"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent eigenaar"
+          }
+        }
+      }
+    },
+    "Je bent medewerker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're a staff member"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent medewerker"
+          }
+        }
+      }
+    },
+    "Je bent niet ingelogd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're not signed in."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent niet ingelogd."
+          }
+        }
+      }
+    },
+    "Je bent uitgelogd. Log opnieuw in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been signed out. Please sign in again."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent uitgelogd. Log opnieuw in."
+          }
+        }
+      }
+    },
+    "Je bent uitgenodigd om stempels te zetten voor %@ in de app Pasr Zakelijk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been invited to add stamps for %@ in the Pasr Zakelijk app."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent uitgenodigd om stempels te zetten voor %@ in de app Pasr Zakelijk."
+          }
+        }
+      }
+    },
+    "Je bent uitgenodigd om stempels te zetten voor een zaak. Na het accepteren zie je die zaak in de scanner.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been invited to add stamps for a business. After accepting, you'll see that business in the scanner."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent uitgenodigd om stempels te zetten voor een zaak. Na het accepteren zie je die zaak in de scanner."
+          }
+        }
+      }
+    },
+    "Je e-mailadres blijft privé.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your email address stays private."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je e-mailadres blijft privé."
+          }
+        }
+      }
+    },
+    "Je hebt al 25 medewerkers. Trek er eerst één in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have 25 staff members. Revoke one first."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je hebt al 25 medewerkers. Trek er eerst één in."
+          }
+        }
+      }
+    },
+    "Je hebt al 5 kaarten. Verwijder er eerst één.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have 5 cards. Delete one first."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je hebt al 5 kaarten. Verwijder er eerst één."
+          }
+        }
+      }
+    },
+    "Je medewerker maakt een gratis Pasr-account (of logt in) en accepteert de uitnodiging. Medewerkers kunnen alleen scannen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your staff member creates a free Pasr account (or signs in) and accepts the invitation. Staff can only scan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je medewerker maakt een gratis Pasr-account (of logt in) en accepteert de uitnodiging. Medewerkers kunnen alleen scannen."
+          }
+        }
+      }
+    },
+    "Je website is gewijzigd. Pasr kan het logo en de kleuren opnieuw ophalen en op je kaarten zetten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your website has changed. Pasr can fetch the logo and colours again and apply them to your cards."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je website is gewijzigd. Pasr kan het logo en de kleuren opnieuw ophalen en op je kaarten zetten."
+          }
+        }
+      }
+    },
+    "Je zaak is nog niet goedgekeurd. Stempels zetten kan pas daarna.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business hasn't been approved yet. You can add stamps after that."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je zaak is nog niet goedgekeurd. Stempels zetten kan pas daarna."
+          }
+        }
+      }
+    },
+    "Kaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaart"
+          }
+        }
+      }
+    },
+    "Kaart bewerken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaart bewerken"
+          }
+        }
+      }
+    },
+    "Kaart overgezet naar de app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card moved to the app"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaart overgezet naar de app"
+          }
+        }
+      }
+    },
+    "Kaart verwijderen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaart verwijderen"
+          }
+        }
+      }
+    },
+    "Kaart verwijderen?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete card?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaart verwijderen?"
+          }
+        }
+      }
+    },
+    "Kaarten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cards"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaarten"
+          }
+        }
+      }
+    },
+    "Kies een wachtwoord van minstens 8 tekens.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a password of at least 8 characters."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies een wachtwoord van minstens 8 tekens."
+          }
+        }
+      }
+    },
+    "Kies een zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies een zaak"
+          }
+        }
+      }
+    },
+    "Klaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klaar"
+          }
+        }
+      }
+    },
+    "Klant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klant"
+          }
+        }
+      }
+    },
+    "Klanten met deze kaart kunnen dan niet meer sparen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customers with this card will no longer be able to collect stamps."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klanten met deze kaart kunnen dan niet meer sparen."
+          }
+        }
+      }
+    },
+    "Klanten scannen deze code met hun camera en sparen in Pasr of in de browser.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customers scan this code with their camera and collect stamps in Pasr or in the browser."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klanten scannen deze code met hun camera en sparen in Pasr of in de browser."
+          }
+        }
+      }
+    },
+    "Klanten vinden je stempelkaart in de lijst in Pasr, ook in de buurt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customers find your stamp card in the list in Pasr, including nearby."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klanten vinden je stempelkaart in de lijst in Pasr, ook in de buurt."
+          }
+        }
+      }
+    },
+    "Kleur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleur"
+          }
+        }
+      }
+    },
+    "Kwartaal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quarter"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kwartaal"
+          }
+        }
+      }
+    },
+    "Laatste stempel %@ geleden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last stamp %@ ago"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laatste stempel %@ geleden"
+          }
+        }
+      }
+    },
+    "Laden lukt niet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laden lukt niet"
+          }
+        }
+      }
+    },
+    "Leden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Members"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leden"
+          }
+        }
+      }
+    },
+    "Leden per kaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Members per card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leden per kaart"
+          }
+        }
+      }
+    },
+    "Licht": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licht"
+          }
+        }
+      }
+    },
+    "Lid sinds %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Member since %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lid sinds %@"
+          }
+        }
+      }
+    },
+    "Link delen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link delen"
+          }
+        }
+      }
+    },
+    "Log in met je Pasr-account. Ben je medewerker? Gebruik het account waarmee je de uitnodiging accepteert.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with your Pasr account. Staff member? Use the account you accept the invitation with."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in met je Pasr-account. Ben je medewerker? Gebruik het account waarmee je de uitnodiging accepteert."
+          }
+        }
+      }
+    },
+    "Logboek": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logboek"
+          }
+        }
+      }
+    },
+    "Logo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo"
+          }
+        }
+      }
+    },
+    "Logo en kleuren komen van de website van je zaak. Je kunt alles hieronder aanpassen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo and colours come from your business website. You can change everything below."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo en kleuren komen van de website van je zaak. Je kunt alles hieronder aanpassen."
+          }
+        }
+      }
+    },
+    "Logo kiezen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose logo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo kiezen"
+          }
+        }
+      }
+    },
+    "Logo weghalen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove logo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo weghalen"
+          }
+        }
+      }
+    },
+    "Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create your first stamp card: choose a name, colour, number of stamps and reward."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning."
+          }
+        }
+      }
+    },
+    "Maak link": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak link"
+          }
+        }
+      }
+    },
+    "Maand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Month"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maand"
+          }
+        }
+      }
+    },
+    "Mail opnieuw sturen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resend email"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mail opnieuw sturen"
+          }
+        }
+      }
+    },
+    "Max. stempels per scan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max. stamps per scan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max. stempels per scan"
+          }
+        }
+      }
+    },
+    "Medewerker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staff member"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medewerker"
+          }
+        }
+      }
+    },
+    "Medewerker intrekken?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoke staff member?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medewerker intrekken?"
+          }
+        }
+      }
+    },
+    "Medewerker uitnodigen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite staff member"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medewerker uitnodigen"
+          }
+        }
+      }
+    },
+    "Medewerkers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staff"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medewerkers"
+          }
+        }
+      }
+    },
+    "Meer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meer"
+          }
+        }
+      }
+    },
+    "Meetwaarde": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metric"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meetwaarde"
+          }
+        }
+      }
+    },
+    "Meld je zaak aan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign up your business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meld je zaak aan"
+          }
+        }
+      }
+    },
+    "Met een account ga je akkoord met de privacyverklaring van Pasr.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By creating an account you agree to Pasr's privacy policy."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Met een account ga je akkoord met de privacyverklaring van Pasr."
+          }
+        }
+      }
+    },
+    "Met je website neemt Pasr je logo en kleuren over op je stempelkaart.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your website, Pasr uses your logo and colours on your stamp card."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Met je website neemt Pasr je logo en kleuren over op je stempelkaart."
+          }
+        }
+      }
+    },
+    "Minder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fewer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minder"
+          }
+        }
+      }
+    },
+    "Naam": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam"
+          }
+        }
+      }
+    },
+    "Naam (bijv. Koffiekaart)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name (e.g. Coffee card)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam (bijv. Koffiekaart)"
+          }
+        }
+      }
+    },
+    "Naam van de kaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card name"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam van de kaart"
+          }
+        }
+      }
+    },
+    "Naam van je zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Business name"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam van je zaak"
+          }
+        }
+      }
+    },
+    "Naar inloggen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to sign in"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naar inloggen"
+          }
+        }
+      }
+    },
+    "Net al gescand. Wacht een paar seconden.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just scanned. Wait a few seconds."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Net al gescand. Wacht een paar seconden."
+          }
+        }
+      }
+    },
+    "Net al gestempeld. Weer mogelijk %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just stamped. Possible again %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Net al gestempeld. Weer mogelijk %@."
+          }
+        }
+      }
+    },
+    "Niet nu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet nu"
+          }
+        }
+      }
+    },
+    "Nieuw lid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New member"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw lid"
+          }
+        }
+      }
+    },
+    "Nieuwe kaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe kaart"
+          }
+        }
+      }
+    },
+    "Nieuwe leden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New members"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe leden"
+          }
+        }
+      }
+    },
+    "Nodig je team uit met een link. Medewerkers zien alleen de scanner.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite your team with a link. Staff only see the scanner."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodig je team uit met een link. Medewerkers zien alleen de scanner."
+          }
+        }
+      }
+    },
+    "Nodig je team uit; zij zien alleen de scanner.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite your team; they only see the scanner."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodig je team uit; zij zien alleen de scanner."
+          }
+        }
+      }
+    },
+    "Nog geen gegevens in deze periode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No data in this period yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen gegevens in deze periode"
+          }
+        }
+      }
+    },
+    "Nog geen kaarten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cards yet."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen kaarten."
+          }
+        }
+      }
+    },
+    "Nog geen leden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No members yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen leden"
+          }
+        }
+      }
+    },
+    "Nog geen medewerkers. Nodig iemand uit; die logt in met een eigen Pasr-account en ziet alleen de scanner.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No staff yet. Invite someone; they sign in with their own Pasr account and only see the scanner."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen medewerkers. Nodig iemand uit; die logt in met een eigen Pasr-account en ziet alleen de scanner."
+          }
+        }
+      }
+    },
+    "Nog geen stempelkaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamp card yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen stempelkaart"
+          }
+        }
+      }
+    },
+    "Nog geen stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamps yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen stempels"
+          }
+        }
+      }
+    },
+    "Nog niets gebeurd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing has happened yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog niets gebeurd"
+          }
+        }
+      }
+    },
+    "Of typ de code (PZ…)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Or type the code (PZ…)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Of typ de code (PZ…)"
+          }
+        }
+      }
+    },
+    "Ongedaan gemaakt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongedaan gemaakt"
+          }
+        }
+      }
+    },
+    "Ongedaan maken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongedaan maken"
+          }
+        }
+      }
+    },
+    "Ongedaan maken (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo (%@)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongedaan maken (%@)"
+          }
+        }
+      }
+    },
+    "Ongedaan maken kan alleen binnen 2 minuten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can only undo within 2 minutes."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongedaan maken kan alleen binnen 2 minuten."
+          }
+        }
+      }
+    },
+    "Online": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online"
+          }
+        }
+      }
+    },
+    "Online (klanten kunnen sparen)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online (customers can collect stamps)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online (klanten kunnen sparen)"
+          }
+        }
+      }
+    },
+    "Op deze dag": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this day"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op deze dag"
+          }
+        }
+      }
+    },
+    "Open Instellingen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Instellingen"
+          }
+        }
+      }
+    },
+    "Opgeslagen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opgeslagen"
+          }
+        }
+      }
+    },
+    "Opgeslagen, maar het adres is niet gevonden op de kaart. Controleer het adres.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved, but the address wasn't found on the map. Please check the address."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opgeslagen, maar het adres is niet gevonden op de kaart. Controleer het adres."
+          }
+        }
+      }
+    },
+    "Ophalen en op mijn kaarten zetten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch and apply to my cards"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ophalen en op mijn kaarten zetten"
+          }
+        }
+      }
+    },
+    "Opnieuw kijken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check again"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnieuw kijken"
+          }
+        }
+      }
+    },
+    "Opnieuw ophalen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch again"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnieuw ophalen"
+          }
+        }
+      }
+    },
+    "Opnieuw proberen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnieuw proberen"
+          }
+        }
+      }
+    },
+    "Opslaan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opslaan"
+          }
+        }
+      }
+    },
+    "Overgenomen van %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taken from %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overgenomen van %@"
+          }
+        }
+      }
+    },
+    "Overzicht": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overzicht"
+          }
+        }
+      }
+    },
+    "Overzicht en logboek": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview and log"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overzicht en logboek"
+          }
+        }
+      }
+    },
+    "Pasr Zakelijk op pasr.nl": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr Zakelijk on pasr.nl"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr Zakelijk op pasr.nl"
+          }
+        }
+      }
+    },
+    "Pasr kijkt je aanmelding zo snel mogelijk na. Je krijgt een mail als je zaak is goedgekeurd. Daarna kun je stempelkaarten publiceren en scannen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr reviews your sign-up as soon as possible. You'll get an email when your business is approved. After that you can publish stamp cards and scan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr kijkt je aanmelding zo snel mogelijk na. Je krijgt een mail als je zaak is goedgekeurd. Daarna kun je stempelkaarten publiceren en scannen."
+          }
+        }
+      }
+    },
+    "Pasr-gebruikers zoeken stempelkaarten in een lijst in de app. Met een adres staat je zaak ook bij \"In de buurt\". Pasr zoekt de plek op via Apple Maps.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr users search for stamp cards in a list in the app. With an address, your business also appears under \"Nearby\". Pasr looks up the location via Apple Maps."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr-gebruikers zoeken stempelkaarten in een lijst in de app. Met een adres staat je zaak ook bij \"In de buurt\". Pasr zoekt de plek op via Apple Maps."
+          }
+        }
+      }
+    },
+    "Plaats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "City"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plaats"
+          }
+        }
+      }
+    },
+    "Plak de link of de code uit de uitnodiging.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste the link or code from the invitation."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plak de link of de code uit de uitnodiging."
+          }
+        }
+      }
+    },
+    "Print de flyer en zet hem op de toonbank.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Print the flyer and put it on your counter."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Print de flyer en zet hem op de toonbank."
+          }
+        }
+      }
+    },
+    "Privacyverklaring": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy policy"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacyverklaring"
+          }
+        }
+      }
+    },
+    "QR, link en flyer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR, link and flyer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR, link en flyer"
+          }
+        }
+      }
+    },
+    "QR-code van de kaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code of the card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR-code van de kaart"
+          }
+        }
+      }
+    },
+    "QR-code van de uitnodiging": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code of the invitation"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR-code van de uitnodiging"
+          }
+        }
+      }
+    },
+    "Richt de camera op de QR-code van je klant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point the camera at your customer's QR code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richt de camera op de QR-code van je klant"
+          }
+        }
+      }
+    },
+    "Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan your customer's QR code, choose the number of stamps and tap Add stamps."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen."
+          }
+        }
+      }
+    },
+    "Scan de kaart van je klant en zet een stempel. Alleen jij en je medewerkers kunnen stempels zetten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan your customer's card and add a stamp. Only you and your staff can add stamps."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan de kaart van je klant en zet een stempel. Alleen jij en je medewerkers kunnen stempels zetten."
+          }
+        }
+      }
+    },
+    "Scan met je camera": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan with your camera"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan met je camera"
+          }
+        }
+      }
+    },
+    "Scannen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scannen"
+          }
+        }
+      }
+    },
+    "Scannen aan de kassa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning at the till"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scannen aan de kassa"
+          }
+        }
+      }
+    },
+    "Simulator": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulator"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulator"
+          }
+        }
+      }
+    },
+    "Spaar bij %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collect stamps at %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spaar bij %@"
+          }
+        }
+      }
+    },
+    "Spaar bij %@ met de digitale stempelkaart.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collect stamps at %@ with the digital stamp card."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spaar bij %@ met de digitale stempelkaart."
+          }
+        }
+      }
+    },
+    "Stempel erbij, beloning inwisselen of ongedaan maken.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a stamp, redeem a reward or undo."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempel erbij, beloning inwisselen of ongedaan maken."
+          }
+        }
+      }
+    },
+    "Stempel gezet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp added"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempel gezet"
+          }
+        }
+      }
+    },
+    "Stempel toevoegen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add stamp"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempel toevoegen"
+          }
+        }
+      }
+    },
+    "Stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempels"
+          }
+        }
+      }
+    },
+    "Stempels, beloningen en nieuwe leden per dag, en wie wat deed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamps, rewards and new members per day, and who did what."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempels, beloningen en nieuwe leden per dag, en wie wat deed."
+          }
+        }
+      }
+    },
+    "Stuur deze link naar je medewerker. De link werkt 14 dagen en maar één keer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send this link to your staff member. The link works for 14 days and only once."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuur deze link naar je medewerker. De link werkt 14 dagen en maar één keer."
+          }
+        }
+      }
+    },
+    "Stuur een link": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuur een link"
+          }
+        }
+      }
+    },
+    "Support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support"
+          }
+        }
+      }
+    },
+    "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many attempts. Wait a few minutes and try again."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw."
+          }
+        }
+      }
+    },
+    "Team": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        }
+      }
+    },
+    "Uitgenodigd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invited"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitgenodigd"
+          }
+        }
+      }
+    },
+    "Uitloggen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitloggen"
+          }
+        }
+      }
+    },
+    "Uitloggen?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitloggen?"
+          }
+        }
+      }
+    },
+    "Uitnodigen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodigen"
+          }
+        }
+      }
+    },
+    "Uitnodiging": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging"
+          }
+        }
+      }
+    },
+    "Uitnodiging Pasr Zakelijk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr Zakelijk invitation"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging Pasr Zakelijk"
+          }
+        }
+      }
+    },
+    "Uitnodiging als medewerker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staff invitation"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging als medewerker"
+          }
+        }
+      }
+    },
+    "Uitnodiging klaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation ready"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging klaar"
+          }
+        }
+      }
+    },
+    "Veeg naar links om iemand in te trekken. Wie is ingetrokken, kan direct geen stempels meer zetten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe left to revoke someone. Revoked staff immediately can't add stamps anymore."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veeg naar links om iemand in te trekken. Wie is ingetrokken, kan direct geen stempels meer zetten."
+          }
+        }
+      }
+    },
+    "Verder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verder"
+          }
+        }
+      }
+    },
+    "Vergist? Maak de laatste stempel of inwisseling binnen 2 minuten ongedaan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Made a mistake? Undo the latest stamp or redemption within 2 minutes."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergist? Maak de laatste stempel of inwisseling binnen 2 minuten ongedaan."
+          }
+        }
+      }
+    },
+    "Verlopen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlopen"
+          }
+        }
+      }
+    },
+    "Verstuurd. Kijk ook bij ongewenste mail.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent. Also check your spam folder."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verstuurd. Kijk ook bij ongewenste mail."
+          }
+        }
+      }
+    },
+    "Verversen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verversen"
+          }
+        }
+      }
+    },
+    "Verwijderen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijderen"
+          }
+        }
+      }
+    },
+    "Vindbaar in Pasr": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Findable in Pasr"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vindbaar in Pasr"
+          }
+        }
+      }
+    },
+    "Voornaam": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First name"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voornaam"
+          }
+        }
+      }
+    },
+    "Vorige periode: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous period: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorige periode: %lld"
+          }
+        }
+      }
+    },
+    "Vul de beloning in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the reward."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vul de beloning in."
+          }
+        }
+      }
+    },
+    "Vul een naam in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a name."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vul een naam in."
+          }
+        }
+      }
+    },
+    "Wacht op goedkeuring": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awaiting approval"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wacht op goedkeuring"
+          }
+        }
+      }
+    },
+    "Wachtwoord": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachtwoord"
+          }
+        }
+      }
+    },
+    "Wachtwoord vergeten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot password"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachtwoord vergeten"
+          }
+        }
+      }
+    },
+    "Wachtwoord vergeten?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot password?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachtwoord vergeten?"
+          }
+        }
+      }
+    },
+    "Wat is nieuw": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's new"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat is nieuw"
+          }
+        }
+      }
+    },
+    "Wat voor zaak is het? (optioneel)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What kind of business is it? (optional)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat voor zaak is het? (optioneel)"
+          }
+        }
+      }
+    },
+    "We hebben je een mail gestuurd. Tik op de knop in die mail om je e-mailadres te bevestigen en log daarna hier in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We've sent you an email. Tap the button in that email to confirm your email address, then sign in here."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We hebben je een mail gestuurd. Tik op de knop in die mail om je e-mailadres te bevestigen en log daarna hier in."
+          }
+        }
+      }
+    },
+    "Website (bijv. jouwzaak.nl)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website (e.g. yourbusiness.com)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website (bijv. jouwzaak.nl)"
+          }
+        }
+      }
+    },
+    "Website (optioneel)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website (optional)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website (optioneel)"
+          }
+        }
+      }
+    },
+    "Week": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
+          }
+        }
+      }
+    },
+    "Weergave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weergave"
+          }
+        }
+      }
+    },
+    "Werk je bij een zaak? Open de uitnodigingslink die je van de eigenaar kreeg, of plak de code hier.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do you work at a business? Open the invitation link you got from the owner, or paste the code here."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werk je bij een zaak? Open de uitnodigingslink die je van de eigenaar kreeg, of plak de code hier."
+          }
+        }
+      }
+    },
+    "ZAKELIJK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ZAKELIJK"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ZAKELIJK"
+          }
+        }
+      }
+    },
+    "Zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaak"
+          }
+        }
+      }
+    },
+    "Zaak geblokkeerd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Business blocked"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaak geblokkeerd"
+          }
+        }
+      }
+    },
+    "Zaklamp aan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torch on"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaklamp aan"
+          }
+        }
+      }
+    },
+    "Zaklamp uit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torch off"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaklamp uit"
+          }
+        }
+      }
+    },
+    "Zie per dag wat er gebeurt en wie wat deed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See what happens each day and who did what."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zie per dag wat er gebeurt en wie wat deed."
+          }
+        }
+      }
+    },
+    "Zoek code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek code"
+          }
+        }
+      }
+    },
+    "Zoek op code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search by code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek op code"
+          }
+        }
+      }
+    },
+    "Zoek op medewerker, kaart of code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search by staff, card or code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek op medewerker, kaart of code"
+          }
+        }
+      }
+    },
+    "Zoveel stempels tegelijk mag niet. Pas het maximum aan in Instellingen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That many stamps at once isn't allowed. Change the maximum in Settings."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoveel stempels tegelijk mag niet. Pas het maximum aan in Instellingen."
+          }
+        }
+      }
+    },
+    "aantal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "count"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aantal"
+          }
+        }
+      }
+    },
+    "eigenaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "owner"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eigenaar"
+          }
+        }
+      }
+    },
+    "je website": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "your website"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "je website"
+          }
+        }
+      }
+    },
+    "lrvdlinden.app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lrvdlinden.app"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lrvdlinden.app"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

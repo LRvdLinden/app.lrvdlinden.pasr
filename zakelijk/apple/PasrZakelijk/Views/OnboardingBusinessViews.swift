@@ -16,6 +16,8 @@ struct RegisterBusinessView: View {
     @State private var saved = false
     @State private var showInvite = false
     @State private var inviteCode = ""
+    @State private var offerBrand = false
+    @State private var brandBusy = false
 
     var body: some View {
         NavigationStack {
@@ -35,10 +37,13 @@ struct RegisterBusinessView: View {
                         .textContentType(.organizationName)
                     TextField("Plaats", text: $city)
                         .textContentType(.addressCity)
-                    TextField("Website (optioneel)", text: $website)
+                    TextField("Website (bijv. jouwzaak.nl)", text: $website)
                         .keyboardType(.URL)
+                        .textContentType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                } footer: {
+                    Text("Met je website neemt Pasr je logo en kleuren over op je stempelkaart.")
                 }
                 Section {
                     TextField("Wat voor zaak is het? (optioneel)", text: $note, axis: .vertical)
@@ -74,6 +79,13 @@ struct RegisterBusinessView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: saved)
+            .confirmationDialog("Huisstijl opnieuw ophalen?", isPresented: $offerBrand, titleVisibility: .visible) {
+                Button("Ophalen en op mijn kaarten zetten") { Task { await applyBrand() } }
+                Button("Niet nu", role: .cancel) { dismiss() }
+            } message: {
+                Text("Je website is gewijzigd. Pasr kan het logo en de kleuren opnieuw ophalen en op je kaarten zetten.")
+            }
+            .overlay { if brandBusy { ProgressView().controlSize(.large) } }
             .alert("Uitnodiging", isPresented: $showInvite) {
                 TextField("Code", text: $inviteCode)
                     .textInputAutocapitalization(.never)
@@ -105,10 +117,33 @@ struct RegisterBusinessView: View {
             saved.toggle()
             await store.load()
             onDone()
-            if existing != nil { dismiss() }
+            if let existing {
+                let old = (existing.website ?? "").trimmingCharacters(in: .whitespaces)
+                let new = website.trimmingCharacters(in: .whitespaces)
+                if !new.isEmpty, new != old, existing.isOwner, !existing.cards.isEmpty { offerBrand = true } else { dismiss() }
+            }
         } catch {
             message = error.localizedDescription
         }
+    }
+}
+
+extension RegisterBusinessView {
+    /// Huisstijl van de nieuwe website ophalen en op alle kaarten zetten. Mislukt het, dan blijft alles zoals het was.
+    func applyBrand() async {
+        guard let business = store.businesses.first(where: { $0.id == existing?.id }) ?? existing else { dismiss(); return }
+        brandBusy = true
+        defer { brandBusy = false }
+        if let brand = await BusinessAPI.brand(business: business.id, url: website.trimmingCharacters(in: .whitespaces)) {
+            for var card in business.cards {
+                if let logo = brand.logo { card.logo = logo }
+                if let color = brand.color { card.color = color }
+                card.textColor = brand.textColor
+                _ = try? await BusinessAPI.saveCard(card, business: business, logoChanged: brand.logo != nil)
+            }
+            await store.load()
+        }
+        dismiss()
     }
 }
 

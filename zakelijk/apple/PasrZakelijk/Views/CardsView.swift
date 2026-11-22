@@ -27,7 +27,8 @@ struct CardsView: View {
                     Section {
                         Button { editing = card } label: {
                             StampCardView(name: card.name, business: business.name, color: card.color, logo: card.logo,
-                                          total: card.stampsTotal, filled: min(card.stampsTotal, max(1, card.stampsTotal / 2)), reward: card.reward)
+                                          total: card.stampsTotal, filled: min(card.stampsTotal, max(1, card.stampsTotal / 2)), reward: card.reward,
+                                          textColor: card.textColor)
                         }
                         .buttonStyle(.plain)
                         .listRowInsets(EdgeInsets())
@@ -92,6 +93,9 @@ struct CardEditorView: View {
     @State private var message: String?
     @State private var confirmDelete = false
     @State private var saved = false
+    @State private var brandBusy = false
+    @State private var brandDomain: String?
+    @State private var brandFailed = false
 
     private var isNew: Bool { card.id.isEmpty }
     private var valid: Bool {
@@ -104,10 +108,12 @@ struct CardEditorView: View {
                 Section {
                     StampCardView(name: card.name.isEmpty ? String(localized: "Naam van de kaart") : card.name,
                                   business: business.name, color: card.color, logo: card.logo, total: card.stampsTotal,
-                                  filled: max(1, card.stampsTotal * 6 / 10), reward: card.reward.isEmpty ? String(localized: "Je beloning") : card.reward)
+                                  filled: max(1, card.stampsTotal * 6 / 10), reward: card.reward.isEmpty ? String(localized: "Je beloning") : card.reward,
+                                  textColor: card.textColor)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 }
+                brandSection
                 Section("Kaart") {
                     TextField("Naam (bijv. Koffiekaart)", text: $card.name)
                     TextField("Beloning (bijv. 1 gratis koffie)", text: $card.reward)
@@ -120,6 +126,7 @@ struct CardEditorView: View {
                         ForEach(Theme.swatches, id: \.self) { hex in
                             Button {
                                 card.color = hex
+                                card.textColor = nil
                             } label: {
                                 Circle().fill(Color(hex: hex))
                                     .frame(height: 36)
@@ -130,7 +137,7 @@ struct CardEditorView: View {
                         }
                     }
                     .padding(.vertical, 4)
-                    ColorPicker("Eigen kleur", selection: Binding(get: { Color(hex: card.color) }, set: { card.color = $0.hexString() }),
+                    ColorPicker("Eigen kleur", selection: Binding(get: { Color(hex: card.color) }, set: { card.color = $0.hexString(); card.textColor = nil }),
                                 supportsOpacity: false)
                 }
                 Section {
@@ -188,10 +195,65 @@ struct CardEditorView: View {
                     }
                 }
             }
+            .task {
+                // nieuwe kaart: huisstijl van de website automatisch invullen
+                if isNew && card.logo == nil && brandDomain == nil { await fetchBrand() }
+            }
             .confirmationDialog("Kaart verwijderen?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Verwijderen", role: .destructive) { Task { await delete() } }
                 Button("Annuleer", role: .cancel) {}
             }
+        }
+    }
+
+    @ViewBuilder private var brandSection: some View {
+        Section {
+            HStack(spacing: 10) {
+                Image(systemName: brandDomain != nil ? "wand.and.stars" : "paintpalette")
+                    .foregroundStyle(brandDomain != nil ? Theme.mint : .secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    if brandBusy {
+                        Text("Huisstijl ophalen…")
+                    } else if let brandDomain {
+                        Text(String(format: String(localized: "Overgenomen van %@"), brandDomain))
+                    } else if brandFailed {
+                        Text("Geen huisstijl gevonden. Kies zelf een logo en kleur.")
+                    } else {
+                        Text("Huisstijl van je website")
+                    }
+                }
+                .font(.subheadline)
+                Spacer()
+                if brandBusy {
+                    ProgressView()
+                } else {
+                    Button("Opnieuw ophalen") { Task { await fetchBrand() } }
+                        .font(.subheadline.weight(.semibold))
+                        .buttonStyle(.borderless)
+                }
+            }
+        } footer: {
+            Text("Logo en kleuren komen van de website van je zaak. Je kunt alles hieronder aanpassen.")
+        }
+    }
+
+    /// Logo, kleur en tekstkleur van de website. Lukt het niet: Pasr-kleur en initiaal, zonder fout.
+    private func fetchBrand() async {
+        brandBusy = true
+        defer { brandBusy = false }
+        guard let brand = await BusinessAPI.brand(business: business.id, url: business.website) else {
+            brandFailed = true
+            brandDomain = nil
+            if isNew && card.logo == nil { card.color = "#6A5CFF"; card.textColor = nil }
+            return
+        }
+        brandFailed = false
+        withAnimation {
+            if let logo = brand.logo { card.logo = logo; logoChanged = true }
+            if let color = brand.color { card.color = color }
+            card.textColor = brand.textColor
+            if card.name.trimmingCharacters(in: .whitespaces).isEmpty, let name = brand.name { card.name = String(name.prefix(40)) }
+            brandDomain = brand.domain ?? business.website.flatMap { URL(string: $0)?.host() } ?? String(localized: "je website")
         }
     }
 
@@ -330,7 +392,7 @@ private struct FlyerPage: View {
                 .font(.system(size: 20, weight: .semibold))
                 .multilineTextAlignment(.center)
             StampCardView(name: card.name, business: business.name, color: card.color, logo: card.logo,
-                          total: card.stampsTotal, filled: (card.stampsTotal + 1) / 2, reward: card.reward)
+                          total: card.stampsTotal, filled: (card.stampsTotal + 1) / 2, reward: card.reward, textColor: card.textColor)
                 .frame(width: 330)
             if let qr = QRCode.image(card.joinURL.absoluteString, scale: 10) {
                 Image(uiImage: qr).interpolation(.none).resizable().frame(width: 210, height: 210)

@@ -35,6 +35,7 @@ enum BusinessAPI {
         var p: [String: Any] = ["name": card.name, "reward": card.reward, "color": card.color.uppercased(),
                                 "stamps_total": card.stampsTotal, "published": card.published, "business_id": business.id]
         if !card.id.isEmpty { p["id"] = card.id }
+        if let text = card.textColor { p["text_color"] = text }
         if logoChanged || card.id.isEmpty { p["logo"] = orNull(card.logo) }
         let json = try await account.rpc("pasr_business_card_save", ["p_card": p])
         return JSONObject(json).flatMap { BusinessCard(json: $0) }
@@ -49,6 +50,43 @@ enum BusinessAPI {
         guard let j = JSONObject(json) else { return (0, []) }
         let rows = j.array("members").enumerated().map { MemberRow(json: $0.element, index: $0.offset) }
         return (j.int("total") ?? rows.count, rows)
+    }
+
+    /// Huisstijl van de website van de zaak (Edge Function business-brand): naam, logo, kaartkleur, tekstkleur.
+    /// Lukt het niet, dan nil (nooit een blokkerende fout).
+    static func brand(business: String, url: String? = nil) async -> Brand? {
+        var body: [String: Any] = ["business_id": business]
+        if let url, !url.isEmpty { body["url"] = url }
+        guard let json = try? await account.function("business-brand", body), let j = JSONObject(json) else { return nil }
+        let b = j.object("brand") ?? j
+        var brand = Brand(name: b.string("name", "site_name"), logo: nil, color: nil, textColor: nil,
+                          source: b.string("source_url", "url", "source"))
+        if let raw = b.string("logo"), let image = LogoImage.image(raw) { brand.logo = LogoImage.encode(image) }
+        if let c = b.string("color", "theme_color").flatMap(Self.hex) { brand.color = c }
+        if let t = b.string("text_color").flatMap(Self.hex) { brand.textColor = t }
+        guard brand.logo != nil || brand.color != nil || brand.name != nil else { return nil }
+        return brand
+    }
+
+    struct Brand {
+        var name: String?
+        var logo: String?
+        var color: String?
+        var textColor: String?
+        var source: String?
+
+        /// "kapsalon-anna.nl" uit de bron-URL.
+        var domain: String? {
+            guard let source, let host = URL(string: source)?.host() else { return nil }
+            return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+        }
+    }
+
+    private static func hex(_ value: String) -> String? {
+        var s = value.trimmingCharacters(in: .whitespaces).uppercased()
+        if !s.hasPrefix("#") { s = "#" + s }
+        if s.count == 4 { s = "#" + s.dropFirst().map { "\($0)\($0)" }.joined() }
+        return s.range(of: "^#[0-9A-F]{6}$", options: .regularExpression) != nil ? s : nil
     }
 
     // MARK: Scannen (eigenaar en medewerkers)

@@ -14,6 +14,8 @@ struct BusinessCard: Identifiable, Hashable {
     var name: String
     var logo: String?
     var color: String
+    /// Tekstkleur op de kaart ("#FFFFFF"/"#111216"); nil = automatisch op contrast.
+    var textColor: String?
     var stampsTotal: Int
     var reward: String
     var published: Bool
@@ -25,6 +27,7 @@ struct BusinessCard: Identifiable, Hashable {
          reward: String = "", published: Bool = false, members: Int = 0, stamps: Int = 0, rewards: Int = 0) {
         self.id = id; self.name = name; self.logo = logo; self.color = color; self.stampsTotal = stampsTotal
         self.reward = reward; self.published = published; self.members = members; self.stamps = stamps; self.rewards = rewards
+        self.textColor = nil
     }
 
     init?(json j: JSONObject) {
@@ -33,6 +36,7 @@ struct BusinessCard: Identifiable, Hashable {
                   stampsTotal: j.int("stamps_total") ?? 10, reward: j.string("reward") ?? "",
                   published: j.bool("published") ?? false, members: j.int("members", "members_count") ?? 0,
                   stamps: j.int("stamps") ?? 0, rewards: j.int("rewards") ?? 0)
+        textColor = j.string("text_color")
     }
 
     /// Link en QR-code waarmee klanten zich aanmelden.
