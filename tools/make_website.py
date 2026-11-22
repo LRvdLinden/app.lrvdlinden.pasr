@@ -807,3 +807,7 @@ if __name__ == "__main__":
         out.mkdir(parents=True, exist_ok=True)
         (out / "index.html").write_text(move_page(slug, m))
         print("Wrote", out / "index.html")
+    # pasr.nl/zakelijk: landingspagina voor ondernemers en de app-pagina's (dashboard, scanner, …)
+    import make_zakelijk
+    for w in make_zakelijk.build():
+        print("Wrote", w)
