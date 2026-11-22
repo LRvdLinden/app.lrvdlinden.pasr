@@ -54,7 +54,8 @@
     var n = count == null ? 0 : Math.max(0, Number(count) || 0);
     var shown = n % total === 0 && n > 0 ? total : n % total;
     var cols = total <= 5 ? total : total <= 10 ? 5 : total <= 12 ? 6 : total <= 21 ? 7 : 8;
-    var ink = luminance(color) > 0.45;
+    // tekstkleur van de zaak (huisstijl van de website) als die er is, anders op contrast
+    var ink = /^#000000$/i.test(card.text_color || "") ? true : /^#FFFFFF$/i.test(card.text_color || "") ? false : luminance(color) > 0.45;
     var mono = String(card.name || "?").split(" ").slice(0, 2).map(function (w) { return w[0] || ""; }).join("").toUpperCase();
     var stamps = "";
     for (var i = 0; i < total; i++) {
@@ -403,7 +404,7 @@
   function editView() {
     var c = dash.edit || { name: "", reward: "", stamps_total: 10, color: "#6A5CFF", logo: null, published: false };
     var b = dash.me.business, approved = b.status === "approved";
-    var state = { name: c.name, reward: c.reward, stamps_total: c.stamps_total, color: c.color, logo: c.logo, business: b.name, city: b.city };
+    var state = { name: c.name, reward: c.reward, stamps_total: c.stamps_total, color: c.color, logo: c.logo, business: b.name, city: b.city, text_color: c.id ? undefined : null };
     dashRoot().innerHTML =
       '<div class="zk-top"><div><span class="zk-kicker">Stempelkaart</span><h1>' + (c.id ? "Kaart bewerken" : "Nieuwe kaart") + "</h1></div>" + logoutBtn() + "</div>" +
       '<div class="zk-editor"><form id="zkCard" class="zk-panel zk-form" novalidate>' +
@@ -420,7 +421,7 @@
     var demo = null;
     function draw() {
       var n = demo === "half" ? Math.floor(state.stamps_total / 2) : demo === "full" ? state.stamps_total : demo === 0 ? 0 : null;
-      $("#cPrev").innerHTML = stampCard({ name: state.name || "Naam van de kaart", reward: state.reward || "Je beloning", stamps_total: state.stamps_total, color: state.color, logo: state.logo, business: state.business, city: state.city }, n);
+      $("#cPrev").innerHTML = stampCard({ name: state.name || "Naam van de kaart", reward: state.reward || "Je beloning", stamps_total: state.stamps_total, color: state.color, logo: state.logo, business: state.business, city: state.city, text_color: state.text_color === undefined ? c.text_color : state.text_color }, n);
     }
     draw();
     // huisstijl van de website (functie business-brand): bij een nieuwe kaart vanzelf, anders met de knop
@@ -432,7 +433,7 @@
         var t = await token();
         var r = await http("functions/v1/business-brand", { business_id: b.id }, t);
         if (r.logo) state.logo = r.logo;
-        if (r.color) { state.color = r.color.toUpperCase(); $("#cColor").value = state.color; }
+        if (r.color) { state.color = r.color.toUpperCase(); $("#cColor").value = state.color; state.text_color = r.text_color || null; }
         if (r.name && !state.name.trim() && !c.id) { state.name = r.name.slice(0, 40); $("#cName").value = state.name; }
         draw();
         box.innerHTML = '<p class="small"><b>Overgenomen van ' + esc(r.domain) + '</b>. Je kunt alles aanpassen. <button type="button" class="zk-btn ghost sm" id="cRebrand">Opnieuw ophalen</button></p>';
@@ -449,8 +450,8 @@
     $("#cName").addEventListener("input", function (e) { state.name = e.target.value; draw(); });
     $("#cReward").addEventListener("input", function (e) { state.reward = e.target.value; draw(); });
     $("#cTotal").addEventListener("input", function (e) { state.stamps_total = Number(e.target.value); $("#cTotOut").textContent = e.target.value; draw(); });
-    $("#cColor").addEventListener("input", function (e) { state.color = e.target.value.toUpperCase(); draw(); });
-    dashRoot().querySelectorAll(".swatches button").forEach(function (s) { s.addEventListener("click", function () { state.color = s.dataset.c; $("#cColor").value = s.dataset.c; draw(); }); });
+    $("#cColor").addEventListener("input", function (e) { state.color = e.target.value.toUpperCase(); state.text_color = null; draw(); });
+    dashRoot().querySelectorAll(".swatches button").forEach(function (s) { s.addEventListener("click", function () { state.color = s.dataset.c; state.text_color = null; $("#cColor").value = s.dataset.c; draw(); }); });
     $("#cDemo").querySelectorAll("button").forEach(function (s) { s.addEventListener("click", function () { demo = s.dataset.n === "0" ? 0 : s.dataset.n; draw(); }); });
     $("#cNoLogo").addEventListener("click", function () { state.logo = null; $("#cLogo").value = ""; draw(); });
     $("#cLogo").addEventListener("change", function (e) {
@@ -480,6 +481,7 @@
       var btn = ev.target.querySelector("button[type=submit]"); btn.disabled = true;
       try {
         var payload = { name: state.name, reward: state.reward, stamps_total: state.stamps_total, color: state.color.toUpperCase(), published: $("#cPub").checked, logo: state.logo || null };
+        if (state.text_color !== undefined) payload.text_color = state.text_color;
         if (c.id) payload.id = c.id;
         await rpc("pasr_business_card_save", { p_card: payload }, true);
         dash.view = "list"; await refresh(); toast("Kaart opgeslagen");

@@ -1951,6 +1951,7 @@ end $$;
 -- pasr_business_me: blok "zakelijk 1.0" (alle zaken waar je eigenaar of medewerker bent).
 
 -- Kaart opslaan (nieuw zonder id). Publiceren kan pas als de zaak is goedgekeurd. Hoogstens 5 kaarten per zaak.
+-- (Blok "zakelijk 1.0" vervangt deze functie met text_color.)
 create or replace function public.pasr_business_card_save(p_card jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid(); b public.pasr_businesses; c public.pasr_business_cards; cid uuid; lg text;
@@ -2206,6 +2207,67 @@ create trigger pasr_business_event_fill before insert on public.pasr_business_ev
   for each row execute function public.pasr_business_event_fill();
 
 -- Ondernemers kunnen events niet wissen of wijzigen: geen policies, geen grants, geen RPC (alleen undone_at via undo).
+
+-- ---- tekstkleur op de kaart (wit of zwart op de kaartkleur; leeg = de app/website kiest zelf) ----
+alter table public.pasr_business_cards add column if not exists text_color text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'pasr_business_cards_text_color_check') then
+    alter table public.pasr_business_cards add constraint pasr_business_cards_text_color_check
+      check (text_color is null or text_color ~ '^#[0-9A-F]{6}$');
+  end if;
+end $$;
+
+-- Wat iedereen van een kaart mag zien (join-pagina, app, Wallet-pas, scanner, zoeklijst): nu met text_color.
+create or replace function public.pasr_business_card_json(c public.pasr_business_cards, b public.pasr_businesses) returns jsonb
+language sql immutable as $$
+  select jsonb_build_object('id', c.id, 'name', c.name, 'business', b.name, 'city', b.city, 'logo', c.logo, 'color', c.color,
+    'text_color', c.text_color, 'kind', c.kind, 'stamps_total', c.stamps_total, 'reward', c.reward);
+$$;
+
+-- Kaart opslaan (vervangt de versie uit blok 1.0.3 web): ook text_color.
+create or replace function public.pasr_business_card_save(p_card jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); b public.pasr_businesses; c public.pasr_business_cards; cid uuid; lg text;
+        nm text; rw text; col text; tot int; pub boolean; tc text;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  select * into b from public.pasr_businesses where owner = uid;
+  if b.id is null then raise exception 'no_business' using errcode = '42501'; end if;
+  if b.status = 'blocked' then raise exception 'blocked' using errcode = '42501'; end if;
+  if jsonb_typeof(p_card) <> 'object' or octet_length(p_card::text) > 230000 then raise exception 'bad_card' using errcode = '22023'; end if;
+  nm := left(regexp_replace(trim(coalesce(p_card->>'name', '')), '\s+', ' ', 'g'), 40);
+  rw := left(regexp_replace(trim(coalesce(p_card->>'reward', '')), '\s+', ' ', 'g'), 80);
+  col := upper(coalesce(p_card->>'color', '#6A5CFF'));
+  tot := coalesce((p_card->>'stamps_total')::int, 10);
+  if nm = '' then raise exception 'bad_name' using errcode = '22023'; end if;
+  if rw = '' then raise exception 'bad_reward' using errcode = '22023'; end if;
+  if col !~ '^#[0-9A-F]{6}$' then raise exception 'bad_color' using errcode = '22023'; end if;
+  if tot not between 2 and 30 then raise exception 'bad_total' using errcode = '22023'; end if;
+  -- tekstkleur op de kaart (Pasr Zakelijk, huisstijl van de website): #RRGGBB of leeg
+  tc := nullif(upper(coalesce(p_card->>'text_color', '')), '');
+  if tc is not null and tc !~ '^#[0-9A-F]{6}$' then raise exception 'bad_color' using errcode = '22023'; end if;
+  lg := nullif(regexp_replace(coalesce(p_card->>'logo', ''), '^data:image/[a-z]+;base64,', ''), '');
+  if lg is not null and (octet_length(lg) > 210000 or lg !~ '^(/9j/|iVBORw0KGgo)[A-Za-z0-9+/]+=*$') then
+    raise exception 'bad_logo' using errcode = '22023';
+  end if;
+  pub := coalesce((p_card->>'published')::boolean, false) and b.status = 'approved';
+  cid := nullif(p_card->>'id', '')::uuid;
+  if cid is null then
+    if (select count(*) from public.pasr_business_cards where business_id = b.id) >= 5 then
+      raise exception 'card_limit' using errcode = '22023';
+    end if;
+    insert into public.pasr_business_cards (business_id, name, logo, color, stamps_total, reward, published, text_color)
+    values (b.id, nm, lg, col, tot, rw, pub, tc) returning * into c;
+  else
+    update public.pasr_business_cards set name = nm, logo = case when p_card ? 'logo' then lg else logo end, color = col,
+      stamps_total = tot, reward = rw, published = pub, updated_at = now(),
+      text_color = case when p_card ? 'text_color' then tc else text_color end
+    where id = cid and business_id = b.id returning * into c;
+    if c.id is null then raise exception 'not_found' using errcode = 'P0002'; end if;
+  end if;
+  return public.pasr_business_card_json(c, b) || jsonb_build_object('published', c.published);
+end $$;
 
 -- ---- json ----
 create or replace function public.pasr_business_json(b public.pasr_businesses) returns jsonb
@@ -2663,7 +2725,7 @@ declare q text := nullif(lower(left(regexp_replace(trim(coalesce(p_query, '')), 
 begin
   return coalesce((select jsonb_agg(x.j order by x.dist nulls last, x.bname, x.cname) from (
     select jsonb_build_object('card_id', c.id, 'card_name', c.name, 'business_name', b.name, 'city', b.city, 'logo', c.logo,
-             'color', c.color, 'stamps_total', c.stamps_total, 'reward', c.reward,
+             'color', c.color, 'text_color', c.text_color, 'stamps_total', c.stamps_total, 'reward', c.reward,
              'distance_km', case when d.km is not null then round(d.km::numeric, 1) end) j,
            d.km dist, lower(b.name) bname, lower(c.name) cname
     from public.pasr_business_cards c join public.pasr_businesses b on b.id = c.business_id
