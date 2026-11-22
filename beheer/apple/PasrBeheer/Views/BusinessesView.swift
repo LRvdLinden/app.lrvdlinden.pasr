@@ -8,6 +8,7 @@ struct BusinessesView: View {
     @State private var loading = false
     @State private var error: String?
     @State private var blocking: Business?
+    @State private var showing: Business?
 
     private static let filters = [("pending", "Wacht"), ("approved", "Goedgekeurd"), ("blocked", "Geblokkeerd"), ("all", "Alle")]
     private var shown: [Business] { filter == "all" ? businesses : businesses.filter { $0.status == filter } }
@@ -26,7 +27,8 @@ struct BusinessesView: View {
             if let error { Text(error).foregroundStyle(Theme.coral).font(.subheadline) }
             Section {
                 ForEach(shown) { b in
-                    BusinessRow(business: b)
+                    Button { showing = b } label: { BusinessRow(business: b) }
+                        .buttonStyle(.plain)
                         .swipeActions(edge: .trailing) {
                             if b.status != "approved" {
                                 Button { Task { await set(b, "approved") } } label: { Label("Goedkeuren", systemImage: "checkmark") }.tint(Theme.mint)
@@ -36,6 +38,7 @@ struct BusinessesView: View {
                             }
                         }
                         .contextMenu {
+                            Button { showing = b } label: { Label("Details", systemImage: "list.bullet.rectangle") }
                             if b.status != "approved" { Button { Task { await set(b, "approved") } } label: { Label("Goedkeuren", systemImage: "checkmark.circle") } }
                             if b.status != "blocked" { Button(role: .destructive) { blocking = b } label: { Label("Blokkeren", systemImage: "hand.raised") } }
                             if b.status == "blocked" { Button { Task { await set(b, "pending") } } label: { Label("Terug naar wachten", systemImage: "clock") } }
@@ -54,6 +57,10 @@ struct BusinessesView: View {
         .navigationTitle("Ondernemers")
         .refreshable { await load() }
         .task(id: session.refreshTick) { await load() }
+        .sheet(item: $showing) { b in
+            BusinessDetailView(business: b, onChanged: { Task { await load() } })
+                .environmentObject(session)
+        }
         .confirmationDialog("Zaak blokkeren?", isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }),
                             titleVisibility: .visible, presenting: blocking) { b in
             Button("Blokkeer \(b.name)", role: .destructive) { Task { await set(b, "blocked") } }
@@ -96,6 +103,10 @@ private struct BusinessRow: View {
                     .background((business.status == "approved" ? Theme.mint : business.status == "blocked" ? Theme.coral : Theme.amber).opacity(0.14), in: Capsule())
             }
             Text([business.email, business.website, "aangemeld " + Fmt.ago(business.created_at)].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                .font(.caption).foregroundStyle(Theme.muted)
+            Text([Fmt.plural(business.staff_count ?? 0, "medewerker", "medewerkers"),
+                  business.listed == false ? "niet vindbaar in Pasr" : "vindbaar in Pasr",
+                  business.last_event_at.map { "laatste actie " + Fmt.ago($0) }].compactMap { $0 }.joined(separator: " · "))
                 .font(.caption).foregroundStyle(Theme.muted)
             if let note = business.note, !note.isEmpty { Text(note).font(.subheadline) }
             ForEach(business.cards) { c in

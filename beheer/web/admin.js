@@ -1122,6 +1122,9 @@
     meta.append(el("span", "badge " + st[1], st[0]), el("span", null, b.email || "—"));
     if (b.website) meta.append(el("span", null, b.website));
     meta.append(el("span", null, "Aangemeld " + ago(b.created_at)));
+    meta.append(el("span", null, `${num(b.staff_count || 0)} ${b.staff_count === 1 ? "medewerker" : "medewerkers"}`));
+    if (b.last_event_at) meta.append(el("span", null, "Laatste stempel/actie " + ago(b.last_event_at)));
+    meta.append(el("span", "badge " + (b.listed === false ? "wait" : "ok"), b.listed === false ? "Niet vindbaar in Pasr" : "Vindbaar in Pasr"));
     who.append(meta);
     if (b.note) who.append(el("p", "muted sm", b.note));
     const cards = el("div", "biz-cards");
@@ -1146,11 +1149,91 @@
       });
       return x;
     };
+    const det = el("button", "btn sm ghost", "Details"); det.type = "button";
+    det.addEventListener("click", () => toggleBizDetail(row, b, det));
+    acts.append(det);
     if (b.status !== "approved") acts.append(btn("Goedkeuren", "", "approved"));
     if (b.status !== "blocked") acts.append(btn("Blokkeren", "danger", "blocked", "Zaak blokkeren?", `${b.name} kan niet meer scannen en de kaarten gaan offline. Leden zien dat de kaart niet meer actief is.`));
     if (b.status === "blocked") acts.append(btn("Terug naar wachten", "ghost", "pending"));
     row.append(el("div", "avatar", b.name.charAt(0).toUpperCase()), who, acts);
     return row;
+  }
+
+  // ---- Ondernemers: details per zaak (medewerkers, instellingen, stats, log) ----
+  const LOGKIND = { join: "Nieuw lid", claim: "Kaart naar de app", stamp: "Stempel", redeem: "Beloning", undo: "Ongedaan" };
+  async function toggleBizDetail(row, b, btn) {
+    const open = row.nextElementSibling && row.nextElementSibling.classList.contains("biz-detail");
+    if (open) { row.nextElementSibling.remove(); btn.textContent = "Details"; return; }
+    btn.textContent = "Sluiten";
+    const box = el("div", "biz-detail");
+    box.append(el("p", "muted", "Laden…"));
+    row.after(box);
+    let d;
+    try { d = await api("business_detail", { id: b.id, limit: 200, days: 30 }); }
+    catch (err) { box.replaceChildren(el("p", "err", err.message)); return; }
+    box.replaceChildren();
+    const z = d.business || b;
+    // instellingen
+    const set = el("form", "se-grid biz-set");
+    const field = (label, input) => { const l = el("label", null, label); l.append(input); return l; };
+    const cool = Object.assign(document.createElement("input"), { type: "number", min: 0, max: 1440, value: z.cooldown_minutes ?? 5 });
+    const max = Object.assign(document.createElement("input"), { type: "number", min: 1, max: 30, value: z.max_per_scan ?? 10 });
+    const listed = Object.assign(document.createElement("input"), { type: "checkbox", checked: z.listed !== false });
+    const addr = Object.assign(document.createElement("input"), { type: "text", maxLength: 200, value: z.address || "", placeholder: "Adres (optioneel)" });
+    const lc = el("label", "check"); lc.append(listed, document.createTextNode(" Vindbaar in Pasr (Kaart toevoegen › Stempelkaart)"));
+    const save = el("button", "btn sm", "Instellingen opslaan"); save.type = "submit";
+    const msg = el("span", "muted sm");
+    set.append(el("h3", null, "Instellingen"), field("Afkoeltijd (minuten, 0 = uit)", cool), field("Max stempels per scan (1–30)", max), field("Adres", addr), lc,
+      el("p", "muted sm", z.lat != null ? `Locatie: ${Number(z.lat).toFixed(4)}, ${Number(z.lng).toFixed(4)}` : "Geen locatie (alleen via de app Pasr Zakelijk)."), save, msg);
+    set.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const p = { id: b.id, cooldown_minutes: Number(cool.value), max_per_scan: Number(max.value), listed: listed.checked };
+      if (addr.value.trim() !== (z.address || "")) p.address = addr.value.trim() || null;
+      save.disabled = true;
+      try { await api("business_settings", p); msg.textContent = "Opgeslagen."; toast(`${b.name}: instellingen opgeslagen`); }
+      catch (err) { msg.textContent = err.message; }
+      finally { save.disabled = false; }
+    });
+    // stats
+    const st = d.stats || { days: [], totals: {} };
+    const stats = el("div", "biz-stats");
+    const t = st.totals || {};
+    stats.append(el("h3", null, "Laatste 30 dagen"),
+      el("p", null, `${num(t.stamps)} stempels · ${num(t.rewards)} beloningen · ${num(t.new_members)} nieuwe leden · ${num(t.members)} leden totaal`));
+    const bars = el("div", "biz-bars"), mx = Math.max(1, ...(st.days || []).map((x) => x.stamps));
+    for (const x of st.days || []) { const i = el("i"); i.style.height = Math.max(2, Math.round(x.stamps / mx * 100)) + "%"; i.title = `${x.day}: ${x.stamps}`; bars.append(i); }
+    stats.append(bars);
+    // medewerkers
+    const staff = el("div", "biz-staff");
+    staff.append(el("h3", null, "Medewerkers"));
+    for (const m of d.staff || []) {
+      const r = el("div", "biz-line");
+      const status = m.revoked ? "ingetrokken" : m.pending ? (m.expired ? "uitnodiging verlopen" : "uitnodiging open") : "actief";
+      r.append(el("span", null, `${m.name || (m.role === "owner" ? "Eigenaar" : "—")}${m.email ? " · " + m.email : ""}`), el("span", "muted sm", `${m.role === "owner" ? "eigenaar" : "medewerker"}, ${status}`));
+      if (m.role !== "owner" && !m.revoked) {
+        const x = el("button", "btn sm danger", "Intrekken"); x.type = "button";
+        x.addEventListener("click", async () => {
+          if (!(await ask("Medewerker intrekken?", `${m.name || "Deze medewerker"} kan dan niet meer scannen bij ${b.name}.`, "Intrekken"))) return;
+          x.disabled = true;
+          try { await api("business_staff_revoke", { id: m.id }); toast("Ingetrokken"); box.remove(); toggleBizDetail(row, b, btn); }
+          catch (err) { toast(err.message); x.disabled = false; }
+        });
+        r.append(x);
+      }
+      staff.append(r);
+    }
+    // log
+    const log = el("div", "biz-log");
+    log.append(el("h3", null, "Log (laatste 200)"));
+    if (!(d.log || []).length) log.append(el("p", "muted", "Nog niets gebeurd."));
+    for (const x of d.log || []) {
+      const r = el("div", "biz-line" + (x.undone ? " undone" : ""));
+      const what = x.kind === "stamp" ? `${x.amount} ${x.amount === 1 ? "stempel" : "stempels"}` : (LOGKIND[x.kind] || x.kind);
+      r.append(el("span", null, `${new Date(x.at).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · ${what}${x.stamps_after != null && x.kind !== "join" && x.kind !== "claim" ? ` (${x.stamps_before} → ${x.stamps_after})` : ""}`),
+        el("span", "muted sm", `${x.card_name || "verwijderde kaart"} · …${x.member_suffix || ""} · ${x.by_role === "customer" ? "klant" : (x.by_name || "?") + (x.by_role === "staff" ? " (medewerker)" : "")}${x.device ? " · " + x.device : ""}`));
+      log.append(r);
+    }
+    box.append(set, stats, staff, log);
   }
 
   // ---- start ----

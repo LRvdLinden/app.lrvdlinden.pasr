@@ -313,6 +313,15 @@ struct Business: Decodable, Identifiable, Hashable {
     let created_at: String?
     let reviewed_at: String?
     let cards: [BusinessCard]
+    // zakelijk 1.0
+    let cooldown_minutes: Int?
+    let max_per_scan: Int?
+    let listed: Bool?
+    let address: String?
+    let lat: Double?
+    let lng: Double?
+    let staff_count: Int?
+    let last_event_at: String?
 
     var statusTitle: String {
         switch status {
@@ -323,3 +332,83 @@ struct Business: Decodable, Identifiable, Hashable {
     }
 }
 struct BusinessesResponse: Decodable { let businesses: [Business] }
+
+// MARK: Ondernemers: details per zaak (zakelijk 1.0, actie business_detail)
+
+/// Zaak zonder kaarten (zoals business_detail hem geeft).
+struct BusinessInfo: Decodable, Hashable {
+    let id: String
+    let name: String
+    let status: String
+    let cooldown_minutes: Int?
+    let max_per_scan: Int?
+    let listed: Bool?
+    let address: String?
+    let lat: Double?
+    let lng: Double?
+}
+struct BusinessStaff: Decodable, Identifiable, Hashable {
+    let id: String
+    let name: String?
+    let email: String?
+    let role: String
+    let created_at: String?
+    let accepted_at: String?
+    let pending: Bool?
+    let expired: Bool?
+    let revoked: Bool?
+
+    var statusTitle: String {
+        if revoked == true { return "ingetrokken" }
+        if pending == true { return expired == true ? "uitnodiging verlopen" : "uitnodiging open" }
+        return "actief"
+    }
+}
+struct BusinessEvent: Decodable, Identifiable, Hashable {
+    let id: String
+    let kind: String
+    let amount: Int?
+    let at: String
+    let card_name: String?
+    let member_suffix: String?
+    let by_name: String?
+    let by_role: String?
+    let device: String?
+    let stamps_before: Int?
+    let stamps_after: Int?
+    let undone: Bool?
+
+    var title: String {
+        switch kind {
+        case "stamp": return (amount ?? 1) == 1 ? "1 stempel" : "\(amount ?? 1) stempels"
+        case "redeem": return "Beloning ingewisseld"
+        case "undo": return "Ongedaan gemaakt"
+        case "join": return "Nieuw lid"
+        case "claim": return "Kaart naar de app"
+        default: return kind
+        }
+    }
+}
+struct BusinessDay: Decodable, Identifiable, Hashable {
+    let day: String
+    let stamps: Int
+    let rewards: Int
+    let new_members: Int
+    var id: String { day }
+}
+struct BusinessTotals: Decodable, Hashable {
+    let stamps: Int
+    let rewards: Int
+    let new_members: Int
+    let members: Int
+}
+struct BusinessStats: Decodable, Hashable {
+    let days: [BusinessDay]
+    let totals: BusinessTotals
+}
+struct BusinessDetail: Decodable {
+    let business: BusinessInfo
+    let staff: [BusinessStaff]
+    let log: [BusinessEvent]
+    let stats: BusinessStats
+}

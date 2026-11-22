@@ -15,6 +15,7 @@ Het beheer van Pasr: tellingen, accounts en pushmeldingen. Twee onderdelen, éé
 - **Accounts:** zoeken op e-mail of voornaam, filters, aantal kaarten, laatste login en sync, bevestigingsmail opnieuw sturen, account verwijderen.
 - **Berichten (1.0.3):** een pushmelding sturen aan gebruikers die in de app "Nieuws over mijn kaarten" aanzetten. Doelgroep: iedereen met opt-in, heeft een kaart van winkel X, nieuwe gebruikers (7 dagen) of inactief (30 dagen). Met voorbeeld, aantal ontvangers, bevestiging en geschiedenis. Alleen winkel-id's per apparaat, nooit kaartnummers.
 - **Ondernemers (1.0.3):** zaken die zich aanmeldden op pasr.nl/zakelijk goedkeuren, blokkeren (kaarten gaan offline) of terugzetten, met hun stempelkaarten (leden, stempels, beloningen). Een nieuwe aanmelding geeft een pushmelding (schakelaar "Winkel aangevraagd of nieuwe ondernemer").
+- **Ondernemers: details (zakelijk 1.0, PasrBeheer build 12, LRbeheer build 58):** per zaak de instellingen (afkoeltijd, max stempels per scan, vindbaar in Pasr aan/uit om een zaak uit de lijst te halen, adres), stempels per dag (30 dagen), medewerkers (intrekken) en de log (wie gaf wanneer welke stempel, ook ongedaan gemaakt). Acties `business_detail`, `business_settings`, `business_staff_revoke` in de functie admin. Op het web: knop Details bij een zaak.
 - **Gids:** ook het verjaardagsvoordeel (`birthday`), alleen als de officiële site het noemt.
 - **Instellingen:** Face ID, pushmeldingen per soort, testmelding, uitloggen en overal uitloggen.
 
