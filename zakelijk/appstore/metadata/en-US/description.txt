@@ -1,0 +1,37 @@
+Pasr Zakelijk is the app for businesses that work with Pasr: digital stamp cards for your café, bakery, hairdresser or shop. Your customers collect stamps in the free Pasr app or simply in their browser. Only you and your staff can add stamps.
+
+SCAN AT THE COUNTER
+• Scan the QR code on your customer's stamp card with the camera, or type the code.
+• Choose how many stamps to add, up to the maximum you set.
+• When the card is full, redeem the reward with one tap.
+• Made a mistake? Undo the last stamp or redemption within 2 minutes.
+
+YOUR OWN STAMP CARD
+• Choose a name, colour, logo, the number of stamps (2 to 30) and the reward.
+• Logo and colours can come straight from your business website.
+• Share the link and QR code, or create an A4 flyer for your counter.
+• Customers also find your stamp card in the list in Pasr, and with your address even under "Nearby".
+
+OVERVIEW AND LOG
+• Stamps, rewards and new members per day in a clear chart, next to the previous period.
+• See the members of each card and how far they are.
+• The log shows who did what and when. It can't be erased.
+
+STAFF
+• Invite your team with a link. Staff sign in with their own Pasr account and only see the scanner.
+• Revoke someone instantly.
+
+SAFE STAMPING
+• Customers can't add stamps themselves.
+• With a cooldown, a customer can't get two stamps in quick succession.
+• Lock the app with Face ID, Touch ID or your passcode.
+• More than one business? Switch at the top.
+
+GOOD TO KNOW
+• You sign in with your Pasr account (the same as on pasr.nl/zakelijk). You can create an account in the app.
+• A new business is checked and approved first; after that you can add stamps.
+• For iPhone and iPad, in Dutch and English. No ads and no tracking.
+
+Privacy: Pasr Zakelijk only keeps what is needed for your business, your cards and the log. You only see customers as the last characters of their code. More at pasr.nl/privacy.
+
+Pasr Zakelijk is made by Léon van der Linden. Find more apps at lrvdlinden.app.

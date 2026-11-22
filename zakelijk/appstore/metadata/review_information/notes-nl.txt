@@ -1,0 +1,31 @@
+Pasr Zakelijk is de zakelijke app naast onze gratis app Pasr (klantenkaarten). Ondernemers (cafés, bakkers, kappers, winkels) gebruiken hem voor digitale stempelkaarten: ze scannen de QR-code van de klant en zetten stempels, wisselen beloningen in, ontwerpen hun stempelkaart, nodigen medewerkers uit en zien statistieken. Klanten sparen in Pasr of in de browser; klanten kunnen nooit zelf stempels zetten. De app is Nederlands en Engels en werkt op iPhone en iPad.
+
+INLOGGEN EN GOEDKEURING
+- Inloggen is verplicht, met een Pasr-account (e-mail en wachtwoord; hetzelfde account als op pasr.nl/zakelijk). Een account maken kan ook in de app, verwijderen in Instellingen › Account.
+- Demo-account: TODO - Léon vult gebruikersnaam en wachtwoord in bij de inloggegevens in App Store Connect.
+- Een zaak moet door de beheerder worden goedgekeurd voordat er stempels gezet kunnen worden. Het demo-account is eigenaar van een demo-zaak ("Koffiebar De Hoek") die vooraf is goedgekeurd, zodat alles direct werkt. (TODO Léon: keur de demo-zaak goed vóór het insturen.)
+
+ZO TEST JE HET
+1. Open de app. Na het korte splashscreen log je in met het demo-account.
+2. Tab Kaarten: de demo-zaak heeft een gepubliceerde stempelkaart. Tik erop om te bewerken (naam, kleur, logo, aantal stempels, beloning) of tik op "QR, link en flyer" om de link te delen of de A4-flyer (PDF) te maken.
+3. Een klantcode krijgen: open de link uit stap 2 in Safari (op elk apparaat) en sluit in de browser aan. De browser toont de QR-code en de code van de klant (begint met PZ).
+4. Tab Scannen: richt de camera op die QR-code, of typ de code in het veld onder de camera. Het resultaat toont de kaart. Kies het aantal stempels met - en + en tik op de groene knop. De laatste actie kan binnen 2 minuten ongedaan worden gemaakt. Is de kaart vol, dan verschijnt "Beloning inwisselen".
+5. Dezelfde klant binnen de afkoeltijd opnieuw scannen geeft een duidelijke melding; dat is de bedoeling (tegen dubbele stempels). De afkoeltijd kan in Instellingen op "Geen".
+6. Tab Overzicht: grafiek van stempels, beloningen en nieuwe leden per dag, leden per kaart en het logboek.
+7. Tab Medewerkers: nodig een medewerker uit (maakt een deellink). Medewerkers zien alleen de scanner.
+8. Instellingen: afkoeltijd, max. stempels per scan, vindbaar in Pasr, vergrendelen met Face ID, weergave, hulplinks, "Wat is nieuw".
+
+TOESTEMMINGEN
+- Camera: alleen om de QR-code van de klant te scannen; gevraagd als het tabblad Scannen voor het eerst opent. Weigeren kan; dan typ je de code.
+- Face ID: alleen als de gebruiker "Vergrendelen met Face ID" aanzet in Instellingen; terugval op de toegangscode.
+- Foto's: de systeemfotokiezer wordt gebruikt om een logo te kiezen; er wordt geen toegang tot de fotobibliotheek gevraagd.
+
+GEGEVENS
+- De app praat met onze eigen backend (Supabase) voor account, zaak, kaarten, stempels en logboek. Klanten zie je alleen als de laatste tekens van hun anonieme code. Geen reclame, geen tracking, geen analytics-SDK's.
+- Het adres van de zaak wordt met Apple Maps omgezet in een plek op de kaart, zodat klanten de zaak in Pasr bij "In de buurt" vinden.
+
+OVERIG
+- Geen in-app aankopen, abonnementen of reclame.
+- Een beoordelingsvraag (requestReview) verschijnt hoogstens 1 keer per week, de eerste keer na een paar uur gebruik, alleen op een rustig moment (nooit tijdens inloggen, het slot, een venster of tijdens scannen).
+- Instellingen bevat de kaart "Meer apps van de ontwikkelaar" met een link naar lrvdlinden.app.
+- Universal links: https://pasr.nl/zakelijk/uitnodiging/#<code> opent een uitnodiging voor medewerkers in de app.

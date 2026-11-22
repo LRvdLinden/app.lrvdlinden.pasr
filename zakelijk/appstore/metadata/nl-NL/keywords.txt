@@ -1,0 +1,1 @@
+spaarkaart,klantenkaart,loyaliteit,ondernemer,kassa,horeca,koffie,kapper,klanten,qr,scanner,sparen

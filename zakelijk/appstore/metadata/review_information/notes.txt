@@ -1,0 +1,31 @@
+Pasr Zakelijk is the business companion to our free app Pasr (loyalty cards). Business owners (cafés, bakeries, hairdressers, shops) use it to run digital stamp cards: they scan the customer's QR code and add stamps, redeem rewards, design their stamp card, invite staff and see statistics. Customers collect stamps in Pasr or in their browser; customers can never add stamps themselves. The app is available in Dutch and English and runs on iPhone and iPad.
+
+SIGN-IN AND APPROVAL
+- Signing in is required and uses a Pasr account (email and password; the same account as on pasr.nl/zakelijk). An account can also be created in the app, and deleted in Settings > Account.
+- Demo account: TODO - Léon fills in the demo user and password in the Sign-In Information fields of App Store Connect.
+- A business has to be approved by our administrator before stamps can be added. The demo account owns a demo business ("Koffiebar De Hoek") that has been approved in advance, so all features are available right away. (TODO Léon: approve the demo business before submitting.)
+
+HOW TO TEST
+1. Open the app. After the short splash screen, sign in with the demo account.
+2. Cards tab: the demo business has a published stamp card. Tap it to edit (name, colour, logo, number of stamps, reward) or tap "QR, link en flyer" (EN: "QR, link and flyer") to share the link or create the A4 flyer (PDF).
+3. To get a customer code: open the card link from step 2 in Safari (on any device) and join the card in the browser. The browser shows the customer's QR code and the code (starts with PZ).
+4. Scan tab: point the camera at that QR code, or type the code in the field below the camera. The result sheet shows the card. Choose the number of stamps with - and + and tap the green button. The last action can be undone within 2 minutes. When the card is full, "Beloning inwisselen" (Redeem reward) appears.
+5. Scanning the same customer again within the cooldown shows a clear message; this is intended (it prevents double stamps). The cooldown can be set to "Geen" (None) in Settings.
+6. Overview tab: chart of stamps, rewards and new members per day, members per card and the log.
+7. Staff tab: invite a staff member (creates a share link). Staff members only see the scanner.
+8. Settings: cooldown, maximum stamps per scan, listing in Pasr, Face ID lock, appearance, help links, "What's new".
+
+PERMISSIONS
+- Camera: only to scan the customer's QR code; asked when the Scan tab opens for the first time. If declined, the code can be typed instead.
+- Face ID: only when the user turns on "Vergrendelen met Face ID" (Lock with Face ID) in Settings; falls back to the device passcode.
+- Photos: the system photo picker is used to choose a logo for a stamp card; no photo library access is requested.
+
+DATA
+- The app talks to our own backend (Supabase) for the account, business, cards, stamps and log. Customers are shown only as the last characters of their anonymous code. No ads, no tracking, no analytics SDKs.
+- The business address is turned into a map position with Apple Maps (geocoding) so customers can find the business under "Nearby" in Pasr.
+
+OTHER
+- No in-app purchases, subscriptions or ads.
+- A review prompt (requestReview) is shown at most once a week, first after a few hours of use, only at a calm moment (never during sign-in, the lock screen, a sheet or while scanning).
+- Settings contains a card "More apps from the developer" that links to the developer's website lrvdlinden.app.
+- Universal links: https://pasr.nl/zakelijk/uitnodiging/#<code> opens a staff invitation in the app.

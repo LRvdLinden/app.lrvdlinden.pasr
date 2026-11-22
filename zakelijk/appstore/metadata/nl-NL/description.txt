@@ -1,0 +1,37 @@
+Pasr Zakelijk is de app voor ondernemers die met Pasr werken: digitale stempelkaarten voor je café, bakker, kapper of winkel. Je klanten sparen in de gratis app Pasr of gewoon in de browser. Alleen jij en je medewerkers kunnen stempels zetten.
+
+SCANNEN AAN DE KASSA
+• Scan de QR-code van de stempelkaart van je klant met de camera, of typ de code over.
+• Kies zelf hoeveel stempels erbij komen, tot het maximum dat je instelt.
+• Is de kaart vol, dan wissel je de beloning in met één tik.
+• Vergist? Maak de laatste stempel of inwisseling binnen 2 minuten ongedaan.
+
+JE EIGEN STEMPELKAART
+• Kies een naam, kleur, logo, het aantal stempels (2 tot 30) en de beloning.
+• Logo en kleuren kunnen automatisch van de website van je zaak komen.
+• Deel de link en QR-code, of maak een A4-flyer voor op de toonbank.
+• Klanten vinden je stempelkaart ook in de lijst in Pasr, met je adres zelfs bij "In de buurt".
+
+OVERZICHT EN LOGBOEK
+• Stempels, beloningen en nieuwe leden per dag in een duidelijke grafiek, met de vorige periode ernaast.
+• Zie per kaart je leden en hun stand.
+• Het logboek laat zien wie wat deed en wanneer. Het kan niet worden gewist.
+
+MEDEWERKERS
+• Nodig je team uit met een link. Medewerkers loggen in met een eigen Pasr-account en zien alleen de scanner.
+• Iemand intrekken kan direct.
+
+VEILIG STEMPELEN
+• Klanten kunnen zelf geen stempels zetten.
+• Met een afkoeltijd krijgt een klant niet twee keer kort na elkaar een stempel.
+• Vergrendel de app met Face ID, Touch ID of je toegangscode.
+• Meerdere zaken? Wissel bovenin van zaak.
+
+GOED OM TE WETEN
+• Je logt in met je Pasr-account (hetzelfde als op pasr.nl/zakelijk). Een account maken kan in de app.
+• Een nieuwe zaak wordt eerst gecontroleerd en goedgekeurd; daarna kun je stempels zetten.
+• Voor iPhone en iPad, in het Nederlands en Engels. Geen reclame en geen tracking.
+
+Privacy: Pasr Zakelijk bewaart alleen wat nodig is voor je zaak, je kaarten en het logboek. Klanten zie je alleen als de laatste tekens van hun code. Meer op pasr.nl/privacy.
+
+Pasr Zakelijk is gemaakt door Léon van der Linden. Meer apps vind je op lrvdlinden.app.

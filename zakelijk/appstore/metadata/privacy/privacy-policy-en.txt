@@ -1,0 +1,21 @@
+Privacy in Pasr Zakelijk
+
+Pasr Zakelijk is the app for businesses that use Pasr's digital stamp cards. The full privacy policy is at https://pasr.nl/privacy/#stempelkaarten-van-ondernemers.
+
+What we store
+- Your Pasr account: email address, first name and an account ID. You can delete your account in the app (Settings > Account).
+- Your business: name, city, website, optional description and address (with its map position, looked up via Apple Maps).
+- Your stamp cards: name, colour, the logo you choose, number of stamps and reward.
+- Staff: the name and email address you enter when inviting someone.
+- The log: every stamp, redemption and undo, with who did it and the type of device (iPhone or iPad).
+- Customers: only their anonymous code and their progress. You see customers as the last characters of that code, never a name or email address.
+
+What we don't do
+- No ads, no tracking, no third-party analytics or crash reporting.
+- The camera reads QR codes on your device only; images are not stored or sent.
+- Face ID happens entirely on your device; we never see any of it.
+
+Where
+Data is sent over HTTPS to the Pasr server (backend: Supabase) and kept until you delete the card, the business or your account. A business can't erase the log itself.
+
+Questions: https://pasr.nl/support/

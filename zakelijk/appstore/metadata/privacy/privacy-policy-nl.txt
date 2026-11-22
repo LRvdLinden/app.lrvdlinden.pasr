@@ -1,0 +1,21 @@
+Privacy in Pasr Zakelijk
+
+Pasr Zakelijk is de app voor ondernemers die digitale stempelkaarten van Pasr gebruiken. De volledige privacyverklaring staat op https://pasr.nl/privacy/#stempelkaarten-van-ondernemers.
+
+Wat we bewaren
+- Je Pasr-account: e-mailadres, voornaam en een account-ID. Je kunt je account in de app verwijderen (Instellingen › Account).
+- Je zaak: naam, plaats, website, optionele omschrijving en adres (met de plek op de kaart, opgezocht via Apple Maps).
+- Je stempelkaarten: naam, kleur, logo dat je kiest, aantal stempels en beloning.
+- Medewerkers: de naam en het e-mailadres die je invult bij een uitnodiging.
+- Het logboek: elke stempel, inwisseling en ongedaanmaking, met wie het deed en het soort apparaat (iPhone of iPad).
+- Klanten: alleen hun anonieme code en hun stand. Je ziet klanten als de laatste tekens van die code, nooit naam of e-mailadres.
+
+Wat we niet doen
+- Geen reclame, geen tracking, geen analytics of crashrapporten van derden.
+- De camera leest QR-codes alleen op je apparaat; beelden worden niet bewaard of verstuurd.
+- Face ID gebeurt helemaal op je apparaat; we krijgen daar niets van te zien.
+
+Waar
+Gegevens gaan via HTTPS naar de server van Pasr (backend: Supabase) en blijven bewaard tot je de kaart, de zaak of je account verwijdert. Het logboek kan een ondernemer niet zelf wissen.
+
+Vragen: https://pasr.nl/support/
