@@ -35,7 +35,7 @@ jobs:
               "// Written by the Website workflow (public values).\nwindow.PASR_ACCOUNT = " + json.dumps({"url": url, "key": key}) + ";\n")
           print("Account config:", "set" if url and key else "empty (secrets PASR_SUPABASE_URL / PASR_SUPABASE_KEY missing)")
           PY
-      - name: Android-APK's naar website/download (nieuwste van Pasr en Pasr Zakelijk)
+      - name: "Android-APK's: Pasr naar /download/, Pasr Zakelijk naar /zakelijk/download/"
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -45,8 +45,8 @@ jobs:
           set -uo pipefail
           mkdir -p website/download
           git fetch -q --depth 1 origin android-builds:refs/remotes/origin/android-builds 2>/dev/null || true
-          fetch() {  # $1 = naam op de site (pasr / pasr-zakelijk), $2 = tag-voorvoegsel, $3 = workflowbestand, $4 = artifact
-            local name=$1 prefix=$2 wf=$3 art=$4 tmp; tmp=$(mktemp -d); tag=""
+          fetch() {  # $1 = naam (pasr / pasr-zakelijk), $2 = tag-voorvoegsel, $3 = workflowbestand, $4 = artifact, $5 = map op de site
+            local name=$1 prefix=$2 wf=$3 art=$4 dest=$5 tmp; tmp=$(mktemp -d); tag=""; mkdir -p "$dest"
             # 1. de branch android-builds (de Android-workflows zetten daar de nieuwste APK neer)
             for dir in "$name" "${name#pasr-}"; do
               if git show "origin/android-builds:$dir/$name.apk" > "$tmp/$name.apk" 2>/dev/null; then
@@ -65,15 +65,16 @@ jobs:
             fi
             apk=$(ls "$tmp"/$name.apk 2>/dev/null || ls -S "$tmp"/*.apk 2>/dev/null | head -1)
             if [ -z "$apk" ]; then echo "::warning::Geen APK gevonden voor $name"; return 0; fi
-            cp "$apk" "website/download/$name.apk"
-            if [ -f "$tmp/$name.json" ]; then cp "$tmp/$name.json" "website/download/$name.json"; else
+            cp "$apk" "$dest/$name.apk"
+            if [ -f "$tmp/$name.json" ]; then cp "$tmp/$name.json" "$dest/$name.json"; else
               printf '{"app":"%s","size":%s,"sha256":"%s","date":"%s"}\n' "$name" "$(stat -c %s "$apk")" "$(sha256sum "$apk" | cut -d' ' -f1)" \
-                "$(date -u +%Y-%m-%d)" > "website/download/$name.json"
+                "$(date -u +%Y-%m-%d)" > "$dest/$name.json"
             fi
             echo "::notice::$name.apk klaargezet ($(stat -c %s "$apk") bytes, ${tag:-artifact})"
           }
-          fetch pasr android-pasr- android-pasr.yml Pasr-Android
-          fetch pasr-zakelijk android-zakelijk- android-zakelijk.yml PasrZakelijk-Android
+          fetch pasr android-pasr- android-pasr.yml Pasr-Android website/download
+          # Pasr Zakelijk staat op pasr.nl/zakelijk/download/ (niet in /download/)
+          fetch pasr-zakelijk android-zakelijk- android-zakelijk.yml PasrZakelijk-Android website/zakelijk/download
       - name: Versie achter css en js (geen oude bestanden uit de cache)
         run: python3 tools/version_assets.py
       - name: Install lftp

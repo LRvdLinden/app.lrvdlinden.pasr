@@ -265,4 +265,9 @@
     <lastmod>2026-11-22</lastmod>
     <image:image><image:loc>https://pasr.nl/og/zakelijk.png</image:loc></image:image>
   </url>
+  <url>
+    <loc>https://pasr.nl/zakelijk/download/</loc>
+    <lastmod>2026-11-22</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
+  </url>
 </urlset>
