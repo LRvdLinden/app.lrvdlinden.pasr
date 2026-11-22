@@ -41,8 +41,12 @@ struct WalletView: View {
 
     enum Sheet: Identifiable {
         case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?), info(Card)
+        /// "Laatst gebruikt": alles, of het bedrag bij één keer.
+        case uses(Card), useAmount(Card, UUID)
         var id: String {
             switch self {
+            case .uses(let card): "uses-\(card.id)"
+            case .useAmount(let card, let use): "useAmount-\(card.id)-\(use)"
             case .info(let card): "info-\(card.id)"
             case .history(let card): "history-\(card.id)"
             case .spend(let card, _): "spend-\(card.id)"
@@ -84,7 +88,7 @@ struct WalletView: View {
                             .allowsHitTesting(selectedID == nil)
                     }
                     if let card = selectedCard {
-                        forward(card, width: min(geo.size.width - 24, 470))
+                        forward(card, width: min(geo.size.width - 24, 470), height: geo.size.height)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -103,6 +107,8 @@ struct WalletView: View {
             case .edit(let card): NavigationStack { CardEditorView(card: card) }
             case .share(let card): ShareCardSheet(card: card)
             case .history(let card): CardHistorySheet(card: card)
+            case .uses(let card): RecentUsesView(card: card)
+            case .useAmount(let card, let use): UseAmountSheet(card: card, useID: use)
             case .info(let card):
                 CardInfoSheet(card: card) {
                     Task { @MainActor in
@@ -214,7 +220,7 @@ struct WalletView: View {
 
     // MARK: Card brought forward
 
-    private func forward(_ card: Card, width: CGFloat) -> some View {
+    private func forward(_ card: Card, width: CGFloat, height: CGFloat) -> some View {
         ZStack {
             Rectangle()
                 .fill(.black.opacity(0.45))
@@ -223,57 +229,68 @@ struct WalletView: View {
                 .onTapGesture { deselect() }
                 .transition(.opacity)
 
-            VStack(spacing: 22) {
-                // tijdelijke kaart: elke 15 seconden opnieuw tekenen, zodat de code op het einde verdwijnt
-                TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in
-                    FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
-                }
-                    .frame(width: width, height: width / Brand.cardAspect)
-                    .matchedGeometryEffect(id: card.id, in: namespace)
-                    .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
-                    .onTapGesture { deselect() }
-
-                HStack(spacing: 14) {
-                    actionButton(card.isFavorite ? "star.fill" : "star",
-                                 label: card.isFavorite ? "Geen favoriet" : "Favoriet") {
-                        card.isFavorite.toggle()
-                        card.updatedAt = .now
+            // in een ScrollView: met "Laatst gebruikt" en grote tekst past het niet altijd op het scherm
+            ScrollView {
+                VStack(spacing: 22) {
+                    // tijdelijke kaart: elke 15 seconden opnieuw tekenen, zodat de code op het einde verdwijnt
+                    TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in
+                        FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
                     }
-                    actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
-                    actionButton(card.kind == .voucher ? "eurosign.circle" : "clock.arrow.circlepath",
-                                 label: card.kind == .voucher ? "Tegoed en uitgaven" : "Geschiedenis") { sheet = .history(card) }
-                    if !card.isTemporary {
-                        actionButton("square.and.arrow.up", label: "Deel") { share(card) }
-                    }
-                    // tijdelijk gedeelde kaarten mogen niet in Apple Wallet
-                    if WalletPass.isAvailable, WalletPass.canMakePass(card) {
-                        WalletActionButton(card: card).id(card.id)
-                    }
-                    // details (gids, foto's, ticket, abonnement) en verwijderen, zoals de achterkant van een pas in Wallet
-                    actionButton("info.circle", label: "Details") { sheet = .info(card) }
-                }
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .frame(width: width, height: width / Brand.cardAspect)
+                        .matchedGeometryEffect(id: card.id, in: namespace)
+                        .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
+                        .onTapGesture { deselect() }
 
-                if card.kind == .stamps {
-                    StampControls(card: card, width: width)
-                        .transition(.opacity)
-                }
+                    HStack(spacing: 14) {
+                        actionButton(card.isFavorite ? "star.fill" : "star",
+                                     label: card.isFavorite ? "Geen favoriet" : "Favoriet") {
+                            card.isFavorite.toggle()
+                            card.updatedAt = .now
+                        }
+                        actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
+                        // cadeaukaart: tegoed en uitgaven; andere kaarten: Laatst gebruikt (vervangt de oude geschiedenis)
+                        actionButton(card.kind == .voucher ? "eurosign.circle" : "clock.arrow.circlepath",
+                                     label: card.kind == .voucher ? "Tegoed en uitgaven" : "Laatst gebruikt") {
+                            sheet = card.kind == .voucher ? .history(card) : .uses(card)
+                        }
+                        if !card.isTemporary {
+                            actionButton("square.and.arrow.up", label: "Deel") { share(card) }
+                        }
+                        // tijdelijk gedeelde kaarten mogen niet in Apple Wallet
+                        if WalletPass.isAvailable, WalletPass.canMakePass(card) {
+                            WalletActionButton(card: card).id(card.id)
+                        }
+                        // details (gids, foto's, ticket, abonnement) en verwijderen, zoals de achterkant van een pas in Wallet
+                        actionButton("info.circle", label: "Details") { sheet = .info(card) }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
 
-                if let previous = previousUse(card) {
-                    Text("Vorige keer \(previous.date.formatted(.relative(presentation: .named)))\(previous.place.map { " · \($0)" } ?? "")")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(width: width, alignment: .leading)
-                        .onTapGesture { sheet = .history(card) }
+                    if card.kind == .stamps {
+                        StampControls(card: card, width: width)
+                            .transition(.opacity)
+                    }
+
+                    if !card.note.isEmpty {
+                        Text(card.note)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .frame(width: width, alignment: .leading)
+                    }
+
+                    // Laatst gebruikt (zoals de transacties in Apple Wallet): de laatste 3 keer, met wat je uitgaf
+                    RecentUsesSection(card: card,
+                                      onAll: { sheet = .uses(card) },
+                                      onAmount: { use in sheet = .useAmount(card, use.id) })
+                        .frame(width: width)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
-                if !card.note.isEmpty {
-                    Text(card.note)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(width: width, alignment: .leading)
-                }
+                .padding(.vertical, 40)
+                .frame(maxWidth: .infinity, minHeight: height)
+                // leeg vlak naast de inhoud: tikken legt de kaart terug
+                .background(Color.clear.contentShape(Rectangle()).onTapGesture { deselect() })
             }
-            .offset(y: -30)
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 
@@ -310,11 +327,6 @@ struct WalletView: View {
         }
     }
 
-    /// De keer hiervoor dat de kaart is getoond (de huidige keer telt niet mee).
-    private func previousUse(_ card: Card) -> CardEvent? {
-        card.history.filter { $0.kind == .shown && Date.now.timeIntervalSince($0.date) > 120 }.first
-    }
-
     private func bringForward(_ card: Card) {
         card.markUsed()
         shownAt = .now
@@ -323,6 +335,10 @@ struct WalletView: View {
             let place = await NearbyStores.shared.placeName(for: card)
             shownPlace = place
             card.recordShown(place: place)
+            // plaats en provincie voor "Laatst gebruikt"
+            if let area = await NearbyStores.shared.area() {
+                card.recordShown(place: place, city: area.city, region: area.region)
+            }
         }
         flipAngle = 0
         withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }

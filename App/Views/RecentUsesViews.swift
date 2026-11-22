@@ -1,0 +1,439 @@
+import SwiftUI
+import SwiftData
+
+/// Teksten voor "Laatst gebruikt": wanneer en waar je een kaart liet zien, en wat je uitgaf.
+enum UseFormat {
+    static let locale = Locale(identifier: "nl_NL")
+    private static var calendar: Calendar {
+        var c = Calendar(identifier: .gregorian)
+        c.locale = locale
+        c.firstWeekday = 2   // week begint op maandag
+        return c
+    }
+
+    /// Vetgedrukte regel: het filiaal ("PLUS Apeldoorn"), anders de winkel.
+    static func title(_ e: CardEvent, card: Card) -> String {
+        e.place ?? (card.storeName.isEmpty ? String(localized: "Getoond") : card.storeName)
+    }
+
+    /// "Apeldoorn, Gelderland" (nil als Pasr je locatie niet had).
+    static func area(_ e: CardEvent) -> String? {
+        let parts = [e.city, e.region].compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
+    static func money(_ value: Double, card: Card) -> String { CardHistoryFormat.money(value, card.currencyCode) }
+
+    private static func capitalized(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
+
+    /// Kort, voor het paneel onder de kaart: "Zojuist", "2 uur geleden", "Gisteren", "Woensdag", "9 november".
+    static func when(_ date: Date, now: Date = .now) -> String {
+        let cal = calendar
+        if now.timeIntervalSince(date) < 60 { return String(localized: "Zojuist") }
+        if cal.isDateInToday(date) {
+            return capitalized(date.formatted(.relative(presentation: .named).locale(locale)))
+        }
+        if cal.isDateInYesterday(date) { return String(localized: "Gisteren") }
+        if let days = cal.dateComponents([.day], from: cal.startOfDay(for: date), to: cal.startOfDay(for: now)).day, days < 7 {
+            return capitalized(date.formatted(.dateTime.weekday(.wide).locale(locale)))
+        }
+        return dayMonth(date, now: now)
+    }
+
+    /// Met tijd, voor de lijst: "Vandaag 16:05", "Woensdag 18:22", "9 november 14:03".
+    static func whenWithTime(_ date: Date, now: Date = .now) -> String {
+        let cal = calendar
+        let time = date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute().locale(locale))
+        let day: String
+        if cal.isDateInToday(date) { day = String(localized: "Vandaag") }
+        else if cal.isDateInYesterday(date) { day = String(localized: "Gisteren") }
+        else if let days = cal.dateComponents([.day], from: cal.startOfDay(for: date), to: cal.startOfDay(for: now)).day, days < 7 {
+            day = capitalized(date.formatted(.dateTime.weekday(.wide).locale(locale)))
+        } else { day = dayMonth(date, now: now) }
+        return "\(day) \(time)"
+    }
+
+    private static func dayMonth(_ date: Date, now: Date) -> String {
+        let sameYear = calendar.isDate(date, equalTo: now, toGranularity: .year)
+        return sameYear ? date.formatted(.dateTime.day().month(.wide).locale(locale))
+                        : date.formatted(.dateTime.day().month(.wide).year().locale(locale))
+    }
+
+    /// Kop van een groep in de lijst: "Deze week", "Eerder in november", "Oktober", "September 2025".
+    static func group(_ date: Date, now: Date = .now) -> String {
+        let cal = calendar
+        if let week = cal.dateInterval(of: .weekOfYear, for: now), date >= week.start { return String(localized: "Deze week") }
+        if cal.isDate(date, equalTo: now, toGranularity: .month) {
+            return String(localized: "Eerder in \(date.formatted(.dateTime.month(.wide).locale(locale)))")
+        }
+        let month = cal.isDate(date, equalTo: now, toGranularity: .year)
+            ? date.formatted(.dateTime.month(.wide).locale(locale))
+            : date.formatted(.dateTime.month(.wide).year().locale(locale))
+        return capitalized(month)
+    }
+
+    static func monthName(_ date: Date = .now) -> String { capitalized(date.formatted(.dateTime.month(.wide).locale(locale))) }
+
+    /// Wat VoiceOver voorleest voor een regel.
+    static func spoken(_ e: CardEvent, card: Card, withTime: Bool) -> String {
+        var parts = [title(e, card: card)]
+        if let a = area(e) { parts.append(a) }
+        parts.append(withTime ? whenWithTime(e.date) : when(e.date))
+        parts.append(e.amount.map { String(localized: "uitgegeven \(money($0, card: card))") } ?? String(localized: "geen bedrag ingevuld"))
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// Klein, afgerond logo van de winkel in de kleur van de kaart.
+struct UseLogoTile: View {
+    let card: Card
+    @ScaledMetric(relativeTo: .body) private var size: CGFloat = 42
+
+    var body: some View {
+        let appearance = CardAppearance(card)
+        RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
+            .fill(Color(hex: appearance.colorHex))
+            .frame(width: size, height: size)
+            .overlay {
+                if let data = appearance.logoData {
+                    StoreLogoMark(data: data, style: appearance.logoStyle, height: size * 0.42, maxWidth: size * 0.8)
+                } else {
+                    Text(appearance.monogram)
+                        .font(.system(size: size * 0.3, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Color.onCard(appearance.colorHex))
+                        .minimumScaleFactor(0.5)
+                        .padding(4)
+                }
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
+                    .strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+/// Eén regel: logo, filiaal, plaats en provincie, wanneer, en rechts het bedrag of de knop Toevoegen.
+struct UseRow: View {
+    let card: Card
+    let event: CardEvent
+    var withTime = false
+    var onAmount: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            UseLogoTile(card: card)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(UseFormat.title(event, card: card))
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.primary)
+                if let area = UseFormat.area(event) {
+                    Text(area).font(.footnote).foregroundStyle(.secondary)
+                }
+                Text(withTime ? UseFormat.whenWithTime(event.date) : UseFormat.when(event.date))
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .multilineTextAlignment(.leading)
+            if let amount = event.amount {
+                Text(UseFormat.money(amount, card: card))
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.primary)
+            } else {
+                Button(action: onAmount) {
+                    Text("Toevoegen").font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .tint(Brand.iris)
+                .accessibilityLabel(Text("Bedrag toevoegen"))
+                .accessibilityHint(Text("Vul in wat je uitgaf bij \(UseFormat.title(event, card: card))"))
+            }
+        }
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Het paneel onder de knoppen in het kaartdetail (zoals "Laatste transacties" in Apple Wallet): de laatste drie keer.
+struct RecentUsesSection: View {
+    let card: Card
+    var onAll: () -> Void
+    var onAmount: (CardEvent) -> Void
+
+    var body: some View {
+        let uses = Array(card.uses.prefix(3))
+        if !uses.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Laatst gebruikt")
+                        .font(.title3.weight(.heavy))
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    Button("Alles", action: onAll)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Brand.irisText)
+                        .accessibilityLabel(Text("Alles van Laatst gebruikt"))
+                }
+                .padding(.horizontal, 4)
+                UsesPanel {
+                    ForEach(Array(uses.enumerated()), id: \.element.id) { index, e in
+                        UseRow(card: card, event: e) { onAmount(e) }
+                            .onTapGesture { onAmount(e) }
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityAction { onAmount(e) }
+                            .accessibilityLabel(Text(UseFormat.spoken(e, card: card, withTime: false)))
+                            .accessibilityHint(Text(e.amount == nil ? "Dubbeltik om een bedrag toe te voegen" : "Dubbeltik om het bedrag aan te passen"))
+                            .accessibilityAddTraits(.isButton)
+                        if index < uses.count - 1 { Divider() }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Eigen, niet-doorzichtig vlak (licht: wit, donker: bijna zwart), afgerond als in Wallet.
+struct UsesPanel<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View {
+        VStack(spacing: 0) { content }
+            .padding(.horizontal, 14)
+            .background(Brand.inkRaised, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
+extension Brand {
+    /// Paars voor links en knoppen met tekst: lichter in donker, zodat het goed leesbaar is.
+    static let irisText = Color.adaptive(light: "#5A4BEF", dark: "#9C90FF")
+}
+
+/// "Alles": grote titel, deze maand in twee tegels, en alle keren per periode. Tik op een regel om het bedrag aan te
+/// passen of de regel te verwijderen.
+struct RecentUsesView: View {
+    @Bindable var card: Card
+    @Environment(\.dismiss) private var dismiss
+    @State private var editing: CardEvent?
+
+    private var uses: [CardEvent] { card.uses }
+    private var thisMonth: [CardEvent] {
+        uses.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
+    }
+    private struct UseGroup: Identifiable {
+        let title: String
+        var events: [CardEvent]
+        var id: String { title }
+    }
+
+    private var groups: [UseGroup] {
+        var out: [UseGroup] = []
+        for e in uses {
+            let title = UseFormat.group(e.date)
+            if out.last?.title == title { out[out.count - 1].events.append(e) } else { out.append(UseGroup(title: title, events: [e])) }
+        }
+        return out
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    tiles
+                    if uses.isEmpty {
+                        ContentUnavailableView {
+                            Label("Nog niet gebruikt", systemImage: "clock")
+                        } description: {
+                            Text("Als je de kaart laat zien, zie je hier wanneer en waar. Dan kun je ook invullen wat je uitgaf.")
+                        }
+                        .padding(.top, 20)
+                    }
+                    ForEach(groups) { group in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(group.title.uppercased(with: UseFormat.locale))
+                                .font(.footnote.weight(.bold))
+                                .tracking(0.6)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 4)
+                                .accessibilityAddTraits(.isHeader)
+                                .accessibilityLabel(Text(group.title))
+                            UsesPanel {
+                                ForEach(Array(group.events.enumerated()), id: \.element.id) { index, e in
+                                    Button { editing = e } label: {
+                                        UseRow(card: card, event: e, withTime: true) { editing = e }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityElement(children: .ignore)
+                                    .accessibilityLabel(Text(UseFormat.spoken(e, card: card, withTime: true)))
+                                    .accessibilityHint(Text("Dubbeltik om het bedrag aan te passen of de regel te verwijderen"))
+                                    .accessibilityAddTraits(.isButton)
+                                    if index < group.events.count - 1 { Divider() }
+                                }
+                            }
+                        }
+                    }
+                    Text("Filiaal en plaats komen van je locatie bij het tonen. Een bedrag vul je zelf in; tik op een regel om het aan te passen of de regel te verwijderen.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                    if card.kind == .voucher {
+                        Text("Bij een cadeaukaart wordt een ingevuld bedrag ook van je tegoed afgeboekt.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
+            }
+            .background(Brand.ink.ignoresSafeArea())
+            .navigationTitle("Laatst gebruikt")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(card.storeName).font(.headline).accessibilityHidden(true)
+                }
+                ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } }
+            }
+            .sheet(item: $editing) { e in
+                UseAmountSheet(card: card, useID: e.id, allowsDelete: true)
+            }
+        }
+    }
+
+    private var tiles: some View {
+        let count = thisMonth.count
+        let total = thisMonth.compactMap(\.amount).reduce(0, +)
+        return HStack(spacing: 8) {
+            tile(UseFormat.monthName(), value: String(localized: "\(count)× gebruikt"),
+                 spoken: String(localized: "In \(UseFormat.monthName()) \(count) keer gebruikt"))
+            tile(String(localized: "Ingevuld"), value: UseFormat.money(total, card: card),
+                 spoken: String(localized: "Ingevuld in \(UseFormat.monthName()): \(UseFormat.money(total, card: card))"))
+        }
+    }
+
+    private func tile(_ label: String, value: String, spoken: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.title3.weight(.heavy).monospacedDigit())
+                .lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Brand.inkRaised, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(spoken))
+    }
+}
+
+/// "Wat gaf je uit?" bij één gebruiksmoment: invullen, aanpassen of weghalen; vanuit de lijst ook de regel verwijderen.
+struct UseAmountSheet: View {
+    @Bindable var card: Card
+    let useID: UUID
+    var allowsDelete = false
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+    @State private var text = ""
+    @State private var confirmDelete = false
+    @FocusState private var focused: Bool
+
+    private var event: CardEvent? { card.history.first { $0.id == useID } }
+    /// "6,48", "1.234,50" of "6.48".
+    private var value: Double? {
+        var t = text.filter { $0.isNumber || $0 == "," || $0 == "." }
+        if t.contains(",") { t = t.replacingOccurrences(of: ".", with: "").replacingOccurrences(of: ",", with: ".") }
+        guard let v = Double(t), v >= 0, v < 1_000_000 else { return nil }
+        return v
+    }
+    private var trimmed: String { text.trimmingCharacters(in: .whitespaces) }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                if let e = event {
+                    VStack(spacing: 2) {
+                        Text(UseFormat.title(e, card: card)).font(.headline)
+                        Text([UseFormat.area(e), UseFormat.whenWithTime(e.date)].compactMap { $0 }.joined(separator: " · "))
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                    .multilineTextAlignment(.center)
+                    .accessibilityElement(children: .combine)
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("€").font(.system(.largeTitle, design: .rounded).weight(.heavy)).foregroundStyle(.secondary)
+                    TextField("0,00", text: $text)
+                        .font(.system(.largeTitle, design: .rounded).weight(.heavy))
+                        .multilineTextAlignment(.center)
+                        .focused($focused)
+                        #if os(iOS)
+                        .keyboardType(.decimalPad)
+                        #endif
+                        .fixedSize()
+                        .accessibilityLabel(Text("Bedrag in euro"))
+                }
+                if card.kind == .voucher {
+                    Text("Wordt afgeboekt van je tegoed (nu \(CardHistoryFormat.money(card.balance ?? 0, card.currencyCode))).")
+                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                } else {
+                    Text("Optioneel. Alleen voor jezelf, om bij te houden wat je bij deze winkel uitgeeft.")
+                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                }
+                if event?.amount != nil {
+                    Button("Bedrag weghalen", role: .destructive) { save(nil) }
+                }
+                Spacer(minLength: 0)
+                if allowsDelete {
+                    Button(role: .destructive) { confirmDelete = true } label: {
+                        Label("Regel verwijderen", systemImage: "trash")
+                    }
+                    .confirmationDialog("Deze regel verwijderen?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                        Button("Verwijder", role: .destructive) { delete() }
+                    } message: {
+                        if card.kind == .voucher, event?.spentID != nil {
+                            Text("Het bedrag gaat terug naar je tegoed.")
+                        }
+                    }
+                }
+            }
+            .padding()
+            .navigationTitle("Wat gaf je uit?")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bewaar", systemImage: "checkmark") { save(trimmed.isEmpty ? nil : value) }
+                        .disabled(!trimmed.isEmpty && value == nil)
+                }
+            }
+            .onAppear {
+                if let a = event?.amount {
+                    text = a.formatted(.number.precision(.fractionLength(2)).locale(UseFormat.locale))
+                }
+                focused = true
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func save(_ amount: Double?) {
+        card.setAmount(amount, forUse: useID)
+        finish()
+    }
+
+    private func delete() {
+        if let e = event { card.removeEvent(e) }
+        finish()
+    }
+
+    private func finish() {
+        try? context.save()
+        let card = card
+        if card.kind == .voucher { Task { await WalletPass.refreshIfInWallet(card) } }
+        dismiss()
+    }
+}

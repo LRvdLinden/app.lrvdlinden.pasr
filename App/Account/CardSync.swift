@@ -136,19 +136,24 @@ enum CardSync {
         } else if f["hasCover"] as? Bool == false {
             card.coverPhoto = nil
         }
-        // geschiedenis: de nieuwere versie wint voor uitgaven en opwaarderingen (zo blijft ongedaan maken staan);
-        // "getoond" synchroniseert niet en blijft per apparaat, net als regels ouder dan wat er meekwam
+        // geschiedenis: de nieuwere versie wint voor uitgaven, opwaarderingen en gebruiksmomenten met een bedrag (zo
+        // blijft ongedaan maken staan); "getoond" zonder bedrag synchroniseert niet en blijft per apparaat, net als regels
+        // ouder dan wat er meekwam
         let remote: [CardEvent] = (f["history"] as? [[String: Any]] ?? []).compactMap { e in
             guard let id = (e["id"] as? String).flatMap(UUID.init(uuidString:)), let at = (e["date"] as? String).flatMap(date),
                   let kind = (e["kind"] as? String).flatMap(CardEvent.Kind.init(rawValue:)) else { return nil }
             return CardEvent(id: id, date: at, kind: kind, amount: e["amount"] as? Double, balance: e["balance"] as? Double,
-                             place: e["place"] as? String)
+                             place: e["place"] as? String, city: e["city"] as? String, region: e["region"] as? String,
+                             spentID: (e["spentID"] as? String).flatMap(UUID.init(uuidString:)))
         }
         if f["history"] != nil {   // oudere Pasr-versies sturen geen geschiedenis mee: dan blijft die van hier staan
             let oldest = remote.map(\.date).min()
             let ids = Set(remote.map(\.id))
+            // een oudere versie (zonder "uses") stuurt geen gebruiksmomenten: dan blijven de ingevulde bedragen van hier staan
+            let remoteHasUses = f["uses"] as? Bool == true
             card.history = remote + card.history.filter { local in
-                !ids.contains(local.id) && (local.kind == .shown || (oldest.map { local.date < $0 } ?? false))
+                !ids.contains(local.id) && ((local.kind == .shown && (local.amount == nil || !remoteHasUses))
+                                            || (oldest.map { local.date < $0 } ?? false))
             }
         }
         card.places = (f["places"] as? [[String: Any]] ?? []).compactMap { p in
@@ -189,11 +194,16 @@ enum CardSync {
         if let cover = c.coverPhoto, cover.count < 120_000 { p["cover"] = cover.base64EncodedString() }
         // altijd meesturen (ook leeg), zodat een ander apparaat weet dat de geschiedenis is bijgewerkt
         do {
-            p["history"] = c.history.filter { $0.kind != .shown }.prefix(60).map { e -> [String: Any] in
+            // gebruiksmomenten met een ingevuld bedrag gaan mee (sinds build 45); oudere versies slaan "shown" gewoon over
+            p["uses"] = true
+            p["history"] = c.history.filter { $0.kind != .shown || $0.amount != nil }.prefix(60).map { e -> [String: Any] in
                 var d: [String: Any] = ["id": e.id.uuidString, "date": iso(e.date), "kind": e.kind.rawValue]
                 d["amount"] = e.amount
                 d["balance"] = e.balance
                 d["place"] = e.place
+                d["city"] = e.city
+                d["region"] = e.region
+                d["spentID"] = e.spentID?.uuidString
                 return d
             }
         }

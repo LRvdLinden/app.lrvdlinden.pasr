@@ -158,6 +158,11 @@ struct CardEvent: Codable, Hashable, Identifiable {
     var balance: Double?
     /// Waar (filiaal, als dat bekend was).
     var place: String?
+    /// Plaats en provincie bij het tonen (sinds build 45, uit je locatie).
+    var city: String?
+    var region: String?
+    /// Bij een getoonde cadeaukaart met een ingevuld bedrag: de afboeking (regel "spent") die erbij hoort.
+    var spentID: UUID?
 
     static let keepDays: Double = 90
     static let maxCount = 150
@@ -177,22 +182,61 @@ extension Card {
     var lastShown: CardEvent? { history.first { $0.kind == .shown } }
 
     /// Kaart getoond. Binnen 10 minuten nog eens dezelfde kaart telt niet opnieuw (wel de plek als die er nog niet was).
-    func recordShown(place: String?) {
+    func recordShown(place: String?, city: String? = nil, region: String? = nil) {
         var list = history
         if let last = list.first(where: { $0.kind == .shown }), Date.now.timeIntervalSince(last.date) < 600 {
-            if last.place == nil, let place, let i = list.firstIndex(of: last) { list[i].place = place; history = list }
+            if let i = list.firstIndex(of: last), (last.place == nil && place != nil) || (last.city == nil && city != nil) {
+                if list[i].place == nil { list[i].place = place }
+                if list[i].city == nil { list[i].city = city; list[i].region = region }
+                history = list
+            }
             return
         }
-        list.insert(CardEvent(kind: .shown, place: place), at: 0)
+        list.insert(CardEvent(kind: .shown, place: place, city: city, region: region), at: 0)
         history = list
     }
 
+    /// Gebruiksmomenten ("Laatst gebruikt"): wanneer je de kaart liet zien, nieuwste eerst.
+    var uses: [CardEvent] { history.filter { $0.kind == .shown } }
+
+    /// Wat je uitgaf bij een gebruiksmoment invullen, wijzigen of weghalen (nil of 0). Bij een cadeaukaart gaat het
+    /// tegoed mee: een eerdere afboeking voor dit moment wordt teruggedraaid en het nieuwe bedrag afgeboekt.
+    func setAmount(_ amount: Double?, forUse id: UUID) {
+        guard var use = history.first(where: { $0.id == id && $0.kind == .shown }) else { return }
+        let value = amount.map { ($0 * 100).rounded() / 100 }.flatMap { $0 > 0 ? $0 : nil }
+        var list = history
+        if kind == .voucher {
+            if let sid = use.spentID, let old = list.first(where: { $0.id == sid }), let a = old.amount {
+                balance = (((balance ?? 0) + a) * 100).rounded() / 100
+                list.removeAll { $0.id == sid }
+            }
+            use.spentID = nil
+            if let value {
+                balance = (max(0, (balance ?? 0) - value) * 100).rounded() / 100
+                let spent = CardEvent(kind: .spent, amount: value, balance: balance, place: use.place)
+                use.spentID = spent.id
+                list.insert(spent, at: 0)
+            }
+        }
+        use.amount = value
+        if let i = list.firstIndex(where: { $0.id == id }) { list[i] = use }
+        history = list
+        updatedAt = .now
+    }
+
     /// Uitgegeven (voucher): tegoed omlaag, nooit onder nul.
-    func recordSpent(_ amount: Double, place: String?) {
+    /// Met `linkToUse` (de vraag na het tonen) komt het bedrag ook bij het gebruiksmoment van zojuist te staan.
+    func recordSpent(_ amount: Double, place: String?, linkToUse: Bool = false) {
         let new = max(0, (balance ?? 0) - amount)
         balance = (new * 100).rounded() / 100
         var list = history
-        list.insert(CardEvent(kind: .spent, amount: amount, balance: balance, place: place), at: 0)
+        let spent = CardEvent(kind: .spent, amount: amount, balance: balance, place: place)
+        list.insert(spent, at: 0)
+        if linkToUse, let i = list.firstIndex(where: { $0.kind == .shown && $0.spentID == nil && $0.amount == nil
+                                                          && Date.now.timeIntervalSince($0.date) < 3_600 }) {
+            list[i].amount = amount
+            list[i].spentID = spent.id
+        }
         history = list
         updatedAt = .now
     }
@@ -215,14 +259,24 @@ extension Card {
     }
 
     /// Een regel weghalen; bij een uitgave of opwaardering gaat het tegoed terug.
+    /// Bij een gebruiksmoment van een cadeaukaart gaat de afboeking die erbij hoort ook weg; bij een afboeking die bij
+    /// een gebruiksmoment hoort, verdwijnt het bedrag daar.
     func removeEvent(_ event: CardEvent) {
+        var list = history
         switch event.kind {
-        case .spent: if let a = event.amount { balance = (balance ?? 0) + a }
+        case .spent:
+            if let a = event.amount { balance = (balance ?? 0) + a }
+            if let i = list.firstIndex(where: { $0.spentID == event.id }) { list[i].amount = nil; list[i].spentID = nil }
         case .topup: if let a = event.amount { balance = max(0, (balance ?? 0) - a) }
+        case .shown:
+            if let sid = event.spentID, let linked = list.first(where: { $0.id == sid }) {
+                if let a = linked.amount { balance = (balance ?? 0) + a }
+                list.removeAll { $0.id == sid }
+            }
         default: break
         }
         if let b = balance { balance = (b * 100).rounded() / 100 }
-        history = history.filter { $0.id != event.id }
+        history = list.filter { $0.id != event.id }
         updatedAt = .now
     }
 }

@@ -263,7 +263,7 @@ struct SpendSheet: View {
 
     private func save(_ amount: Double) {
         switch mode {
-        case .spent: if amount > 0 { card.recordSpent(amount, place: place) }
+        case .spent: if amount > 0 { card.recordSpent(amount, place: place, linkToUse: asked) }
         case .topup: if amount > 0 { card.recordTopUp(amount) }
         case .set: card.recordBalance(amount)
         }
