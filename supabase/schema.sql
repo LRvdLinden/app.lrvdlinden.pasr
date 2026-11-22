@@ -1676,7 +1676,7 @@ revoke all on function public.pasr_web_rate_hit(text, int, int) from public, ano
 -- ------------------------------------------------------------------------------------------------------------
 create table if not exists public.pasr_news_devices (
   device_id text primary key check (device_id ~ '^[A-Za-z0-9_-]{8,80}$'),
-  token text not null check (token ~ '^[0-9a-f]{64,200}$'),
+  token text check (token is null or token ~ '^[0-9a-f]{64,200}$'),   -- leeg: het token staat in pasr_user_push
   sandbox boolean not null default false,
   stores text[] not null default '{}',
   user_id uuid references auth.users (id) on delete set null,
@@ -1697,6 +1697,7 @@ create table if not exists public.pasr_news_campaigns (
   failed int not null default 0,
   created_at timestamptz not null default now()
 );
+alter table public.pasr_news_devices alter column token drop not null;
 alter table public.pasr_news_devices enable row level security;
 alter table public.pasr_news_campaigns enable row level security;
 revoke all on public.pasr_news_devices, public.pasr_news_campaigns from anon, authenticated;
@@ -1729,32 +1730,60 @@ language sql security definer set search_path = public as $$
   select jsonb_build_object('ok', true);
 $$;
 
+-- Zo doet de app het (1.0.3, met een Pasr-account): het apparaat staat al in pasr_user_push (token, sandbox; elke
+-- start bijgewerkt) en meldt hier alleen of "Nieuws over mijn kaarten" aanstaat en welke winkels erin staan.
+-- p_enabled false = de rij weg. Het token komt bij het versturen uit pasr_user_push.
+create or replace function public.pasr_push_stores(p_device text, p_enabled boolean, p_stores text[] default '{}') returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); s text[];
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  if coalesce(p_device, '') !~ '^[A-Za-z0-9_-]{8,80}$' then raise exception 'bad_device' using errcode = '22023'; end if;
+  if not coalesce(p_enabled, false) then
+    delete from public.pasr_news_devices where device_id = p_device and (user_id = uid or user_id is null);
+    return jsonb_build_object('ok', true, 'enabled', false);
+  end if;
+  select coalesce(array_agg(x order by x), '{}') into s
+  from (select distinct lower(x) x from unnest(coalesce(p_stores, '{}')) x where lower(x) ~ '^[a-z0-9-]{2,40}$' limit 300) q;
+  insert into public.pasr_news_devices as d (device_id, token, sandbox, stores, user_id)
+  select p_device, u.token, coalesce(u.sandbox, false), s, uid
+  from (select 1) one left join public.pasr_user_push u on u.device_id = p_device and u.user_id = uid
+  on conflict (device_id) do update set stores = excluded.stores, user_id = uid,
+    token = coalesce(excluded.token, d.token), sandbox = excluded.sandbox, last_seen = now();
+  return jsonb_build_object('ok', true, 'enabled', true);
+end $$;
+
 -- Voor de functie admin: de apparaten van een doelgroep. new = de laatste p_days dagen aangezet, inactive = al
 -- p_days dagen de app niet geopend, store = heeft een kaart van die winkel.
 create or replace function public.pasr_admin_news_targets(p_audience text, p_store text default null, p_days int default null)
 returns table (device_id text, token text, sandbox boolean)
 language sql stable security definer set search_path = public as $$
-  select d.device_id, d.token, d.sandbox from public.pasr_news_devices d
-  where case p_audience
+  -- token en omgeving: bij voorkeur uit pasr_user_push (houdt de app bij elke start bij), anders van de opt-in zelf;
+  -- laatst actief: de opt-in of de laatste aanmelding van het pushtoken, wat het nieuwst is
+  select d.device_id, coalesce(u.token, d.token), coalesce(u.sandbox, d.sandbox)
+  from public.pasr_news_devices d left join public.pasr_user_push u on u.device_id = d.device_id
+  where coalesce(u.token, d.token) is not null and case p_audience
     when 'all' then true
     when 'store' then d.stores @> array[lower(coalesce(p_store, ''))]
     when 'new' then d.first_seen > now() - make_interval(days => coalesce(p_days, 7))
-    when 'inactive' then d.last_seen < now() - make_interval(days => coalesce(p_days, 30))
+    when 'inactive' then greatest(d.last_seen, coalesce(u.updated_at, d.last_seen)) < now() - make_interval(days => coalesce(p_days, 30))
     else false end;
 $$;
 -- Tellingen voor het scherm "Bericht sturen": per doelgroep, en de winkels die het vaakst voorkomen.
 create or replace function public.pasr_admin_news_overview() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
-    'all', (select count(*) from public.pasr_news_devices),
-    'new', (select count(*) from public.pasr_news_devices where first_seen > now() - interval '7 days'),
-    'inactive', (select count(*) from public.pasr_news_devices where last_seen < now() - interval '30 days'),
+    'all', (select count(*) from public.pasr_admin_news_targets('all')),
+    'new', (select count(*) from public.pasr_admin_news_targets('new')),
+    'inactive', (select count(*) from public.pasr_admin_news_targets('inactive')),
     'stores', (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'count', n) order by n desc, id), '[]'::jsonb)
                from (select x id, count(*) n from public.pasr_news_devices, unnest(stores) x group by x order by n desc, x limit 400) q));
 $$;
 revoke all on function public.pasr_news_register(text, text, boolean, text[]), public.pasr_news_unregister(text),
+  public.pasr_push_stores(text, boolean, text[]),
   public.pasr_admin_news_targets(text, text, int), public.pasr_admin_news_overview() from public;
 grant execute on function public.pasr_news_register(text, text, boolean, text[]), public.pasr_news_unregister(text) to anon, authenticated;
+grant execute on function public.pasr_push_stores(text, boolean, text[]) to authenticated;
 grant execute on function public.pasr_admin_news_targets(text, text, int), public.pasr_admin_news_overview() to service_role;
 
 -- ------------------------------------------------------------------------------------------------------------
@@ -1845,6 +1874,12 @@ language sql stable security definer set search_path = public as $$
   where c.id = p_card and c.published and b.status = 'approved';
 $$;
 
+-- Zelfde, onder de naam die de app gebruikt.
+create or replace function public.pasr_business_card(p_card uuid) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select public.pasr_business_card_public(p_card);
+$$;
+
 create or replace function public.pasr_business_new_code() returns text
 language plpgsql volatile security definer set search_path = public, extensions as $$
 declare alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; code text; bytes bytea; i int;
@@ -1860,7 +1895,7 @@ end $$;
 create or replace function public.pasr_business_member_json(m public.pasr_business_members, c public.pasr_business_cards,
                                                             b public.pasr_businesses) returns jsonb
 language sql immutable as $$
-  select jsonb_build_object('status', 'ok', 'member_code', m.member_code, 'stamps_count', m.stamps_count,
+  select jsonb_build_object('status', 'ok', 'name', c.name, 'business', b.name, 'member_code', m.member_code, 'stamps_count', m.stamps_count,
     'stamps_total', c.stamps_total, 'reward', c.reward, 'rewards_redeemed', m.rewards_redeemed, 'updated_at', m.updated_at,
     'card', public.pasr_business_card_json(c, b));
 $$;
@@ -2080,11 +2115,11 @@ $$;
 revoke all on function public.pasr_business_card_json(public.pasr_business_cards, public.pasr_businesses),
   public.pasr_business_member_json(public.pasr_business_members, public.pasr_business_cards, public.pasr_businesses),
   public.pasr_business_json(public.pasr_businesses), public.pasr_business_new_code(),
-  public.pasr_business_card_public(uuid), public.pasr_business_join(uuid), public.pasr_business_member(text),
+  public.pasr_business_card_public(uuid), public.pasr_business_card(uuid), public.pasr_business_join(uuid), public.pasr_business_member(text),
   public.pasr_business_register(text, text, text, text), public.pasr_business_me(), public.pasr_business_card_save(jsonb),
   public.pasr_business_card_delete(uuid), public.pasr_business_members_list(uuid, int), public.pasr_business_scan(text),
   public.pasr_business_stamp(text, int), public.pasr_business_redeem(text), public.pasr_admin_businesses() from public;
-grant execute on function public.pasr_business_card_public(uuid), public.pasr_business_join(uuid), public.pasr_business_member(text)
+grant execute on function public.pasr_business_card_public(uuid), public.pasr_business_card(uuid), public.pasr_business_join(uuid), public.pasr_business_member(text)
   to anon, authenticated;
 grant execute on function public.pasr_business_register(text, text, text, text), public.pasr_business_me(),
   public.pasr_business_card_save(jsonb), public.pasr_business_card_delete(uuid), public.pasr_business_members_list(uuid, int),
