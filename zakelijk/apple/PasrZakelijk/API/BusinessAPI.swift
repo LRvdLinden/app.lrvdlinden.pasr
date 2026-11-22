@@ -60,7 +60,7 @@ enum BusinessAPI {
         guard let json = try? await account.function("business-brand", body), let j = JSONObject(json) else { return nil }
         let b = j.object("brand") ?? j
         var brand = Brand(name: b.string("name", "site_name"), logo: nil, color: nil, textColor: nil,
-                          source: b.string("source_url", "url", "source"))
+                          source: b.string("source_url", "url", "source"), serverDomain: b.string("domain"))
         if let raw = b.string("logo"), let image = LogoImage.image(raw) { brand.logo = LogoImage.encode(image) }
         if let c = b.string("color", "theme_color").flatMap(Self.hex) { brand.color = c }
         if let t = b.string("text_color").flatMap(Self.hex) { brand.textColor = t }
@@ -74,9 +74,11 @@ enum BusinessAPI {
         var color: String?
         var textColor: String?
         var source: String?
+        var serverDomain: String?
 
-        /// "kapsalon-anna.nl" uit de bron-URL.
+        /// "kapsalon-anna.nl" (van de server, anders uit de bron-URL).
         var domain: String? {
+            if let serverDomain { return serverDomain.hasPrefix("www.") ? String(serverDomain.dropFirst(4)) : serverDomain }
             guard let source, let host = URL(string: source)?.host() else { return nil }
             return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
         }
