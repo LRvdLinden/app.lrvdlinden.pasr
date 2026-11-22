@@ -189,7 +189,7 @@ enum PurchaseMatcher {
 struct RecordPurchaseIntent: AppIntent {
     static let title: LocalizedStringResource = "Aankoop vastleggen"
     static let description = IntentDescription(
-        "Zet een aankoop in Laatst gebruikt van de kaart die bij de winkel past. Koppel deze actie in Opdrachten aan de automatisering Transactie: Opdrachten geeft de verkoper en het bedrag door. Alles blijft op je iPhone.",
+        "Zet een aankoop in Laatst gebruikt van de kaart die bij de winkel past. Koppel deze actie in Opdrachten aan de automatisering Transactie: Opdrachten geeft de verkoper en het bedrag door. Alles blijft op dit apparaat.",
         categoryName: "Laatst gebruikt")
     static let openAppWhenRun = false
 
