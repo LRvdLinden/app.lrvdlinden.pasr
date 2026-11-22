@@ -11,6 +11,9 @@ name: Backend
 # For "Add to Apple Wallet" (function wallet-pass, signs the passes):
 #   PASS_CERT_P12 (the Pass Type ID certificate + key as .p12, base64), PASS_CERT_PASSWORD,
 #   PASS_TYPE_ID (default pass.nl.lrvdlinden.pasr), PASR_SUPABASE_KEY (the publishable key)
+# For "Opslaan in Google Wallet" (function google-wallet, Pasr for Android):
+#   GOOGLE_WALLET_ISSUER_ID (issuer id from the Google Pay & Wallet Console),
+#   GOOGLE_WALLET_SA_JSON (the service account's JSON key, as text or base64). Missing = the app hides the button.
 on:
   push:
     branches: [main]
@@ -129,6 +132,29 @@ jobs:
           else
             echo "::warning::PASS_CERT_P12 missing: the Wallet function is deployed but can't sign passes yet."
           fi
+      - name: Google Wallet function (google-wallet)
+        if: steps.check.outputs.skip != '1'
+        env:
+          GW_ISSUER: ${{ secrets.GOOGLE_WALLET_ISSUER_ID }}
+          GW_SA: ${{ secrets.GOOGLE_WALLET_SA_JSON }}
+          PK: ${{ secrets.PASR_SUPABASE_KEY }}
+        run: |
+          set -euo pipefail
+          if curl -fsSL https://deno.land/install.sh | sh -s -- -y >/dev/null 2>&1; then
+            ~/.deno/bin/deno test --no-check -A supabase/functions/google-wallet/ || { echo "::error::Tests of the google-wallet function failed"; exit 1; }
+          fi
+          # Pasr voor Android: "Opslaan in Google Wallet" (eigen apikey-controle, Google haalt logo's op zonder JWT)
+          supabase functions deploy google-wallet --yes --project-ref "$REF" --no-verify-jwt --use-api
+          if [ -n "$GW_ISSUER" ] && [ -n "$GW_SA" ]; then
+            # De JSON mag als tekst of als base64 in de secret staan; nooit in het log
+            supabase secrets set --yes --project-ref "$REF" GOOGLE_WALLET_ISSUER_ID="$GW_ISSUER" GOOGLE_WALLET_SA_JSON="$GW_SA" >/dev/null
+            echo "::notice::google-wallet deployed and Google Wallet issuer set."
+          else
+            echo "::warning::GOOGLE_WALLET_ISSUER_ID / GOOGLE_WALLET_SA_JSON missing: google-wallet is deployed, the Android app hides the Google Wallet button."
+          fi
+          code=$(curl -s -o /tmp/gw.json -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/google-wallet" \
+            -H "apikey: $PK" -H "Content-Type: application/json" -d '{"action":"status"}')
+          echo "::notice::google-wallet status: HTTP $code $(cat /tmp/gw.json 2>/dev/null | head -c 100)"
       - name: Beheer function (admin)
         if: steps.check.outputs.skip != '1'
         env:

@@ -364,6 +364,14 @@ Deno.serve(async (req) => {
         if (error) throw new Error(error.message);
         return json({ ...(data as Record<string, unknown>), push_ready: apnsConfigured() });
       }
+      case "platforms": {
+        // Inzichten iOS/Android (apparaten, versies, accounts per platform, Apple en Google Wallet)
+        const q = parseRange(body.days, 0);
+        if (!q) return json({ error: "bad_range" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_platforms", { p_days: q.days });
+        if (error) throw new Error(error.message);
+        return json({ ...(data as Record<string, unknown>), gwallet_ready: !!(Deno.env.get("GOOGLE_WALLET_ISSUER_ID") && Deno.env.get("GOOGLE_WALLET_SA_JSON")) });
+      }
       case "users": {
         const q = parseUsers(body);
         if (!q) return json({ error: "bad_request" }, 400);

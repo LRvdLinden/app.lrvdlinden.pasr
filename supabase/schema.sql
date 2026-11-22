@@ -3440,3 +3440,196 @@ grant execute on function public.pasr_admin_business_save(jsonb), public.pasr_ad
   public.pasr_admin_business_settings(uuid, jsonb), public.pasr_admin_business_staff_revoke(uuid) to service_role;
 -- beheer: e-mailadres bevestigen (user_confirm, business_owner_confirm) loggen via de functie admin
 grant execute on function public.pasr_admin_event(uuid, uuid, text), public.pasr_admin_user_id(text) to service_role;
+
+-- ============================================================================================================
+-- android 1.0 (Pasr en Pasr Zakelijk voor Android, Google Wallet). Elk apparaat meldt bij het opstarten (hoogstens
+-- 1x per dag, en na in-/uitloggen of een update) welke app, welk platform en welke versie het draait. Alleen een
+-- willekeurige id per installatie, geen naam, geen IP. Voor de inzichten in het beheer (iOS/Android, versies, actief).
+-- Google Wallet: per object alleen een hash van de sleutel die de app bewaart, en bij een zakelijke stempelkaart de
+-- klantcode (om het object na een stempel bij te werken). De kaartgegevens zelf staan bij Google, niet hier.
+-- ============================================================================================================
+create table if not exists public.pasr_devices (
+  device_id  text primary key check (device_id ~ '^[A-Za-z0-9_-]{8,80}$'),
+  app        text not null check (app in ('pasr', 'zakelijk')),
+  platform   text not null check (platform in ('ios', 'android')),
+  version    text check (version is null or char_length(version) <= 20),
+  build      text check (build is null or char_length(build) <= 20),
+  os         text check (os is null or char_length(os) <= 40),
+  country    text check (country is null or country ~ '^[A-Z]{2}$'),
+  user_id    uuid references auth.users (id) on delete set null,
+  first_seen timestamptz not null default now(),
+  last_seen  timestamptz not null default now()
+);
+create index if not exists pasr_devices_app on public.pasr_devices (app, platform, last_seen);
+-- Actief per dag (een rij per apparaat per dag waarop het zich meldde), voor de grafiek. 400 dagen bewaard.
+create table if not exists public.pasr_device_days (
+  day       date not null,
+  device_id text not null,
+  app       text not null,
+  platform  text not null,
+  primary key (day, device_id)
+);
+create index if not exists pasr_device_days_day on public.pasr_device_days (day, app, platform);
+alter table public.pasr_devices enable row level security;
+alter table public.pasr_device_days enable row level security;
+revoke all on public.pasr_devices, public.pasr_device_days from anon, authenticated;
+
+create or replace function public.pasr_device_register(p_device text, p_app text, p_platform text, p_version text,
+  p_build text default null, p_os text default null, p_country text default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a text := lower(trim(coalesce(p_app, ''))); pl text := lower(trim(coalesce(p_platform, '')));
+  c text := upper(trim(coalesce(p_country, '')));
+begin
+  if coalesce(p_device, '') !~ '^[A-Za-z0-9_-]{8,80}$' then raise exception 'bad_device' using errcode = '22023', hint = 'bad_device'; end if;
+  if a not in ('pasr', 'zakelijk') then raise exception 'bad_app' using errcode = '22023', hint = 'bad_app'; end if;
+  if pl not in ('ios', 'android') then raise exception 'bad_platform' using errcode = '22023', hint = 'bad_platform'; end if;
+  if not exists (select 1 from public.pasr_devices where device_id = p_device) then
+    perform public.pasr_web_rate_hit('device', 40, 100000);
+  end if;
+  insert into public.pasr_devices as d (device_id, app, platform, version, build, os, country, user_id)
+  values (p_device, a, pl, nullif(left(trim(coalesce(p_version, '')), 20), ''), nullif(left(trim(coalesce(p_build, '')), 20), ''),
+          nullif(left(trim(coalesce(p_os, '')), 40), ''), case when c ~ '^[A-Z]{2}$' then c end, auth.uid())
+  on conflict (device_id) do update set app = excluded.app, platform = excluded.platform, version = excluded.version,
+    build = excluded.build, os = coalesce(excluded.os, d.os), country = coalesce(excluded.country, d.country),
+    user_id = auth.uid(), last_seen = now();
+  insert into public.pasr_device_days (day, device_id, app, platform)
+  values ((now() at time zone 'utc')::date, p_device, a, pl) on conflict do nothing;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function public.pasr_device_unregister(p_device text) returns jsonb
+language sql security definer set search_path = public as $$
+  delete from public.pasr_devices where device_id = p_device and (user_id is null or user_id = auth.uid());
+  select jsonb_build_object('ok', true);
+$$;
+
+revoke all on function public.pasr_device_register(text, text, text, text, text, text, text),
+  public.pasr_device_unregister(text) from public;
+grant execute on function public.pasr_device_register(text, text, text, text, text, text, text),
+  public.pasr_device_unregister(text) to anon, authenticated;
+
+-- ---- Google Wallet (functie google-wallet) ----
+create table if not exists public.pasr_gwallet_objects (
+  object_id   text primary key check (char_length(object_id) between 3 and 200),
+  key_hash    text not null check (key_hash ~ '^[0-9a-f]{64}$'),
+  kind        text,
+  member_code text check (member_code is null or char_length(member_code) <= 120),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+-- Logo van de kaart (PNG, base64, hoogstens ~200 kB): Google haalt het op via GET google-wallet?logo=<object_id>.
+alter table public.pasr_gwallet_objects add column if not exists logo text check (logo is null or char_length(logo) <= 280000);
+create index if not exists pasr_gwallet_member on public.pasr_gwallet_objects (member_code) where member_code is not null;
+alter table public.pasr_gwallet_objects enable row level security;
+revoke all on public.pasr_gwallet_objects from anon, authenticated;
+alter table public.pasr_daily add column if not exists gwallet int not null default 0;
+
+create or replace function public.pasr_count_gwallet() returns void
+language sql security definer set search_path = public as $$
+  insert into public.pasr_daily as d (day, gwallet) values ((now() at time zone 'utc')::date, 1)
+  on conflict (day) do update set gwallet = d.gwallet + 1;
+$$;
+revoke all on function public.pasr_count_gwallet() from public, anon, authenticated;
+grant execute on function public.pasr_count_gwallet() to service_role;
+
+-- Nieuwe stand van een zakelijke stempelkaart: seintje aan de functie google-wallet (naast wallet-pass voor Apple).
+create or replace function public.pasr_gwallet_business_kick() returns trigger
+language plpgsql security definer set search_path = public, extensions as $$
+declare u text; s text;
+begin
+  if new.stamps_count is not distinct from old.stamps_count and new.rewards_redeemed is not distinct from old.rewards_redeemed then
+    return new;
+  end if;
+  if not exists (select 1 from public.pasr_gwallet_objects where member_code = new.member_code) then return new; end if;
+  select admin_url into u from public.pasr_admin_config where id = 1;
+  select hook_secret into s from public.pasr_secret where id = 1;
+  if coalesce(u, '') = '' or s is null then return new; end if;
+  u := regexp_replace(u, '/admin/?$', '/google-wallet');
+  perform net.http_post(url := u, body := jsonb_build_object('action', 'business', 'code', new.member_code),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-pasr-hook', s), timeout_milliseconds := 30000);
+  return new;
+exception when others then
+  raise warning 'pasr_gwallet_business_kick: %', sqlerrm;
+  return new;
+end $$;
+revoke all on function public.pasr_gwallet_business_kick() from public, anon, authenticated;
+do $$
+begin
+  if to_regclass('public.pasr_business_members') is not null then
+    drop trigger if exists pasr_gwallet_business on public.pasr_business_members;
+    create trigger pasr_gwallet_business after update on public.pasr_business_members
+      for each row execute function public.pasr_gwallet_business_kick();
+  end if;
+exception when others then
+  raise notice 'pasr_gwallet_business trigger: %', sqlerrm;
+end $$;
+
+-- ---- Inzichten voor het beheer (functie admin, actie platforms) ----
+create or replace function public.pasr_admin_platforms(p_days int default 30) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare d int := least(greatest(coalesce(p_days, 30), 7), 365); since date := (now() at time zone 'utc')::date - d + 1;
+  apps jsonb := '{}'::jsonb; a text; pl text; block jsonb;
+begin
+  foreach a in array array['pasr', 'zakelijk'] loop
+    block := '{}'::jsonb;
+    foreach pl in array array['ios', 'android'] loop
+      block := block || jsonb_build_object(pl, (
+        select jsonb_build_object(
+          'devices', count(*),
+          'active_1', count(*) filter (where last_seen > now() - interval '1 day'),
+          'active_7', count(*) filter (where last_seen > now() - interval '7 days'),
+          'active_30', count(*) filter (where last_seen > now() - interval '30 days'),
+          'new_period', count(*) filter (where first_seen::date >= since),
+          'signed_in', count(*) filter (where user_id is not null))
+        from public.pasr_devices where app = a and platform = pl));
+    end loop;
+    apps := apps || jsonb_build_object(a, block);
+  end loop;
+  return jsonb_build_object(
+    'days', d,
+    'apps', apps,
+    'versions', coalesce((select jsonb_agg(v order by v->>'app', v->>'platform', (v->>'devices')::int desc) from (
+        select jsonb_build_object('app', app, 'platform', platform, 'version', coalesce(version, '?'), 'build', coalesce(build, ''),
+               'devices', count(*), 'active_30', count(*) filter (where last_seen > now() - interval '30 days')) v
+        from public.pasr_devices group by app, platform, version, build) q), '[]'::jsonb),
+    'os', coalesce((select jsonb_agg(jsonb_build_object('platform', platform, 'os', os, 'devices', n) order by n desc) from (
+        select platform, coalesce(os, '?') os, count(*) n from public.pasr_devices
+        where last_seen > now() - interval '30 days' group by platform, os order by n desc limit 20) q), '[]'::jsonb),
+    'accounts', (select jsonb_build_object(
+        'ios', count(*) filter (where coalesce(raw_user_meta_data->>'app', '') = 'ios'),
+        'android', count(*) filter (where coalesce(raw_user_meta_data->>'app', '') in ('android', 'zakelijk-android')),
+        'web', count(*) filter (where coalesce(raw_user_meta_data->>'app', '') like 'web%'),
+        'other', count(*) filter (where coalesce(raw_user_meta_data->>'app', '') not in ('ios', 'android', 'zakelijk-android')
+                                    and coalesce(raw_user_meta_data->>'app', '') not like 'web%'))
+      from auth.users),
+    'series', coalesce((select jsonb_agg(jsonb_build_object('day', g::date,
+        'pasr_ios', (select count(*) from public.pasr_device_days x where x.day = g::date and x.app = 'pasr' and x.platform = 'ios'),
+        'pasr_android', (select count(*) from public.pasr_device_days x where x.day = g::date and x.app = 'pasr' and x.platform = 'android'),
+        'zakelijk_ios', (select count(*) from public.pasr_device_days x where x.day = g::date and x.app = 'zakelijk' and x.platform = 'ios'),
+        'zakelijk_android', (select count(*) from public.pasr_device_days x where x.day = g::date and x.app = 'zakelijk' and x.platform = 'android'),
+        'new_ios', (select count(*) from public.pasr_devices x where x.first_seen::date = g::date and x.platform = 'ios'),
+        'new_android', (select count(*) from public.pasr_devices x where x.first_seen::date = g::date and x.platform = 'android'),
+        'gwallet', coalesce((select x.gwallet from public.pasr_daily x where x.day = g::date), 0),
+        'wallet', coalesce((select x.wallet from public.pasr_daily x where x.day = g::date), 0)) order by g)
+      from generate_series(since, (now() at time zone 'utc')::date, interval '1 day') g), '[]'::jsonb),
+    'gwallet', jsonb_build_object(
+        'objects', (select count(*) from public.pasr_gwallet_objects),
+        'updated_30', (select count(*) from public.pasr_gwallet_objects where updated_at > now() - interval '30 days'),
+        'period', (select coalesce(sum(gwallet), 0) from public.pasr_daily where day >= since)),
+    'apple_wallet', jsonb_build_object('period', (select coalesce(sum(wallet), 0) from public.pasr_daily where day >= since),
+        'total', (select coalesce(sum(wallet), 0) from public.pasr_daily))
+  );
+end $$;
+revoke all on function public.pasr_admin_platforms(int) from public, anon, authenticated;
+grant execute on function public.pasr_admin_platforms(int) to service_role;
+
+-- Opruimen: dagen ouder dan 400 dagen, apparaten die al 400 dagen niets lieten horen.
+do $$
+begin
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-device-cleanup';
+  perform cron.schedule('pasr-device-cleanup', '45 3 * * *',
+    $q$delete from public.pasr_device_days where day < current_date - 400;
+       delete from public.pasr_devices where last_seen < now() - interval '400 days';$q$);
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;
