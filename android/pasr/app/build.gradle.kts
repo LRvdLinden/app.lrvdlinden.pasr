@@ -4,8 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
-// Previews (screenshots van de schermen) zonder emulator: alleen met -Ppreviews.
-if (project.hasProperty("previews")) apply(plugin = "app.cash.paparazzi")
+// Previews (screenshots zonder emulator): de workflow zet hier alleen in de job Previews de Paparazzi-plugin bij.
 
 // Ondertekenen komt uit de omgeving (GitHub Actions), nooit uit bestanden in de repo. Elke release met dezelfde
 // sleutel, zodat een update over de vorige versie heen installeert (zie .github/workflows/android-pasr.yml).
