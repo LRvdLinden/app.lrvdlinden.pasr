@@ -7,6 +7,9 @@ in het beheer zijn bijgekomen verschijnen erbij, catalogus-winkels die (nog) nie
 Kaarten met een gids (tools/make_gids.py) linken naar hun gidspagina. Lukt dat niet, dan blijft de gegenereerde lijst staan.
 Logo's worden verkleind naar website/assets/kaarten/<domain>.png; kaartontwerpen (supabase/catalog/covers.json) komen in
 website/assets/covers/<id>.jpg en vullen de hele kaart.
+Met de live catalogus (.cache/live-catalog.json, tools/fetch_live_catalog.py) komt alles uit de database: winkels, logo's,
+kleuren, kaartontwerpen, saldo-pagina's en de stempelkaarten (pasr_business_directory, derde tab). De demo-zaak voor App
+Review en zaken met listed = false komen er nooit op (store_catalog.business_hidden, ook in kaarten.js).
 Wordt aangeroepen door tools/make_website.py; los: python3 tools/make_kaarten.py"""
 import html
 import io
@@ -28,7 +31,8 @@ APP_STORE = "https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"
 MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"]
 
 KIND_LABEL = {"loyalty": ("klantenkaart", "klantenkaarten", "Klantenkaarten"),
-              "voucher": ("cadeaukaart of voucher", "cadeaukaarten en vouchers", "Cadeaukaarten en vouchers")}
+              "voucher": ("cadeaukaart of voucher", "cadeaukaarten en vouchers", "Cadeaukaarten en vouchers"),
+              "stamp": ("stempelkaart", "stempelkaarten", "Stempelkaarten")}
 
 
 def esc(s):
@@ -58,12 +62,13 @@ def account_config():
 
 
 def web_logos(cards):
-    """Verkleint de logo's (in een vak van 240 x 112 px, vierkante iconen 112 x 112) en geeft domain -> (w, h)."""
+    """Verkleint de logo's (in een vak van 240 x 112 px, vierkante iconen 112 x 112) en geeft key -> (w, h).
+    key is het domein van de winkel, of het id als er geen domein is."""
     from PIL import Image
     LOGO_OUT.mkdir(parents=True, exist_ok=True)
     sizes, done = {}, set()
     for c in cards:
-        d = c["domain"]
+        d = c["key"]
         if c["logo"] is None or d in done:
             continue
         done.add(d)
@@ -94,15 +99,24 @@ COVERS = REPO / "supabase" / "catalog" / "covers.json"
 COVER_OUT = ROOT / "assets" / "covers"
 
 
+_COVERS = {}
+
+
 def load_covers():
-    """Alle kaartontwerpen: covers.json plus covers_<deel>.json in dezelfde map (eerste bestand wint)."""
+    """Alle kaartontwerpen: covers.json plus covers_<deel>.json in dezelfde map (eerste bestand wint). Met de live catalogus
+    gaan de ontwerpen uit het beheer voor en tellen alleen winkels die daar een ontwerp hebben (has_cover)."""
+    if "data" in _COVERS:
+        return _COVERS["data"]
     data = {}
     for path in sorted(COVERS.parent.glob("covers*.json")):
         for k, v in json.loads(path.read_text(encoding="utf-8")).items():
             data.setdefault(k, v)
     live = sc.live_catalog()
-    if live:   # kaartontwerpen uit het beheer gaan voor
+    if live:   # kaartontwerpen uit het beheer gaan voor; ontwerp in het beheer weggehaald = weg
         data.update({k: v for k, v in (live.get("covers") or {}).items() if isinstance(v, str) and v})
+        has = {s["id"] for s in live["stores"] if isinstance(s, dict) and s.get("has_cover") and not s.get("removed")}
+        data = {k: v for k, v in data.items() if k in has}
+    _COVERS["data"] = data
     return data
 
 
@@ -151,12 +165,12 @@ GIFT = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16v10H4zM3 7
 def tile(c, sizes, guide_links=None):
     st = c["style"] or {}
     ink = " ink-dark" if is_light(c["card"]) else ""
-    q = " ".join(dict.fromkeys(fold(x) for x in [c["name"], *c["aliases"], c["domain"]]))
-    if c["domain"] in sizes:
-        w, h = sizes[c["domain"]]
+    q = " ".join(dict.fromkeys(fold(x) for x in [c["name"], *c["aliases"], c["domain"]] if x))
+    if c["key"] in sizes:
+        w, h = sizes[c["key"]]
         cls = "kc-logo" + (" opaque" if st.get("opaque") else "") + (" plate" if st.get("plate") else "")
         plate = f' style="--plate:{st["plate"]}"' if st.get("plate") else ""
-        face = (f'<span class="{cls}"{plate}><img src="/assets/kaarten/{esc(c["domain"])}.png" alt="" width="{w}" height="{h}" '
+        face = (f'<span class="{cls}"{plate}><img src="/assets/kaarten/{esc(c["key"])}.png" alt="" width="{w}" height="{h}" '
                 f'loading="lazy" decoding="async"></span>')
     else:
         face = f'<span class="kc-word" aria-hidden="true">{esc(c["name"])}</span>'
@@ -166,10 +180,27 @@ def tile(c, sizes, guide_links=None):
                  f'aria-label="Saldo-check van {esc(c["name"])} (opent de site van de uitgever)">{GIFT}Saldo-check</a>')
     src = ' data-src="catalogus"' if c["source"] == "catalogus" else ""
     cover = cover_img(c)
-    return (f'<li class="kc" data-id="{esc(c["id"])}"{src} data-c="{esc(c["category"])}" data-q="{esc(q)}">'
+    return (f'<li class="kc" data-id="{esc(c["id"].lower())}"{src} data-c="{esc(c["category"])}" data-q="{esc(q)}">'
             f'<div class="kc-card{ink}{" has-cover" if cover else ""}" style="background:{c["card"]}">{cover}{face}{saldo}</div>'
             + (f'<a class="kc-name" href="{guide_links[c["id"]]}" aria-label="Gids: {esc(c["name"])}">{esc(c["name"])}<span class="kc-gids" aria-hidden="true"> · gids</span></a></li>'
                if guide_links and c["id"] in guide_links else f'<span class="kc-name">{esc(c["name"])}</span></li>'))
+
+
+def stamp_tile(b):
+    """Een stempelkaart zoals in de app: kleur van de zaak, logo, naam, de vakjes en de beloning."""
+    ink = b["text"] or ("#17162A" if is_light(b["color"]) else "#FFFFFF")
+    q = " ".join(dict.fromkeys(fold(x) for x in (b["business"], b["name"], b["city"], b["reward"]) if x))
+    logo = (f'<img class="ks-logo" src="data:image/{"jpeg" if b["logo"].startswith("/9j/") else "png"};base64,{b["logo"]}" alt="" '
+            f'loading="lazy" decoding="async">') if b["logo"] else ""
+    dots = "".join('<i></i>' for _ in range(b["total"]))
+    sub = " · ".join(x for x in (b["city"], f'{b["total"]} stempels') if x)
+    return (f'<li class="kc ks" data-id="{esc(b["id"])}" data-q="{esc(q)}">'
+            f'<div class="kc-card ks-card" style="background:{b["color"]};color:{ink}">'
+            f'<span class="ks-top">{logo}<span class="ks-biz">{esc(b["business"])}</span></span>'
+            f'<span class="ks-dots" style="--n:{min(b["total"], 10)}" aria-hidden="true">{dots}</span>'
+            f'<span class="ks-reward">{esc(b["reward"])}</span></div>'
+            f'<span class="kc-name">{esc(b["business"])}</span>'
+            f'<span class="ks-sub">{esc(sub)}</span></li>')
 
 
 def build(write=True):
@@ -178,7 +209,15 @@ def build(write=True):
     sizes = web_logos(cards) if write else {}
     if write:
         web_covers()
-    now = datetime.now(timezone.utc).replace(microsecond=0)
+    stamps = sorted(sc.stamp_cards(), key=lambda b: (sort_key(b["business"]), sort_key(b["name"]), b["id"]))
+    # Met de live catalogus: het tijdstip van de laatste wijziging in het beheer (zo verandert de pagina alleen als er iets
+    # is gewijzigd, en haalt kaarten.js alleen nieuwere wijzigingen live op).
+    built = sc.live_built()
+    try:
+        now = datetime.fromisoformat(built.replace("Z", "+00:00")).astimezone(timezone.utc).replace(microsecond=0) if built else None
+    except ValueError:
+        now = None
+    now = now or datetime.now(timezone.utc).replace(microsecond=0)
     day = f"{now.day} {MONTHS[now.month - 1]} {now.year}"
     url, key = account_config()
     import make_gids   # hier: make_gids gebruikt zelf hulpjes uit dit bestand
@@ -192,11 +231,14 @@ def build(write=True):
     all_cats = sorted({c["category"] for c in cards}, key=fold)
     options = "".join(f'<option value="{esc(c)}">{esc(c)}</option>' for c in all_cats)
     # kaartontwerpen die als bestand op de site staan (ook voor winkels die pas live in de lijst komen)
-    config = {"url": url, "key": key, "cats": cat_opts, "built": now.isoformat(), "covers": cover_names()}
+    config = {"url": url, "key": key, "cats": cat_opts, "built": now.isoformat(), "covers": cover_names(),
+              "live": bool(sc.live_catalog())}
+    stamp_list = "\n".join("          " + stamp_tile(b) for b in stamps)
 
     title = "Alle klantenkaarten en cadeaukaarten in Pasr"
     desc = (f"Zoek je winkel: Pasr kent {n['loyalty']} klantenkaarten en {n['voucher']} cadeaukaarten en vouchers, "
-            f"met logo en kleur. Mis je er een? Vraag hem aan in de app.")
+            f"met logo en kleur" + (f", plus {n['stamp']} stempelkaart{'en' if n['stamp'] != 1 else ''} van lokale zaken" if n["stamp"] else "")
+            + ". Mis je er een? Vraag hem aan in de app.")
     og_alt = "Kaarten van Nederlandse winkels in hun eigen kleur met logo, naast de tekst: Welke kaarten kent Pasr?"
     ld = {"@context": "https://schema.org", "@graph": [
         {"@type": "CollectionPage", "@id": URL + "#page", "url": URL, "name": title, "description": desc, "inLanguage": "nl-NL",
@@ -285,6 +327,7 @@ def build(write=True):
       <dl class="kh-stats">
         <div><dt>Klantenkaarten</dt><dd data-count="loyalty">{n["loyalty"]}</dd></div>
         <div><dt>Cadeaukaarten en vouchers</dt><dd data-count="voucher">{n["voucher"]}</dd></div>
+        <div><dt>Stempelkaarten</dt><dd data-count="stamp">{n["stamp"]}</dd></div>
       </dl>
       <p class="kh-date">Bijgewerkt op <time datetime="{now.date().isoformat()}">{day}</time>. Nieuwe winkels komen erbij zonder app-update.</p>
     </div>
@@ -301,6 +344,7 @@ def build(write=True):
             <legend class="sr-only">Soort kaart</legend>
             <input type="radio" name="kind" id="kf-loyalty" value="loyalty" checked><label for="kf-loyalty">Klantenkaarten</label>
             <input type="radio" name="kind" id="kf-voucher" value="voucher"><label for="kf-voucher">Cadeaukaarten<span class="kf-long"> en vouchers</span></label>
+            <input type="radio" name="kind" id="kf-stamp" value="stamp"><label for="kf-stamp">Stempelkaarten</label>
           </fieldset>
           <div class="kf-cat">
             <label for="kf-cat">Categorie</label>
@@ -324,6 +368,17 @@ def build(write=True):
         <ul class="kg" role="list">
 {lists["voucher"]}
         </ul>
+      </div>
+      <div class="kg-block" data-kind="stamp" id="stempelkaarten">
+        <h2 class="kg-title">Stempelkaarten <span>({n["stamp"]})</span></h2>
+        <p class="kg-note">Digitale stempelkaarten van lokale zaken met <b>Pasr Zakelijk</b>. In Pasr voeg je ze toe met <b>+</b> › <b>Kaart toevoegen</b> › <b>Stempelkaart</b>; bij elke aankoop krijg je een stempel en een volle kaart levert de beloning op.</p>
+        <ul class="kg" role="list">
+{stamp_list}
+        </ul>
+        <div class="ks-empty" id="ks-empty"{"" if not stamps else " hidden"}>
+          <p><b>Er is momenteel nog geen stempelkaart.</b></p>
+          <p>Heb je een zaak? Met <a href="/zakelijk/">Pasr Zakelijk</a> maak je gratis een digitale stempelkaart die je klanten in Pasr bewaren.</p>
+        </div>
       </div>
       <p class="kg-empty" id="kg-empty" hidden>Geen kaart gevonden. Je kunt hem in Pasr toch toevoegen met <b>Andere winkel</b>, of hem aanvragen.</p>
     </section>

@@ -3,7 +3,10 @@
 bronnen, onbekend = weggelaten) en tools/store_catalog.py (naam, kleur, logo, saldo-pagina):
 - Cadeaubon-gids: /cadeaubon/ en per cadeaukaart /cadeaubon/<slug>/ (saldo-check, geldigheid, inwisselen, voorwaarden);
 - Klantenkaart-gids: /klantenkaart/ en per spaarprogramma /klantenkaart/<slug>/ (zo spaar je, voordelen, programmapagina).
-Alleen kaarten met een gids krijgen een pagina. slug() geeft het adres; make_kaarten linkt er vanaf de tegels naartoe.
+Met de live catalogus (.cache/live-catalog.json) komt alles uit de database: naam, logo, kleur, kaartontwerp, de gids
+(guide in pasr_store_index) en de saldo-pagina (balance_pages). Elke cadeaukaart en voucher uit de database krijgt een
+pagina (zonder gids: saldo-check en de kaart); klantenkaarten alleen als ze een gids hebben.
+slug() geeft het adres; make_kaarten linkt er vanaf de tegels naartoe.
 Wordt aangeroepen door tools/make_website.py (na make_kaarten, dat de logo's in website/assets/kaarten/ zet).
 Los: python3 tools/make_gids.py"""
 import json
@@ -39,7 +42,10 @@ def slug(card):
 
 
 def guides():
-    """guides.json, met het verjaardagsvoordeel uit birthdays.json erbij (alleen bij winkels die al een gids hebben)."""
+    """De gidsen: met de live catalogus die uit de database (guide per winkel), anders guides.json met het
+    verjaardagsvoordeel uit birthdays.json erbij (alleen bij winkels die al een gids hebben)."""
+    if sc.live_catalog():
+        return {c["id"]: c["guide"] for c in sc.all_cards() if c.get("guide")}
     g = json.loads(GUIDES.read_text(encoding="utf-8"))
     bfile = GUIDES.parent / "birthdays.json"
     if bfile.exists():
@@ -50,9 +56,10 @@ def guides():
 
 
 def load(kind, all_guides=None):
-    """Kaarten van deze soort met een gids, op naam gesorteerd: [(card, guide)], met card["slug"] uniek."""
+    """Kaarten van deze soort op naam gesorteerd: [(card, guide)], met card["slug"] uniek. Cadeaukaarten en vouchers:
+    allemaal (zonder gids is guide {}); klantenkaarten: alleen met een gids."""
     g = all_guides if all_guides is not None else guides()
-    cards = [c for c in sc.all_cards() if c["kind"] == kind and c["id"] in g]
+    cards = [c for c in sc.all_cards() if c["kind"] == kind and (kind == "voucher" or c["id"] in g)]
     cards.sort(key=lambda c: (sort_key(c["name"]), c["id"]))
     seen = set()
     for c in cards:
@@ -61,7 +68,7 @@ def load(kind, all_guides=None):
             s = f"{s}-{c['id']}"
         seen.add(s)
         c["slug"] = s
-    return [(c, g[c["id"]]) for c in cards]
+    return [(c, g.get(c["id"]) or {}) for c in cards]
 
 
 def links():
@@ -75,8 +82,8 @@ def nl_date(iso):
     return f"{d.day} {MONTHS[d.month - 1]} {d.year}"
 
 
-def logo_size(domain):
-    p = ROOT / "assets" / "kaarten" / f"{domain}.png"
+def logo_size(key):
+    p = ROOT / "assets" / "kaarten" / f"{key}.png"
     if not p.exists():
         return None
     from PIL import Image
@@ -88,12 +95,12 @@ def card_face(c, big=False):
     """De kaart zoals in de app: merkkleur met logo (zelfde opmaak als de tegels op /kaarten/)."""
     st = c["style"] or {}
     ink = " ink-dark" if is_light(c["card"]) else ""
-    size = logo_size(c["domain"])
+    size = logo_size(c["key"])
     if size:
         cls = "kc-logo" + (" opaque" if st.get("opaque") else "") + (" plate" if st.get("plate") else "")
         plate = f' style="--plate:{st["plate"]}"' if st.get("plate") else ""
         lazy = "" if big else ' loading="lazy"'
-        face = (f'<span class="{cls}"{plate}><img src="/assets/kaarten/{esc(c["domain"])}.png" alt="" width="{size[0]}" '
+        face = (f'<span class="{cls}"{plate}><img src="/assets/kaarten/{esc(c["key"])}.png" alt="" width="{size[0]}" '
                 f'height="{size[1]}"{lazy} decoding="async"></span>')
     else:
         face = f'<span class="kc-word" aria-hidden="true">{esc(c["name"])}</span>'
@@ -284,6 +291,11 @@ def guide_page(c, g, items, kind, year):
         if g.get("shipping"):
             facts.append(fact("Verzendkosten", esc(g["shipping"])))
         body = (f'<dl class="gd-facts">{"".join(facts)}</dl>' if facts else "") + (f'<p class="gd-how">{esc(g["how"])}</p>' if g.get("how") else "")
+        if not body:
+            site = (f' Kijk voor de voorwaarden op {ext_link("https://" + c["domain"] + "/", esc(c["domain"]))}.'
+                    if c["domain"] else "")
+            body = (f'<p class="gd-how">De {esc(n)} staat in Pasr{" met het eigen kaartontwerp" if cover_img(c) else " met logo en kleur"}. De geldigheid en waar je hem '
+                    f'inwisselt hebben we nog niet bij de uitgever gecontroleerd; dat zetten we hier zodra het officieel bekend is.{site}</p>')
         panels.append(panel("kort", "In het kort", body))
         if c.get("balance"):
             saldo = (f'<p>Kijk het tegoed na op de saldo-pagina van de uitgever. Je hebt het kaartnummer nodig, en vaak ook de pincode.</p>'
@@ -295,7 +307,8 @@ def guide_page(c, g, items, kind, year):
                      f'na het tonen van de kaart vraagt Pasr wat je uitgaf.</p>')
         panels.append(panel("saldo", "Saldo checken", saldo))
         terms = f'<p>{ext_link(g["terms_url"], "Voorwaarden en uitleg van de uitgever")}</p>' if g.get("terms_url") else ""
-        panels.append(panel("voorwaarden", "Voorwaarden", terms + f'<p class="gd-small">{checked}Voorwaarden kunnen veranderen; bij twijfel geldt wat de uitgever zegt. Klopt er iets niet? Mail <a href="mailto:support@pasr.nl?subject=Gids%20{esc(c["id"])}">support@pasr.nl</a>.</p>'))
+        if terms or checked:
+            panels.append(panel("voorwaarden", "Voorwaarden", terms + f'<p class="gd-small">{checked}Voorwaarden kunnen veranderen; bij twijfel geldt wat de uitgever zegt. Klopt er iets niet? Mail <a href="mailto:support@pasr.nl?subject=Gids%20{esc(c["id"])}">support@pasr.nl</a>.</p>'))
         app_title = f"Bewaar je {esc(n)} in Pasr"
         ticks = ["Barcode, pincode en vervaldatum bij de hand, ook op je Apple Watch.",
                  "Na het tonen vraagt Pasr wat je uitgaf: je ziet het tegoed afnemen.",
@@ -311,7 +324,14 @@ def guide_page(c, g, items, kind, year):
         if c.get("balance"):
             bits.append("de saldo-check")
         desc = f"{n}: {', '.join(bits) if bits else 'zo wissel je hem in'} en de voorwaarden, van de officiële site. Bewaar je cadeaukaart gratis in Pasr."
-        if len(desc) > 165:
+        if not g:
+            desc = (f"{n}: " + ("saldo checken bij de uitgever en " if c.get("balance") else "")
+                    + "je cadeaukaart gratis bewaren in Pasr, met tegoed en vervaldatum bij de hand.")
+            lead = ("Saldo checken en je kaart bewaren in Pasr." if c.get("balance")
+                    else "Bewaar je kaart in Pasr, met tegoed en vervaldatum bij de hand.")
+        if len(desc) > 165 and not g:
+            desc = f"{n}: bewaar je cadeaukaart gratis in Pasr, met tegoed en vervaldatum bij de hand."
+        elif len(desc) > 165:
             desc = f"{n}: geldigheid, inwisselen, saldo-check en voorwaarden, van de officiële site. Bewaar je cadeaukaart gratis in Pasr."
     else:
         body = ""
@@ -534,10 +554,10 @@ def og_html(items, kind):
     """Bron voor de deelafbeelding /og/<map>.png (tools/og/render.py cadeaubon klantenkaart)."""
     k = KINDS[kind]
     src = (REPO / "tools" / "og" / "kaarten.html").read_text(encoding="utf-8")
-    pick = [c for c, _ in items if logo_size(c["domain"])][:18]
+    pick = [c for c, _ in items if logo_size(c["key"])][:18]
     while pick and len(pick) < 18:
         pick = (pick * 2)[:18]
-    tiles = "".join(f'<div class="t" style="background:{c["card"]}"><span style=""><img src="../../website/assets/kaarten/{c["domain"]}.png"></span></div>' for c in pick)
+    tiles = "".join(f'<div class="t" style="background:{c["card"]}"><span style=""><img src="../../website/assets/kaarten/{c["key"]}.png"></span></div>' for c in pick)
     start, end = src.index('<div class="grid">'), src.index('<div class="left">')
     src = src[:start] + f'<div class="grid">{tiles}</div>\n' + src[end:]
     src = src.replace("<h1>Welke kaarten kent Pasr?</h1>", f"<h1>{k['label']}</h1>")

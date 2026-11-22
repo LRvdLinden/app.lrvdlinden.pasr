@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Haalt de live catalogus van de server op (zoals de app hem ziet, inclusief alles wat in het beheer is aangepast):
-pasr_store_index (winkels), pasr_store_logos (logo's, 40 per keer) en pasr_store_covers (kaartontwerpen, 40 per keer).
+pasr_store_index (winkels, gids en saldo-pagina's), pasr_store_logos (logo's, 40 per keer), pasr_store_covers
+(kaartontwerpen, 40 per keer) en pasr_business_directory (stempelkaarten van zaken die vindbaar willen zijn).
 Schrijft .cache/live-catalog.json; tools/store_catalog.py en tools/make_kaarten.py gebruiken dat bestand als het er is,
 zodat pasr.nl/kaarten/ precies dezelfde kaarten, kleuren, logo's en ontwerpen toont als de app.
 Omgeving: PASR_SUPABASE_URL en PASR_SUPABASE_KEY (publieke waarden). Lukt het niet, dan blijft alles bij de repo-gegevens.
@@ -39,9 +40,19 @@ def main():
                 part = rpc(url, key, fn, {"p_ids": ids[i:i + 40]})
                 if isinstance(part, dict):
                     dest.update({k: v for k, v in part.items() if isinstance(v, str) and v})
+        pages = idx.get("balance_pages") if isinstance(idx, dict) else None
+        try:   # stempelkaarten: los, zodat een fout hier de winkels niet tegenhoudt
+            businesses = rpc(url, key, "pasr_business_directory", {"p_limit": 200})
+            businesses = businesses if isinstance(businesses, list) else None
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning::Stempelkaarten niet opgehaald ({e}); de lijst blijft leeg op de site.")
+            businesses = None
         OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps({"stores": stores, "logos": logos, "covers": covers}), encoding="utf-8")
-        print(f"Live catalogus: {len(stores)} winkels, {len(logos)} logo's, {len(covers)} kaartontwerpen.")
+        OUT.write_text(json.dumps({"now": idx.get("now") if isinstance(idx, dict) else None, "stores": stores, "logos": logos,
+                                   "covers": covers, "balance_pages": pages if isinstance(pages, dict) else {},
+                                   "businesses": businesses}), encoding="utf-8")
+        print(f"Live catalogus: {len(stores)} winkels, {len(logos)} logo's, {len(covers)} kaartontwerpen, "
+              f"{len(businesses) if businesses is not None else '?'} stempelkaarten.")
     except Exception as e:  # noqa: BLE001 - nooit de deploy breken
         print(f"::warning::Live catalogus niet opgehaald ({e}); de website gebruikt de gegevens uit de repo.")
         if OUT.exists():
