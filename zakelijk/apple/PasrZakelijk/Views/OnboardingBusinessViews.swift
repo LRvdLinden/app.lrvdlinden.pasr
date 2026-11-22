@@ -32,7 +32,7 @@ struct RegisterBusinessView: View {
                     }
                     .listRowBackground(Color.clear)
                 }
-                Section("Zaak") {
+                Section {
                     TextField("Naam van je zaak", text: $name)
                         .textContentType(.organizationName)
                     TextField("Plaats", text: $city)
@@ -42,6 +42,8 @@ struct RegisterBusinessView: View {
                         .textContentType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                } header: {
+                    Text("Zaak")
                 } footer: {
                     Text("Met je website neemt Pasr je logo en kleuren over op je stempelkaart.")
                 }
