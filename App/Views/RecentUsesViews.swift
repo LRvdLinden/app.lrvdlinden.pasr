@@ -171,10 +171,17 @@ struct RecentUsesSection: View {
                         .font(.title3.weight(.heavy))
                         .accessibilityAddTraits(.isHeader)
                     Spacer()
-                    Button("Alles", action: onAll)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Brand.irisText)
-                        .accessibilityLabel(Text("Alles van Laatst gebruikt"))
+                    // op een eigen vlak, zodat het ook over de wazige achtergrond (licht en donker) goed leesbaar is
+                    Button(action: onAll) {
+                        Text("Alles")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Brand.irisText)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Brand.inkRaised, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Alles van Laatst gebruikt"))
                 }
                 .padding(.horizontal, 4)
                 UsesPanel {
