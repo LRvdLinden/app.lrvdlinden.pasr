@@ -248,6 +248,7 @@
       kpi("Actief", num(t.active_30d), txt("ingelogd, 30 dagen"), "#8A7FFF"),
       kpi("Wallet-passen", num(s.wallet_total), txt(`Apple · ${num(s.platforms?.gwallet?.objects)} in Google Wallet`), "#4FB3FF"),
       kpi("Android", num(s.platforms?.apps?.pasr?.android?.active_30), txt(`actief, 30 dagen · iOS ${num(s.platforms?.apps?.pasr?.ios?.active_30)}`), "#2BB38A"),
+      kpi("Push aan", num((s.platforms?.push?.ios || 0) + (s.platforms?.push?.android || 0)), txt(`iOS ${num(s.platforms?.push?.ios)} · Android ${num(s.platforms?.push?.android)}`), "#FF6B57"),
       kpi("Landen", num(Object.keys(s.countries || {}).filter((c) => c !== "?").length), txt("waar accounts vandaan komen"), "#FFB547"),
       kpi("Gedeelde Pasrs", num(s.shared?.groups), txt(`${num(s.shared?.people)} personen · ${num(s.shared?.cards)} kaarten`), "#2ED3A6"),
       kpi("Tijdelijk gedeeld", num(s.temp?.active), txt(`nu geldig · +${num(s.temp?.new_7d)} deze week`), "#C77DFF"),
@@ -256,7 +257,7 @@
   function skeleton() {
     const box = $("kpis");
     if (box.children.length) return;
-    for (let i = 0; i < 9; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
+    for (let i = 0; i < 10; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
   }
 
   const fmtDay = (d, opts) => new Date(d + "T00:00:00Z").toLocaleDateString("nl-NL", { timeZone: "UTC", ...opts });
@@ -530,6 +531,10 @@
       ["Ingelogd op Android", pl.apps?.pasr?.android?.signed_in || 0],
       ["Google Wallet-passen (bijgewerkt in 30 dagen)", `${num(pl.gwallet?.objects)} (${num(pl.gwallet?.updated_30)})`],
       ["Google Wallet", pl.gwallet_ready ? "ingericht" : "nog niet ingericht (secrets ontbreken)"],
+      ["Push aan: Pasr iOS / Android", `${num(pl.push?.ios)} / ${num(pl.push?.android)}`],
+      ["Nieuws over mijn kaarten aan: iOS / Android", `${num(pl.push?.ios_news)} / ${num(pl.push?.android_news)}`],
+      ["Push aan: Pasr Zakelijk Android", pl.push?.zakelijk_android || 0],
+      ["Android-push (FCM)", pl.fcm_ready ? "ingericht" : "nog niet ingericht (FIREBASE_SERVICE_ACCOUNT_JSON)"],
     ] : [], "Nog geen gegevens.");
     const vers = (pl?.versions || []).slice().sort((x, y) => (y.active_30 || 0) - (x.active_30 || 0)).slice(0, 10);
     dist($("versions"), vers.map((v) => [`${v.app === "zakelijk" ? "Zakelijk" : "Pasr"} ${v.platform === "android" ? "Android" : "iOS"} ${v.version}${v.build ? ` (${v.build})` : ""}`, v.active_30 || v.devices || 0]),
@@ -1084,7 +1089,8 @@
       await loadBuiltin();
       newsData = await api("news_overview");
       $("newsInfo").textContent = `${num(newsData.all)} ${newsData.all === 1 ? "apparaat" : "apparaten"} met de opt-in, ${num(newsData.new)} nieuw deze week, ${num(newsData.inactive)} inactief.` +
-        (newsData.push_ready ? "" : " Pushmeldingen zijn nog niet ingericht.");
+        (newsData.push_ready ? "" : " Pushmeldingen zijn nog niet ingericht.")
+        + (newsData.push_ready && newsData.fcm_ready === false ? " Android-push (FCM) is nog niet ingericht." : "");
       $("nStores").replaceChildren(...(newsData.stores || []).map((x) => { const o = document.createElement("option"); o.value = x.id; o.label = `${storeName(x.id)} (${num(x.count)})`; return o; }));
       const h = $("newsHistory");
       h.replaceChildren();
@@ -1115,14 +1121,15 @@
     if (audience === "store") p.store = resolveStore($("nStore").value);
     return p;
   }
+  const countText = (c) => `${num(c.count)}` + (c.ios !== undefined ? ` (iOS ${num(c.ios)} · Android ${num(c.android || 0)})` : "");
   function updateCount() {
     clearTimeout(countTimer);
     const p = audienceParams();
     $("nStoreRow").classList.toggle("hidden", p.audience !== "store");
-    if (newsData && p.audience !== "store") { $("nCount").textContent = num(newsData[p.audience]); return; }
-    if (!p.store) { $("nCount").textContent = "–"; return; }
+    if (p.audience === "store" && !p.store) { $("nCount").textContent = "–"; return; }
+    // ontvangers per platform: iOS (APNs) en Android (FCM)
     countTimer = setTimeout(async () => {
-      try { $("nCount").textContent = num((await api("news_count", p)).count); } catch { $("nCount").textContent = "–"; }
+      try { $("nCount").textContent = countText(await api("news_count", p)); } catch { $("nCount").textContent = "–"; }
     }, 250);
   }
   ["nTitle", "nBody"].forEach((id) => $(id).addEventListener("input", newsPreview));
@@ -1134,16 +1141,17 @@
     const body = $("nBody").value.trim();
     if (!body) { msg.textContent = "Schrijf een bericht."; return; }
     const p = audienceParams();
-    let n;
-    try { n = (await api("news_count", p)).count; } catch (err) { msg.textContent = err.message; return; }
+    let n, c;
+    try { c = await api("news_count", p); n = c.count; } catch (err) { msg.textContent = err.message; return; }
     if (!n) { msg.textContent = "Er zijn geen ontvangers in deze doelgroep."; return; }
     const who = p.audience === "store" ? `iedereen met een kaart van ${storeName(p.store)}` : AUD[p.audience].toLowerCase();
-    if (!(await ask("Bericht versturen?", `Naar ${num(n)} ${n === 1 ? "apparaat" : "apparaten"} (${who}). Dit kan niet worden teruggedraaid.`, "Versturen"))) return;
+    if (!(await ask("Bericht versturen?", `Naar ${num(n)} ${n === 1 ? "apparaat" : "apparaten"} (${who}): ${num(c.ios ?? n)} iOS en ${num(c.android ?? 0)} Android. Dit kan niet worden teruggedraaid.`, "Versturen"))) return;
     $("nSend").disabled = true;
     try {
       const r = await api("news_send", { title: $("nTitle").value.trim() || null, body, ...p });
       msg.className = "err ok";
-      msg.textContent = `Verstuurd naar ${num(r.sent)} van ${num(r.recipients)} apparaten${r.failed ? ` (${num(r.failed)} mislukt)` : ""}.`;
+      msg.textContent = `Verstuurd naar ${num(r.sent)} van ${num(r.recipients)} apparaten${r.failed ? ` (${num(r.failed)} mislukt)` : ""}.`
+        + (r.android ? ` iOS ${num(r.ios.sent)} van ${num(r.ios.recipients)}, Android ${num(r.android.sent)} van ${num(r.android.recipients)}.` : "");
       $("nBody").value = ""; $("nTitle").value = ""; newsPreview(); loadNews();
     } catch (err) { msg.textContent = err.message; }
     finally { $("nSend").disabled = false; }

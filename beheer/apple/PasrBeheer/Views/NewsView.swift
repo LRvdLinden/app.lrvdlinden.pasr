@@ -10,6 +10,7 @@ struct NewsView: View {
     @State private var audience: NewsAudience = .all
     @State private var store = ""
     @State private var count: Int?
+    @State private var split: NewsCount?
     @State private var error: String?
     @State private var result: String?
     @State private var confirming = false
@@ -62,6 +63,10 @@ struct NewsView: View {
                     }
                 }
                 LabeledContent("Ontvangers", value: count.map(Fmt.n) ?? "–")
+                if let split, let ios = split.ios {
+                    LabeledContent("Per platform", value: "iOS \(Fmt.n(ios)) · Android \(Fmt.n(split.android ?? 0))")
+                        .font(.subheadline).foregroundStyle(Theme.muted)
+                }
             }
             Section("Voorbeeld") {
                 HStack(alignment: .top, spacing: 10) {
@@ -125,14 +130,14 @@ struct NewsView: View {
     }
 
     private func updateCount() async {
-        if audience != .store, let overview {
+        // altijd via news_count: telt iOS (APNs) en Android (FCM) apart
+        if audience != .store, let overview, split == nil {
             count = audience == .all ? overview.all : audience == .new ? overview.new : overview.inactive
-            return
         }
-        guard audience != .store || storeID.range(of: "^[a-z0-9-]{2,40}$", options: .regularExpression) != nil else { count = nil; return }
+        guard audience != .store || storeID.range(of: "^[a-z0-9-]{2,40}$", options: .regularExpression) != nil else { count = nil; split = nil; return }
         try? await Task.sleep(for: .milliseconds(300))
         guard !Task.isCancelled else { return }
-        count = try? await session.call("news_count", params, as: NewsCount.self).count
+        if let c = try? await session.call("news_count", params, as: NewsCount.self) { count = c.count; split = c }
     }
 
     private func send() async {
@@ -145,6 +150,7 @@ struct NewsView: View {
         do {
             let r = try await session.call("news_send", p, as: NewsSendResponse.self)
             result = "Verstuurd naar \(Fmt.n(r.sent)) van \(Fmt.n(r.recipients)) apparaten" + (r.failed > 0 ? " (\(r.failed) mislukt)." : ".")
+                + (r.android.map { a in " iOS \(Fmt.n(r.ios?.sent ?? 0)) van \(Fmt.n(r.ios?.recipients ?? 0)), Android \(Fmt.n(a.sent)) van \(Fmt.n(a.recipients))." } ?? "")
             message = ""; title = ""
             await load()
         } catch { self.error = error.localizedDescription }

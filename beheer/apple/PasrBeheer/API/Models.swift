@@ -270,8 +270,18 @@ struct NewsCampaign: Decodable, Identifiable, Hashable {
     let failed: Int
     let created_at: String
 }
-struct NewsCount: Decodable { let count: Int }
-struct NewsSendResponse: Decodable { let id: String; let recipients: Int; let sent: Int; let failed: Int }
+struct NewsCount: Decodable {
+    let count: Int
+    /// Ontvangers per platform (sinds Android-push): iOS (APNs) en Android (FCM).
+    var ios: Int? = nil
+    var android: Int? = nil
+}
+struct NewsSendResponse: Decodable {
+    struct Part: Decodable { let recipients: Int; let sent: Int }
+    let id: String; let recipients: Int; let sent: Int; let failed: Int
+    var ios: Part? = nil
+    var android: Part? = nil
+}
 
 /// Doelgroepen van "Bericht sturen" (zelfde sleutels als supabase/functions/admin/news.ts).
 enum NewsAudience: String, CaseIterable, Identifiable {

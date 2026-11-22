@@ -47,6 +47,12 @@ struct Platforms: Decodable {
     var series: [Day]? = nil
     var gwallet: GWallet? = nil
     var gwallet_ready: Bool? = nil
+    /// "Push aan" per platform (pasr_admin_push_platforms).
+    struct Push: Decodable {
+        var ios = 0, ios_news = 0, android = 0, android_news = 0, zakelijk_android = 0
+    }
+    var push: Push? = nil
+    var fcm_ready: Bool? = nil
 }
 
 /// iOS en Android in Homey Insights-stijl: actieve toestellen per dag (iOS en Android gestapeld, met kruisdraad),
@@ -112,6 +118,10 @@ struct PlatformsCard: View {
             KPITile(title: "iOS actief", value: Fmt.n(ios.active_30), detail: "30 dagen · \(Fmt.n(ios.active_1)) vandaag", color: Theme.iris)
             KPITile(title: "Nieuwe installaties", value: Fmt.n(android.new_period + ios.new_period),
                     detail: "Android \(Fmt.n(android.new_period)) · iOS \(Fmt.n(ios.new_period))", color: Theme.mint)
+            KPITile(title: "Push aan", value: Fmt.n(app == "zakelijk" ? (d.push?.zakelijk_android ?? 0) : (d.push?.ios ?? 0) + (d.push?.android ?? 0)),
+                    detail: app == "zakelijk" ? "Android" + (d.fcm_ready == false ? " · FCM niet ingericht" : "")
+                        : "iOS \(Fmt.n(d.push?.ios ?? 0)) · Android \(Fmt.n(d.push?.android ?? 0))" + (d.fcm_ready == false ? " · FCM niet ingericht" : ""),
+                    color: Theme.coral)
             KPITile(title: "Google Wallet", value: Fmt.n(d.gwallet?.objects ?? 0),
                     detail: d.gwallet_ready == false ? "nog niet ingericht" : "\(Fmt.n(d.gwallet?.updated_30 ?? 0)) bijgewerkt, 30 dagen", color: Color(hex: 0x0E8A62))
         }
