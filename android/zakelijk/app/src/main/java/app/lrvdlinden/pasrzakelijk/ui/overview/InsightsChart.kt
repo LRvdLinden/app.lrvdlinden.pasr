@@ -75,7 +75,7 @@ fun InsightsChart(
     ) {
         val left = 34.dp.toPx()
         val right = size.width - 6.dp.toPx()
-        val topY = 18.dp.toPx()
+        val topY = 26.dp.toPx()
         val bottom = size.height - 22.dp.toPx()
         val w = right - left
         val h = bottom - topY
