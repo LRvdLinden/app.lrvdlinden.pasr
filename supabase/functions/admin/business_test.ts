@@ -23,3 +23,15 @@ Deno.test("instellingen: afkoeltijd en max per scan", () => {
   const one = cleanBusinessSettings({ id: ID, cooldown_minutes: 15 });
   ok(one.ok && !("max_per_scan" in one.settings), "alleen wat meegegeven is");
 });
+
+Deno.test("instellingen: vindbaar in Pasr, adres en locatie", () => {
+  const s = cleanBusinessSettings({ id: ID, listed: false });
+  ok(s.ok && s.settings.listed === false, "uit de lijst halen");
+  ok(!cleanBusinessSettings({ id: ID, listed: "nee" }).ok, "listed is boolean");
+  const a = cleanBusinessSettings({ id: ID, address: "  Hoofdstraat   1,  Apeldoorn ", lat: 52.21, lng: 5.97 });
+  ok(a.ok && a.settings.address === "Hoofdstraat 1, Apeldoorn" && a.settings.lat === 52.21, "adres en locatie");
+  ok(!cleanBusinessSettings({ id: ID, lat: 52.2 }).ok, "lat zonder lng");
+  ok(!cleanBusinessSettings({ id: ID, lat: 100, lng: 5 }).ok, "lat buiten bereik");
+  const n = cleanBusinessSettings({ id: ID, address: null, lat: null, lng: null });
+  ok(n.ok && n.settings.address === null && n.settings.lat === null, "wissen");
+});

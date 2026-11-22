@@ -2050,6 +2050,11 @@ alter table public.pasr_businesses add column if not exists cooldown_minutes int
 -- max per scan: de ondernemer kiest per scan 1 tot max_per_scan stempels (aantal-kiezer, standaard 1)
 alter table public.pasr_businesses add column if not exists max_per_scan int not null default 10;
 alter table public.pasr_businesses alter column max_per_scan set default 10;
+-- vindbaar in Pasr (Kaart toevoegen › Stempelkaart): aan/uit, adres en optioneel een locatie voor "In de buurt"
+alter table public.pasr_businesses add column if not exists listed boolean not null default true;
+alter table public.pasr_businesses add column if not exists address text;
+alter table public.pasr_businesses add column if not exists lat double precision;
+alter table public.pasr_businesses add column if not exists lng double precision;
 do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'pasr_businesses_cooldown_check') then
@@ -2060,6 +2065,11 @@ begin
   end if;
   if not exists (select 1 from pg_constraint where conname = 'pasr_businesses_max_per_scan_v2') then
     alter table public.pasr_businesses add constraint pasr_businesses_max_per_scan_v2 check (max_per_scan between 1 and 30);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'pasr_businesses_place_check') then
+    alter table public.pasr_businesses add constraint pasr_businesses_place_check check (
+      (address is null or char_length(address) <= 200) and (lat is null) = (lng is null)
+      and (lat is null or (lat between -90 and 90 and lng between -180 and 180)));
   end if;
 end $$;
 
@@ -2202,7 +2212,8 @@ create or replace function public.pasr_business_json(b public.pasr_businesses) r
 language sql immutable as $$
   select jsonb_build_object('id', b.id, 'name', b.name, 'city', b.city, 'email', b.email, 'website', b.website, 'note', b.note,
     'status', b.status, 'created_at', b.created_at, 'reviewed_at', b.reviewed_at,
-    'cooldown_minutes', b.cooldown_minutes, 'max_per_scan', b.max_per_scan);
+    'cooldown_minutes', b.cooldown_minutes, 'max_per_scan', b.max_per_scan,
+    'listed', b.listed, 'address', b.address, 'lat', b.lat, 'lng', b.lng);
 $$;
 
 -- Kaarten van een zaak; met tellingen (leden, stempels, beloningen) als p_stats.
@@ -2383,7 +2394,7 @@ end $$;
 -- ---- instellingen (eigenaar) ----
 create or replace function public.pasr_business_settings_apply(p_business uuid, p_settings jsonb) returns public.pasr_businesses
 language plpgsql security definer set search_path = public as $$
-declare b public.pasr_businesses; cd int; mx int;
+declare b public.pasr_businesses; cd int; mx int; li boolean; ad text; la double precision; lo double precision;
 begin
   if jsonb_typeof(coalesce(p_settings, '{}'::jsonb)) <> 'object' then
     raise exception 'Ongeldige instellingen.' using errcode = '22023', hint = 'bad_settings';
@@ -2392,12 +2403,23 @@ begin
   begin
     cd := coalesce((p_settings->>'cooldown_minutes')::int, b.cooldown_minutes);
     mx := coalesce((p_settings->>'max_per_scan')::int, b.max_per_scan);
+    li := coalesce((p_settings->>'listed')::boolean, b.listed);
+    -- adres: weglaten = laten staan, leeg of null = wissen (dan ook de locatie)
+    ad := case when p_settings ? 'address' then nullif(left(regexp_replace(trim(coalesce(p_settings->>'address', '')), '\s+', ' ', 'g'), 200), '')
+               else b.address end;
+    la := case when p_settings ? 'lat' then (p_settings->>'lat')::double precision else b.lat end;
+    lo := case when p_settings ? 'lng' then (p_settings->>'lng')::double precision else b.lng end;
+    if p_settings ? 'address' and ad is null and not (p_settings ? 'lat') then la := null; lo := null; end if;
   exception when others then
     raise exception 'Ongeldige instellingen.' using errcode = '22023', hint = 'bad_settings';
   end;
   if cd not between 0 and 1440 then raise exception 'Afkoeltijd moet tussen 0 en 1440 minuten liggen.' using errcode = '22023', hint = 'bad_settings'; end if;
   if mx not between 1 and 30 then raise exception 'Max per scan moet tussen 1 en 30 liggen.' using errcode = '22023', hint = 'bad_settings'; end if;
-  update public.pasr_businesses set cooldown_minutes = cd, max_per_scan = mx, updated_at = now() where id = b.id returning * into b;
+  if (la is null) <> (lo is null) or (la is not null and (la not between -90 and 90 or lo not between -180 and 180)) then
+    raise exception 'Deze locatie klopt niet.' using errcode = '22023', hint = 'bad_settings';
+  end if;
+  update public.pasr_businesses set cooldown_minutes = cd, max_per_scan = mx, listed = li, address = ad, lat = la, lng = lo,
+    updated_at = now() where id = b.id returning * into b;
   return b;
 end $$;
 
@@ -2630,6 +2652,30 @@ begin
   return public.pasr_business_member_json(m, c, b) || jsonb_build_object('business_card_id', c.id, 'claimed', true);
 end $$;
 
+-- ---- vindbaar in Pasr: Kaart toevoegen › Stempelkaart (anon) ----
+-- Alleen gepubliceerde kaarten van goedgekeurde zaken met listed = true. Zoeken op zaak, kaart en plaats; met een
+-- locatie eerst wat dichtbij is (distance_km, alleen als de zaak een locatie heeft). Geen e-mail, geen eigenaar.
+create or replace function public.pasr_business_directory(p_query text default null, p_lat double precision default null,
+                                                          p_lng double precision default null, p_limit int default 50) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare q text := nullif(lower(left(regexp_replace(trim(coalesce(p_query, '')), '\s+', ' ', 'g'), 60)), '');
+        here boolean := p_lat between -90 and 90 and p_lng between -180 and 180;
+begin
+  return coalesce((select jsonb_agg(x.j order by x.dist nulls last, x.bname, x.cname) from (
+    select jsonb_build_object('card_id', c.id, 'card_name', c.name, 'business_name', b.name, 'city', b.city, 'logo', c.logo,
+             'color', c.color, 'stamps_total', c.stamps_total, 'reward', c.reward,
+             'distance_km', case when d.km is not null then round(d.km::numeric, 1) end) j,
+           d.km dist, lower(b.name) bname, lower(c.name) cname
+    from public.pasr_business_cards c join public.pasr_businesses b on b.id = c.business_id
+    cross join lateral (select case when here and b.lat is not null then
+        6371 * 2 * asin(sqrt(power(sin(radians(b.lat - p_lat) / 2), 2)
+          + cos(radians(p_lat)) * cos(radians(b.lat)) * power(sin(radians(b.lng - p_lng) / 2), 2))) end km) d
+    where c.published and b.status = 'approved' and b.listed
+      and (q is null or strpos(lower(b.name || ' ' || c.name || ' ' || b.city || ' ' || coalesce(b.address, '')), q) > 0)
+    order by d.km nulls last, lower(b.name), lower(c.name)
+    limit least(greatest(coalesce(p_limit, 50), 1), 200)) x), '[]'::jsonb);
+end $$;
+
 -- ---- beheer (functie admin, service role) ----
 create or replace function public.pasr_admin_businesses() returns jsonb
 language sql stable security definer set search_path = public as $$
@@ -2696,7 +2742,9 @@ revoke all on function public.pasr_business_new_code(), public.pasr_business_jso
   public.pasr_admin_businesses(), public.pasr_admin_business_detail(uuid, int, int), public.pasr_admin_business_status(uuid, text),
   public.pasr_admin_business_settings(uuid, jsonb), public.pasr_admin_business_staff_revoke(uuid)
   from public, anon, authenticated;
-grant execute on function public.pasr_business_claim(text), public.pasr_business_staff_invite_info(text) to anon, authenticated;
+revoke all on function public.pasr_business_directory(text, double precision, double precision, int) from public;
+grant execute on function public.pasr_business_claim(text), public.pasr_business_staff_invite_info(text),
+  public.pasr_business_directory(text, double precision, double precision, int) to anon, authenticated;
 grant execute on function public.pasr_business_me(), public.pasr_business_role(uuid), public.pasr_business_staff_list(uuid),
   public.pasr_business_staff_invite(uuid, text, text), public.pasr_business_staff_accept(text), public.pasr_business_staff_revoke(uuid),
   public.pasr_business_settings_save(uuid, jsonb), public.pasr_business_log(uuid, int), public.pasr_business_stats(uuid, int),
