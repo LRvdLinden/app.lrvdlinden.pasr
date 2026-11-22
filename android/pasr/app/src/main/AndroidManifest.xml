@@ -51,6 +51,21 @@
             </intent-filter>
         </activity>
 
+        <!-- Pushmeldingen (Firebase Cloud Messaging): nieuws over je kaarten en stempels van zaken -->
+        <service
+            android:name=".notify.PasrMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="news" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_card" />
+
         <!-- ML Kit barcode-scanning (gebundeld model): geen download via Google Play nodig -->
     </application>
 </manifest>

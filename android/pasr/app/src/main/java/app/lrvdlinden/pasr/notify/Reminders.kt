@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit
 object Reminders {
     const val CHANNEL = "reminders"
     const val CHANNEL_STAMPS = "stamps"
+    const val CHANNEL_NEWS = "news"
 
     fun setup(context: Context) {
         if (Build.VERSION.SDK_INT >= 26) {
@@ -47,7 +48,10 @@ object Reminders {
                 description = "Cadeaukaarten en kortingscodes die bijna verlopen, abonnementen die verlengen"
             })
             nm.createNotificationChannel(NotificationChannel(CHANNEL_STAMPS, "Stempelkaarten", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "Je stempelkaart is vol"
+                description = "Een stempel erbij of je stempelkaart is vol"
+            })
+            nm.createNotificationChannel(NotificationChannel(CHANNEL_NEWS, "Nieuws over mijn kaarten", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "Berichten van Pasr over winkels waarvan je een kaart hebt"
             })
         }
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
@@ -59,11 +63,12 @@ object Reminders {
     fun canNotify(context: Context) = Build.VERSION.SDK_INT < 33 ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    fun notify(context: Context, id: String, channel: String, title: String, text: String, cardId: String?) {
+    fun notify(context: Context, id: String, channel: String, title: String, text: String, cardId: String?, store: String? = null) {
         if (!canNotify(context)) return
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             cardId?.let { putExtra("cardId", it) }
+            store?.let { putExtra("store", it) }
         }
         val pi = PendingIntent.getActivity(context, id.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = NotificationCompat.Builder(context, channel)
@@ -120,7 +125,8 @@ class DailyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         Reminders.check(applicationContext)
         val before = CardStore.visible.filter { it.isBusinessStamps }.associate { it.id to it.details.stampsFull }
         for (c in Business.refreshAll(force = true)) {
-            if (before[c.id] == false && c.details.stampsFull) Reminders.stampsFull(applicationContext, c)
+            // met push meldt de server het al (stempel erbij of vol); anders een lokale melding
+            if (!Push.hasToken && before[c.id] == false && c.details.stampsFull) Reminders.stampsFull(applicationContext, c)
             GoogleWallet.updateIfSaved(c)
         }
         return Result.success()

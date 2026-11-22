@@ -81,7 +81,7 @@ private fun AccountContent(onDone: (() -> Unit)?) {
         SectionHeader("Account")
         Group {
             RowItem(Icons.AutoMirrored.Outlined.Logout, "Uitloggen", "Je kaarten blijven op dit toestel") {
-                scope.launch { Account.signOut(); DeviceRegistry.registerIfNeeded(force = true) }
+                scope.launch { Account.signOut(); DeviceRegistry.registerIfNeeded(appContext, force = true) }
             }
             RowItem(Icons.Outlined.DeleteForever, "Account verwijderen", "Wist je account en de kaarten op de server", tint = MaterialTheme.colorScheme.error) {
                 confirmDelete = true
@@ -95,7 +95,7 @@ private fun AccountContent(onDone: (() -> Unit)?) {
                 TextButton({
                     confirmDelete = false
                     scope.launch {
-                        try { Account.deleteAccount(); DeviceRegistry.registerIfNeeded(force = true) } catch (e: PasrError) { message = e.message }
+                        try { Account.deleteAccount(); DeviceRegistry.registerIfNeeded(appContext, force = true) } catch (e: PasrError) { message = e.message }
                     }
                 }) { Text("Verwijderen", color = MaterialTheme.colorScheme.error) }
             },
@@ -144,7 +144,7 @@ private fun AccountContent(onDone: (() -> Unit)?) {
                 }
                 if (Account.isSignedIn) {
                     Sync.sync()
-                    DeviceRegistry.registerIfNeeded(force = true)
+                    DeviceRegistry.registerIfNeeded(appContext, force = true)
                     onDone?.invoke()
                 }
             } catch (e: PasrError) {

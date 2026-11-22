@@ -84,11 +84,11 @@ fun Root() {
         LifecycleEventEffect(Lifecycle.Event.ON_START) {
             scope.launch {
                 Catalog.refresh()
-                DeviceRegistry.registerIfNeeded()
+                DeviceRegistry.registerIfNeeded(appContext)
                 if (Account.isSignedIn) Sync.sync()
                 val before = CardStore.visible.filter { it.isBusinessStamps }.associate { it.id to it.details.stampsFull }
                 for (c in Business.refreshAll()) {
-                    if (before[c.id] == false && c.details.stampsFull) Reminders.stampsFull(appContext, c)
+                    if (!app.lrvdlinden.pasr.notify.Push.hasToken && before[c.id] == false && c.details.stampsFull) Reminders.stampsFull(appContext, c)
                     GoogleWallet.updateIfSaved(c)
                 }
             }
@@ -102,6 +102,25 @@ fun Root() {
             val id = openCard ?: return@LaunchedEffect
             Incoming.cardId.value = null
             if (CardStore.get(id) != null) { nav.home(); nav.push(Screen.Detail(id)) }
+        }
+        val openStore by Incoming.store.collectAsState()
+        LaunchedEffect(openStore) {
+            val id = openStore ?: return@LaunchedEffect
+            Incoming.store.value = null
+            val card = CardStore.visible.firstOrNull { it.templateID.equals(id, true) }
+            val t = Catalog.template(id)
+            nav.home()
+            when {
+                card != null -> nav.push(Screen.Detail(card.id))
+                t != null -> nav.push(Screen.Editor(template = t, kind = t.kind))
+                else -> nav.push(Screen.Add)
+            }
+        }
+        // kaarten veranderd (winkels, zakelijke stempelkaarten): push-gegevens opnieuw melden
+        val cardsNow by CardStore.cards.collectAsState()
+        LaunchedEffect(cardsNow.map { "${it.templateID}|${it.details.memberCode}|${it.deletedAt != null}" }.toSet()) {
+            kotlinx.coroutines.delay(3000)
+            DeviceRegistry.registerIfNeeded(appContext)
         }
 
         CompositionLocalProviders(nav, snack) {

@@ -164,6 +164,8 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
     var reminders by remember { mutableStateOf(Prefs.remindersEnabled) }
     var brightness by remember { mutableStateOf(Prefs.brightness) }
     var appearance by remember { mutableStateOf(Prefs.appearance) }
+    var news by remember { mutableStateOf(Prefs.bool("push.news")) }
+    val scope = rememberCoroutineScope()
     SimpleScaffold("Instellingen") {
         SectionHeader("Account")
         Group {
@@ -184,6 +186,12 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
         SectionHeader("Meldingen")
         Group {
             Toggle("Herinneringen", reminders, "Cadeaukaarten en codes die verlopen, abonnementen die verlengen") { reminders = it; Prefs.remindersEnabled = it }
+            if (app.lrvdlinden.pasr.notify.Push.available(context)) {
+                Toggle("Nieuws over mijn kaarten", news, "Af en toe een bericht over winkels waarvan je een kaart hebt. Stempels van zaken krijg je altijd.") {
+                    news = it; Prefs.setBool("push.news", it)
+                    scope.launch { app.lrvdlinden.pasr.data.DeviceRegistry.registerIfNeeded(context, force = true) }
+                }
+            }
             RowItem(Icons.Outlined.Notifications, "Meldingen in Android-instellingen") {
                 val i = if (Build.VERSION.SDK_INT >= 26) Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                     else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:${context.packageName}"))

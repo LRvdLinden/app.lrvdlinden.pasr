@@ -4,16 +4,30 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.util.Base64
 import app.lrvdlinden.pasr.BuildConfig
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
-/** Meldt bij het opstarten welke app, welk platform en welke versie dit toestel draait (voor de inzichten in het beheer). */
+/**
+ * Meldt bij het opstarten welke app, welk platform en welke versie dit toestel draait (voor de inzichten in het beheer),
+ * met het FCM-token voor pushmeldingen, "Nieuws over mijn kaarten", de winkel-id's van je kaarten (alleen ids zoals
+ * "ah") en de klantcodes van zakelijke stempelkaarten (voor een melding na een stempel). Hoogstens 1x per dag, en meteen
+ * als er iets van verandert.
+ */
 object DeviceRegistry {
-    suspend fun registerIfNeeded(force: Boolean = false) {
+    private val lock = kotlinx.coroutines.sync.Mutex()
+
+    suspend fun registerIfNeeded(context: android.content.Context, force: Boolean = false) = lock.withLock {
         val user = Account.session.value?.userID ?: "-"
-        val stamp = "${BuildConfig.VERSION_NAME}|${BuildConfig.VERSION_CODE}|$user"
+        val token = app.lrvdlinden.pasr.notify.Push.token(context)
+        val cards = CardStore.visible
+        val stores = cards.mapNotNull { it.templateID?.lowercase() }.filter { Regex("^[a-z0-9-]{2,40}$").matches(it) }.distinct().sorted().take(300)
+        val codes = cards.mapNotNull { c -> c.details.memberCode?.uppercase()?.takeIf { c.isBusinessStamps } }.distinct().sorted().take(100)
+        val news = Prefs.bool("push.news")
+        val stamp = listOf(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, user, token ?: "", news, stores.joinToString(","), codes.joinToString(","))
+            .joinToString("|").hashCode().toString()
         val fresh = nowMs() - Prefs.long("device.at") < 24 * 3_600_000 && Prefs.string("device.stamp") == stamp
-        if (fresh && !force) return
+        if (fresh && !force) return@withLock
         val body = JSONObject()
             .put("p_device", Prefs.deviceId)
             .put("p_app", "pasr")
@@ -22,6 +36,11 @@ object DeviceRegistry {
             .put("p_build", BuildConfig.VERSION_CODE.toString())
             .put("p_os", "Android ${Build.VERSION.RELEASE}")
             .put("p_country", Account.deviceCountry ?: JSONObject.NULL)
+        if (token != null) {
+            body.put("p_push_token", token).put("p_push_provider", "fcm").put("p_push_news", news)
+                .put("p_stores", org.json.JSONArray(if (news) stores else emptyList<String>()))
+                .put("p_member_codes", org.json.JSONArray(codes))
+        }
         runCatching { Api.publicRpc("pasr_device_register", body) }.onSuccess {
             Prefs.setLong("device.at", nowMs())
             Prefs.setString("device.stamp", stamp)

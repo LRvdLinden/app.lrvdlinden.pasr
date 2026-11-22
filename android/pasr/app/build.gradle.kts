@@ -4,6 +4,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
+// Firebase (push): google-services.json komt uit de secret FIREBASE_GOOGLE_SERVICES_JSON en staat nooit in de repo.
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
 // Previews (screenshots zonder emulator): de workflow zet hier alleen in de job Previews de Paparazzi-plugin bij.
 
 // Ondertekenen komt uit de omgeving (GitHub Actions), nooit uit bestanden in de repo. Elke release met dezelfde
@@ -79,5 +81,8 @@ dependencies {
     // Barcodes tekenen
     implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Push (FCM)
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

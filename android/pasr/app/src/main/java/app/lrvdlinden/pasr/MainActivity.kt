@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 object Incoming {
     val link = MutableStateFlow<Uri?>(null)
     val cardId = MutableStateFlow<String?>(null)
+    /** Winkel uit een pushbericht: open die kaart, of Kaart toevoegen bij die winkel. */
+    val store = MutableStateFlow<String?>(null)
     /** Vergrendeld (app-slot): bij opstarten en elke keer dat Pasr weer naar voren komt. */
     val locked = MutableStateFlow(false)
     /** Even naar een ander scherm (fotokiezer, delen, Google Wallet): dan niet vergrendelen bij terugkomst. */
@@ -52,6 +54,7 @@ class MainActivity : FragmentActivity() {
         intent ?: return
         intent.data?.let { Incoming.link.value = it }
         intent.getStringExtra("cardId")?.let { Incoming.cardId.value = it }
+        intent.getStringExtra("store")?.let { Incoming.store.value = it }
         if (intent.action == Intent.ACTION_SEND) {
             intent.getStringExtra(Intent.EXTRA_TEXT)?.let { text ->
                 Regex("(https://(www\\.)?pasr\\.nl/\\S+|pasr://\\S+)").find(text)?.value?.let { Incoming.link.value = Uri.parse(it) }

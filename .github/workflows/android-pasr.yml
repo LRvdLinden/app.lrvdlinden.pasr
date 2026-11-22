@@ -125,6 +125,24 @@ jobs:
             echo "ANDROID_KEY_ALIAS=pasr"; echo "ANDROID_KEY_PASSWORD=$PASS"
           } >> "$GITHUB_ENV"
 
+      - name: Firebase (google-services.json uit de secret, nooit in de repo)
+        env:
+          GS: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GS" ]; then echo "::warning::FIREBASE_GOOGLE_SERVICES_JSON ontbreekt: APK zonder push (alleen lokale meldingen)."; exit 0; fi
+          umask 077
+          printf '%s' "$GS" > /tmp/gs.json
+          if ! python3 -c 'import json,sys;json.load(open("/tmp/gs.json"))' 2>/dev/null; then printf '%s' "$GS" | base64 -d > /tmp/gs.json 2>/dev/null || true; fi
+          if python3 - <<'PY'
+          import json, sys
+          j = json.load(open("/tmp/gs.json"))
+          names = [c.get("client_info", {}).get("android_client_info", {}).get("package_name") for c in j.get("client", [])]
+          print("Firebase-project:", j.get("project_info", {}).get("project_id"), "apps:", ", ".join(n for n in names if n))
+          sys.exit(0 if "app.lrvdlinden.pasr" in names else 1)
+          PY
+          then cp /tmp/gs.json app/google-services.json; echo "::notice::Push (FCM) staat aan in deze build."
+          else echo "::warning::google-services.json heeft geen app app.lrvdlinden.pasr: APK zonder push. Voeg de app toe in Firebase."; fi
+          rm -f /tmp/gs.json
       - name: APK bouwen
         env:
           VERSION_NAME: ${{ steps.version.outputs.name }}
@@ -193,7 +211,7 @@ jobs:
           echo "::warning::Kon de branch android-builds niet bijwerken"
       - name: Sleutel opruimen
         if: always()
-        run: rm -f "$RUNNER_TEMP/pasr.jks"
+        run: rm -f "$RUNNER_TEMP/pasr.jks" app/google-services.json
 
       - uses: actions/upload-artifact@v4
         with:
