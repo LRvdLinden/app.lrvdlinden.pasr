@@ -3337,8 +3337,84 @@ begin
   return jsonb_build_object('ok', true, 'members', n);
 end $$;
 
--- Zaak voor de huisstijl (functie admin, actie business_brand): website en status.
--- (De functie leest pasr_businesses direct met de service role; hier niets extra.)
+-- ---- beheer: testklant per stempelkaart (App Review van Pasr Zakelijk) ----
+-- Een lid met label "Testklant (App Review)", zelfde codegenerator als pasr_business_join. De reviewer scant de QR-code
+-- of typt de code. Alleen leden met een label kan het beheer resetten of verwijderen.
+alter table public.pasr_business_members add column if not exists label text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'pasr_business_members_label_check') then
+    alter table public.pasr_business_members add constraint pasr_business_members_label_check check (label is null or char_length(label) <= 60);
+  end if;
+end $$;
+
+create or replace function public.pasr_admin_test_members_json(p_card uuid) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'member_code', m.member_code, 'label', m.label, 'stamps_count', m.stamps_count,
+      'rewards_redeemed', m.rewards_redeemed, 'created_at', m.created_at, 'last_stamp_at', m.last_stamp_at) order by m.created_at), '[]'::jsonb)
+  from public.pasr_business_members m where m.business_card_id = p_card and m.label is not null;
+$$;
+
+create or replace function public.pasr_admin_test_member_create(p_card uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare c public.pasr_business_cards; m public.pasr_business_members;
+begin
+  select * into c from public.pasr_business_cards where id = p_card;
+  if c.id is null then raise exception 'not_found' using errcode = 'P0002'; end if;
+  if (select count(*) from public.pasr_business_members where business_card_id = c.id and label is not null) >= 10 then
+    raise exception 'test_limit' using errcode = '22023';
+  end if;
+  insert into public.pasr_business_members (business_card_id, member_code, label)
+  values (c.id, public.pasr_business_new_code(), 'Testklant (App Review)') returning * into m;
+  perform public.pasr_admin_event(c.business_id, c.id, 'Testklant (App Review) gemaakt: …' || right(m.member_code, 4));
+  return jsonb_build_object('id', m.id, 'member_code', m.member_code, 'label', m.label, 'stamps_count', m.stamps_count,
+    'rewards_redeemed', m.rewards_redeemed, 'created_at', m.created_at, 'last_stamp_at', m.last_stamp_at);
+end $$;
+
+-- p_action: 'reset' (stempels en beloningen op 0) of 'delete'.
+create or replace function public.pasr_admin_test_member(p_member uuid, p_action text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare m public.pasr_business_members; c public.pasr_business_cards;
+begin
+  select * into m from public.pasr_business_members where id = p_member and label is not null;
+  if m.id is null then raise exception 'not_found' using errcode = 'P0002'; end if;
+  select * into c from public.pasr_business_cards where id = m.business_card_id;
+  if p_action = 'reset' then
+    update public.pasr_business_members set stamps_count = 0, rewards_redeemed = 0, last_stamp_at = null, updated_at = now()
+    where id = m.id returning * into m;
+    perform public.pasr_admin_event(c.business_id, c.id, 'Testklant gereset: …' || right(m.member_code, 4));
+    return jsonb_build_object('ok', true, 'stamps_count', 0);
+  elsif p_action = 'delete' then
+    perform public.pasr_admin_event(c.business_id, c.id, 'Testklant verwijderd: …' || right(m.member_code, 4));
+    delete from public.pasr_business_members where id = m.id;
+    return jsonb_build_object('ok', true);
+  end if;
+  raise exception 'bad_request' using errcode = '22023';
+end $$;
+
+-- kaart voor het beheer: met de testklanten
+create or replace function public.pasr_admin_card_json(c public.pasr_business_cards, b public.pasr_businesses) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select public.pasr_business_card_json(c, b) || jsonb_build_object('business_id', b.id, 'published', c.published, 'updated_at', c.updated_at,
+    'members', (select count(*) from public.pasr_business_members m where m.business_card_id = c.id),
+    'test_members', public.pasr_admin_test_members_json(c.id));
+$$;
+
+-- kaarten in het beheer-overzicht ook met testklanten
+create or replace function public.pasr_admin_business_json(b public.pasr_businesses) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select public.pasr_business_json(b) || jsonb_build_object(
+    'cards', coalesce((select jsonb_agg(x || jsonb_build_object('test_members', public.pasr_admin_test_members_json((x->>'id')::uuid)))
+                       from jsonb_array_elements(public.pasr_business_cards_json(b, true)) x), '[]'::jsonb),
+    'has_owner', b.owner is not null,
+    'owner_email', (select u.email from auth.users u where u.id = b.owner),
+    'owner_invite', public.pasr_admin_owner_invite_json(b.id),
+    'created_by', b.created_by,
+    'staff_count', (select count(*) from public.pasr_business_staff s where s.business_id = b.id and s.role = 'staff'
+                    and s.revoked_at is null and s.user_id is not null),
+    'last_event_at', (select max(at) from public.pasr_business_events e where e.business_id = b.id and e.kind <> 'admin'));
+$$;
+
 
 -- ---- rechten ----
 revoke all on function public.pasr_admin_event(uuid, uuid, text), public.pasr_business_log_json_all(uuid, int, boolean),
@@ -3347,6 +3423,7 @@ revoke all on function public.pasr_admin_event(uuid, uuid, text), public.pasr_bu
   public.pasr_admin_business_json(public.pasr_businesses), public.pasr_admin_owner_invite(uuid, text),
   public.pasr_admin_card_json(public.pasr_business_cards, public.pasr_businesses), public.pasr_admin_card_save(uuid, jsonb),
   public.pasr_admin_card_publish(uuid, boolean), public.pasr_admin_card_delete(uuid),
+  public.pasr_admin_test_members_json(uuid), public.pasr_admin_test_member_create(uuid), public.pasr_admin_test_member(uuid, text),
   public.pasr_business_log_json(uuid, int), public.pasr_business_staff_invite_info(text), public.pasr_business_staff_accept(text),
   public.pasr_business_card_save(jsonb), public.pasr_admin_businesses(), public.pasr_admin_business_detail(uuid, int, int),
   public.pasr_admin_business_status(uuid, text), public.pasr_admin_business_settings(uuid, jsonb), public.pasr_admin_business_staff_revoke(uuid)
@@ -3355,5 +3432,6 @@ grant execute on function public.pasr_business_staff_invite_info(text) to anon, 
 grant execute on function public.pasr_business_staff_accept(text), public.pasr_business_card_save(jsonb) to authenticated;
 grant execute on function public.pasr_admin_business_save(jsonb), public.pasr_admin_owner_invite(uuid, text),
   public.pasr_admin_card_save(uuid, jsonb), public.pasr_admin_card_publish(uuid, boolean), public.pasr_admin_card_delete(uuid),
+  public.pasr_admin_test_member_create(uuid), public.pasr_admin_test_member(uuid, text),
   public.pasr_admin_businesses(), public.pasr_admin_business_detail(uuid, int, int), public.pasr_admin_business_status(uuid, text),
   public.pasr_admin_business_settings(uuid, jsonb), public.pasr_admin_business_staff_revoke(uuid) to service_role;

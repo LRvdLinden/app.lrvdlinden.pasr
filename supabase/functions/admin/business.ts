@@ -185,7 +185,7 @@ export function cleanCardInput(body: Record<string, unknown>):
 
 /** Bekende fouten uit de database (message of hint) naar een code en HTTP-status; anders null (= serverfout). */
 const DB_ERRORS: Record<string, number> = {
-  not_found: 404, owner_taken: 409, has_owner: 409, not_approved: 409, card_limit: 409,
+  not_found: 404, owner_taken: 409, has_owner: 409, not_approved: 409, card_limit: 409, test_limit: 409,
   bad_name: 400, bad_email: 400, bad_url: 400, bad_reward: 400, bad_color: 400, bad_total: 400, bad_logo: 400, bad_card: 400,
   bad_business: 400, bad_settings: 400, bad_status: 400,
 };

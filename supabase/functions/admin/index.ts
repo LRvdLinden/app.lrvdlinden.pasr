@@ -38,6 +38,8 @@
 //   business_card_save {business_id, card:{id?, name, reward, stamps_total, color, text_color?, logo?, published?}} -> {card}
 //   business_card_publish {id, published}           -> {card}                 (409 not_approved)
 //   business_card_delete {id}                       -> {ok, members}
+//   business_test_member {card_id}                -> {member:{id, member_code, label, stamps_count, …}} (Testklant (App Review))
+//   business_test_member_reset {id} / business_test_member_delete {id} -> {ok}  (alleen leden met een label)
 //   business_brand   {business_id?, url?}           -> {name, logo, color, text_color, source_url, domain} (zelfde als business-brand)
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -676,6 +678,21 @@ Deno.serve(async (req) => {
         const { data, error } = await db.rpc("pasr_admin_card_delete", { p_card: body.id });
         if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
         await audit("business_card_delete", ipHash, String(body.id));
+        return json(data);
+      }
+      case "business_test_member": {
+        if (!isUuid(body.card_id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_test_member_create", { p_card: body.card_id });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        await audit("business_test_member", ipHash, String(body.card_id));
+        return json({ member: data });
+      }
+      case "business_test_member_reset":
+      case "business_test_member_delete": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_test_member", { p_member: body.id, p_action: action.endsWith("reset") ? "reset" : "delete" });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        await audit(action, ipHash, String(body.id));
         return json(data);
       }
       case "business_brand": {

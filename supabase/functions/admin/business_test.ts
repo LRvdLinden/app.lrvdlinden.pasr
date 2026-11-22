@@ -85,5 +85,6 @@ Deno.test("databasefouten", () => {
   ok(dbError({ message: "owner_taken" })?.status === 409, "eigenaar bezet");
   ok(dbError({ message: "Max per scan moet tussen 1 en 30 liggen.", hint: "bad_settings" })?.error === "bad_settings", "hint");
   ok(dbError({ message: "not_found" })?.status === 404, "niet gevonden");
+  ok(dbError({ message: "test_limit" })?.error === "test_limit", "hoogstens 10 testklanten");
   ok(dbError({ message: "iets anders" }) === null, "onbekend = serverfout");
 });
