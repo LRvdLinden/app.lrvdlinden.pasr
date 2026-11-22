@@ -1124,7 +1124,7 @@
         : "<h1>Uitnodiging van " + esc(info.business) + "</h1><p>" + (info.name ? esc(info.name) + ", je" : "Je") + " bent uitgenodigd om stempels te geven bij " + esc(info.business) + (info.city ? " in " + esc(info.city) : "") + ". Je logt in met je eigen Pasr-account.</p>") +
         '<p style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="zk-btn" href="' + appLink + '">Open in Pasr Zakelijk</a>' +
         '<button class="zk-btn ghost" type="button" id="invWeb">' + (owner ? (session ? "Zaak overnemen" : "Inloggen en zaak overnemen") : (session ? "Accepteren in de browser" : "Inloggen en accepteren")) + "</button></p>" +
-        '<p style="font-size:14px">De app Pasr Zakelijk komt binnenkort in de App Store. Tot die tijd werkt de scanner in je browser.</p>');
+        '<p style="font-size:14px">Nog geen Pasr Zakelijk? Download hem in de <a href="https://apps.apple.com/nl/app/pasrzakelijk/id6837907454" rel="noopener">App Store</a> of <a href="/zakelijk/download/">voor Android</a>, of gebruik de scanner in je browser.</p>');
       $("#invWeb").addEventListener("click", async function () {
         if (session && (await token())) return accept();
         location.hash = "inloggen"; loginView("login");
