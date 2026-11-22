@@ -1,7 +1,9 @@
 name: Beheer
 
-# Builds beheer.pasr.nl-web.zip (folder web/) from beheer/web as a workflow artifact. Léon uploads beheer.pasr.nl
-# himself; this workflow never uploads via FTP (the FTP_* secrets belong to pasr.nl and must never touch beheer).
+# Publishes Pasr Beheer (beheer/web) to https://beheer.pasr.nl via FTPS with the FTP_BEHEER_* secrets only
+# (FTP_BEHEER_SERVER, FTP_BEHEER_USER, FTP_BEHEER_PASSWORD, FTP_BEHEER_PORT; the account lands in the beheer folder),
+# and always also builds beheer.pasr.nl-web.zip (folder web/) as an artifact. The pasr.nl FTP_* secrets are never used.
+# Safety: if the target folder holds an index.html that is not Pasr Beheer (no admin.js), nothing is uploaded.
 on:
   push:
     branches: [main]
@@ -34,15 +36,97 @@ jobs:
           print("Config:", "set" if url and key else "kept (secrets PASR_SUPABASE_URL / PASR_SUPABASE_KEY missing)")
           PY
       - name: Zip for manual upload
-        id: upload
         run: |
           mkdir -p out/web && cp -r beheer/web/. out/web/
           (cd out && zip -qr ../beheer.pasr.nl-web.zip web)
-          echo "beheer.pasr.nl-web.zip gemaakt; Léon uploadt die zelf naar beheer.pasr.nl." | tee /tmp/report.txt
+          echo "beheer.pasr.nl-web.zip gemaakt (artifact)." | tee /tmp/report.txt
       - uses: actions/upload-artifact@v4
         with:
           name: beheer.pasr.nl-web
           path: beheer.pasr.nl-web.zip
+      - name: Install lftp
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+      - name: Upload via FTPS
+        id: upload
+        env:
+          FTP_SERVER: ${{ secrets.FTP_BEHEER_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_BEHEER_USER }}
+          FTP_PORT: ${{ secrets.FTP_BEHEER_PORT }}
+          FTP_PASSWORD: ${{ secrets.FTP_BEHEER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          note(){ echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; echo "$1" >> /tmp/report.txt; }
+          if [ -z "${FTP_SERVER:-}" ] || [ -z "${FTP_USERNAME:-}" ] || [ -z "${FTP_PASSWORD:-}" ]; then
+            note "FTP_BEHEER_* secrets missing — dashboard not uploaded (use the zip artifact)."
+            exit 1
+          fi
+          trim(){ printf '%s' "$1" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+          FTP_SERVER=$(trim "$FTP_SERVER" | sed -E 's#^[a-zA-Z]+://##; s#/.*$##; s#:[0-9]+$##')
+          FTP_USERNAME=$(trim "$FTP_USERNAME")
+          PORT=$(trim "${FTP_PORT:-}" | tr -cd '0-9'); PORT="${PORT:-21}"
+          export LFTP_PASSWORD=$(trim "$FTP_PASSWORD")
+          CA=/tmp/ftp-ca.pem; cp /etc/ssl/certs/ca-certificates.crt "$CA"
+          if [ "$PORT" = "22" ]; then
+            # SFTP (SSH): encrypted; the server key is recorded on first use
+            mkdir -p ~/.ssh; ssh-keyscan -p 22 -T 20 "$FTP_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
+            common="set cmd:fail-exit true; set net:max-retries 3; set net:timeout 30; set dns:order inet; set sftp:auto-confirm no"
+            HOST="sftp://$FTP_SERVER"
+            note "Connecting with SFTP (port 22)."
+          else
+            common="set cmd:fail-exit true; set net:max-retries 3; set net:timeout 30; set dns:order inet; set ftp:passive-mode true; set ftp:ssl-force true; set ftp:ssl-protect-data true; set ssl:verify-certificate yes; set ssl:check-hostname yes; set ssl:ca-file $CA"
+            ip_of(){ (getent ahostsv4 "$1" || true) | awk 'NR==1{print $1}'; }
+            if [ "$PORT" = "990" ]; then tls="-connect"; else tls="-starttls ftp -connect"; fi
+            sc(){ timeout 40 openssl s_client ${tls/-connect/} -connect "$1:$PORT" -servername "$1" "${@:2}" </dev/null 2>/dev/null; }
+            add_chain(){
+              local aia
+              aia=$(sc "$1" | openssl x509 -noout -text 2>/dev/null | grep -oE 'CA Issuers - URI:[^ ]+' | sed 's/CA Issuers - URI://' | head -1 || true)
+              [ -n "$aia" ] || return 0
+              curl -fsSL --max-time 20 "$aia" -o /tmp/inter.bin 2>/dev/null || return 0
+              openssl x509 -inform DER -in /tmp/inter.bin -out /tmp/inter.pem 2>/dev/null || openssl x509 -in /tmp/inter.bin -out /tmp/inter.pem 2>/dev/null || return 0
+              cat /tmp/inter.pem >> "$CA"
+            }
+            cert_ok(){ sc "$1" -verify_hostname "$1" -verify_return_error -CAfile "$CA" | grep -q 'Verify return code: 0 (ok)'; }
+            HOST=""
+            base_ip=$(ip_of "$FTP_SERVER")
+            [ -n "$base_ip" ] || { note "FTP_SERVER does not resolve."; exit 1; }
+            add_chain "$FTP_SERVER"
+            if cert_ok "$FTP_SERVER"; then HOST="$FTP_SERVER"; else
+              names=$(sc "$FTP_SERVER" | openssl x509 -noout -ext subjectAltName -subject 2>/dev/null \
+                | grep -oE '(DNS:|CN ?= ?)(\*\.)?[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+' | sed -E 's/^(DNS:|CN ?= ?)//' | sort -u || true)
+              ptr=$(getent hosts "$base_ip" 2>/dev/null | awk '{print $2}' | sed 's/\.$//' || true)
+              cands="$ptr"; first="${FTP_SERVER%%.*}"
+              for n in $names; do case "$n" in \*.*) cands="$cands $first.${n#\*.} ftp.${n#\*.}";; *) cands="$cands $n";; esac; done
+              for n in $(echo $cands | tr ' ' '\n' | sort -u); do
+                [ "$(ip_of "$n")" = "$base_ip" ] || continue
+                if cert_ok "$n"; then HOST="$n"; break; fi
+              done
+            fi
+            [ -n "$HOST" ] || { note "No valid FTPS certificate found for FTP_SERVER on port $PORT. The server's certificate is for: $(echo $names | tr '\n' ' ')${ptr:+ (reverse DNS: $ptr)}. Set the secret FTP_SERVER to one of those names (the one your hosting gives for FTP)."; exit 1; }
+            [ "$PORT" = "990" ] && HOST="ftps://$HOST"
+          fi
+          run(){ lftp -e "$common; open -p $PORT --env-password -u \"$FTP_USERNAME\" \"$HOST\"; $1; bye"; }
+          ok=""
+          for attempt in 1 2 3; do
+            [ "$attempt" -gt 1 ] && sleep 30
+            if run "cls -1 > /tmp/root.txt" 2>/tmp/err.txt; then ok=1; break; fi
+            echo "Login attempt $attempt failed: $(grep -viE 'user|pass' /tmp/err.txt | tr '\n' ' ' | tail -c 200)"
+          done
+          if [ -z "$ok" ]; then
+            msg=$(grep -viE 'user|pass|@' /tmp/err.txt | tr '\n' ' ' | sed "s/$FTP_USERNAME/***/g" | tail -c 300 || true)
+            note "Login to the FTP server failed (host checked: $([ "$HOST" = "$FTP_SERVER" ] && echo FTP_SERVER || echo "$HOST"), port $PORT). Server said: ${msg:-no message}"
+            exit 1
+          fi
+          TARGET="."   # the FTP_BEHEER account lands in the folder of beheer.pasr.nl
+          # safety: never overwrite another website
+          rm -f /tmp/remote-index.html
+          run "get \"$TARGET/index.html\" -o /tmp/remote-index.html" >/dev/null 2>&1 || true
+          if [ -s /tmp/remote-index.html ] && ! grep -q "admin.js" /tmp/remote-index.html; then
+            note "Stopped: the FTP_BEHEER folder holds another website (its index.html is not Pasr Beheer). Nothing uploaded."
+            exit 1
+          fi
+          run "mirror -R --verbose --parallel=4 --only-newer --exclude-glob .DS_Store beheer/web/ \"$TARGET\""
+          run "put beheer/web/.htaccess -o \"$TARGET/.htaccess\""
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://beheer.pasr.nl/ || true)
       - name: Report on the commit
         if: always()
         env:
