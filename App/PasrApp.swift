@@ -134,6 +134,7 @@ struct RootView: View {
             await StorePush.syncIfEnabled()
             await Birthday.syncWithAccount()
             await Birthday.reschedule(cards)
+            await DeviceRegistry.registerIfNeeded()
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
