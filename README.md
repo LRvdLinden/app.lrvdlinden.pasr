@@ -88,6 +88,18 @@ kaarten"), voor Pasr, Pasr Zakelijk of beide en voor Alles, Apple of Android, op
 Pasr kent (kaart, tijdelijke kaart, uitnodiging, zakelijke stempelkaart) op die plek in de app, andere in
 SFSafariViewController; pas na splash, welkomst en ontgrendelen. Android: Custom Tabs (anders de browser).
 
+## Laatst gebruikt (build 45)
+
+Onder de knoppen in het kaartdetail staat **Laatst gebruikt** (zoals de transacties in Apple Wallet): de laatste drie
+keer dat je de kaart liet zien, met het logo, het filiaal (`NearbyStores.placeName`), plaats en provincie (CLGeocoder bij
+het tonen, velden `city`/`region` in `CardEvent`) en de relatieve tijd. Rechts staat het bedrag dat je uitgaf, of
+**Toevoegen**. **Alles** opent `RecentUsesView`: deze maand (aantal keer en totaal ingevuld) en alle keren per periode;
+tik op een regel om het bedrag aan te passen of de regel te verwijderen. Bij een cadeaukaart boekt een bedrag ook af van
+het tegoed (`spentID` koppelt het gebruiksmoment aan de afboeking). Gebruiksmomenten met een bedrag gaan mee met de
+accountsync (`"uses": true` in de kaart-JSON; oudere versies en Android vóór deze build laten ze staan). Geen
+CloudKit-schemawijziging: alles zit in `historyData`. Vervangt de regel "Vorige keer …" en, bij klantenkaarten, de oude
+geschiedenis-sheet (de klokknop opent nu Laatst gebruikt; bij cadeaukaarten blijft Tegoed en uitgaven).
+
 ## Website
 
 De site staat in `website/` en heeft schone adressen (`/privacy/`, `/support/`, geen `.html`). De homepage wordt gemaakt met `python3 tools/make_website.py` (met echte barcodes voor de voorbeeldkaarten).
