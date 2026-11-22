@@ -47,6 +47,7 @@
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
+import { cleanFcmToken, fcmMessage, fcmResult, fcmUrl, importRsaKey, memberPayload, oauthAssertion, parseServiceAccount, type ServiceAccount } from "./fcm.ts";
 import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, topicOrder, wants } from "./push.ts";
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
@@ -188,10 +189,69 @@ async function apnsSend(token: string, sandbox: boolean, payload: unknown, topic
   return r;
 }
 
+// ---- FCM (Android) ----
+// Function secret FIREBASE_SERVICE_ACCOUNT_JSON (zet de workflow Backend). Zonder secret: alleen APNs, zoals vroeger.
+let fcmSa: ServiceAccount | null | undefined;
+let fcmAuth: { token: string; until: number } | null = null;
+const fcmAccount = () => (fcmSa === undefined ? (fcmSa = parseServiceAccount(Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON"))) : fcmSa);
+const fcmConfigured = () => !!fcmAccount();
+const pushConfigured = () => apnsConfigured() || fcmConfigured();
+async function fcmBearer(): Promise<string> {
+  if (fcmAuth && Date.now() < fcmAuth.until) return fcmAuth.token;
+  const sa = fcmAccount()!;
+  const assertion = await oauthAssertion(sa, await importRsaKey(sa.private_key));
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) { await res.body?.cancel(); throw new Error(`fcm_oauth_${res.status}`); }
+  const j = await res.json();
+  fcmAuth = { token: String(j.access_token), until: Date.now() + 50 * 60_000 };
+  return fcmAuth.token;
+}
+async function fcmSend(token: string, payload: unknown, channel = "news") {
+  const sa = fcmAccount();
+  if (!sa) return { ok: false as const, invalid: false, error: "fcm_not_configured" };
+  let auth: string;
+  try { auth = await fcmBearer(); } catch (e) {
+    console.error("admin", "fcm_auth", e instanceof Error ? e.message.slice(0, 40) : "?");
+    return { ok: false as const, invalid: false, error: "fcm_auth" };
+  }
+  let res: Response;
+  try {
+    res = await fetch(fcmUrl(sa.project_id), {
+      method: "POST", headers: { authorization: `Bearer ${auth}`, "content-type": "application/json" },
+      body: JSON.stringify(fcmMessage(token, payload, channel)), signal: AbortSignal.timeout(10000),
+    });
+  } catch {
+    return { ok: false as const, invalid: false, error: "fcm_unreachable" };
+  }
+  let b: unknown = null;
+  try { b = await res.json(); } catch { /* leeg */ }
+  if (res.status === 401) fcmAuth = null;
+  return fcmResult(res.status, b);
+}
+/** Naar een lijst Android-toestellen (pasr_devices); ongeldige tokens gaan weg. Geeft {sent, failed}. */
+async function fcmToDevices(list: { device_id: string; token: string }[], payload: unknown, channel: string) {
+  let sent = 0, failed = 0;
+  const invalid: string[] = [];
+  for (const part of chunks(list, 100)) {
+    const res = await Promise.all(part.map(async (d) => ({ d, r: await fcmSend(d.token, payload, channel) })));
+    for (const x of res) {
+      if (x.r.ok) sent++;
+      else { failed++; if (x.r.invalid) invalid.push(x.d.device_id); }
+    }
+  }
+  if (invalid.length) await db.rpc("pasr_admin_push_forget", { p_devices: invalid });
+  return { sent, failed };
+}
+
 /** Melding naar alle apparaten die deze soort willen; ongeldige tokens gaan weg. */
 /** Naar een beheer-apparaat: met het topic van die app. Weet de server nog niet welke app het is (oudere versies,
  *  of het topic klopt niet: DeviceTokenNotForTopic), dan probeert hij de andere beheer-app en onthoudt het. */
-async function adminSend(d: { device_id: string; token: string; sandbox: boolean; topic?: string | null }, payload: unknown) {
+async function adminSend(d: { device_id: string; token: string; sandbox: boolean; topic?: string | null; provider?: string | null }, payload: unknown) {
+  if (d.provider === "fcm") return await fcmSend(d.token, payload, "admin");
   let last: Awaited<ReturnType<typeof apnsSend>> = { ok: false as const, invalid: true, error: "apns_none" };
   for (const topic of topicOrder(d.topic)) {
     const r = await apnsSend(d.token, d.sandbox, payload, topic);
@@ -207,8 +267,8 @@ async function adminSend(d: { device_id: string; token: string; sandbox: boolean
 
 /** Melding naar alle apparaten die deze soort willen; ongeldige tokens gaan weg. */
 async function pushAll(kind: Kind, payload: unknown): Promise<number> {
-  if (!apnsConfigured()) return 0;
-  const { data, error } = await db.from("admin_push_devices").select("device_id, token, sandbox, prefs, topic");
+  if (!pushConfigured()) return 0;
+  const { data, error } = await db.from("admin_push_devices").select("device_id, token, sandbox, prefs, topic, provider");
   if (error) throw new Error(error.message);
   const targets = (data ?? []).filter((d) => wants(d.prefs, kind));
   const results = await Promise.all(targets.map(async (d) => ({ d, r: await adminSend(d, payload) })));
@@ -258,7 +318,29 @@ async function pushNewStore(id: string, name: string, requesters: string[]): Pro
   if (invalid.length) await db.from("pasr_user_push").delete().in("device_id", invalid);
   const failed = results.filter((x) => !x.r.ok && !x.r.invalid);
   if (failed.length) console.error("admin", "user_push", (failed[0].r as { error: string }).error, failed.length);
-  return results.filter((x) => x.r.ok).length;
+  // Android: wie de winkel aanvroeg (ingelogd op een Android-toestel met push)
+  let android = 0;
+  if (fcmConfigured() && requesters.length) {
+    const { data: devs } = await db.from("pasr_devices").select("device_id, push_token").eq("app", "pasr").eq("push_provider", "fcm")
+      .not("push_token", "is", null).in("user_id", requesters.slice(0, 500));
+    android = (await fcmToDevices(((devs ?? []) as { device_id: string; push_token: string }[]).map((d) => ({ device_id: d.device_id, token: d.push_token })), payload, "news")).sent;
+  }
+  return results.filter((x) => x.r.ok).length + android;
+}
+
+/** Stempel gezet of kaart vol (seintje van de database): FCM naar Android-toestellen met deze klantcode. */
+async function pushMember(code: string, before: number, after: number): Promise<number> {
+  if (!fcmConfigured()) return 0;
+  const { data: devs, error } = await db.rpc("pasr_admin_member_devices", { p_code: code });
+  if (error) throw new Error(error.message);
+  const list = (devs ?? []) as { device_id: string; token: string }[];
+  if (!list.length) return 0;
+  const { data: m } = await db.rpc("pasr_business_member", { p_code: code });
+  const info = (m ?? {}) as Record<string, unknown>;
+  const card = (info.card ?? {}) as Record<string, unknown>;
+  const payload = memberPayload({ name: (info.name ?? card.name) as string, business: (info.business ?? card.business) as string,
+    reward: (info.reward ?? card.reward) as string, stamps_total: Number(info.stamps_total ?? card.stamps_total) || null }, code, before, after);
+  return (await fcmToDevices(list, payload, "stamps")).sent;
 }
 
 // ---- zakelijk 1.1: eigenaarsuitnodiging mailen (SMTP-secrets van group-invite; zonder SMTP: alleen de link) ----
@@ -313,6 +395,11 @@ Deno.serve(async (req) => {
     // Seintje van de database: eigen geheim, geen beheer-token.
     if (action === "notify") {
       if (!(await hookOk(req.headers.get("x-pasr-hook")))) return json({ error: "forbidden" }, 403);
+      if (body.kind === "member") {
+        const code = typeof body.code === "string" && /^PZ[A-Z0-9]{10,40}$/i.test(body.code) ? body.code.toUpperCase() : null;
+        if (!code) return json({ error: "bad_code" }, 400);
+        return json({ sent: await pushMember(code, Number(body.before) || 0, Number(body.after) || 0) });
+      }
       if (!(KINDS as readonly unknown[]).includes(body.kind)) return json({ error: "bad_kind" }, 400);
       return json({ sent: await notify(body.kind as Kind, body.kind === "store_request" || body.kind === "business" ? body.name : body.reason) });
     }
@@ -370,7 +457,8 @@ Deno.serve(async (req) => {
         if (!q) return json({ error: "bad_range" }, 400);
         const { data, error } = await db.rpc("pasr_admin_platforms", { p_days: q.days });
         if (error) throw new Error(error.message);
-        return json({ ...(data as Record<string, unknown>), gwallet_ready: !!(Deno.env.get("GOOGLE_WALLET_ISSUER_ID") && Deno.env.get("GOOGLE_WALLET_SA_JSON")) });
+        const { data: push } = await db.rpc("pasr_admin_push_platforms");
+        return json({ ...(data as Record<string, unknown>), push: push ?? null, fcm_ready: fcmConfigured(), gwallet_ready: !!(Deno.env.get("GOOGLE_WALLET_ISSUER_ID") && Deno.env.get("GOOGLE_WALLET_SA_JSON")) });
       }
       case "users": {
         const q = parseUsers(body);
@@ -415,6 +503,19 @@ Deno.serve(async (req) => {
         return json({ ok: true });
       }
       case "push_register": {
+        // beheer-app op Android (FCM): {device_id, fcm_token, prefs}
+        if (body.fcm_token !== undefined) {
+          const id = cleanDeviceId(body.device_id), tok = cleanFcmToken(body.fcm_token), prefs = cleanPrefs(body.prefs);
+          if (!id) return json({ error: "bad_device_id" }, 400);
+          if (!tok) return json({ error: "bad_fcm_token" }, 400);
+          if (!prefs) return json({ error: "bad_prefs" }, 400);
+          await db.from("admin_push_devices").delete().eq("token", tok).neq("device_id", id);
+          const { error } = await db.from("admin_push_devices").upsert({ device_id: id, token: tok, platform: "android", sandbox: false,
+            provider: "fcm", prefs, updated_at: new Date().toISOString() });
+          if (error) throw new Error(error.message);
+          await audit("push_register", ipHash, "android");
+          return json({ ok: true, push_ready: fcmConfigured() });
+        }
         const v = cleanRegister(body);
         if (!v.ok) return json({ error: v.error }, 400);
         const r = v.value;
@@ -447,8 +548,9 @@ Deno.serve(async (req) => {
       case "push_test": {
         const id = cleanDeviceId(body.device_id);
         if (!id) return json({ error: "bad_device_id" }, 400);
-        if (!apnsConfigured()) return json({ error: "apns_not_configured" }, 503);
-        const { data } = await db.from("admin_push_devices").select("device_id, token, sandbox, topic").eq("device_id", id).maybeSingle();
+        const { data } = await db.from("admin_push_devices").select("device_id, token, sandbox, topic, provider").eq("device_id", id).maybeSingle();
+        if (!data) return json({ error: "not_registered" }, 404);
+        if (data.provider === "fcm" ? !fcmConfigured() : !apnsConfigured()) return json({ error: data.provider === "fcm" ? "fcm_not_configured" : "apns_not_configured" }, 503);
         if (!data) return json({ error: "not_registered" }, 404);
         const r = await adminSend(data, testPayload());
         if (!r.ok) {
@@ -588,25 +690,33 @@ Deno.serve(async (req) => {
         const { data: history, error: he } = await db.from("pasr_news_campaigns")
           .select("id, title, body, audience, store_id, recipients, sent, failed, created_at").order("created_at", { ascending: false }).limit(20);
         if (he) throw new Error(he.message);
-        return json({ ...(data as Record<string, unknown>), history: history ?? [], push_ready: apnsConfigured() });
+        return json({ ...(data as Record<string, unknown>), history: history ?? [], push_ready: pushConfigured(),
+          apns_ready: apnsConfigured(), fcm_ready: fcmConfigured() });
       }
       case "news_count": {
         const a = cleanAudience(body);
         if (!a.ok) return json({ error: a.error }, 400);
-        const { data, error } = await db.rpc("pasr_admin_news_targets", { p_audience: a.audience, p_store: a.store });
+        const [{ data, error }, { data: fcm, error: fe }] = await Promise.all([
+          db.rpc("pasr_admin_news_targets", { p_audience: a.audience, p_store: a.store }),
+          db.rpc("pasr_admin_news_targets_fcm", { p_audience: a.audience, p_store: a.store }),
+        ]);
         if (error) throw new Error(error.message);
-        return json({ count: (data ?? []).length });
+        const ios = (data ?? []).length, android = fe ? 0 : (fcm ?? []).length;
+        return json({ count: ios + android, ios, android, apns_ready: apnsConfigured(), fcm_ready: fcmConfigured() });
       }
       case "news_send": {
         const v = cleanNews(body);
         if (!v.ok) return json({ error: v.error }, 400);
-        if (!apnsConfigured()) return json({ error: "apns_not_configured" }, 503);
+        if (!pushConfigured()) return json({ error: "apns_not_configured" }, 503);
         const n = v.value;
         const { data: targets, error } = await db.rpc("pasr_admin_news_targets", { p_audience: n.audience, p_store: n.store });
         if (error) throw new Error(error.message);
-        const list = (targets ?? []) as { device_id: string; token: string; sandbox: boolean }[];
+        const list = (apnsConfigured() ? targets ?? [] : []) as { device_id: string; token: string; sandbox: boolean }[];
+        const { data: fcmTargets } = fcmConfigured()
+          ? await db.rpc("pasr_admin_news_targets_fcm", { p_audience: n.audience, p_store: n.store }) : { data: [] };
+        const androidList = (fcmTargets ?? []) as { device_id: string; token: string }[];
         const { data: camp, error: ce } = await db.from("pasr_news_campaigns")
-          .insert({ title: n.title, body: n.body, audience: n.audience, store_id: n.store, recipients: list.length }).select("id").single();
+          .insert({ title: n.title, body: n.body, audience: n.audience, store_id: n.store, recipients: list.length + androidList.length }).select("id").single();
         if (ce) throw new Error(ce.message);
         const payload = newsPayload(n, camp.id);
         let sent = 0, failed = 0;
@@ -619,9 +729,13 @@ Deno.serve(async (req) => {
           }
         }
         if (invalid.length) await db.from("pasr_news_devices").delete().in("device_id", invalid);
+        const iosSent = sent;
+        const a = await fcmToDevices(androidList, payload, "news");
+        sent += a.sent; failed += a.failed;
         await db.from("pasr_news_campaigns").update({ sent, failed }).eq("id", camp.id);
-        await audit("news_send", ipHash, `${n.audience}${n.store ? ":" + n.store : ""} ${sent}/${list.length}`);
-        return json({ id: camp.id, recipients: list.length, sent, failed });
+        await audit("news_send", ipHash, `${n.audience}${n.store ? ":" + n.store : ""} ${sent}/${list.length + androidList.length}`);
+        return json({ id: camp.id, recipients: list.length + androidList.length, sent, failed,
+          ios: { recipients: list.length, sent: iosSent }, android: { recipients: androidList.length, sent: a.sent } });
       }
       case "businesses": {
         const { data, error } = await db.rpc("pasr_admin_businesses");

@@ -11,6 +11,7 @@ name: Backend
 # For "Add to Apple Wallet" (function wallet-pass, signs the passes):
 #   PASS_CERT_P12 (the Pass Type ID certificate + key as .p12, base64), PASS_CERT_PASSWORD,
 #   PASS_TYPE_ID (default pass.nl.lrvdlinden.pasr), PASR_SUPABASE_KEY (the publishable key)
+# For push to Android (FCM HTTP v1, function admin): FIREBASE_SERVICE_ACCOUNT_JSON (service account JSON of the Firebase project).
 # For "Opslaan in Google Wallet" (function google-wallet, Pasr for Android):
 #   GOOGLE_WALLET_ISSUER_ID (issuer id from the Google Pay & Wallet Console),
 #   GOOGLE_WALLET_SA_JSON (the service account's JSON key, as text or base64). Missing = the app hides the button.
@@ -163,6 +164,7 @@ jobs:
           APNS_P8: ${{ secrets.PASR_APNS_KEY_P8 }}
           APNS_ID: ${{ secrets.PASR_APNS_KEY_ID }}
           APNS_TEAM: ${{ secrets.PASR_APNS_TEAM_ID }}
+          FCM_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
           deno_ok=1
@@ -195,6 +197,12 @@ jobs:
             args+=("APNS_KEY_P8=$APNS_P8" "APNS_KEY_ID=$APNS_ID" "APNS_TEAM_ID=${APNS_TEAM:-EU3UY476T6}")
           else
             echo "::warning::PASR_APNS_KEY_P8 / PASR_APNS_KEY_ID missing: no push notifications yet (run Pasr push in app.lrvdlinden.secrets)."
+          fi
+          # Android-push (FCM HTTP v1): service-account van Firebase; als base64, zodat de JSON veilig als één waarde gaat
+          if [ -n "$FCM_SA" ]; then
+            args+=("FIREBASE_SERVICE_ACCOUNT_JSON=$(printf '%s' "$FCM_SA" | base64 -w0)")
+          else
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_JSON missing: no push notifications to Android (FCM)."
           fi
           if [ ${#args[@]} -gt 0 ]; then supabase secrets set --yes --project-ref "$REF" "${args[@]}" >/dev/null; fi
           echo "::notice::Admin function deployed."

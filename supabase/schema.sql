@@ -3633,3 +3633,154 @@ begin
 exception when others then
   raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
 end $$;
+
+-- ============================================================================================================
+-- android push (FCM). Pasr en Pasr Zakelijk voor Android melden hun FCM-token mee met pasr_device_register. De
+-- functie admin stuurt dan dezelfde meldingen als op iOS (APNs) ook via FCM HTTP v1: nieuws over mijn kaarten, een
+-- stempel of een volle zakelijke stempelkaart, en een nieuwe winkel aan wie hem aanvroeg. Alleen het token, of
+-- "Nieuws over mijn kaarten" aanstaat, de winkel-id's (zoals "ah") en de klantcodes van zakelijke stempelkaarten
+-- (willekeurige codes, geen persoonsgegevens). Ongeldige tokens wist de functie admin meteen.
+-- ============================================================================================================
+alter table public.pasr_devices add column if not exists push_token text check (push_token is null or char_length(push_token) between 20 and 4096);
+alter table public.pasr_devices add column if not exists push_provider text check (push_provider is null or push_provider in ('fcm', 'apns'));
+alter table public.pasr_devices add column if not exists push_news boolean not null default false;
+alter table public.pasr_devices add column if not exists push_stores text[] not null default '{}';
+alter table public.pasr_devices add column if not exists member_codes text[] not null default '{}';
+alter table public.pasr_devices add column if not exists push_updated timestamptz;
+create index if not exists pasr_devices_push on public.pasr_devices (push_provider) where push_token is not null;
+create index if not exists pasr_devices_members on public.pasr_devices using gin (member_codes);
+create index if not exists pasr_devices_stores on public.pasr_devices using gin (push_stores);
+-- beheer-apps op Android (later): provider per apparaat; bestaande rijen zijn APNs
+alter table public.admin_push_devices add column if not exists provider text not null default 'apns';
+
+drop function if exists public.pasr_device_register(text, text, text, text, text, text, text);
+create or replace function public.pasr_device_register(p_device text, p_app text, p_platform text, p_version text,
+  p_build text default null, p_os text default null, p_country text default null,
+  p_push_token text default null, p_push_provider text default null, p_push_news boolean default null,
+  p_stores text[] default null, p_member_codes text[] default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a text := lower(trim(coalesce(p_app, ''))); pl text := lower(trim(coalesce(p_platform, '')));
+  c text := upper(trim(coalesce(p_country, ''))); t text := nullif(trim(coalesce(p_push_token, '')), '');
+  pv text := lower(trim(coalesce(p_push_provider, ''))); s text[]; m text[];
+begin
+  if coalesce(p_device, '') !~ '^[A-Za-z0-9_-]{8,80}$' then raise exception 'bad_device' using errcode = '22023', hint = 'bad_device'; end if;
+  if a not in ('pasr', 'zakelijk') then raise exception 'bad_app' using errcode = '22023', hint = 'bad_app'; end if;
+  if pl not in ('ios', 'android') then raise exception 'bad_platform' using errcode = '22023', hint = 'bad_platform'; end if;
+  if t is not null then
+    if pv = '' then pv := case when pl = 'android' then 'fcm' else 'apns' end; end if;
+    if pv not in ('fcm', 'apns') then raise exception 'bad_provider' using errcode = '22023', hint = 'bad_provider'; end if;
+    if char_length(t) not between 20 and 4096 or t !~ '^[A-Za-z0-9_:.-]+$' then
+      raise exception 'bad_token' using errcode = '22023', hint = 'bad_token';
+    end if;
+  end if;
+  if p_stores is not null then
+    select coalesce(array_agg(x order by x), '{}') into s
+    from (select distinct lower(x) x from unnest(p_stores) x where lower(x) ~ '^[a-z0-9-]{2,40}$' limit 300) q;
+  end if;
+  if p_member_codes is not null then
+    select coalesce(array_agg(x order by x), '{}') into m
+    from (select distinct upper(x) x from unnest(p_member_codes) x where upper(x) ~ '^PZ[A-Z0-9]{10,40}$' limit 100) q;
+  end if;
+  if not exists (select 1 from public.pasr_devices where device_id = p_device) then
+    perform public.pasr_web_rate_hit('device', 40, 100000);
+  end if;
+  insert into public.pasr_devices as d (device_id, app, platform, version, build, os, country, user_id,
+                                        push_token, push_provider, push_news, push_stores, member_codes, push_updated)
+  values (p_device, a, pl, nullif(left(trim(coalesce(p_version, '')), 20), ''), nullif(left(trim(coalesce(p_build, '')), 20), ''),
+          nullif(left(trim(coalesce(p_os, '')), 40), ''), case when c ~ '^[A-Z]{2}$' then c end, auth.uid(),
+          t, case when t is not null then pv end, coalesce(p_push_news, false), coalesce(s, '{}'), coalesce(m, '{}'),
+          case when t is not null then now() end)
+  on conflict (device_id) do update set app = excluded.app, platform = excluded.platform, version = excluded.version,
+    build = excluded.build, os = coalesce(excluded.os, d.os), country = coalesce(excluded.country, d.country),
+    user_id = auth.uid(), last_seen = now(),
+    push_token = case when p_push_token is null then d.push_token else t end,
+    push_provider = case when p_push_token is null then d.push_provider when t is null then null else pv end,
+    push_updated = case when p_push_token is null then d.push_updated else now() end,
+    push_news = coalesce(p_push_news, d.push_news),
+    push_stores = coalesce(s, d.push_stores),
+    member_codes = coalesce(m, d.member_codes);
+  -- één token hoort bij één apparaat
+  if t is not null then
+    update public.pasr_devices set push_token = null, push_provider = null where push_token = t and device_id <> p_device;
+  end if;
+  insert into public.pasr_device_days (day, device_id, app, platform)
+  values ((now() at time zone 'utc')::date, p_device, a, pl) on conflict do nothing;
+  return jsonb_build_object('ok', true);
+end $$;
+revoke all on function public.pasr_device_register(text, text, text, text, text, text, text, text, text, boolean, text[], text[]) from public;
+grant execute on function public.pasr_device_register(text, text, text, text, text, text, text, text, text, boolean, text[], text[])
+  to anon, authenticated;
+
+-- Voor de functie admin: FCM-toestellen van Pasr met "Nieuws over mijn kaarten" aan, per doelgroep (zelfde regels als
+-- pasr_admin_news_targets voor iOS).
+create or replace function public.pasr_admin_news_targets_fcm(p_audience text, p_store text default null, p_days int default null)
+returns table (device_id text, token text)
+language sql stable security definer set search_path = public as $$
+  select d.device_id, d.push_token from public.pasr_devices d
+  where d.app = 'pasr' and d.push_provider = 'fcm' and d.push_token is not null and d.push_news and case p_audience
+    when 'all' then true
+    when 'store' then d.push_stores @> array[lower(coalesce(p_store, ''))]
+    when 'new' then d.first_seen > now() - make_interval(days => coalesce(p_days, 7))
+    when 'inactive' then d.last_seen < now() - make_interval(days => coalesce(p_days, 30))
+    else false end;
+$$;
+-- FCM-toestellen met een zakelijke stempelkaart van deze klantcode (melding na een stempel of als hij vol is).
+create or replace function public.pasr_admin_member_devices(p_code text)
+returns table (device_id text, token text)
+language sql stable security definer set search_path = public as $$
+  select d.device_id, d.push_token from public.pasr_devices d
+  where d.push_provider = 'fcm' and d.push_token is not null and d.member_codes @> array[upper(coalesce(p_code, ''))];
+$$;
+-- Wist een ongeldig FCM-token (de functie admin, na UNREGISTERED of INVALID_ARGUMENT van Google).
+create or replace function public.pasr_admin_push_forget(p_devices text[]) returns int
+language sql security definer set search_path = public as $$
+  with x as (update public.pasr_devices set push_token = null, push_provider = null, push_updated = now()
+             where device_id = any(coalesce(p_devices, '{}')) returning 1)
+  select count(*)::int from x;
+$$;
+revoke all on function public.pasr_admin_news_targets_fcm(text, text, int), public.pasr_admin_member_devices(text),
+  public.pasr_admin_push_forget(text[]) from public, anon, authenticated;
+grant execute on function public.pasr_admin_news_targets_fcm(text, text, int), public.pasr_admin_member_devices(text),
+  public.pasr_admin_push_forget(text[]) to service_role;
+
+-- Stempel gezet of kaart vol: seintje aan de functie admin (die stuurt via FCM naar Android-toestellen met die kaart).
+-- Alleen als er zo'n toestel is. Via pg_net: houdt de stempel nooit op.
+create or replace function public.pasr_member_push_kick() returns trigger
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if new.stamps_count is not distinct from old.stamps_count then return new; end if;
+  if not exists (select 1 from public.pasr_devices where push_provider = 'fcm' and member_codes @> array[upper(new.member_code)]) then
+    return new;
+  end if;
+  perform public.pasr_admin_notify('member', jsonb_build_object('code', new.member_code, 'before', old.stamps_count, 'after', new.stamps_count));
+  return new;
+exception when others then
+  raise warning 'pasr_member_push_kick: %', sqlerrm;
+  return new;
+end $$;
+revoke all on function public.pasr_member_push_kick() from public, anon, authenticated;
+do $$
+begin
+  if to_regclass('public.pasr_business_members') is not null then
+    drop trigger if exists pasr_member_push on public.pasr_business_members;
+    create trigger pasr_member_push after update of stamps_count on public.pasr_business_members
+      for each row execute function public.pasr_member_push_kick();
+  end if;
+exception when others then
+  raise notice 'pasr_member_push trigger: %', sqlerrm;
+end $$;
+
+-- Inzichten: "push aan" per platform (bovenop pasr_admin_platforms).
+create or replace function public.pasr_admin_push_platforms() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'ios', (select count(distinct x.device_id) from (
+              select device_id from public.pasr_user_push
+              union select device_id from public.pasr_news_devices where token is not null) x),
+    'ios_news', (select count(*) from public.pasr_news_devices),
+    'android', (select count(*) from public.pasr_devices where app = 'pasr' and push_provider = 'fcm' and push_token is not null),
+    'android_news', (select count(*) from public.pasr_devices where app = 'pasr' and push_provider = 'fcm' and push_token is not null and push_news),
+    'zakelijk_android', (select count(*) from public.pasr_devices where app = 'zakelijk' and push_provider = 'fcm' and push_token is not null));
+$$;
+revoke all on function public.pasr_admin_push_platforms() from public, anon, authenticated;
+grant execute on function public.pasr_admin_push_platforms() to service_role;
