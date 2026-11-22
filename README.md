@@ -79,6 +79,15 @@ Opt-in in de app (Instellingen › Meldingen › "Nieuws over mijn kaarten"): me
 `pasr_news_register` / `pasr_news_unregister` (token en alleen winkel-id's). Een melding met `kind: "news"` en `store`
 opent je kaart van die winkel, of anders Kaart toevoegen bij die winkel. In het beheer (tab Berichten, ook in PasrBeheer en LRbeheer) kies je een doelgroep en stuur je via de functie `admin` (`news_send`) en APNs.
 
+## Bericht aan iedereen met een link (build 44)
+
+Het beheer kan ook een belangrijk bericht sturen aan **iedereen met meldingen aan** (ook zonder "Nieuws over mijn
+kaarten"), voor Pasr, Pasr Zakelijk of beide en voor Alles, Apple of Android, optioneel met een https-link. Daarvoor meldt
+`DeviceRegistry` nu ook het APNs-token (`p_push_token`, `p_push_provider: "apns"`, `p_push_sandbox`) met
+`pasr_device_register`. Een tik op een melding met `url` (APNs custom key, FCM data) opent de link: links van pasr.nl die
+Pasr kent (kaart, tijdelijke kaart, uitnodiging, zakelijke stempelkaart) op die plek in de app, andere in
+SFSafariViewController; pas na splash, welkomst en ontgrendelen. Android: Custom Tabs (anders de browser).
+
 ## Website
 
 De site staat in `website/` en heeft schone adressen (`/privacy/`, `/support/`, geen `.html`). De homepage wordt gemaakt met `python3 tools/make_website.py` (met echte barcodes voor de voorbeeldkaarten).

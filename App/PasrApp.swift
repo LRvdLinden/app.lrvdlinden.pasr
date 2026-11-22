@@ -45,6 +45,9 @@ struct RootView: View {
     @State private var incomingBusiness: IncomingBusinessCard?
     @Environment(\.openURL) private var openURL
     @State private var newStore: NewStore?
+    /// Link uit een pushmelding: wacht tot splash, welkomst en ontgrendelen klaar zijn.
+    @State private var pendingLink: URL?
+    @State private var safariLink: IdentifiedURL?
     @State private var invite: GroupService.Invite?
     @State private var seenInvites: Set<String> = []
     @Environment(\.modelContext) private var context
@@ -118,6 +121,14 @@ struct RootView: View {
         .sheet(item: $invite) { item in
             GroupInviteSheet(invite: item)
         }
+        #if canImport(SafariServices)
+        .sheet(item: $safariLink) { item in
+            SafariView(url: item.url).ignoresSafeArea()
+        }
+        #endif
+        .onChange(of: showSplash) { _, _ in openPendingLink() }
+        .onChange(of: onboarded) { _, _ in openPendingLink() }
+        .onChange(of: locked) { _, _ in openPendingLink() }
         .onChange(of: groups.invites, initial: true) { _, _ in offerInvite() }
         .onChange(of: showSplash) { _, _ in offerInvite() }
         .onChange(of: onboarded) { _, _ in offerInvite() }
@@ -188,6 +199,7 @@ extension RootView {
         NotificationCenter.default.post(name: .pasrCloseSheets, object: nil)
         newStore = nil
         invite = nil
+        safariLink = nil
         incoming = nil
         incomingTemp = nil
         incomingBusiness = nil
@@ -217,8 +229,35 @@ extension RootView {
             }
             NotificationRouter.pendingStoreID = store
         } else if let url = news.url {
-            openURL(url)
+            pendingLink = url
+            openPendingLink()
         }
+    }
+
+    /// Link uit een melding, pas als de app klaar is (geen splash, welkomst of vergrendeling). Een link van pasr.nl die
+    /// Pasr zelf kent (kaart, tijdelijke kaart, uitnodiging, zakelijke stempelkaart) gaat naar die plek in de app; elke
+    /// andere https-link opent in Safari in de app (SFSafariViewController).
+    fileprivate func openPendingLink() {
+        guard let url = pendingLink, !showSplash, onboarded, !locked else { return }
+        pendingLink = nil
+        if Self.appHandles(url) {
+            handle(url)
+            return
+        }
+        #if canImport(SafariServices)
+        present { safariLink = IdentifiedURL(url: url) }
+        #else
+        openURL(url)
+        #endif
+    }
+
+    /// Kent Pasr deze link zelf (dezelfde regels als `handle`)?
+    static func appHandles(_ url: URL) -> Bool {
+        if DeepLink.cardID(from: url) != nil || BusinessLink.cardID(from: url) != nil { return true }
+        guard url.host()?.lowercased() == "pasr.nl" else { return false }
+        let path = url.path()
+        if path.hasPrefix("/tijdelijk") || path.hasPrefix("/uitnodiging") { return true }
+        return CardShare.decode(url) != nil
     }
 
     fileprivate func offerInvite() {

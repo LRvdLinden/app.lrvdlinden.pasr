@@ -123,6 +123,8 @@ enum UserPush {
             await sync()
             // zonder account: "Nieuws over mijn kaarten" gaat via pasr_news_register (met account doet sync() het)
             if !(await AccountService.shared.isSignedIn) { await StorePush.syncIfEnabled(force: true) }
+            // het token ook in het apparaatregister (bereikbaar voor "Iedereen met meldingen aan" uit het beheer)
+            await DeviceRegistry.registerIfNeeded()
         }
     }
 

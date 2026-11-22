@@ -203,8 +203,9 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     @MainActor static var pendingStoreID: String? {
         didSet { NotificationCenter.default.post(name: .pasrOpenStore, object: nil) }
     }
-    /// Pushmelding "Nieuws over mijn kaarten" (kind "news"): RootView opent je kaart van die winkel, of anders
-    /// Kaart toevoegen bij die winkel; zonder winkel (alleen een https-link) die link.
+    /// Pushmelding "Nieuws over mijn kaarten" of een bericht aan iedereen (kind "news"): RootView opent je kaart van die
+    /// winkel, of anders Kaart toevoegen bij die winkel; zonder winkel met een https-link die link (pasr.nl-links op de
+    /// juiste plek in Pasr, andere in Safari in de app).
     @MainActor static var pendingNews: (store: String?, url: URL?)? {
         didSet { if pendingNews != nil { NotificationCenter.default.post(name: .pasrOpenNews, object: nil) } }
     }
@@ -220,12 +221,14 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
         let kind = info["kind"] as? String
         let storeID = kind == "store" ? info["store"] as? String : nil
         let newsStore = kind == "news" ? (info["store"] as? String).flatMap { $0.isEmpty ? nil : $0 } : nil
-        let newsURL = kind == "news" ? (info["url"] as? String).flatMap(URL.init(string:)).flatMap { $0.scheme == "https" ? $0 : nil } : nil
+        // link onder de melding (bericht uit het beheer): alleen https
+        let link = (info["url"] as? String).flatMap(URL.init(string:)).flatMap { $0.scheme?.lowercased() == "https" ? $0 : nil }
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
                 if let cardID { Self.pendingCardID = cardID }
                 else if let storeID { Self.pendingStoreID = storeID }
-                else if kind == "news" { Self.pendingNews = (newsStore, newsURL) }
+                else if kind == "news" { Self.pendingNews = (newsStore, link) }
+                else if let link { Self.pendingNews = (nil, link) }
             }
             completionHandler()
         }
