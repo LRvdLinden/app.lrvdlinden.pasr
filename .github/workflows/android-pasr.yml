@@ -179,6 +179,8 @@ jobs:
           retention-days: 90
 
       - name: Release (nieuwste APK voor pasr.nl/download)
+        # Mag mislukken (token zonder rechten op releases): de workflow Website pakt dan het artifact Pasr-Android.
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-pasr-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
