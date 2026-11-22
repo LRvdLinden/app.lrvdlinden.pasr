@@ -3784,3 +3784,129 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.pasr_admin_push_platforms() from public, anon, authenticated;
 grant execute on function public.pasr_admin_push_platforms() to service_role;
+
+-- ============================================================================================================
+-- push iedereen (beheer › Bericht sturen, 22 nov 2026). Naast de opt-in "Nieuws over mijn kaarten" kan het beheer een
+-- belangrijk bericht sturen aan iedereen met meldingen aan: elk apparaat met een geldig push-token, van Pasr en/of
+-- Pasr Zakelijk, op Apple en/of Android. Apple-richtlijn 4.5.4: zonder opt-in alleen belangrijke berichten, geen
+-- reclame. Optioneel met een https-link die een tik op de melding opent. iOS meldt het APNs-token nu ook met
+-- pasr_device_register (p_push_provider 'apns', p_push_sandbox), zodat ook apparaten zonder account en zonder opt-in
+-- (en Pasr Zakelijk voor iOS) bereikbaar zijn. Alleen tokens, geen namen of kaartgegevens.
+-- ============================================================================================================
+alter table public.pasr_devices add column if not exists push_sandbox boolean not null default false;
+
+alter table public.pasr_news_campaigns drop constraint if exists pasr_news_campaigns_audience_check;
+alter table public.pasr_news_campaigns add constraint pasr_news_campaigns_audience_check
+  check (audience in ('all', 'store', 'new', 'inactive', 'everyone'));
+alter table public.pasr_news_campaigns add column if not exists platform text not null default 'all';
+alter table public.pasr_news_campaigns add column if not exists app text not null default 'pasr';
+alter table public.pasr_news_campaigns add column if not exists url text;
+alter table public.pasr_news_campaigns add column if not exists fingerprint text;
+alter table public.pasr_news_campaigns drop constraint if exists pasr_news_campaigns_platform_check;
+alter table public.pasr_news_campaigns add constraint pasr_news_campaigns_platform_check check (platform in ('all', 'ios', 'android'));
+alter table public.pasr_news_campaigns drop constraint if exists pasr_news_campaigns_app_check;
+alter table public.pasr_news_campaigns add constraint pasr_news_campaigns_app_check check (app in ('pasr', 'zakelijk', 'both'));
+alter table public.pasr_news_campaigns drop constraint if exists pasr_news_campaigns_url_check;
+alter table public.pasr_news_campaigns add constraint pasr_news_campaigns_url_check
+  check (url is null or (char_length(url) <= 500 and url ~ '^https://[^\s]+$'));
+create index if not exists pasr_news_campaigns_created on public.pasr_news_campaigns (created_at desc);
+
+drop function if exists public.pasr_device_register(text, text, text, text, text, text, text, text, text, boolean, text[], text[]);
+create or replace function public.pasr_device_register(p_device text, p_app text, p_platform text, p_version text,
+  p_build text default null, p_os text default null, p_country text default null,
+  p_push_token text default null, p_push_provider text default null, p_push_news boolean default null,
+  p_stores text[] default null, p_member_codes text[] default null, p_push_sandbox boolean default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a text := lower(trim(coalesce(p_app, ''))); pl text := lower(trim(coalesce(p_platform, '')));
+  c text := upper(trim(coalesce(p_country, ''))); t text := nullif(trim(coalesce(p_push_token, '')), '');
+  pv text := lower(trim(coalesce(p_push_provider, ''))); s text[]; m text[];
+begin
+  if coalesce(p_device, '') !~ '^[A-Za-z0-9_-]{8,80}$' then raise exception 'bad_device' using errcode = '22023', hint = 'bad_device'; end if;
+  if a not in ('pasr', 'zakelijk') then raise exception 'bad_app' using errcode = '22023', hint = 'bad_app'; end if;
+  if pl not in ('ios', 'android') then raise exception 'bad_platform' using errcode = '22023', hint = 'bad_platform'; end if;
+  if t is not null then
+    if pv = '' then pv := case when pl = 'android' then 'fcm' else 'apns' end; end if;
+    if pv not in ('fcm', 'apns') then raise exception 'bad_provider' using errcode = '22023', hint = 'bad_provider'; end if;
+    if char_length(t) not between 20 and 4096 or t !~ '^[A-Za-z0-9_:.-]+$' then
+      raise exception 'bad_token' using errcode = '22023', hint = 'bad_token';
+    end if;
+    -- APNs-tokens zijn hex (kleine letters, zoals in pasr_user_push)
+    if pv = 'apns' then
+      t := lower(t);
+      if t !~ '^[0-9a-f]{64,200}$' then raise exception 'bad_token' using errcode = '22023', hint = 'bad_token'; end if;
+    end if;
+  end if;
+  if p_stores is not null then
+    select coalesce(array_agg(x order by x), '{}') into s
+    from (select distinct lower(x) x from unnest(p_stores) x where lower(x) ~ '^[a-z0-9-]{2,40}$' limit 300) q;
+  end if;
+  if p_member_codes is not null then
+    select coalesce(array_agg(x order by x), '{}') into m
+    from (select distinct upper(x) x from unnest(p_member_codes) x where upper(x) ~ '^PZ[A-Z0-9]{10,40}$' limit 100) q;
+  end if;
+  if not exists (select 1 from public.pasr_devices where device_id = p_device) then
+    perform public.pasr_web_rate_hit('device', 40, 100000);
+  end if;
+  insert into public.pasr_devices as d (device_id, app, platform, version, build, os, country, user_id,
+                                        push_token, push_provider, push_news, push_stores, member_codes, push_updated, push_sandbox)
+  values (p_device, a, pl, nullif(left(trim(coalesce(p_version, '')), 20), ''), nullif(left(trim(coalesce(p_build, '')), 20), ''),
+          nullif(left(trim(coalesce(p_os, '')), 40), ''), case when c ~ '^[A-Z]{2}$' then c end, auth.uid(),
+          t, case when t is not null then pv end, coalesce(p_push_news, false), coalesce(s, '{}'), coalesce(m, '{}'),
+          case when t is not null then now() end, coalesce(p_push_sandbox, false))
+  on conflict (device_id) do update set app = excluded.app, platform = excluded.platform, version = excluded.version,
+    build = excluded.build, os = coalesce(excluded.os, d.os), country = coalesce(excluded.country, d.country),
+    user_id = auth.uid(), last_seen = now(),
+    push_token = case when p_push_token is null then d.push_token else t end,
+    push_provider = case when p_push_token is null then d.push_provider when t is null then null else pv end,
+    push_updated = case when p_push_token is null then d.push_updated else now() end,
+    push_sandbox = coalesce(p_push_sandbox, d.push_sandbox),
+    push_news = coalesce(p_push_news, d.push_news),
+    push_stores = coalesce(s, d.push_stores),
+    member_codes = coalesce(m, d.member_codes);
+  -- één token hoort bij één apparaat
+  if t is not null then
+    update public.pasr_devices set push_token = null, push_provider = null where push_token = t and device_id <> p_device;
+  end if;
+  insert into public.pasr_device_days (day, device_id, app, platform)
+  values ((now() at time zone 'utc')::date, p_device, a, pl) on conflict do nothing;
+  return jsonb_build_object('ok', true);
+end $$;
+revoke all on function public.pasr_device_register(text, text, text, text, text, text, text, text, text, boolean, text[], text[], boolean) from public;
+grant execute on function public.pasr_device_register(text, text, text, text, text, text, text, text, text, boolean, text[], text[], boolean)
+  to anon, authenticated;
+
+-- Voor de functie admin: iedereen met meldingen aan. p_app: pasr | zakelijk | both; p_platform: all | ios | android.
+-- Een toestel kan in meer tabellen staan (apparaatregister, account, opt-in): per app en token één rij.
+-- src zegt waar het token vandaan komt, zodat de functie admin een ongeldig token op de juiste plek wist.
+create or replace function public.pasr_admin_push_everyone(p_app text default 'pasr', p_platform text default 'all')
+returns table (device_id text, token text, provider text, sandbox boolean, app text, src text)
+language sql stable security definer set search_path = public as $$
+  with x as (
+    select d.device_id, d.push_token token, d.push_provider provider, d.push_sandbox sandbox, d.app, 'device'::text src, 3 prio
+    from public.pasr_devices d
+    where d.push_token is not null and d.push_provider in ('apns', 'fcm')
+    union all
+    select u.device_id, u.token, 'apns', u.sandbox, 'pasr', 'user', 1 from public.pasr_user_push u
+    union all
+    select n.device_id, n.token, 'apns', n.sandbox, 'pasr', 'news', 2 from public.pasr_news_devices n where n.token is not null
+  )
+  select distinct on (x.app, lower(x.token)) x.device_id, x.token, x.provider, x.sandbox, x.app, x.src
+  from x
+  where (coalesce(p_app, 'pasr') = 'both' or x.app = coalesce(p_app, 'pasr'))
+    and case coalesce(p_platform, 'all') when 'ios' then x.provider = 'apns' when 'android' then x.provider = 'fcm' else true end
+  order by x.app, lower(x.token), x.prio;
+$$;
+-- Tellingen voor het scherm "Bericht sturen": iedereen met meldingen aan, per app en platform.
+create or replace function public.pasr_admin_push_everyone_counts() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'pasr', jsonb_build_object(
+      'ios', (select count(*) from public.pasr_admin_push_everyone('pasr', 'ios')),
+      'android', (select count(*) from public.pasr_admin_push_everyone('pasr', 'android'))),
+    'zakelijk', jsonb_build_object(
+      'ios', (select count(*) from public.pasr_admin_push_everyone('zakelijk', 'ios')),
+      'android', (select count(*) from public.pasr_admin_push_everyone('zakelijk', 'android'))));
+$$;
+revoke all on function public.pasr_admin_push_everyone(text, text), public.pasr_admin_push_everyone_counts()
+  from public, anon, authenticated;
+grant execute on function public.pasr_admin_push_everyone(text, text), public.pasr_admin_push_everyone_counts() to service_role;

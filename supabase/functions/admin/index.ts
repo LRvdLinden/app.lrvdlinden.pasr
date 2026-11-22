@@ -23,9 +23,13 @@
 //   store_publish    {id, request_ids?, push?}      -> {ok, sent, closed}  (aanvragen dicht als "toegevoegd")
 //   store_unpublish  {id}                           -> {ok}
 //   store_reject     {request_ids}                  -> {ok, closed}
-//   news_overview    {}                             -> {all, new, inactive, stores:[{id,count}], history:[…], push_ready}
-//   news_count       {audience, store?}             -> {count}
-//   news_send        {title?, body, audience, store?} -> {id, recipients, sent, failed}
+//   news_overview    {}                             -> {all, new, inactive, everyone:{pasr:{ios,android},zakelijk:{…}},
+//                                                       stores:[{id,count}], history:[…, platform, app, url], push_ready}
+//   news_count       {audience, store?, platform?, app?} -> {count, ios, android, pasr, zakelijk}
+//   news_send        {title?, body, audience, store?, platform?, app?, url?} -> {id, recipients, sent, failed, ios, android}
+//                    audience: all | store | new | inactive (opt-in "Nieuws over mijn kaarten", alleen Pasr) of
+//                    everyone (iedereen met meldingen aan); platform: all | ios | android; app: pasr | zakelijk | both
+//                    (alleen bij everyone); url: https, max 500, opent bij een tik. 409 duplicate = zelfde bericht net verstuurd.
 //   businesses       {}                             -> {businesses:[…zaak, cards, staff_count, last_event_at]}
 //   business_status  {id, status}                   -> {business}            (blocked = kaarten offline)
 //   business_detail  {id, limit?, days?}            -> {business, staff, log, stats}
@@ -52,7 +56,7 @@ import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs,
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
-import { chunks, cleanAudience, cleanNews, newsPayload } from "./news.ts";
+import { chunks, cleanAudience, cleanNews, DUPLICATE_WINDOW_MS, newsFingerprint, newsPayload, type Target, uniqueTokens, wantsAndroid, wantsIos } from "./news.ts";
 import { cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, dbError } from "./business.ts";
 import { okLink, ownerMail } from "./owner_mail.ts";
 // huisstijl: dezelfde code als de functie business-brand (SSRF-beveiligd ophalen, logo en kleur)
@@ -303,6 +307,55 @@ async function userSend(d: { device_id: string; token: string; sandbox: boolean 
   const other = await apnsSend(d.token, !d.sandbox, payload, USER_TOPIC);
   if (other.ok) await db.from("pasr_user_push").update({ sandbox: !d.sandbox }).eq("device_id", d.device_id);
   return other.ok ? other : r;
+}
+
+// ---- Bericht sturen (news): doelgroep, versturen, ongeldige tokens opruimen ----
+type NewsTarget = { device_id: string; token: string; sandbox: boolean; app: "pasr" | "zakelijk"; src: "device" | "user" | "news" };
+/** Bundle-id van Pasr Zakelijk (APNs-topic). */
+const ZAKELIJK_TOPIC = "app.lrvdlinden.pasrzakelijk";
+
+/** De toestellen van een doelgroep, apart voor iOS (APNs) en Android (FCM), al gefilterd op platform en app. */
+async function newsTargets(t: Target): Promise<{ ios: NewsTarget[]; android: NewsTarget[] }> {
+  if (t.audience === "everyone") {
+    const { data, error } = await db.rpc("pasr_admin_push_everyone", { p_app: t.app, p_platform: t.platform });
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as (NewsTarget & { provider: string })[];
+    const pick = (p: string) => uniqueTokens(rows.filter((r) => r.provider === p)).map(({ provider: _, ...r }) => ({ ...r, sandbox: !!r.sandbox }));
+    return { ios: wantsIos(t) ? pick("apns") : [], android: wantsAndroid(t) ? pick("fcm") : [] };
+  }
+  const [{ data, error }, { data: fcm, error: fe }] = await Promise.all([
+    wantsIos(t) ? db.rpc("pasr_admin_news_targets", { p_audience: t.audience, p_store: t.store }) : Promise.resolve({ data: [], error: null }),
+    wantsAndroid(t) ? db.rpc("pasr_admin_news_targets_fcm", { p_audience: t.audience, p_store: t.store }) : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (error) throw new Error(error.message);
+  const ios = ((data ?? []) as { device_id: string; token: string; sandbox: boolean }[])
+    .map((d) => ({ ...d, app: "pasr" as const, src: "news" as const }));
+  const android = (fe ? [] : (fcm ?? []) as { device_id: string; token: string }[])
+    .map((d) => ({ ...d, sandbox: false, app: "pasr" as const, src: "device" as const }));
+  return { ios: uniqueTokens(ios), android: uniqueTokens(android) };
+}
+
+/** Naar één iOS-toestel met het topic van de app. Klopt de omgeving niet (BadDeviceToken), dan de andere proberen en
+ *  dat onthouden in de tabel waar het token vandaan kwam. */
+async function newsIosSend(d: NewsTarget, payload: unknown) {
+  const topic = d.app === "zakelijk" ? ZAKELIJK_TOPIC : USER_TOPIC;
+  const r = await apnsSend(d.token, d.sandbox, payload, topic);
+  if (r.ok || r.error !== "apns_BadDeviceToken") return r;
+  const other = await apnsSend(d.token, !d.sandbox, payload, topic);
+  if (other.ok) {
+    if (d.src === "user") await db.from("pasr_user_push").update({ sandbox: !d.sandbox }).eq("device_id", d.device_id);
+    else if (d.src === "news") await db.from("pasr_news_devices").update({ sandbox: !d.sandbox }).eq("device_id", d.device_id);
+    else await db.from("pasr_devices").update({ push_sandbox: !d.sandbox }).eq("device_id", d.device_id);
+  }
+  return other.ok ? other : r;
+}
+
+/** Ongeldige tokens weg, elk uit zijn eigen tabel. */
+async function forgetTargets(list: NewsTarget[]) {
+  const ids = (src: NewsTarget["src"]) => list.filter((d) => d.src === src).map((d) => d.device_id);
+  if (ids("news").length) await db.from("pasr_news_devices").delete().in("device_id", ids("news"));
+  if (ids("user").length) await db.from("pasr_user_push").delete().in("device_id", ids("user"));
+  if (ids("device").length) await db.rpc("pasr_admin_push_forget", { p_devices: ids("device") });
 }
 
 /** Melding aan gebruikers van Pasr over een nieuwe winkel: wie hem aanvroeg plus wie "Nieuwe winkels" aan heeft. */
@@ -685,57 +738,66 @@ Deno.serve(async (req) => {
         return json({ ok: true, created, email, ...(seed as Record<string, unknown>) });
       }
       case "news_overview": {
-        const { data, error } = await db.rpc("pasr_admin_news_overview");
+        const [{ data, error }, { data: everyone, error: ee }] = await Promise.all([
+          db.rpc("pasr_admin_news_overview"),
+          db.rpc("pasr_admin_push_everyone_counts"),
+        ]);
         if (error) throw new Error(error.message);
         const { data: history, error: he } = await db.from("pasr_news_campaigns")
-          .select("id, title, body, audience, store_id, recipients, sent, failed, created_at").order("created_at", { ascending: false }).limit(20);
+          .select("id, title, body, audience, store_id, platform, app, url, recipients, sent, failed, created_at")
+          .order("created_at", { ascending: false }).limit(20);
         if (he) throw new Error(he.message);
-        return json({ ...(data as Record<string, unknown>), history: history ?? [], push_ready: pushConfigured(),
-          apns_ready: apnsConfigured(), fcm_ready: fcmConfigured() });
+        return json({ ...(data as Record<string, unknown>), everyone: ee ? null : everyone, history: history ?? [],
+          push_ready: pushConfigured(), apns_ready: apnsConfigured(), fcm_ready: fcmConfigured() });
       }
       case "news_count": {
         const a = cleanAudience(body);
         if (!a.ok) return json({ error: a.error }, 400);
-        const [{ data, error }, { data: fcm, error: fe }] = await Promise.all([
-          db.rpc("pasr_admin_news_targets", { p_audience: a.audience, p_store: a.store }),
-          db.rpc("pasr_admin_news_targets_fcm", { p_audience: a.audience, p_store: a.store }),
-        ]);
-        if (error) throw new Error(error.message);
-        const ios = (data ?? []).length, android = fe ? 0 : (fcm ?? []).length;
-        return json({ count: ios + android, ios, android, apns_ready: apnsConfigured(), fcm_ready: fcmConfigured() });
+        const t = await newsTargets(a);
+        return json({ count: t.ios.length + t.android.length, ios: t.ios.length, android: t.android.length,
+          pasr: t.ios.filter((d) => d.app === "pasr").length + t.android.filter((d) => d.app === "pasr").length,
+          zakelijk: t.ios.filter((d) => d.app === "zakelijk").length + t.android.filter((d) => d.app === "zakelijk").length,
+          apns_ready: apnsConfigured(), fcm_ready: fcmConfigured() });
       }
       case "news_send": {
         const v = cleanNews(body);
         if (!v.ok) return json({ error: v.error }, 400);
         if (!pushConfigured()) return json({ error: "apns_not_configured" }, 503);
         const n = v.value;
-        const { data: targets, error } = await db.rpc("pasr_admin_news_targets", { p_audience: n.audience, p_store: n.store });
-        if (error) throw new Error(error.message);
-        const list = (apnsConfigured() ? targets ?? [] : []) as { device_id: string; token: string; sandbox: boolean }[];
-        const { data: fcmTargets } = fcmConfigured()
-          ? await db.rpc("pasr_admin_news_targets_fcm", { p_audience: n.audience, p_store: n.store }) : { data: [] };
-        const androidList = (fcmTargets ?? []) as { device_id: string; token: string }[];
+        // dubbel versturen voorkomen: hetzelfde bericht naar dezelfde doelgroep kort na elkaar (dubbele tik, twee tabbladen)
+        const fingerprint = newsFingerprint(n);
+        const { data: dup } = await db.from("pasr_news_campaigns").select("id").eq("fingerprint", fingerprint)
+          .gte("created_at", new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString()).limit(1);
+        if ((dup ?? []).length) return json({ error: "duplicate" }, 409);
+        const t = await newsTargets(n);
+        const list = apnsConfigured() ? t.ios : [];
+        const androidList = fcmConfigured() ? t.android : [];
         const { data: camp, error: ce } = await db.from("pasr_news_campaigns")
-          .insert({ title: n.title, body: n.body, audience: n.audience, store_id: n.store, recipients: list.length + androidList.length }).select("id").single();
+          .insert({ title: n.title, body: n.body, audience: n.audience, store_id: n.store, platform: n.platform, app: n.app,
+            url: n.url, fingerprint, recipients: list.length + androidList.length }).select("id").single();
         if (ce) throw new Error(ce.message);
-        const payload = newsPayload(n, camp.id);
         let sent = 0, failed = 0;
-        const invalid: string[] = [];
+        const invalid: NewsTarget[] = [];
         for (const part of chunks(list, 100)) {
-          const res = await Promise.all(part.map(async (d) => ({ d, r: await userSend(d, payload) })));
+          const res = await Promise.all(part.map(async (d) => ({ d, r: await newsIosSend(d, newsPayload(n, camp.id, d.app)) })));
           for (const x of res) {
             if (x.r.ok) sent++;
-            else { failed++; if (x.r.invalid) invalid.push(x.d.device_id); }
+            else { failed++; if (x.r.invalid) invalid.push(x.d); }
           }
         }
-        if (invalid.length) await db.from("pasr_news_devices").delete().in("device_id", invalid);
+        await forgetTargets(invalid);
         const iosSent = sent;
-        const a = await fcmToDevices(androidList, payload, "news");
-        sent += a.sent; failed += a.failed;
+        let androidSent = 0;
+        for (const app of ["pasr", "zakelijk"] as const) {
+          const part = androidList.filter((d) => d.app === app);
+          if (!part.length) continue;
+          const a = await fcmToDevices(part, newsPayload(n, camp.id, app), app === "zakelijk" ? "zakelijk" : "news");
+          androidSent += a.sent; sent += a.sent; failed += a.failed;
+        }
         await db.from("pasr_news_campaigns").update({ sent, failed }).eq("id", camp.id);
-        await audit("news_send", ipHash, `${n.audience}${n.store ? ":" + n.store : ""} ${sent}/${list.length + androidList.length}`);
+        await audit("news_send", ipHash, `${n.audience}${n.store ? ":" + n.store : ""} ${n.app}/${n.platform}${n.url ? " +url" : ""} ${sent}/${list.length + androidList.length}`);
         return json({ id: camp.id, recipients: list.length + androidList.length, sent, failed,
-          ios: { recipients: list.length, sent: iosSent }, android: { recipients: androidList.length, sent: a.sent } });
+          ios: { recipients: list.length, sent: iosSent }, android: { recipients: androidList.length, sent: androidSent } });
       }
       case "businesses": {
         const { data, error } = await db.rpc("pasr_admin_businesses");
