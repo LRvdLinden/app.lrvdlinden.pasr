@@ -39,6 +39,25 @@
             "comment": "Zakelijke stempelkaart (join-link van een ondernemer) openen in Pasr"
           }
         ]
+      },
+      {
+        "appIDs": [
+          "EU3UY476T6.app.lrvdlinden.pasrzakelijk"
+        ],
+        "components": [
+          {
+            "/": "/zakelijk/uitnodiging/*",
+            "comment": "Uitnodiging voor een medewerker openen in Pasr Zakelijk"
+          },
+          {
+            "/": "/zakelijk/uitnodiging",
+            "comment": "Uitnodiging voor een medewerker openen in Pasr Zakelijk"
+          },
+          {
+            "/": "/zakelijk/scan*",
+            "comment": "Scanner openen in Pasr Zakelijk"
+          }
+        ]
       }
     ]
   }

@@ -155,7 +155,7 @@ FEATURES = [
     ("sort", "#0A84FF", "Slim sorteren", "Standaard staan je kaarten van A tot Z. Kies Meest gebruikt of In de buurt, en die kaarten staan bovenaan, ook in je widgets en op je Apple Watch.", 4, "sort"),
     ("cloud", "#0A84FF", "Via je eigen iCloud", "Op je iPhone, iPad en Watch tegelijk, via iCloud of je gratis Pasr-account.", 3, "cloud"),
     ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 3, "theme"),
-    ("stamp", "#7B4B2A", "Stempelkaarten", "Spaar stempels voor een gratis koffie of broodje, zonder papieren kaartje. Maak zelf een stempelkaart, of sluit aan bij de kaart van je zaak: de stempels komen er vanzelf bij, ook op je Wallet-pas. Heb je een zaak? <a href=\"/zakelijk/\">Pasr voor ondernemers</a>", 3, "stamps"),
+    ("stamp", "#7B4B2A", "Stempelkaarten", "Spaar stempels voor een gratis koffie of broodje, zonder papieren kaartje. Zoek de stempelkaart van je zaak in Pasr of scan de QR-code bij de toonbank: de zaak zet de stempels, ze komen er vanzelf bij, ook op je Wallet-pas. Heb je een zaak? <a href=\"/zakelijk/\">Pasr voor ondernemers</a>", 3, "stamps"),
     ("cake", "#FF375F", "Verjaardagsvoordeel", "Veel winkels geven je iets op je verjaardag. Pasr zet het bij de kaart, van de officiële site, en herinnert je eraan in je verjaardagsmaand. Je verjaardag vul je zelf in, als je dat wilt, en blijft op je iPhone.", 3, "birthday"),
 ]
 

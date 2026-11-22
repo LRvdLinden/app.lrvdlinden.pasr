@@ -1,4 +1,5 @@
-// Pasr voor ondernemers op pasr.nl/zakelijk: dashboard, join-pagina, web-scanner en flyer.
+// Pasr voor ondernemers op pasr.nl/zakelijk: dashboard (kaarten, medewerkers, instellingen, log), join-pagina,
+// web-scanner (eigenaar en medewerkers, aantal-kiezer, afkoeltijd, ongedaan maken), uitnodiging en flyer.
 // Gewone fetch naar de Pasr-server (geen SDK). Alles via databasefuncties (pasr_business_*); de tabellen zelf zijn dicht.
 (function () {
   "use strict";
@@ -85,6 +86,8 @@
     if (!res.ok) {
       var err = new Error((data && (data.message || data.msg || data.error_description)) || "error");
       err.status = res.status; err.code = (data && (data.error_code || data.code)) || "";
+      // scanner- en medewerkerfuncties (zakelijk 1.0): message is al een nette zin, hint de vaste code
+      err.hint = (data && data.hint) || ""; err.details = (data && data.details) || "";
       throw err;
     }
     return data;
@@ -106,6 +109,7 @@
   }
   function nice(e) {
     var m = String((e && e.message) || "");
+    if (e && e.hint && /\s/.test(m) && e.hint !== "not_signed_in") return m;
     if (e && e.status === 429 || /rate_limited/.test(m)) return "Even wachten: er zijn te veel pogingen gedaan. Probeer het over een paar minuten opnieuw.";
     if (/invalid login|invalid_credentials/i.test(m) || e.code === "invalid_credentials") return "E-mailadres of wachtwoord klopt niet.";
     if (/email not confirmed|not_confirmed/i.test(m) || e.code === "email_not_confirmed") return "Bevestig eerst je e-mailadres met de link in de mail.";
@@ -117,6 +121,7 @@
     if (/not_found/.test(m)) return "Niet gevonden. Controleer de code of de link.";
     if (/not_enough/.test(m)) return "Nog niet genoeg stempels voor de beloning.";
     if (/too_soon/.test(m)) return "Net al een stempel gezet. Wacht een paar seconden.";
+    if (e && e.hint === "not_signed_in") return "Je bent uitgelogd. Log opnieuw in.";
     if (/card_limit/.test(m)) return "Je kunt hoogstens 5 kaarten maken.";
     if (/bad_logo/.test(m)) return "Dit logo werkt niet. Kies een PNG of JPEG.";
     if (/blocked/.test(m)) return "Je zaak is geblokkeerd. Mail support@pasr.nl als dat niet klopt.";
@@ -165,6 +170,7 @@
             '. Tik op de knop in die mail om je e-mailadres te bevestigen. Kom daarna terug en log hier in om je zaak aan te melden.</p><p><a class="zk-btn" href="#inloggen">Naar inloggen</a></p></section>';
         } else {
           keep(await http("auth/v1/token?grant_type=password", { email: email, password: $("#zkPw").value }));
+          if (dash.afterLogin) return dash.afterLogin();
           location.hash = "";
           await refresh();
         }
@@ -179,7 +185,7 @@
       '<form id="zkReg" class="zk-form" novalidate>' +
       '<label>Naam van je zaak<input id="rName" maxlength="60" required value="' + esc(b && b.name) + '"></label>' +
       '<label>Plaats<input id="rCity" maxlength="60" value="' + esc(b && b.city) + '"></label>' +
-      '<label>Website (optioneel)<input id="rWeb" maxlength="200" inputmode="url" placeholder="jouwzaak.nl" value="' + esc(b && b.website) + '"></label>' +
+      '<label>Website (optioneel; we nemen er je logo en kleur van over)<input id="rWeb" maxlength="200" inputmode="url" placeholder="jouwzaak.nl" value="' + esc(b && b.website) + '"></label>' +
       '<label>Wat voor zaak is het? (optioneel)<textarea id="rNote" rows="3" maxlength="300" placeholder="Bijvoorbeeld: koffiebar met lunch, 2 vestigingen">' + esc(b && b.note) + "</textarea></label>" +
       '<p class="small" style="font-size:14px;margin:0">De naam en plaats komen op je stempelkaart. Je e-mailadres blijft privé. Lees ook onze <a href="/privacy/#stempelkaarten-van-ondernemers">privacyverklaring</a>.</p>' +
       '<div class="row"><button class="zk-btn" type="submit">' + (b ? "Opslaan" : "Aanmelden") + "</button>" + (b ? '<button class="zk-btn ghost" type="button" id="rBack">Terug</button>' : "") + '</div><p class="zk-msg" id="rMsg" role="status"></p></form></div>';
@@ -189,13 +195,145 @@
       ev.preventDefault();
       var btn = ev.target.querySelector("button"); btn.disabled = true;
       try {
-        await rpc("pasr_business_register", { p_name: $("#rName").value, p_city: $("#rCity").value, p_website: $("#rWeb").value || null, p_note: $("#rNote").value || null }, true);
+        var newWeb = ($("#rWeb").value || "").trim(), oldWeb = (b && b.website) || "";
+        await rpc("pasr_business_register", { p_name: $("#rName").value, p_city: $("#rCity").value, p_website: newWeb || null, p_note: $("#rNote").value || null }, true);
         dash.view = "list"; await refresh();
+        if (b && newWeb && newWeb !== oldWeb && (dash.me.cards || []).length) toast("Nieuwe website: open een kaart en tik op Huisstijl ophalen");
       } catch (e) { setMsg($("#rMsg"), /bad_name/.test(e.message) ? "Vul de naam van je zaak in." : nice(e)); btn.disabled = false; }
     });
   }
 
   function logoutBtn() { return '<div class="zk-actions"><a class="zk-btn ghost sm" href="/zakelijk/scan/">' + ICON.scan + 'Scanner</a><button class="zk-btn ghost sm" type="button" id="zkOut">Uitloggen</button></div>'; }
+  // Tabs voor de eigenaar: Kaarten, Medewerkers, Instellingen, Log.
+  var TABS = [["list", "Kaarten"], ["staff", "Medewerkers"], ["settings", "Instellingen"], ["log", "Log"]];
+  function tabs() {
+    return '<nav class="zk-tabs" aria-label="Dashboard">' + TABS.map(function (t) {
+      return '<button type="button" class="zk-btn ghost sm" data-tab="' + t[0] + '" aria-pressed="' + (dash.view === t[0]) + '">' + t[1] + "</button>";
+    }).join("") + "</nav>";
+  }
+  function bindTabs() {
+    dashRoot().querySelectorAll(".zk-tabs button").forEach(function (b) {
+      b.addEventListener("click", function () { dash.view = b.dataset.tab; render(); });
+    });
+  }
+  function bizTop(kicker, title) {
+    return '<div class="zk-top"><div><span class="zk-kicker">' + esc(kicker) + "</span><h1>" + esc(title) + "</h1></div>" + logoutBtn() + "</div>" + tabs();
+  }
+  function timeNl(iso) { return iso ? new Date(iso).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"; }
+
+  // ---- medewerkers ----
+  async function staffView() {
+    var b = dash.me.business;
+    dashRoot().innerHTML = bizTop(b.name, "Medewerkers") +
+      '<div class="zk-panel"><h3>Medewerker uitnodigen</h3><p style="margin:0 0 10px">Een medewerker logt in met een eigen Pasr-account en kan alleen scannen: stempels geven, belonen en ongedaan maken. Kaarten, instellingen en de log blijven van jou.</p>' +
+      '<form id="stInv" class="zk-form" novalidate><label>Naam<input id="stName" maxlength="60" required placeholder="bijv. Sanne"></label>' +
+      '<label>E-mailadres (optioneel, alleen ter herkenning)<input id="stMail" type="email" maxlength="200" autocomplete="off"></label>' +
+      '<div class="row"><button class="zk-btn" type="submit">' + ICON.plus + 'Uitnodiging maken</button></div><p class="zk-msg" id="stMsg" role="status"></p></form><div id="stLink"></div></div>' +
+      '<div class="zk-panel" id="stList">Laden…</div>';
+    bindLogout(); bindTabs();
+    $("#stInv").addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      var btn = ev.target.querySelector("button"); btn.disabled = true;
+      try {
+        var r = await rpc("pasr_business_staff_invite", { p_business: b.id, p_name: $("#stName").value, p_email: $("#stMail").value || null }, true);
+        $("#stName").value = ""; $("#stMail").value = "";
+        $("#stLink").innerHTML = '<div class="zk-qr" style="margin-top:12px"><div class="qr">' + qrSvg(r.link) + '</div><div><p style="margin:0 0 6px">Stuur deze link naar je medewerker. Hij werkt 14 dagen en één keer.</p><div class="zk-link">' + esc(r.link) + '</div>' +
+          '<div class="zk-actions" style="margin-top:10px"><button class="zk-btn sm" type="button" id="stCopy">' + ICON.link + "Kopieer link</button>" +
+          (navigator.share ? '<button class="zk-btn ghost sm" type="button" id="stShare">Delen</button>' : "") + "</div></div></div>";
+        $("#stCopy").addEventListener("click", function () { copy(r.link); });
+        var sh = $("#stShare"); if (sh) sh.addEventListener("click", function () { navigator.share({ title: "Uitnodiging " + b.name, text: "Je bent uitgenodigd om stempels te geven bij " + b.name + " met Pasr Zakelijk.", url: r.link }).catch(function () {}); });
+        loadStaff();
+      } catch (e) { setMsg($("#stMsg"), nice(e)); }
+      btn.disabled = false;
+    });
+    async function loadStaff() {
+      try {
+        var list = await rpc("pasr_business_staff_list", { p_business: b.id }, true);
+        $("#stList").innerHTML = "<h3>Wie kan scannen</h3>" + '<div style="overflow-x:auto"><table class="zk-table"><thead><tr><th>Naam</th><th>Rol</th><th>Status</th><th></th></tr></thead><tbody>' +
+          list.map(function (x) {
+            var st = x.revoked ? "Ingetrokken " + nlDate(x.revoked_at) : x.pending ? (x.expired ? "Uitnodiging verlopen" : "Uitnodiging open") : "Actief sinds " + nlDate(x.accepted_at || x.created_at);
+            return "<tr><td>" + esc(x.name || (x.role === "owner" ? "Jij" : "—")) + (x.email ? '<br><small style="color:#6B6880">' + esc(x.email) + "</small>" : "") + "</td><td>" + (x.role === "owner" ? "Eigenaar" : "Medewerker") + "</td><td>" + esc(st) + "</td><td>" +
+              (x.role !== "owner" && !x.revoked ? '<button class="zk-btn ghost sm" type="button" data-revoke="' + esc(x.id) + '">' + (x.pending ? "Intrekken" : "Toegang intrekken") + "</button>" : "") + "</td></tr>";
+          }).join("") + "</tbody></table></div>";
+        $("#stList").querySelectorAll("button[data-revoke]").forEach(function (btn) {
+          btn.addEventListener("click", async function () {
+            if (!confirm("Toegang intrekken? Deze medewerker kan dan niet meer scannen.")) return;
+            btn.disabled = true;
+            try { await rpc("pasr_business_staff_revoke", { p_staff: btn.dataset.revoke }, true); toast("Ingetrokken"); loadStaff(); }
+            catch (e) { btn.disabled = false; toast(nice(e)); }
+          });
+        });
+      } catch (e) { $("#stList").textContent = nice(e); }
+    }
+    loadStaff();
+  }
+
+  // ---- instellingen: afkoeltijd, max per scan, vindbaar in Pasr, adres ----
+  function settingsView() {
+    var b = dash.me.business;
+    dashRoot().innerHTML = bizTop(b.name, "Instellingen") +
+      '<form id="setForm" class="zk-panel zk-form" novalidate style="max-width:640px">' +
+      '<label>Afkoeltijd: zo lang na een stempel krijgt dezelfde klant geen nieuwe stempel (minuten, 0 = uit)<input id="setCool" type="number" inputmode="numeric" min="0" max="1440" value="' + esc(b.cooldown_minutes == null ? 5 : b.cooldown_minutes) + '"></label>' +
+      '<label>Hoogstens zoveel stempels per scan (1 tot 30)<input id="setMax" type="number" inputmode="numeric" min="1" max="30" value="' + esc(b.max_per_scan == null ? 10 : b.max_per_scan) + '"></label>' +
+      '<label class="check"><input id="setListed" type="checkbox"' + (b.listed === false ? "" : " checked") + "> Vindbaar in Pasr: klanten vinden je stempelkaart in de app bij Kaart toevoegen › Stempelkaart</label>" +
+      '<label>Adres (optioneel, voor "In de buurt" in Pasr)<input id="setAddr" maxlength="200" autocomplete="street-address" placeholder="Straat en huisnummer, plaats" value="' + esc(b.address || "") + '"></label>' +
+      '<p style="font-size:14px;margin:0">' + (b.lat != null ? "Locatie bekend: je kaart verschijnt bij In de buurt." : "De locatie zet je met de app Pasr Zakelijk (Instellingen › Adres); zonder locatie ben je wel vindbaar op naam en plaats.") + "</p>" +
+      '<div class="row"><button class="zk-btn" type="submit">Opslaan</button></div><p class="zk-msg" id="setMsg" role="status"></p></form>' +
+      '<div class="zk-panel" style="max-width:640px"><h3>Gegevens van je zaak</h3><p style="margin:0">' + esc(b.name) + (b.city ? " · " + esc(b.city) : "") + ' · <a href="#" id="zkEditBiz">wijzigen</a></p></div>';
+    bindLogout(); bindTabs();
+    $("#zkEditBiz").addEventListener("click", function (e) { e.preventDefault(); registerView(b); });
+    $("#setForm").addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      var cd = Number($("#setCool").value), mx = Number($("#setMax").value);
+      if (!Number.isInteger(cd) || cd < 0 || cd > 1440) return setMsg($("#setMsg"), "Afkoeltijd moet tussen 0 en 1440 minuten liggen.");
+      if (!Number.isInteger(mx) || mx < 1 || mx > 30) return setMsg($("#setMsg"), "Max per scan moet tussen 1 en 30 liggen.");
+      var addr = $("#setAddr").value.replace(/\s+/g, " ").trim();
+      var settings = { cooldown_minutes: cd, max_per_scan: mx, listed: $("#setListed").checked };
+      if (addr !== (b.address || "")) settings.address = addr || null;   // ander adres: de oude locatie vervalt
+      var btn = ev.target.querySelector("button"); btn.disabled = true;
+      try {
+        var nb = await rpc("pasr_business_settings_save", { p_business: b.id, p_settings: settings }, true);
+        dash.me.business = Object.assign({}, b, nb); setMsg($("#setMsg"), "Opgeslagen.", true);
+      } catch (e) { setMsg($("#setMsg"), nice(e)); }
+      btn.disabled = false;
+    });
+  }
+
+  // ---- log: wie gaf wanneer welke stempel (niet te wissen) ----
+  var KIND = { join: "Nieuw lid", claim: "Kaart naar de app", stamp: "Stempel", redeem: "Beloning ingewisseld", undo: "Ongedaan gemaakt" };
+  async function logView() {
+    var b = dash.me.business;
+    dashRoot().innerHTML = bizTop(b.name, "Log") + '<div class="zk-panel" id="lgStats"></div><div class="zk-panel" id="lgBody">Laden…</div>';
+    bindLogout(); bindTabs();
+    try {
+      var st = await rpc("pasr_business_stats", { p_business: b.id, p_days: 30 }, true);
+      var max = 1; (st.days || []).forEach(function (d) { if (d.stamps > max) max = d.stamps; });
+      $("#lgStats").innerHTML = "<h3>Laatste 30 dagen</h3><div class=\"zk-stats\"><span class=\"zk-stat\"><b>" + st.totals.stamps + "</b><small>stempels</small></span><span class=\"zk-stat\"><b>" + st.totals.rewards + "</b><small>beloningen</small></span><span class=\"zk-stat\"><b>" + st.totals.new_members + "</b><small>nieuwe leden</small></span><span class=\"zk-stat\"><b>" + st.totals.members + "</b><small>leden totaal</small></span></div>" +
+        '<div class="zk-bars" aria-hidden="true">' + (st.days || []).map(function (d) { return '<i style="height:' + Math.max(2, Math.round(d.stamps / max * 100)) + '%" title="' + d.day + ": " + d.stamps + ' stempels"></i>'; }).join("") + "</div>";
+    } catch (e) { $("#lgStats").textContent = nice(e); }
+    try {
+      var r = await rpc("pasr_business_log", { p_business: b.id, p_limit: 300 }, true), ev = r.events || [];
+      $("#lgBody").innerHTML = "<h3>Log</h3>" + (ev.length ? '<div style="overflow-x:auto"><table class="zk-table"><thead><tr><th>Wanneer</th><th>Wat</th><th>Kaart</th><th>Klant</th><th>Door</th></tr></thead><tbody>' +
+        ev.map(function (x) {
+          var what = KIND[x.kind] || x.kind;
+          if (x.kind === "stamp") what = x.amount === 1 ? "1 stempel" : x.amount + " stempels";
+          if (x.stamps_after != null && x.kind !== "join" && x.kind !== "claim") what += " (" + x.stamps_before + " → " + x.stamps_after + ")";
+          var who = x.by_role === "customer" ? "Klant" : esc(x.by_name || "—") + (x.by_role === "staff" ? " (medewerker)" : "") + (x.device ? '<br><small style="color:#6B6880">' + esc(x.device) + "</small>" : "");
+          return "<tr" + (x.undone ? ' style="text-decoration:line-through;opacity:.6"' : "") + "><td>" + timeNl(x.at) + "</td><td>" + esc(what) + "</td><td>" + esc(x.card_name || "verwijderde kaart") + "</td><td>…" + esc(x.member_suffix || "") + "</td><td>" + who + "</td></tr>";
+        }).join("") + "</tbody></table></div>" : '<p class="zk-empty">Nog niets gebeurd.</p>') +
+        '<p style="font-size:14px;margin:12px 0 0">De log kan niet worden gewist of aangepast, ook niet door jou. Doorgestreept = ongedaan gemaakt.</p>';
+    } catch (e) { $("#lgBody").textContent = nice(e); }
+  }
+
+  // ---- medewerker (geen eigen zaak): alleen de scanner ----
+  function staffOnlyView() {
+    var list = (dash.me.businesses || []).filter(function (x) { return x.role === "staff"; });
+    dashRoot().innerHTML = '<div class="zk-top"><div><span class="zk-kicker">Medewerker</span><h1>' + esc(list.map(function (x) { return x.name; }).join(", ")) + "</h1></div>" + logoutBtn() + "</div>" +
+      '<div class="zk-panel" style="max-width:640px"><p>Je bent medewerker en kunt stempels geven en belonen met de scanner, of met de app Pasr Zakelijk.</p><p><a class="zk-btn" href="/zakelijk/scan/">' + ICON.scan + "Open de scanner</a></p>" +
+      '<p style="font-size:14px;margin:0">Heb je zelf een zaak? <a href="#" id="zkOwn">Meld je zaak aan</a>.</p></div>';
+    bindLogout();
+    $("#zkOwn").addEventListener("click", function (e) { e.preventDefault(); registerView(null); });
+  }
   function bindLogout() {
     var b = $("#zkOut"); if (!b) return;
     b.addEventListener("click", async function () {
@@ -210,7 +348,7 @@
     var b = dash.me.business, cards = dash.me.cards || [];
     var st = STATUS[b.status] || STATUS.pending;
     var html = '<div class="zk-top"><div><span class="zk-status ' + st[1] + '">' + st[0] + "</span><h1>" + esc(b.name) + '</h1><p style="margin:4px 0 0">' + esc(b.city || "") +
-      ' · <a href="#" id="zkEditBiz">gegevens wijzigen</a></p></div>' + logoutBtn() + "</div>";
+      ' · <a href="#" id="zkEditBiz">gegevens wijzigen</a></p></div>' + logoutBtn() + "</div>" + tabs();
     if (b.status === "pending") html += '<div class="zk-panel"><h3>Bijna klaar</h3><p style="margin:0">We bekijken je aanmelding. Ontwerp alvast je stempelkaart; zodra je zaak is goedgekeurd zet je hem online en kun je stempels geven.</p></div>';
     if (b.status === "blocked") html += '<div class="zk-panel"><h3>Je zaak is geblokkeerd</h3><p style="margin:0">Je kaarten zijn offline. Mail <a href="mailto:support@pasr.nl">support@pasr.nl</a> als dat niet klopt.</p></div>';
     if (!cards.length) {
@@ -228,7 +366,7 @@
       if (cards.length < 5) html += '<p style="text-align:center;margin-top:18px"><button class="zk-btn ghost" id="zkNew" type="button">' + ICON.plus + "Nog een kaart</button></p>";
     }
     dashRoot().innerHTML = html;
-    bindLogout();
+    bindLogout(); bindTabs();
     $("#zkEditBiz").addEventListener("click", function (e) { e.preventDefault(); registerView(b); });
     var nb = $("#zkNew"); if (nb) nb.addEventListener("click", function () { dash.edit = null; dash.view = "edit"; render(); });
     dashRoot().querySelectorAll(".zk-card button[data-act]").forEach(function (btn) {
@@ -273,6 +411,7 @@
       '<label>Beloning<input id="cReward" maxlength="80" placeholder="bijv. 1 gratis koffie" value="' + esc(c.reward) + '" required></label>' +
       '<label>Aantal stempels: <output id="cTotOut">' + c.stamps_total + '</output><input id="cTotal" type="range" min="2" max="30" value="' + c.stamps_total + '"></label>' +
       '<label>Kleur<span class="row"><input id="cColor" type="color" value="' + esc(c.color) + '"><span class="swatches">' + SWATCHES.map(function (s) { return '<button type="button" data-c="' + s + '" style="background:' + s + '" aria-label="Kleur ' + s + '"></button>'; }).join("") + "</span></span></label>" +
+      '<div class="zk-brand" id="cBrand" role="status"></div>' +
       '<label>Logo (PNG of JPEG, vierkant werkt het best)<span class="row"><input id="cLogo" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" class="zk-btn ghost sm" id="cNoLogo">Geen logo</button></span></label>' +
       '<label class="check"><input id="cPub" type="checkbox"' + (c.published && approved ? " checked" : "") + (approved ? "" : " disabled") + "> Online: klanten kunnen aansluiten" + (approved ? "" : " (kan na goedkeuring)") + "</label>" +
       '<div class="row"><button class="zk-btn" type="submit">Opslaan</button><button class="zk-btn ghost" type="button" id="cBack">Annuleren</button>' + (c.id ? '<button class="zk-btn ghost" type="button" id="cDel" style="margin-left:auto;color:#C2361F">Verwijderen</button>' : "") + '</div><p class="zk-msg" id="cMsg" role="status"></p></form>' +
@@ -284,6 +423,29 @@
       $("#cPrev").innerHTML = stampCard({ name: state.name || "Naam van de kaart", reward: state.reward || "Je beloning", stamps_total: state.stamps_total, color: state.color, logo: state.logo, business: state.business, city: state.city }, n);
     }
     draw();
+    // huisstijl van de website (functie business-brand): bij een nieuwe kaart vanzelf, anders met de knop
+    async function fetchBrand(auto) {
+      var box = $("#cBrand");
+      if (!b.website) { box.innerHTML = auto ? "" : '<p class="small">Vul je website in bij <a href="#" id="cBizLink">de gegevens van je zaak</a>, dan nemen we je logo en kleur automatisch over.</p>'; var l = $("#cBizLink"); if (l) l.addEventListener("click", function (e) { e.preventDefault(); registerView(b); }); return; }
+      box.innerHTML = '<p class="small">Huisstijl ophalen van ' + esc(b.website.replace(/^https?:\/\//, "").replace(/\/.*$/, "")) + "…</p>";
+      try {
+        var t = await token();
+        var r = await http("functions/v1/business-brand", { business_id: b.id }, t);
+        if (r.logo) state.logo = r.logo;
+        if (r.color) { state.color = r.color.toUpperCase(); $("#cColor").value = state.color; }
+        if (r.name && !state.name.trim() && !c.id) { state.name = r.name.slice(0, 40); $("#cName").value = state.name; }
+        draw();
+        box.innerHTML = '<p class="small"><b>Overgenomen van ' + esc(r.domain) + '</b>. Je kunt alles aanpassen. <button type="button" class="zk-btn ghost sm" id="cRebrand">Opnieuw ophalen</button></p>';
+      } catch (e) {
+        // lukt het niet: neutrale Pasr-kleur en de initiaal; nooit blokkeren
+        var why = e.status === 429 ? "Even wachten: je hebt het vaak geprobeerd." : e.message === "bad_url" || e.message === "no_website" ? "Je website klopt niet." : "Je website gaf geen logo of kleur.";
+        box.innerHTML = '<p class="small">' + esc(why) + ' Kies zelf een logo en kleur. <button type="button" class="zk-btn ghost sm" id="cRebrand">Opnieuw ophalen</button></p>';
+      }
+      var rb = $("#cRebrand"); if (rb) rb.addEventListener("click", function () { fetchBrand(false); });
+    }
+    if (!c.id) fetchBrand(true);
+    else $("#cBrand").innerHTML = b.website ? '<p class="small"><button type="button" class="zk-btn ghost sm" id="cRebrand">Huisstijl ophalen van je website</button></p>' : "";
+    var rb0 = $("#cRebrand"); if (rb0) rb0.addEventListener("click", function () { fetchBrand(false); });
     $("#cName").addEventListener("input", function (e) { state.name = e.target.value; draw(); });
     $("#cReward").addEventListener("input", function (e) { state.reward = e.target.value; draw(); });
     $("#cTotal").addEventListener("input", function (e) { state.stamps_total = Number(e.target.value); $("#cTotOut").textContent = e.target.value; draw(); });
@@ -308,7 +470,7 @@
     $("#cBack").addEventListener("click", function () { dash.view = "list"; render(); });
     var del = $("#cDel");
     if (del) del.addEventListener("click", async function () {
-      if (!confirm("Deze kaart verwijderen? Alle leden en stempels van deze kaart gaan ook weg. Dit kan niet ongedaan worden.")) return;
+      if (!confirm("Deze kaart verwijderen? Alle leden en stempels van deze kaart gaan ook weg (de log blijft staan). Dit kan niet ongedaan worden.")) return;
       try { await rpc("pasr_business_card_delete", { p_card: c.id }, true); dash.view = "list"; await refresh(); } catch (e) { setMsg($("#cMsg"), nice(e)); }
     });
     $("#zkCard").addEventListener("submit", async function (ev) {
@@ -350,9 +512,12 @@
     var h = location.hash.replace("#", "");
     if (!session) return loginView(h === "account" ? "signup" : h === "vergeten" ? "forgot" : "login");
     if (!dash.me) { dashRoot().innerHTML = '<p class="zk-empty">Laden…</p>'; return refresh(); }
-    if (!dash.me.business) return registerView(null);
+    if (!dash.me.business) return (dash.me.businesses || []).some(function (x) { return x.role === "staff"; }) ? staffOnlyView() : registerView(null);
     if (dash.view === "edit") return editView();
     if (dash.view === "members") return membersView();
+    if (dash.view === "staff") return staffView();
+    if (dash.view === "settings") return settingsView();
+    if (dash.view === "log") return logView();
     return listView();
   }
   async function refresh() {
@@ -375,8 +540,8 @@
       root.innerHTML = "<h1>" + esc(m.card.name) + "</h1><p>Laat deze code scannen bij " + esc(m.card.business) + " voor een stempel.</p>" + stampCard(m.card, m.stamps_count) +
         '<div class="zk-member-qr">' + qrSvg(m.member_code) + '</div><p class="zk-code">' + esc(m.member_code.replace(/(.{4})(?=.)/g, "$1 ")) + "</p>" +
         "<p>" + (m.stamps_count >= m.stamps_total ? "Je beloning staat klaar: " + esc(m.reward) + "." : "Nog " + (m.stamps_total - m.stamps_count) + " stempels tot " + esc(m.reward) + ".") + "</p>" +
-        '<div class="actions"><button class="btn btn-ghost" id="jRefresh" type="button">Vernieuwen</button><a class="btn btn-primary" href="pasr://zakelijk#' + esc(id) + '">Bewaar in Pasr</a></div>' +
-        '<p class="note">Deze kaart staat in deze browser. Met de gratis app <a href="' + APP_STORE + '" rel="noopener">Pasr</a> heb je hem altijd bij de hand, ook in Apple Wallet.</p>';
+        '<div class="actions"><button class="btn btn-ghost" id="jRefresh" type="button">Vernieuwen</button><a class="btn btn-primary" href="pasr://zakelijk?code=' + encodeURIComponent(m.member_code) + "#" + esc(id) + '">Bewaar in Pasr</a></div>' +
+        '<p class="note">Deze kaart staat in deze browser. Met Bewaar in Pasr gaan je stempels mee naar de app. Met de gratis app <a href="' + APP_STORE + '" rel="noopener">Pasr</a> heb je hem altijd bij de hand, ook in Apple Wallet.</p>';
       $("#jRefresh").addEventListener("click", load);
     }
     async function load() {
@@ -414,14 +579,14 @@
   // ---------------------------------------------------------------- scanner: pasr.nl/zakelijk/scan
   function codeFrom(text) {
     var t = String(text || "").trim().toUpperCase();
-    var m = t.match(/PZ[A-HJ-NP-Z2-9]{10}/);
+    var m = t.match(/PZ(?:[A-HJ-NP-Z2-9]{14}|[A-HJ-NP-Z2-9]{10})(?![A-HJ-NP-Z2-9])/);
     return m ? m[0] : null;
   }
   async function scanPage() {
     var root = $("#zk-scan");
     if (!ready) { root.innerHTML = "<p>Even niet beschikbaar.</p>"; return; }
     if (!session || !(await token())) {
-      root.innerHTML = '<section class="auth"><h1>Eerst inloggen</h1><p>De scanner werkt met het account van je zaak.</p><a class="zk-btn" href="/zakelijk/dashboard/">Inloggen</a></section>';
+      root.innerHTML = '<section class="auth"><h1>Eerst inloggen</h1><p>De scanner werkt met het account van je zaak, of met je eigen account als medewerker.</p><a class="zk-btn" href="/zakelijk/dashboard/">Inloggen</a></section>';
       return;
     }
     root.innerHTML = '<div class="zk-top"><div><span class="zk-kicker">Scanner</span><h1>Stempel geven</h1></div><a class="zk-btn ghost sm" href="/zakelijk/dashboard/">Dashboard</a></div>' +
@@ -441,33 +606,62 @@
       } catch (e) { setMsg($("#sMsg"), nice(e)); $("#sResult").innerHTML = ""; }
       busy = false;
     }
+    var DEVICE = "Webscanner";
+    var undoTimer = null;
     function result(m) {
-      var amount = 1, full = m.stamps_count >= m.stamps_total;
-      $("#sResult").innerHTML = '<div class="zk-result" id="sBox">' + stampCard(m.card, m.stamps_count) +
+      // aantal-kiezer: standaard 1, tot het maximum per scan van de zaak (1 tot 30)
+      var amount = 1, maxAmt = Math.max(1, Math.min(30, Number(m.max_per_scan) || 10)), full = m.stamps_count >= m.stamps_total;
+      var cool = m.cooldown_until && new Date(m.cooldown_until) > new Date();
+      clearInterval(undoTimer);
+      $("#sResult").innerHTML = '<div class="zk-result" id="sBox">' + stampCard(m.card, Math.min(m.stamps_count, m.stamps_total)) +
         '<div class="big">' + m.stamps_count + " van " + m.stamps_total + " stempels</div>" +
-        (full ? '<p style="margin:0">Beloning klaar: <b>' + esc(m.reward) + "</b></p>" : "") +
-        '<div class="zk-stepper"><button class="zk-btn ghost sm" type="button" id="sMin" aria-label="Minder">-</button><output id="sAmt">1</output><button class="zk-btn ghost sm" type="button" id="sPlus" aria-label="Meer">+</button></div>' +
-        '<div class="zk-actions" style="justify-content:center"><button class="zk-btn mint" id="sStamp" type="button">' + ICON.stamp + 'Stempel erbij</button>' +
+        (full ? '<p style="margin:0">Beloning klaar: <b>' + esc(m.reward) + "</b>" + (m.stamps_count > m.stamps_total ? " (" + (m.stamps_count - m.stamps_total) + " stempels blijven staan voor de volgende kaart)" : "") + "</p>" : "") +
+        (cool ? '<p class="zk-msg bad" style="margin:0">Afkoeltijd: deze klant kreeg net een stempel. De volgende kan vanaf ' + new Date(m.cooldown_until).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) + ".</p>" : "") +
+        '<label class="zk-amount">Aantal stempels<span class="zk-stepper"><button class="zk-btn ghost sm" type="button" id="sMin" aria-label="Minder">-</button>' +
+        '<input id="sAmt" type="number" inputmode="numeric" min="1" max="' + maxAmt + '" value="1" aria-label="Aantal stempels">' +
+        '<button class="zk-btn ghost sm" type="button" id="sPlus" aria-label="Meer">+</button></span><small>hoogstens ' + maxAmt + " per scan</small></label>" +
+        '<div class="zk-actions" style="justify-content:center"><button class="zk-btn mint" id="sStamp" type="button"' + (cool ? " disabled" : "") + ">" + ICON.stamp + '<span id="sStampTxt">Stempel erbij</span></button>' +
         '<button class="zk-btn coral" id="sRedeem" type="button"' + (full ? "" : " disabled") + ">" + ICON.gift + "Beloning inwisselen</button></div>" +
-        '<p style="font-size:13px;margin:0">Lid …' + esc(m.member_code.slice(-4)) + (m.rewards_redeemed ? " · " + m.rewards_redeemed + "x beloning gehad" : "") + "</p></div>";
-      $("#sMin").addEventListener("click", function () { amount = Math.max(1, amount - 1); $("#sAmt").textContent = amount; });
-      $("#sPlus").addEventListener("click", function () { amount = Math.min(10, amount + 1); $("#sAmt").textContent = amount; });
-      $("#sStamp").addEventListener("click", function (ev) { act(ev.currentTarget, "pasr_business_stamp", { p_code: m.member_code, p_amount: amount }, amount === 1 ? "Stempel gezet" : amount + " stempels gezet"); });
+        (m.can_undo_event_id ? '<p style="margin:0"><button class="zk-btn ghost sm" type="button" id="sUndo">Ongedaan maken <span id="sUndoLeft"></span></button></p>' : "") +
+        '<p style="font-size:13px;margin:0">Lid …' + esc(m.member_code_suffix || m.member_code.slice(-4)) + (m.rewards_redeemed ? " · " + m.rewards_redeemed + "x beloning gehad" : "") + "</p></div>";
+      function setAmt(n) {
+        amount = Math.max(1, Math.min(maxAmt, Math.round(Number(n)) || 1));
+        $("#sAmt").value = amount;
+        $("#sStampTxt").textContent = amount === 1 ? "Stempel erbij" : amount + " stempels erbij";
+      }
+      $("#sMin").addEventListener("click", function () { setAmt(amount - 1); });
+      $("#sPlus").addEventListener("click", function () { setAmt(amount + 1); });
+      $("#sAmt").addEventListener("change", function (e) { setAmt(e.target.value); });
+      $("#sStamp").addEventListener("click", function (ev) { act(ev.currentTarget, "pasr_business_stamp", { p_code: m.member_code, p_amount: amount, p_device: DEVICE }, amount === 1 ? "Stempel gezet" : amount + " stempels gezet"); });
       $("#sRedeem").addEventListener("click", function (ev) {
         if (!confirm("Beloning inwisselen: " + m.reward + "? Er gaan " + m.stamps_total + " stempels af.")) return;
-        act(ev.currentTarget, "pasr_business_redeem", { p_code: m.member_code }, "Beloning ingewisseld");
+        act(ev.currentTarget, "pasr_business_redeem", { p_code: m.member_code, p_device: DEVICE }, "Beloning ingewisseld");
       });
+      var undo = $("#sUndo");
+      if (undo) {
+        // ongedaan maken kan 2 minuten na het eigen stempel (eigenaar: elk); de server controleert het ook
+        var until = Date.now() + 120000;
+        if (m.event_id && m.event_id === m.can_undo_event_id) until = Date.now() + 120000;
+        else if (m.last_stamp_at) until = Math.min(until, new Date(m.last_stamp_at).getTime() + 120000);
+        var tickUndo = function () {
+          var left = Math.round((until - Date.now()) / 1000);
+          if (left <= 0) { clearInterval(undoTimer); undo.remove(); return; }
+          $("#sUndoLeft").textContent = "(" + Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") + ")";
+        };
+        tickUndo(); undoTimer = setInterval(tickUndo, 1000);
+        undo.addEventListener("click", function (ev) { act(ev.currentTarget, "pasr_business_undo", { p_event: m.can_undo_event_id, p_device: DEVICE }, "Ongedaan gemaakt"); });
+      }
       $("#sBox").scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
     async function act(btn, fn, args, done) {
       btn.disabled = true;
-      try { var m = await rpc(fn, args, true); result(m); $("#sBox").classList.add("zk-flash"); setMsg($("#sMsg"), done, true); }
+      try { var m = await rpc(fn, args, true); result(m); $("#sBox").classList.add("zk-flash"); setMsg($("#sMsg"), done, true); if (navigator.vibrate) navigator.vibrate(30); }
       catch (e) { btn.disabled = false; setMsg($("#sMsg"), nice(e)); }
     }
     $("#sManual").addEventListener("submit", function (ev) {
       ev.preventDefault();
       var c = codeFrom($("#sCode").value.replace(/\s+/g, ""));
-      if (!c) return setMsg($("#sMsg"), "Een code begint met PZ en heeft 12 tekens.");
+      if (!c) return setMsg($("#sMsg"), "Een code begint met PZ en heeft 16 tekens (oudere codes 12).");
       show(c);
     });
     async function tick() {
@@ -494,6 +688,45 @@
     } catch (e) {
       $("#sHint").textContent = "Geen camera: geef toegang in je browser of typ de code hieronder.";
     }
+  }
+
+  // ---------------------------------------------------------------- uitnodiging medewerker: pasr.nl/zakelijk/uitnodiging/#<code>
+  async function invitePage() {
+    var KEY = "pasr.zakelijk.invite";
+    var fromHash = location.hash.slice(1).toUpperCase();
+    if (/^[A-HJ-NP-Z2-9]{20}$/.test(fromHash)) { try { sessionStorage.setItem(KEY, fromHash); } catch (e) { /* */ } }
+    var code = /^[A-HJ-NP-Z2-9]{20}$/.test(fromHash) ? fromHash : (function () { try { return sessionStorage.getItem(KEY); } catch (e) { return null; } })();
+    function box(html) { dashRoot().innerHTML = '<section class="auth" style="max-width:520px"><div class="badge">' + ICON.users + "</div>" + html + "</section>"; }
+    if (!code) return box("<h1>Deze link werkt niet</h1><p>De uitnodiging is niet compleet. Vraag de eigenaar van de zaak om een nieuwe link.</p>");
+    if (!ready) return box("<h1>Even niet beschikbaar</h1><p>Probeer het later opnieuw.</p>");
+    var info;
+    try { info = await rpc("pasr_business_staff_invite_info", { p_code: code }); } catch (e) { return box("<h1>Niet opgehaald</h1><p>Geen verbinding met Pasr. Laad de pagina opnieuw.</p>"); }
+    if (!info || info.status !== "ok") return box("<h1>Uitnodiging verlopen</h1><p>Deze uitnodiging is verlopen of al gebruikt. Vraag de eigenaar om een nieuwe.</p>");
+    var appLink = "pasrzakelijk://uitnodiging#" + code;
+    async function accept() {
+      try {
+        var r = await rpc("pasr_business_staff_accept", { p_code: code }, true);
+        try { sessionStorage.removeItem(KEY); } catch (e) { /* */ }
+        box("<h1>Welkom bij " + esc(r.business.name) + "</h1><p>Je kunt nu stempels geven en belonen. Open de scanner op deze telefoon, of gebruik de app Pasr Zakelijk.</p>" +
+          '<p style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="zk-btn" href="/zakelijk/scan/">' + ICON.scan + 'Open de scanner</a><a class="zk-btn ghost" href="' + appLink + '">Open in Pasr Zakelijk</a></p>');
+      } catch (e) { box("<h1>Dat lukte niet</h1><p>" + esc(nice(e)) + "</p>"); }
+    }
+    dash.afterLogin = accept;
+    function intro() {
+      box("<h1>Uitnodiging van " + esc(info.business) + "</h1><p>" + (info.name ? esc(info.name) + ", je" : "Je") + " bent uitgenodigd om stempels te geven bij " + esc(info.business) + (info.city ? " in " + esc(info.city) : "") + ". Je logt in met je eigen Pasr-account.</p>" +
+        '<p style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="zk-btn" href="' + appLink + '">Open in Pasr Zakelijk</a>' +
+        '<button class="zk-btn ghost" type="button" id="invWeb">' + (session ? "Accepteren in de browser" : "Inloggen en accepteren") + "</button></p>" +
+        '<p style="font-size:14px">De app Pasr Zakelijk komt binnenkort in de App Store. Tot die tijd werkt de scanner in je browser.</p>');
+      $("#invWeb").addEventListener("click", async function () {
+        if (session && (await token())) return accept();
+        location.hash = "inloggen"; loginView("login");
+      });
+    }
+    window.addEventListener("hashchange", function () {
+      var h = location.hash.replace("#", "");
+      if (h === "account") loginView("signup"); else if (h === "vergeten") loginView("forgot"); else if (h === "inloggen") loginView("login");
+    });
+    intro();
   }
 
   // ---------------------------------------------------------------- flyer: pasr.nl/zakelijk/flyer/#<id>
@@ -523,5 +756,6 @@
   if (page === "zk-join") joinPage();
   if (page === "zk-scan") scanPage();
   if (page === "zk-flyer") flyerPage();
+  if (page === "zk-invite") invitePage();
   if (page === "zk-home") homePage();
 })();

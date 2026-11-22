@@ -167,7 +167,7 @@
       rows.push(['Stempels', Math.min(count, total) + ' van ' + total]);
       // stempelkaart van een zaak: de actuele stand ophalen met de lidcode (niets persoonlijks)
       var cfg = window.PASR_ACCOUNT || {};
-      if (x.memberCode && cfg.url && cfg.key && /^PZ[A-HJ-NP-Z2-9]{10}$/.test(x.memberCode)) {
+      if (x.memberCode && cfg.url && cfg.key && /^PZ([A-HJ-NP-Z2-9]{10}|[A-HJ-NP-Z2-9]{14})$/.test(x.memberCode)) {
         fetch(cfg.url + '/rest/v1/rpc/pasr_business_member', { method: 'POST', headers: { apikey: cfg.key, 'Content-Type': 'application/json' },
           body: JSON.stringify({ p_code: x.memberCode }), referrerPolicy: 'no-referrer', cache: 'no-store' })
           .then(function (r) { return r.json(); }).then(function (m) {
