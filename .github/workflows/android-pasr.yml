@@ -238,6 +238,7 @@ jobs:
           # Paparazzi alleen in deze job (de APK-build blijft er los van)
           sed -i 's|^plugins {|plugins {\n    id("app.cash.paparazzi") version "1.3.5"|' app/build.gradle.kts
           mkdir -p app/src/test/java && cp -r previews/* app/src/test/java/ 2>/dev/null || true
+          set -o pipefail
           ./gradlew --no-daemon recordPaparazziDebug 2>&1 | tail -80
       - uses: actions/upload-artifact@v4
         if: always()
@@ -246,7 +247,7 @@ jobs:
           path: android/pasr/app/src/test/snapshots/
           if-no-files-found: ignore
       - name: Previews naar de branch android-builds (pasr-previews/)
-        if: always()
+        if: success()
         env:
           SRC: app/src/test/snapshots/images
           SUB: pasr-previews

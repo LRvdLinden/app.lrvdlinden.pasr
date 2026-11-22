@@ -121,7 +121,7 @@ class PreviewTest {
                 }
             }
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                ExtendedFloatingActionButton({}, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Kaart toevoegen") },
+                ExtendedFloatingActionButton(onClick = {}, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Kaart toevoegen") },
                     containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White)
             }
         }
