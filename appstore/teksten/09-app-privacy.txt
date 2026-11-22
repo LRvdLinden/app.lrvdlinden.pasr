@@ -18,6 +18,11 @@ Gegevens die worden verzameld:
 Niet verzameld:
 - Locatie: blijft op het apparaat. (Bij een Wallet-pas gaan plaatsen van filialen mee om de pas te maken; de server bewaart niets.)
 - Foto's en schermopnames voor importeren: worden alleen op het apparaat gelezen.
+- Bonnetjes (build 47): foto's, totaal en datum blijven op je apparaten en in je eigen iCloud; de tekst wordt op het
+  apparaat gelezen. Gaan niet naar de server.
+- Aankopen via Opdrachten (build 47): de winkelnaam uit de betaling wordt alleen op de iPhone gebruikt om de kaart te
+  vinden en niet bewaard. Een bedrag bij een gebruiksmoment gaat alleen mee in de kaart (Overige gebruikersinhoud) als
+  je een account hebt, net als een zelf ingevuld bedrag.
 - Gebruiksgegevens, diagnose, crashrapporten, aankopen, financiële gegevens: niet verzameld.
 
 Encryptie (Export compliance): de app gebruikt alleen standaardversleuteling (HTTPS, AES voor back-ups en Keychain) →

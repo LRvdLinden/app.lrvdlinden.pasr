@@ -1,4 +1,6 @@
-• Laatst gebruikt: onder elke kaart zie je wanneer je hem liet zien, zoals in Apple Wallet. Vul als je wilt in wat je uitgaf; bij een cadeaukaart gaat het van je tegoed af.
+• Laatst gebruikt: onder elke kaart zie je wanneer je hem gebruikte, zoals in Apple Wallet. Even kijken telt niet meer: liet je de kaart een paar seconden zien, dan vraagt Pasr bij het sluiten "Gebruikt bij PLUS? Ja · Nee", en met je locatie alleen als je echt bij de winkel bent. Vul als je wilt in wat je uitgaf; bij een cadeaukaart gaat het van je tegoed af.
+• Aankopen vanzelf vastleggen: koppel Aankoop vastleggen in de app Opdrachten aan je Apple Pay-betalingen, en Pasr zet de aankoop bij de juiste kaart.
+• Bonnetjes bewaren: scan de kassabon, Pasr leest het totaal en de datum. Met Garantie tot krijg je een maand van tevoren een herinnering. Vind elke bon snel terug via Bonnetjes, de zoekbalk of Spotlight, en deel hem als PDF.
 • Stempelkaarten van je favoriete zaak: scan de QR-code bij de kassa en spaar stempels tot je beloning. De zaak zet de stempels, Pasr toont altijd de actuele stand.
 • Al een stempelkaart in je browser? Met Bewaar in Pasr gaan je stempels mee naar de app.
 • Je eigen stempelkaarten zijn klantenkaarten geworden; je stand staat in de notitie. Stempels zet voortaan alleen de zaak zelf.

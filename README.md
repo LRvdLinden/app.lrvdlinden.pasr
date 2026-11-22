@@ -102,6 +102,44 @@ naar de server en blijft bij het samenvoegen lokaal staan. Plaats en provincie b
 CloudKit-schemawijziging: alles zit in `historyData`. Vervangt de regel "Vorige keer …" en, bij klantenkaarten, de oude
 geschiedenis-sheet (de klokknop opent nu Laatst gebruikt; bij cadeaukaarten blijft Tegoed en uitgaven).
 
+## Gebruik slim bijhouden en bonnetjes (build 47)
+
+Even een kaart openen telt niet meer als gebruik (Pasr ziet de kassascan niet; dat gaf dubbele regels). Een moment komt
+in Laatst gebruikt op drie manieren (`UseCapture` in `App/Views/UsePromptViews.swift`, `Card.recordUse`):
+
+1. **Vraag bij sluiten.** Was de barcode minstens 5 seconden in beeld (achtergrond telt niet), dan staat bij het sluiten
+   8 seconden onderin "Gebruikt bij PLUS? Ja · Nee". Ja zet het moment erin en opent het optionele bedrag
+   (`UseAmountSheet`, bij een cadeaukaart van het tegoed); geen reactie of Nee = niets. Vervangt de oude
+   "Hoeveel heb je uitgegeven?"-vraag bij vouchers. Instellingen › Laatst gebruikt › Vraag na het tonen.
+2. **Alleen bij de winkel** (standaard aan). Met locatietoegang vraagt `NearbyStores.storeCheck` lokaal: bij een eigen
+   locatie of bekend filiaal binnen 300 m → vragen met de filiaalnaam (blijft lokaal, zoals in build 46); kent Pasr de
+   filialen rond deze plek en ben je bij geen ervan → niets vragen, niets bewaren; onbekend of geen toestemming → gewoon
+   vragen (optie 1). Geen extra zoekopdracht naar Apple Kaarten.
+3. **Aankoop vastleggen** (`RecordPurchaseIntent`, App Intent en App Shortcut, `App/Services/PurchaseCapture.swift`).
+   Koppel hem in Opdrachten aan de persoonlijke automatisering Transactie (Apple Pay) met Winkel = Verkoper en
+   Bedrag = Bedrag. `PurchaseMatcher` zoekt de kaart op naam, aliassen en website uit de catalogus (korte namen als AH
+   alleen vooraan). Klantenkaart: moment met bedrag. Cadeaukaart: het bedrag wacht (`pendingAmount`) tot je in de
+   melding op Afboeken tikt. Geen kaart: niets bewaard, melding "Geen kaart gevonden voor X". Geen locatie; de
+   winkelnaam uit de betaling wordt niet bewaard. Uitleg en knop naar Opdrachten: Instellingen › Laatst gebruikt ›
+   Aankopen vanzelf vastleggen.
+
+Een moment binnen 15 minuten van een ander (eerst Ja, daarna Apple Pay) wordt geen dubbele regel. Bestaande dubbele
+regels blijven staan; naar links vegen verwijdert een regel (ook in het kaartdetail). `CardEvent` kreeg `source`,
+`pendingAmount` en `receiptID`; die blijven op het apparaat (de sync stuurt nog steeds alleen winkel, tijd en bedrag).
+
+**Bonnetjes** (`Receipt`, nieuw SwiftData-model in `Shared/Model/Receipt.swift`; niet op de Watch). Scannen met de
+documentscanner (VisionKit) of een foto, totaal en datum lokaal lezen met Vision (`ReceiptReader`), controleren,
+optioneel "Garantie tot" (voorstel 2 jaar) met een herinnering een maand van tevoren (`ReceiptReminders`). Bij een
+gebruiksmoment (Bonnetje scannen in het bedrag-venster) of los. Vaste ingang: knop Bonnetjes op het hoofdscherm (alle
+bonnen, nieuwste eerst, zoeken op winkel, bedrag of datum, filter Garantie loopt nog en per kaart); de zoekbalk "Zoek
+kaarten" toont ook passende bonnen; per kaart onder Alles. Groot tonen met zoomen, delen als PDF of afbeelding. Spotlight
+("PLUS bon", alleen de lokale index) en de opdracht **Toon bonnetje**. Opslag zoals de foto's van een pas: externe
+bestanden in SwiftData onder iOS-gegevensbescherming, iCloud (privédatabase) en de versleutelde Pasr-back-up; niet via
+het Pasr-account (de foto's van een pas gaan daar ook niet mee).
+
+`App/InfoPlist.xcstrings` (nl en en) vertaalt de toestemmingsteksten; `App/PrivacyInfo.xcprivacy` en
+`Widgets/PrivacyInfo.xcprivacy` zijn de privacy manifests (gelijk aan `appstore/teksten/09-app-privacy.txt`).
+
 ## Website
 
 De site staat in `website/` en heeft schone adressen (`/privacy/`, `/support/`, geen `.html`). De homepage wordt gemaakt met `python3 tools/make_website.py` (met echte barcodes voor de voorbeeldkaarten).

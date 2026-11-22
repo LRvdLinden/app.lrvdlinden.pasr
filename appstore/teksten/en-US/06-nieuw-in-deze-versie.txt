@@ -1,4 +1,6 @@
-• Recently used: below each card you see when you showed it, just like Apple Wallet. Add what you spent if you like; on a gift card it comes off your balance.
+• Recently used: below each card you see when you used it, just like Apple Wallet. Just looking no longer counts: if you showed the card for a few seconds, Pasr asks "Used at PLUS? Yes · No" when you close it, and with your location only when you are really at the store. Add what you spent if you like; on a gift card it comes off your balance.
+• Record purchases automatically: connect Record purchase in the Shortcuts app to your Apple Pay payments, and Pasr adds the purchase to the right card.
+• Keep receipts: scan the receipt and Pasr reads the total and the date. With Warranty until you get a reminder a month ahead. Find any receipt quickly in Receipts, the search bar or Spotlight, and share it as a PDF.
 • Stamp cards from your favourite shop: have the QR code scanned at the till and collect stamps towards your reward. The shop sets the stamps, Pasr always shows the current count.
 • Already have a stamp card in your browser? With Save in Pasr your stamps move to the app.
 • Your own stamp cards are now loyalty cards; your count is in the note. From now on only the shop itself sets stamps.
