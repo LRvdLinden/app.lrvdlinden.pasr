@@ -2,12 +2,19 @@ name: Website
 
 # Uploads the website/ folder to the web server via FTPS (encrypted, certificate checked) on every push
 # that changes the site, or by hand (Actions › Website › Run workflow).
+# Elke deploy bouwt /kaarten/, /cadeaubon/, /klantenkaart/, de homepage en de sitemap opnieuw op uit de beheer-database
+# (tools/fetch_live_catalog.py). Elk uur draait de workflow ook vanzelf (schedule), zodat wijzigingen in het beheer
+# (winkels, logo's, kaartontwerpen, gidsen, saldo-pagina's, stempelkaarten) binnen het uur op pasr.nl staan; dan wordt
+# alleen geüpload wat echt anders is (website/assets/deploy-manifest.json op de server).
 # Repository secrets: FTP_SERVER, FTP_USER, FTP_PASSWORD; optional FTP_PORT (21 = FTPS, 22 = SFTP) and FTP_DIR.
 # Safety: if the target folder already holds a website that is not Pasr, nothing is uploaded.
 on:
   push:
     branches: [main]
-    paths: ["website/**", ".github/workflows/website.yml"]
+    paths: ["website/**", ".github/workflows/website.yml", "tools/make_*.py", "tools/store_catalog.py",
+            "tools/fetch_live_catalog.py", "supabase/catalog/**"]
+  schedule:
+    - cron: "17 * * * *"   # elk uur: bijwerken uit het beheer (uploadt alleen als er iets veranderd is)
   workflow_dispatch:
 
 permissions:
@@ -75,6 +82,24 @@ jobs:
           fetch pasr android-pasr- android-pasr.yml Pasr-Android website/download
           # Pasr Zakelijk staat op pasr.nl/zakelijk/download/ (niet in /download/)
           fetch pasr-zakelijk android-zakelijk- android-zakelijk.yml PasrZakelijk-Android website/zakelijk/download
+      - name: "Kaarten, cadeaubons, gidsen en sitemap uit de beheer-database"
+        continue-on-error: true   # lukt het niet, dan gaat de site uit de repo online
+        env:
+          PASR_SUPABASE_URL: ${{ secrets.PASR_SUPABASE_URL }}
+          PASR_SUPABASE_KEY: ${{ secrets.PASR_SUPABASE_KEY }}
+        run: |
+          set -uo pipefail
+          GEN="website/kaarten website/cadeaubon website/klantenkaart website/overstappen website/index.html website/sitemap.xml website/assets/kaarten website/assets/covers"
+          python3 -m pip install --quiet --disable-pip-version-check Pillow || true
+          python3 tools/fetch_live_catalog.py
+          [ -f .cache/live-catalog.json ] || echo "::warning::Geen live catalogus: de pagina's komen uit de repo."
+          if python3 tools/make_website.py && python3 tools/make_sitemap.py; then
+            python3 tools/store_catalog.py | head -1 | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Opbouwen uit de database mislukt; de gegenereerde pagina's uit de repo worden gebruikt."
+            git checkout -- $GEN 2>/dev/null || true
+            git clean -fdq -- $GEN 2>/dev/null || true
+          fi
       - name: Versie achter css en js (geen oude bestanden uit de cache)
         run: python3 tools/version_assets.py
       - name: Install lftp
@@ -165,7 +190,52 @@ jobs:
             note "Stopped: the target folder already has another website (no Pasr in index.html). Set the secret FTP_DIR to the folder of the pasr.nl domain."
             exit 1
           fi
-          run "mirror -R --verbose --parallel=4 --only-newer --exclude-glob .DS_Store --exclude-glob .htaccess website/ \"$TARGET\""
+          # Alleen uploaden wat anders is dan de vorige keer: vergelijk met het manifest (sha256 per bestand) op de server.
+          # Geen manifest op de server, of push / met de hand: alles met mirror. Elk uur (schedule) zonder wijzigingen: niets.
+          rm -f /tmp/manifest.remote
+          run "get \"$TARGET/assets/deploy-manifest.json\" -o /tmp/manifest.remote" >/dev/null 2>&1 || true
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, shutil
+          site = pathlib.Path("website")
+          files = {str(p.relative_to(site)): hashlib.sha256(p.read_bytes()).hexdigest()[:20]
+                   for p in sorted(site.rglob("*")) if p.is_file() and p.name not in (".DS_Store", ".htaccess", "deploy-manifest.json")}
+          try:
+              old = json.load(open("/tmp/manifest.remote"))
+              old = old if isinstance(old, dict) else None
+          except (OSError, ValueError):
+              old = None
+          changed = [f for f, h in files.items() if old is None or old.get(f) != h]
+          stage = pathlib.Path("/tmp/stage"); shutil.rmtree(stage, ignore_errors=True); stage.mkdir()
+          for f in changed:
+              (stage / f).parent.mkdir(parents=True, exist_ok=True); shutil.copy2(site / f, stage / f)
+          (site / "assets" / "deploy-manifest.json").write_text(json.dumps(files, separators=(",", ":")))
+          open("/tmp/changed.txt", "w").write("\n".join(changed))
+          # Pagina's en plaatjes van kaarten die niet meer in de database staan: ook van de server af (alleen gegenereerde mappen).
+          gen = ("kaarten/", "cadeaubon/", "klantenkaart/", "assets/kaarten/", "assets/covers/")
+          gone = [f for f in (old or {}) if f not in files and f.startswith(gen) and ".." not in f and '"' not in f]
+          open("/tmp/removed.txt", "w").write("\n".join(gone))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as o:
+              o.write(f"changed={len(changed)}\nfull={'1' if old is None else '0'}\n")
+          print(f"{len(changed)} van {len(files)} bestanden anders" + (" (geen manifest op de server)" if old is None else ""))
+          PY
+          CHANGED=$(grep -c . /tmp/changed.txt || true)
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ] && [ "${CHANGED:-0}" = "0" ]; then
+            note "Elk-uur-controle: niets veranderd in het beheer, niets geüpload."
+            exit 0
+          fi
+          if [ -s /tmp/manifest.remote ] && [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            run "mirror -R --verbose --parallel=4 --exclude-glob .DS_Store /tmp/stage/ \"$TARGET\""
+          else
+            run "mirror -R --verbose --parallel=4 --only-newer --exclude-glob .DS_Store --exclude-glob .htaccess --exclude-glob deploy-manifest.json website/ \"$TARGET\""
+          fi
+          if [ -s /tmp/removed.txt ]; then
+            cmds=$(sed "s#.*#rm -f \"$TARGET/&\"#" /tmp/removed.txt | paste -sd';' -)
+            run "set cmd:fail-exit false; $cmds" >/dev/null 2>&1 || true
+            note "Weggehaald van de server: $(grep -c . /tmp/removed.txt) bestand(en) van kaarten die niet meer in het beheer staan."
+          fi
+          # het manifest als laatste: pas als alles erop staat
+          run "put website/assets/deploy-manifest.json -o \"$TARGET/assets/deploy-manifest.json\""
+          note "Bijgewerkt: $CHANGED bestand(en) anders dan de vorige upload."
           # .htaccess (clean URLs): keep anything the hoster put there, replace only our block
           rm -f /tmp/htaccess.remote
           run "get \"$TARGET/.htaccess\" -o /tmp/htaccess.remote" >/dev/null 2>&1 || true
@@ -179,7 +249,8 @@ jobs:
           run "put /tmp/htaccess.new -o \"$TARGET/.htaccess\""
           note "Website uploaded (port $PORT) to ${FTP_DIR:+the FTP_DIR folder}${FTP_DIR:-$TARGET} on the server (certificate checked)."
       - name: Report on the commit
-        if: always()
+        # elk uur (schedule) geen opmerking bij de commit, behalve als het misgaat
+        if: always() && (github.event_name != 'schedule' || steps.upload.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
