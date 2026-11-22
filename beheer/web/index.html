@@ -267,7 +267,10 @@
     <!-- Ondernemers: Pasr voor ondernemers (pasr.nl/zakelijk) -->
     <section id="view-business" class="view hidden" role="tabpanel" aria-labelledby="tab-business">
       <div class="head">
-        <div><h1>Ondernemers</h1><p class="muted" id="bizCount">Zaken die zich aanmeldden op pasr.nl/zakelijk. Keur ze goed of blokkeer ze; bij Details medewerkers, instellingen, stats en de log.</p></div>
+        <div><h1>Ondernemers</h1><p class="muted" id="bizCount">Zaken die zich aanmeldden op pasr.nl/zakelijk of die je zelf aanmaakt. Keur ze goed of blokkeer ze; bij Details medewerkers, instellingen, stats en de log.</p></div>
+        <button id="bizNew" class="btn" type="button">Nieuwe ondernemer</button>
+      </div>
+      <div class="acc-tools">
         <div id="bizFilter" class="seg" role="group" aria-label="Filter">
           <button type="button" data-status="pending">Wacht</button>
           <button type="button" data-status="approved">Goedgekeurd</button>
@@ -323,7 +326,85 @@
   </div>
 </div>
 
+<!-- Ondernemer aanmaken of bewerken -->
+<div id="bizSheet" class="modal sheet hidden" role="dialog" aria-modal="true" aria-labelledby="bfTitle">
+  <form id="bizForm" class="modal-card wide" novalidate autocomplete="off">
+    <header class="card-h"><h2 id="bfTitle">Nieuwe ondernemer</h2><button id="bfClose" class="btn ghost sm" type="button">Sluiten</button></header>
+    <div class="se-grid">
+      <label class="se-wide">Naam van de zaak<input id="bfName" type="text" maxlength="60" placeholder="bijv. Koffiebar De Hoek" required></label>
+      <label>Plaats<input id="bfCity" type="text" maxlength="60" placeholder="bijv. Apeldoorn"></label>
+      <label>Adres<input id="bfAddress" type="text" maxlength="200" placeholder="Straat en huisnummer (optioneel)"></label>
+      <label class="se-wide">Website<input id="bfWebsite" type="text" maxlength="200" inputmode="url" placeholder="zaak.nl" spellcheck="false"></label>
+      <label class="se-wide">E-mail van de eigenaar<input id="bfEmail" type="email" maxlength="200" placeholder="eigenaar@zaak.nl (leeg = zonder eigenaar)" spellcheck="false">
+        <span class="muted sm" id="bfEmailHint">Heeft dit adres al een Pasr-account, dan wordt dat account eigenaar. Anders maken we een eigenaarslink (30 dagen geldig). Leeg = geen eigenaar: dan beheer jij de zaak.</span></label>
+      <label>Afkoeltijd (minuten, 0 = uit)<input id="bfCooldown" type="number" min="0" max="1440" value="5"></label>
+      <label>Max stempels per scan (1–30)<input id="bfMax" type="number" min="1" max="30" value="10"></label>
+      <label class="se-check se-wide"><input id="bfListed" type="checkbox" checked> Vindbaar in Pasr (Kaart toevoegen › Stempelkaart)</label>
+      <label class="se-check se-wide"><input id="bfSend" type="checkbox" checked> Eigenaarslink mailen (als er een uitnodiging wordt gemaakt)</label>
+    </div>
+    <p class="muted sm" id="bfStatus">Een zaak die je hier aanmaakt is meteen goedgekeurd.</p>
+    <div id="bfResult" class="bf-result hidden" role="status"></div>
+    <div class="row-btns">
+      <button id="bfSave" class="btn" type="submit">Aanmaken</button>
+      <button id="bfCard" class="btn ghost hidden" type="button">Nieuwe stempelkaart</button>
+    </div>
+    <div id="bfMsg" class="err" role="status"></div>
+  </form>
+</div>
+
+<!-- Stempelkaart aanmaken of bewerken (zoals op pasr.nl/zakelijk) -->
+<div id="cardSheet" class="modal sheet hidden" role="dialog" aria-modal="true" aria-labelledby="ceTitle">
+  <div class="modal-card wider">
+    <header class="card-h"><div><h2 id="ceTitle">Nieuwe stempelkaart</h2><span class="muted sm" id="ceBiz"></span></div><button id="ceClose" class="btn ghost sm" type="button">Sluiten</button></header>
+    <div class="ce-layout">
+      <form id="cardForm" class="se-grid" novalidate autocomplete="off">
+        <label class="se-wide">Naam van de kaart<input id="ceName" type="text" maxlength="40" placeholder="bijv. Koffiekaart"></label>
+        <label class="se-wide">Beloning<input id="ceReward" type="text" maxlength="80" placeholder="bijv. 1 gratis koffie"></label>
+        <label class="se-wide">Aantal stempels: <output id="ceTotalOut">10</output><input id="ceTotal" type="range" min="2" max="30" value="10"></label>
+        <label class="se-wide">Huisstijl van de website
+          <span class="se-row"><input id="ceSite" type="text" inputmode="url" placeholder="zaak.nl" spellcheck="false"><button id="ceBrand" class="btn ghost sm" type="button">Huisstijl ophalen</button></span>
+          <span class="muted sm" id="ceBrandMsg"></span></label>
+        <label class="se-wide">Kleur<span class="se-row"><input id="ceColor" type="color" value="#6A5CFF"><span id="ceSwatches" class="se-swatches"></span></span></label>
+        <label>Tekstkleur<select id="ceInk"><option value="">Automatisch</option><option value="#FFFFFF">Wit</option><option value="#000000">Zwart</option></select></label>
+        <label>Logo<span class="se-row"><input id="ceLogo" type="file" accept="image/png,image/jpeg,image/webp"></span></label>
+        <div class="se-wide se-row"><button id="ceNoLogo" class="btn ghost sm" type="button">Geen logo</button></div>
+        <label class="se-check se-wide"><input id="cePub" type="checkbox"> Online: klanten kunnen aansluiten</label>
+      </form>
+      <div class="ce-side">
+        <div id="cePreview"></div>
+        <div class="seg" role="group" aria-label="Voorbeeld" id="ceDemo"><button type="button" data-n="0" aria-pressed="true">Leeg</button><button type="button" data-n="half">Half vol</button><button type="button" data-n="full">Vol</button></div>
+        <p class="muted sm">Zo ziet de klant de kaart in Pasr en in de browser.</p>
+        <div id="ceShare" class="ce-share hidden">
+          <img id="ceQr" alt="QR-code om aan te sluiten" width="132" height="132">
+          <div>
+            <div class="mono-link" id="ceLink"></div>
+            <div class="se-row">
+              <button id="ceCopy" class="btn ghost sm" type="button">Kopieer link</button>
+              <a id="ceQrDl" class="btn ghost sm" download="pasr-qr.gif" href="#">QR downloaden</a>
+              <a id="ceFlyer" class="btn ghost sm" target="_blank" rel="noopener" href="#">Flyer</a>
+            </div>
+            <p class="muted sm" id="ceShareNote"></p>
+          </div>
+        </div>
+        <div id="ceTest" class="ce-test hidden">
+          <div class="se-row ce-test-h"><h3>Testklant (App Review)</h3><button id="ceTestNew" class="btn ghost sm" type="button">Testklant maken</button></div>
+          <p class="muted sm">Een lid voor de review van Pasr Zakelijk door Apple: de reviewer scant de QR-code of typt de klantcode in de app.</p>
+          <div id="ceTestList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="row-btns">
+      <button id="ceSave" class="btn" type="button">Opslaan</button>
+      <button id="cePublish" class="btn ghost hidden" type="button">Publiceren</button>
+      <button id="ceDelete" class="btn danger hidden" type="button">Verwijderen</button>
+    </div>
+    <div id="ceMsg" class="err" role="status"></div>
+  </div>
+</div>
+
+<div id="printArea" class="print-area" aria-hidden="true"></div>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<script src="vendor/qrcode.js"></script>
 <script src="config.js"></script>
 <script src="admin.js"></script>
 </body>

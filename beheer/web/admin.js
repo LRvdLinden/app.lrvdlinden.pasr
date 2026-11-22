@@ -63,6 +63,21 @@
       case "apns_not_configured": return "Pushmeldingen zijn nog niet ingericht (APNS_KEY_P8 / APNS_KEY_ID).";
       case "bad_status": return "Onbekende status.";
       case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs.";
+      case "owner_taken": return "Dit Pasr-account is al eigenaar van een andere zaak. Gebruik een ander e-mailadres of laat het leeg.";
+      case "has_owner": return "Deze zaak heeft al een eigenaar.";
+      case "not_approved": return "Keur de zaak eerst goed; daarna kan de kaart online.";
+      case "card_limit": return "Een zaak heeft hoogstens 5 stempelkaarten.";
+      case "bad_reward": return "Vul een beloning in.";
+      case "bad_total": return "Kies 2 tot 30 stempels.";
+      case "bad_city": return "De plaats is te lang.";
+      case "bad_address": return "Het adres is te lang (hoogstens 200 tekens).";
+      case "bad_cooldown": return "Afkoeltijd: 0 tot 1440 minuten.";
+      case "bad_max_per_scan": case "bad_settings": return "Max per scan: 1 tot 30; afkoeltijd: 0 tot 1440 minuten.";
+      case "logo_too_large": return "Het logo is te groot (hoogstens ~150 kB). Kies een kleiner bestand.";
+      case "no_website": return "Vul eerst een website in.";
+      case "unreachable": return "Van deze website kon geen huisstijl worden gehaald. Kies zelf een kleur en logo.";
+      case "bad_business": return "Vul de gegevens van de zaak in.";
+      case "test_limit": return "Hoogstens 10 testklanten per kaart.";
       case "create_failed": case "update_failed": case "seed_failed": return "Het review-account kon niet worden gemaakt. Probeer het opnieuw.";
       default: return `Er ging iets mis op de server (${code}).`;
     }
@@ -1120,6 +1135,8 @@
     who.append(el("div", "mail", b.name + (b.city ? ` · ${b.city}` : "")));
     const st = BIZ[b.status] || BIZ.pending;
     meta.append(el("span", "badge " + st[1], st[0]), el("span", null, b.email || "—"));
+    if (b.has_owner === false) meta.append(el("span", "badge wait", b.owner_invite ? (b.owner_invite.expired ? "Eigenaarslink verlopen" : "Eigenaarslink open") : "Zonder eigenaar"));
+    if (b.created_by === "beheer") meta.append(el("span", null, "Aangemaakt door het beheer"));
     if (b.website) meta.append(el("span", null, b.website));
     meta.append(el("span", null, "Aangemeld " + ago(b.created_at)));
     meta.append(el("span", null, `${num(b.staff_count || 0)} ${b.staff_count === 1 ? "medewerker" : "medewerkers"}`));
@@ -1129,7 +1146,8 @@
     if (b.note) who.append(el("p", "muted sm", b.note));
     const cards = el("div", "biz-cards");
     for (const c of b.cards || []) {
-      const chip = el("div", "biz-card");
+      const chip = el("button", "biz-card click"); chip.type = "button"; chip.title = "Stempelkaart bewerken";
+      chip.addEventListener("click", () => openCardEditor(b, c));
       chip.style.background = c.color;
       if (luminance(c.color) > 0.45) chip.classList.add("light");
       if (c.logo) { const i = document.createElement("img"); i.alt = ""; i.src = "data:image/" + (c.logo.startsWith("/9j/") ? "jpeg" : "png") + ";base64," + c.logo; chip.append(i); }
@@ -1151,16 +1169,22 @@
     };
     const det = el("button", "btn sm ghost", "Details"); det.type = "button";
     det.addEventListener("click", () => toggleBizDetail(row, b, det));
-    acts.append(det);
+    const edit = el("button", "btn sm ghost", "Bewerken"); edit.type = "button";
+    edit.addEventListener("click", () => openBizForm(b));
+    const newCard = el("button", "btn sm ghost", "Nieuwe stempelkaart"); newCard.type = "button";
+    newCard.disabled = (b.cards || []).length >= 5; if (newCard.disabled) newCard.title = "Hoogstens 5 stempelkaarten per zaak";
+    newCard.addEventListener("click", () => openCardEditor(b, null));
+    acts.append(det, edit, newCard);
     if (b.status !== "approved") acts.append(btn("Goedkeuren", "", "approved"));
     if (b.status !== "blocked") acts.append(btn("Blokkeren", "danger", "blocked", "Zaak blokkeren?", `${b.name} kan niet meer scannen en de kaarten gaan offline. Leden zien dat de kaart niet meer actief is.`));
     if (b.status === "blocked") acts.append(btn("Terug naar wachten", "ghost", "pending"));
+    acts.classList.add("wrap-acts");
     row.append(el("div", "avatar", b.name.charAt(0).toUpperCase()), who, acts);
     return row;
   }
 
   // ---- Ondernemers: details per zaak (medewerkers, instellingen, stats, log) ----
-  const LOGKIND = { join: "Nieuw lid", claim: "Kaart naar de app", stamp: "Stempel", redeem: "Beloning", undo: "Ongedaan" };
+  const LOGKIND = { join: "Nieuw lid", claim: "Kaart naar de app", stamp: "Stempel", redeem: "Beloning", undo: "Ongedaan", admin: "Beheer" };
   async function toggleBizDetail(row, b, btn) {
     const open = row.nextElementSibling && row.nextElementSibling.classList.contains("biz-detail");
     if (open) { row.nextElementSibling.remove(); btn.textContent = "Details"; return; }
@@ -1228,13 +1252,411 @@
     if (!(d.log || []).length) log.append(el("p", "muted", "Nog niets gebeurd."));
     for (const x of d.log || []) {
       const r = el("div", "biz-line" + (x.undone ? " undone" : ""));
+      if (x.kind === "admin") {
+        r.append(el("span", null, `${new Date(x.at).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · ${x.note || "Beheer"}`),
+          el("span", "muted sm", `${x.card_name ? x.card_name + " · " : ""}${x.by_role === "beheer" ? "beheer" : (x.by_name || "?")}`));
+        log.append(r); continue;
+      }
       const what = x.kind === "stamp" ? `${x.amount} ${x.amount === 1 ? "stempel" : "stempels"}` : (LOGKIND[x.kind] || x.kind);
       r.append(el("span", null, `${new Date(x.at).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · ${what}${x.stamps_after != null && x.kind !== "join" && x.kind !== "claim" ? ` (${x.stamps_before} → ${x.stamps_after})` : ""}`),
         el("span", "muted sm", `${x.card_name || "verwijderde kaart"} · …${x.member_suffix || ""} · ${x.by_role === "customer" ? "klant" : (x.by_name || "?") + (x.by_role === "staff" ? " (medewerker)" : "")}${x.device ? " · " + x.device : ""}`));
       log.append(r);
     }
+    box.prepend(ownerBox(z, () => { box.remove(); toggleBizDetail(row, b, btn); loadBusinesses(); }));
     box.append(set, stats, staff, log);
   }
+
+  /** Eigenaar: wie het is, of de open eigenaarslink (kopiëren, QR, opnieuw versturen). */
+  function ownerBox(z, refresh) {
+    const box = el("div", "owner-box");
+    box.append(el("h3", null, "Eigenaar"));
+    if (z.has_owner !== false) { box.append(el("p", "muted sm", z.owner_email ? `${z.owner_email} (Pasr-account)` : "Pasr-account")); return box; }
+    const inv = z.owner_invite;
+    box.append(el("p", "muted sm", inv ? `Nog geen eigenaar. Eigenaarslink voor ${inv.email || "—"}, ${inv.expired ? "verlopen" : "geldig tot " + new Date(inv.expires_at).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}.`
+      : "Geen eigenaar: jij beheert deze zaak. Vul bij Bewerken een e-mailadres in om een eigenaar uit te nodigen."));
+    if (inv && !inv.expired) box.append(inviteLinkBlock(inv));
+    if (inv || z.email) {
+      const again = el("button", "btn sm ghost", inv ? "Nieuwe link maken en mailen" : "Eigenaarslink maken en mailen"); again.type = "button";
+      again.addEventListener("click", async () => {
+        if (!(await ask(inv ? "Nieuwe eigenaarslink?" : "Eigenaarslink maken?", `De oude link werkt dan niet meer. De nieuwe gaat naar ${inv?.email || z.email} (30 dagen geldig).`, "Versturen"))) return;
+        again.disabled = true;
+        try {
+          const r = await api("business_owner_invite", { id: z.id, send: true });
+          toast(r.owner === "account" ? "Bestaand Pasr-account is nu eigenaar." : r.mailed ? "Nieuwe link gemaild." : "Nieuwe link gemaakt (niet gemaild: geen SMTP). Kopieer hem.");
+          refresh();
+        } catch (err) { toast(err.message); again.disabled = false; }
+      });
+      box.append(el("div", "se-row")); box.lastChild.append(again);
+    }
+    return box;
+  }
+  function qrData(text, cell) {
+    if (typeof qrcode !== "function") return "";
+    const q = qrcode(0, "M"); q.addData(text); q.make();
+    return q.createDataURL(cell || 4, 2);
+  }
+  function copyText(text) {
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast("Gekopieerd"), () => window.prompt("Kopieer de link", text));
+    else window.prompt("Kopieer de link", text);
+  }
+  function inviteLinkBlock(inv) {
+    const wrap = el("div", "owner-link");
+    const img = el("img"); img.alt = "QR-code van de eigenaarslink"; img.width = 96; img.height = 96; img.src = qrData(inv.link, 3);
+    const right = el("div");
+    right.append(el("div", "mono-link", inv.link));
+    const copy = el("button", "btn sm ghost", "Kopieer link"); copy.type = "button";
+    copy.addEventListener("click", () => copyText(inv.link));
+    right.append(copy);
+    wrap.append(img, right);
+    return wrap;
+  }
+
+  // ---- Ondernemer aanmaken of bewerken (zakelijk 1.1) ----
+  let bizEditing = null;   // null = nieuw, anders de zaak
+  function openBizForm(b) {
+    bizEditing = b || null;
+    $("bfTitle").textContent = b ? `${b.name} bewerken` : "Nieuwe ondernemer";
+    $("bfName").value = b?.name || ""; $("bfCity").value = b?.city || ""; $("bfAddress").value = b?.address || "";
+    $("bfWebsite").value = b?.website || ""; $("bfEmail").value = b?.email || "";
+    $("bfCooldown").value = b?.cooldown_minutes ?? 5; $("bfMax").value = b?.max_per_scan ?? 10; $("bfListed").checked = b ? b.listed !== false : true;
+    $("bfSend").checked = true;
+    const owned = b && b.has_owner !== false;
+    $("bfEmail").closest("label").firstChild.textContent = owned ? "E-mail (contact)" : "E-mail van de eigenaar";
+    $("bfEmailHint").textContent = owned ? "Deze zaak heeft een eigenaar met een Pasr-account; dit is alleen het contactadres."
+      : "Heeft dit adres al een Pasr-account, dan wordt dat account eigenaar. Anders maken we een eigenaarslink (30 dagen geldig). Leeg = geen eigenaar: dan beheer jij de zaak.";
+    $("bfSend").closest("label").classList.toggle("hidden", !!owned);
+    $("bfStatus").textContent = b ? `Status: ${(BIZ[b.status] || BIZ.pending)[0].toLowerCase()}.` : "Een zaak die je hier aanmaakt is meteen goedgekeurd.";
+    $("bfSave").textContent = b ? "Opslaan" : "Aanmaken";
+    $("bfResult").classList.add("hidden"); $("bfResult").replaceChildren();
+    $("bfCard").classList.add("hidden");
+    $("bfMsg").textContent = "";
+    $("bizSheet").classList.remove("hidden");
+    setTimeout(() => $("bfName").focus(), 30);
+  }
+  function closeSheet(id) { $(id).classList.add("hidden"); }
+  $("bizNew").addEventListener("click", () => openBizForm(null));
+  $("bfClose").addEventListener("click", () => closeSheet("bizSheet"));
+  $("bizSheet").addEventListener("click", (e) => { if (e.target === $("bizSheet")) closeSheet("bizSheet"); });
+  $("bizForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("bfMsg").textContent = "";
+    const name = $("bfName").value.trim();
+    if (name.length < 2) { $("bfMsg").textContent = "Vul de naam van de zaak in (minstens 2 tekens)."; return; }
+    const business = { name, city: $("bfCity").value.trim(), address: $("bfAddress").value.trim() || null, website: $("bfWebsite").value.trim() || null,
+      email: $("bfEmail").value.trim(), listed: $("bfListed").checked, cooldown_minutes: Number($("bfCooldown").value), max_per_scan: Number($("bfMax").value) };
+    if (bizEditing && (bizEditing.address || "") === (business.address || "")) delete business.address;   // locatie laten staan
+    $("bfSave").disabled = true;
+    try {
+      const r = bizEditing ? await api("business_update", { id: bizEditing.id, business, send: $("bfSend").checked })
+                           : await api("business_create", { business, send: $("bfSend").checked });
+      bizEditing = r.business;
+      showBizResult(r);
+      $("bfTitle").textContent = `${r.business.name} bewerken`;
+      $("bfSave").textContent = "Opslaan";
+      $("bfCard").classList.toggle("hidden", (r.business.cards || []).length >= 5);
+      toast(`${r.business.name} opgeslagen`);
+      if (bizFilter === "pending") bizFilter = "approved";
+      loadBusinesses();
+    } catch (err) { $("bfMsg").textContent = err.message; }
+    finally { $("bfSave").disabled = false; }
+  });
+  function showBizResult(r) {
+    const box = $("bfResult");
+    box.replaceChildren();
+    if (r.owner === "account") box.append(el("p", null, "Eigenaar gekoppeld: het Pasr-account met dit e-mailadres is nu eigenaar. Die ziet de zaak meteen in Pasr Zakelijk en op pasr.nl/zakelijk."));
+    else if (r.owner === "invite" && r.invite) {
+      box.append(el("p", null, r.mailed ? `Eigenaarslink gemaild naar ${r.invite.email}. Je kunt hem ook kopiëren:`
+        : `Eigenaarslink gemaakt voor ${r.invite.email}${r.mail_ready === false ? " (mailen staat uit: geen SMTP)" : ""}. Kopieer hem en stuur hem zelf:`));
+      box.append(inviteLinkBlock(r.invite));
+    } else if (r.owner === "none") box.append(el("p", null, r.invite ? "Nog geen eigenaar; de eigenaarslink staat open (zie Details)." : "Zonder eigenaar: jij beheert deze zaak. Maak nu de stempelkaart."));
+    else box.append(el("p", null, "Opgeslagen."));
+    box.classList.remove("hidden");
+  }
+  $("bfCard").addEventListener("click", () => { const b = bizEditing; closeSheet("bizSheet"); if (b) openCardEditor(b, null); });
+
+  // ---- Stempelkaart aanmaken of bewerken: live voorbeeld, huisstijl ophalen, QR, link en flyer ----
+  const SC_ICON = {
+    stamp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>',
+    gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8S10.5 3 7.5 4.5 9 8 12 8zm0 0s1.5-5 4.5-3.5S15 8 12 8z"/></svg>',
+  };
+  const CARD_SWATCHES = ["#6A5CFF", "#17162A", "#E30613", "#FF6B57", "#E2683C", "#F2B705", "#2ED3A6", "#12A77E", "#0A84FF", "#7B4B2A", "#AF52DE", "#FF375F"];
+  function mixHex(hex, to, part) {
+    let out = "#";
+    for (let i = 1; i < 7; i += 2) { const v = Math.round(parseInt(hex.substr(i, 2), 16) * (1 - part) + to * part); out += v.toString(16).padStart(2, "0"); }
+    return out;
+  }
+  /** De stempelkaart zoals op pasr.nl/zakelijk (DOM, geen inline styles in HTML vanwege de CSP). */
+  function stampCardEl(card, count) {
+    const color = /^#[0-9a-f]{6}$/i.test(card.color || "") ? card.color : "#6A5CFF";
+    const total = Math.max(2, Math.min(30, Number(card.stamps_total) || 10));
+    const n = Math.max(0, Number(count) || 0), shown = n % total === 0 && n > 0 ? total : n % total;
+    const cols = total <= 5 ? total : total <= 10 ? 5 : total <= 12 ? 6 : total <= 21 ? 7 : 8;
+    const ink = /^#000000$/i.test(card.text_color || "") ? true : /^#FFFFFF$/i.test(card.text_color || "") ? false : luminance(color) > 0.45;
+    const sc = el("div", "sc" + (ink ? " ink" : ""));
+    sc.style.setProperty("--c", color); sc.style.setProperty("--cols", String(cols));
+    sc.style.background = `linear-gradient(135deg, ${mixHex(color, 255, 0.16)}, ${color} 55%, ${mixHex(color, 0, 0.22)})`;
+    const head = el("div", "sc-head"), logo = el("span", "sc-logo");
+    if (card.logo) { const i = el("img"); i.alt = ""; i.src = "data:image/" + (card.logo.startsWith("/9j/") ? "jpeg" : "png") + ";base64," + card.logo; logo.append(i); }
+    else logo.textContent = String(card.name || "?").split(" ").slice(0, 2).map((w) => w[0] || "").join("").toUpperCase();
+    const title = el("span", "sc-title");
+    title.append(el("span", "sc-name", card.name || "Naam van de kaart"), el("span", "sc-biz", [card.business, card.city].filter(Boolean).join(" · ")));
+    head.append(logo, title, el("span", "sc-kind", "Stempelkaart"));
+    const stamps = el("div", "sc-stamps"); stamps.setAttribute("role", "img"); stamps.setAttribute("aria-label", `${shown} van ${total} stempels`);
+    for (let i = 0; i < total; i++) {
+      const on = i < shown, last = i === total - 1;
+      const s = el("span", "sc-stamp" + (on ? " on" : "") + (last && !on ? " gift" : "")); s.style.setProperty("--i", String(i));
+      if (on || last) s.innerHTML = on ? SC_ICON.stamp : SC_ICON.gift;
+      stamps.append(s);
+    }
+    const reward = el("div", "sc-reward");
+    reward.append(el("span", null, card.reward || "Beloning"), el("span", null, n >= total ? "Beloning klaar" : `${total - shown} te gaan`));
+    sc.append(head, stamps, reward);
+    return sc;
+  }
+
+  let cardEditing = null;   // {biz, card, logo, demo}
+  function openCardEditor(biz, card) {
+    const c = card || { name: "", reward: "", stamps_total: 10, color: "#6A5CFF", logo: null, text_color: null, published: false };
+    cardEditing = { biz, card: card || null, logo: c.logo || null, demo: "0", logoChanged: false };
+    $("ceTitle").textContent = card ? "Stempelkaart bewerken" : "Nieuwe stempelkaart";
+    $("ceBiz").textContent = [biz.name, biz.city].filter(Boolean).join(" · ") + (biz.status !== "approved" ? " · nog niet goedgekeurd" : "");
+    $("ceName").value = c.name || ""; $("ceReward").value = c.reward || "";
+    $("ceTotal").value = c.stamps_total || 10; $("ceTotalOut").textContent = $("ceTotal").value;
+    $("ceColor").value = (c.color || "#6A5CFF").toLowerCase();
+    $("ceInk").value = /^#(FFFFFF|000000)$/i.test(c.text_color || "") ? c.text_color.toUpperCase() : "";
+    $("ceSite").value = biz.website || "";
+    $("ceBrandMsg").textContent = "";
+    $("cePub").checked = !!c.published && biz.status === "approved";
+    $("cePub").disabled = biz.status !== "approved";
+    $("cePub").closest("label").lastChild.textContent = biz.status === "approved" ? " Online: klanten kunnen aansluiten" : " Online (kan na goedkeuring van de zaak)";
+    $("ceLogo").value = "";
+    $("ceMsg").textContent = "";
+    document.querySelectorAll("#ceDemo button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.n === "0")));
+    swatchesCard([]);
+    cardButtons();
+    cardPreview();
+    $("cardSheet").classList.remove("hidden");
+    // nieuwe kaart: huisstijl van de website meteen ophalen (zoals in Pasr Zakelijk en het dashboard)
+    if (!card && biz.website) fetchBrand(true);
+    setTimeout(() => $("ceName").focus(), 30);
+  }
+  function swatchesCard(extra) {
+    const box = $("ceSwatches"); box.replaceChildren();
+    for (const c of [...new Set([...extra, ...CARD_SWATCHES].map((x) => x.toUpperCase()))].slice(0, 14)) {
+      const b = el("button", "sw"); b.type = "button"; b.style.background = c; b.title = c; b.setAttribute("aria-label", "Kleur " + c);
+      b.addEventListener("click", () => { $("ceColor").value = c.toLowerCase(); cardPreview(); });
+      box.append(b);
+    }
+  }
+  function cardState() {
+    return { name: $("ceName").value.trim(), reward: $("ceReward").value.trim(), stamps_total: Number($("ceTotal").value),
+      color: $("ceColor").value.toUpperCase(), text_color: $("ceInk").value || null, logo: cardEditing.logo,
+      business: cardEditing.biz.name, city: cardEditing.biz.city };
+  }
+  function cardPreview() {
+    if (!cardEditing) return;
+    const s = cardState(), d = cardEditing.demo;
+    const count = d === "full" ? s.stamps_total : d === "half" ? Math.ceil(s.stamps_total / 2) : 0;
+    $("cePreview").replaceChildren(stampCardEl(s, count));
+  }
+  function cardButtons() {
+    const c = cardEditing.card;
+    $("ceDelete").classList.toggle("hidden", !c);
+    $("cePublish").classList.toggle("hidden", !c || cardEditing.biz.status !== "approved");
+    if (c) $("cePublish").textContent = c.published ? "Offline halen" : "Publiceren";
+    $("ceShare").classList.toggle("hidden", !c);
+    testMembers();
+    if (c) {
+      const url = "https://pasr.nl/zakelijk/kaart/#" + c.id;
+      $("ceLink").textContent = url;
+      const big = qrData(url, 8);
+      $("ceQr").src = qrData(url, 4); $("ceQrDl").href = big || "#";
+      $("ceQrDl").download = "pasr-qr-" + (c.name || "kaart").toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".gif";
+      $("ceFlyer").href = "https://pasr.nl/zakelijk/flyer/#" + c.id;
+      $("ceShareNote").textContent = c.published ? "Hang de QR-code bij de kassa of deel de link. De flyer is een A4 om te printen."
+        : "De kaart is nog een concept: link, QR-code en flyer werken zodra hij online staat.";
+    }
+  }
+  // ---- testklant (App Review): lid met label, klantcode als tekst en grote QR-code (PNG of afdrukken) ----
+  function qrCanvas(text, px) {
+    const q = qrcode(0, "M"); q.addData(text); q.make();
+    const n = q.getModuleCount(), margin = 4, cell = Math.max(1, Math.floor(px / (n + margin * 2)));
+    const c = document.createElement("canvas"); c.width = c.height = (n + margin * 2) * cell;
+    const x = c.getContext("2d"); x.fillStyle = "#FFFFFF"; x.fillRect(0, 0, c.width, c.height); x.fillStyle = "#000000";
+    for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect((k + margin) * cell, (r + margin) * cell, cell, cell);
+    return c;
+  }
+  const spaced = (code) => code.replace(/(.{4})(?=.)/g, "$1 ");
+  function testMembers() {
+    const c = cardEditing?.card;
+    $("ceTest").classList.toggle("hidden", !c);
+    if (!c) return;
+    const list = $("ceTestList"); list.replaceChildren();
+    const members = c.test_members || [];
+    if (!members.length) list.append(el("p", "muted sm", "Nog geen testklant."));
+    for (const m of members) {
+      const row = el("div", "test-member");
+      const img = el("img"); img.alt = "QR-code met klantcode " + m.member_code; img.src = qrCanvas(m.member_code, 600).toDataURL("image/png");
+      const info = el("div");
+      info.append(el("div", "muted sm", m.label || "Testklant"), el("div", "test-code", spaced(m.member_code)),
+        el("div", "muted sm", `${m.stamps_count} van ${c.stamps_total} stempels${m.rewards_redeemed ? ` · ${m.rewards_redeemed} beloningen` : ""}`));
+      const btns = el("div", "se-row");
+      const dl = el("a", "btn ghost sm", "PNG downloaden"); dl.href = img.src; dl.download = `pasr-testklant-${m.member_code}.png`;
+      const pr = el("button", "btn ghost sm", "Afdrukken"); pr.type = "button";
+      pr.addEventListener("click", () => {
+        const area = $("printArea"), big = el("img"); big.alt = ""; big.src = img.src;
+        area.replaceChildren(el("h2", null, `${c.business || cardEditing.biz.name} · ${c.name}`), big, el("div", "test-code", spaced(m.member_code)),
+          el("p", null, "Testklant (App Review): scan deze code met Pasr Zakelijk of typ hem in."));
+        document.body.classList.add("print-qr");
+        const done = () => { document.body.classList.remove("print-qr"); window.removeEventListener("afterprint", done); };
+        window.addEventListener("afterprint", done);
+        setTimeout(() => { window.print(); setTimeout(done, 1000); }, 50);
+      });
+      const cp = el("button", "btn ghost sm", "Kopieer code"); cp.type = "button"; cp.addEventListener("click", () => copyText(m.member_code));
+      const rs = el("button", "btn ghost sm", "Resetten"); rs.type = "button";
+      rs.addEventListener("click", () => testAction(m, "reset"));
+      const del = el("button", "btn danger sm", "Verwijderen"); del.type = "button";
+      del.addEventListener("click", () => testAction(m, "delete"));
+      btns.append(dl, pr, cp, rs, del);
+      info.append(btns);
+      row.append(img, info);
+      list.append(row);
+    }
+  }
+  async function testAction(m, what) {
+    const c = cardEditing?.card; if (!c) return;
+    if (!(await ask(what === "reset" ? "Testklant resetten?" : "Testklant verwijderen?",
+      what === "reset" ? "Stempels en beloningen van deze testklant gaan terug naar 0." : "De klantcode werkt daarna niet meer.", what === "reset" ? "Resetten" : "Verwijderen"))) return;
+    try {
+      await api(what === "reset" ? "business_test_member_reset" : "business_test_member_delete", { id: m.id });
+      c.test_members = what === "reset" ? (c.test_members || []).map((x) => x.id === m.id ? { ...x, stamps_count: 0, rewards_redeemed: 0 } : x)
+        : (c.test_members || []).filter((x) => x.id !== m.id);
+      testMembers(); toast(what === "reset" ? "Gereset." : "Verwijderd."); loadBusinesses();
+    } catch (err) { $("ceMsg").textContent = err.message; }
+  }
+  $("ceTestNew").addEventListener("click", async () => {
+    const c = cardEditing?.card; if (!c) return;
+    $("ceTestNew").disabled = true;
+    try {
+      const r = await api("business_test_member", { card_id: c.id });
+      c.test_members = [...(c.test_members || []), r.member];
+      testMembers();
+      toast(c.published ? "Testklant gemaakt." : "Testklant gemaakt. Zet de kaart online, anders kan de reviewer niet scannen.");
+      loadBusinesses();
+    } catch (err) { $("ceMsg").textContent = err.message; }
+    finally { $("ceTestNew").disabled = false; }
+  });
+
+  ["ceName", "ceReward", "ceColor", "ceInk"].forEach((id) => $(id).addEventListener("input", cardPreview));
+  $("ceInk").addEventListener("change", cardPreview);
+  $("ceTotal").addEventListener("input", () => { $("ceTotalOut").textContent = $("ceTotal").value; cardPreview(); });
+  document.querySelectorAll("#ceDemo button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll("#ceDemo button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    cardEditing.demo = b.dataset.n; cardPreview();
+  }));
+  $("ceClose").addEventListener("click", () => { closeSheet("cardSheet"); cardEditing = null; });
+  $("cardSheet").addEventListener("click", (e) => { if (e.target === $("cardSheet")) { closeSheet("cardSheet"); cardEditing = null; } });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !$("modal").classList.contains("hidden")) return;
+    if (!$("cardSheet").classList.contains("hidden")) { closeSheet("cardSheet"); cardEditing = null; }
+    else if (!$("bizSheet").classList.contains("hidden")) closeSheet("bizSheet");
+  });
+  /** Logo verkleinen tot hoogstens 512 px PNG (zoals business-brand), zodat hij onder de limiet blijft. */
+  function shrinkLogo(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image(), reader = new FileReader();
+      img.onload = () => {
+        const side = Math.min(512, Math.max(img.naturalWidth, img.naturalHeight));
+        const scale = side / Math.max(img.naturalWidth, img.naturalHeight);
+        const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+        const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(img, 0, 0, c.width, c.height);
+        let out = c.toDataURL("image/png").split(",")[1];
+        if (out.length > 200_000) out = c.toDataURL("image/jpeg", 0.85).split(",")[1];
+        out.length > 205_000 ? reject(new Error("Het logo is te groot. Kies een kleiner bestand.")) : resolve(out);
+      };
+      img.onerror = () => reject(new Error("Dit bestand is geen afbeelding."));
+      reader.onload = () => { img.src = reader.result; };
+      reader.onerror = () => reject(new Error("Dit bestand kan niet worden gelezen."));
+      reader.readAsDataURL(file);
+    });
+  }
+  $("ceLogo").addEventListener("change", async () => {
+    const f = $("ceLogo").files[0];
+    if (!f) return;
+    if (f.size > 8_000_000) { $("ceMsg").textContent = "Dit bestand is te groot (hoogstens 8 MB)."; return; }
+    try {
+      cardEditing.logo = await shrinkLogo(f); cardEditing.logoChanged = true; $("ceMsg").textContent = "";
+      const c = await logoColor(cardEditing.logo); if (c) swatchesCard([c]);
+      cardPreview();
+    } catch (err) { $("ceMsg").textContent = err.message; }
+  });
+  $("ceNoLogo").addEventListener("click", () => { cardEditing.logo = null; cardEditing.logoChanged = true; $("ceLogo").value = ""; cardPreview(); });
+  /** Huisstijl ophalen: zelfde logica als de functie business-brand (logo, kleur, tekstkleur van de website). */
+  async function fetchBrand(auto) {
+    if (!cardEditing) return;
+    const url = $("ceSite").value.trim();
+    if (!url) { $("ceBrandMsg").textContent = "Vul de website van de zaak in."; return; }
+    const forCard = cardEditing;
+    $("ceBrand").disabled = true; $("ceBrandMsg").textContent = "Huisstijl ophalen…";
+    try {
+      const params = { business_id: forCard.biz.id };
+      if (url.replace(/^https?:\/\//i, "").replace(/\/$/, "") !== String(forCard.biz.website || "").replace(/^https?:\/\//i, "").replace(/\/$/, "")) params.url = url;
+      const r = await api("business_brand", params);
+      if (cardEditing !== forCard) return;
+      if (r.logo) { forCard.logo = r.logo; forCard.logoChanged = true; }
+      if (r.color) { $("ceColor").value = r.color.toLowerCase(); swatchesCard([r.color]); }
+      if (r.text_color && r.color) $("ceInk").value = r.text_color.toUpperCase();
+      if (!$("ceName").value.trim() && auto) $("ceName").value = "Stempelkaart";
+      $("ceBrandMsg").textContent = `Overgenomen van ${r.domain}. Pas gerust aan.`;
+      cardPreview();
+    } catch (err) {
+      if (cardEditing === forCard) $("ceBrandMsg").textContent = auto ? "Geen huisstijl gevonden; kies zelf een kleur en logo." : err.message;
+    } finally { $("ceBrand").disabled = false; }
+  }
+  $("ceBrand").addEventListener("click", () => fetchBrand(false));
+  async function saveCard() {
+    const s = cardState();
+    $("ceMsg").textContent = "";
+    if (!s.name) { $("ceMsg").textContent = "Vul de naam van de kaart in."; return; }
+    if (!s.reward) { $("ceMsg").textContent = "Vul de beloning in."; return; }
+    const card = { name: s.name, reward: s.reward, stamps_total: s.stamps_total, color: s.color, text_color: s.text_color || "",
+      published: $("cePub").checked };
+    if (cardEditing.card) card.id = cardEditing.card.id;
+    if (!cardEditing.card || cardEditing.logoChanged) card.logo = cardEditing.logo;
+    $("ceSave").disabled = true;
+    try {
+      const r = await api("business_card_save", { business_id: cardEditing.biz.id, card });
+      cardEditing.card = r.card; cardEditing.logoChanged = false;
+      $("ceTitle").textContent = "Stempelkaart bewerken";
+      cardButtons();
+      toast(r.card.published ? "Opgeslagen en online." : "Opgeslagen als concept.");
+      loadBusinesses();
+    } catch (err) { $("ceMsg").textContent = err.message; }
+    finally { $("ceSave").disabled = false; }
+  }
+  $("ceSave").addEventListener("click", saveCard);
+  $("cardForm").addEventListener("submit", (e) => { e.preventDefault(); saveCard(); });
+  $("cePublish").addEventListener("click", async () => {
+    const c = cardEditing?.card; if (!c) return;
+    const on = !c.published;
+    if (!on && !(await ask("Offline halen?", "Nieuwe klanten kunnen niet meer aansluiten en bestaande leden zien dat de kaart niet actief is.", "Offline halen"))) return;
+    $("cePublish").disabled = true;
+    try {
+      const r = await api("business_card_publish", { id: c.id, published: on });
+      cardEditing.card = r.card; $("cePub").checked = !!r.card.published; cardButtons();
+      toast(on ? "Kaart staat online." : "Kaart is offline."); loadBusinesses();
+    } catch (err) { $("ceMsg").textContent = err.message; }
+    finally { $("cePublish").disabled = false; }
+  });
+  $("ceDelete").addEventListener("click", async () => {
+    const c = cardEditing?.card; if (!c) return;
+    if (!(await ask("Stempelkaart verwijderen?", `${c.name} en alle leden met hun stempels gaan weg. Dit kan niet ongedaan worden gemaakt. De log blijft.`, "Verwijderen"))) return;
+    try {
+      const r = await api("business_card_delete", { id: c.id });
+      toast(`Verwijderd (${r.members === 1 ? "1 lid" : (r.members || 0) + " leden"}).`);
+      closeSheet("cardSheet"); cardEditing = null; loadBusinesses();
+    } catch (err) { $("ceMsg").textContent = err.message; }
+  });
 
   // ---- start ----
   function start() {
