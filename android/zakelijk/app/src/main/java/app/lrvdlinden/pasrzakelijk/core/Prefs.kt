@@ -22,12 +22,12 @@ object Prefs {
     var appLock by mutableStateOf(false)
         private set
 
-    fun setAppearance(value: String) {
+    fun changeAppearance(value: String) {
         appearance = value
         prefs?.edit()?.putString("ui.appearance", value)?.apply()
     }
 
-    fun setAppLock(on: Boolean) {
+    fun changeAppLock(on: Boolean) {
         appLock = on
         prefs?.edit()?.putBoolean("security.appLock", on)?.apply()
     }

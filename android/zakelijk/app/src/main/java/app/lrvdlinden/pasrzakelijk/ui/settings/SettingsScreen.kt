@@ -200,7 +200,7 @@ fun SettingsScreen(business: Business) {
                     SettingsRow(L("Vergrendelen met vingerafdruk of gezicht"), Icons.Filled.Fingerprint, Pz.mint, enabled = bioAvailable, onClick = {
                         val target = !Prefs.appLock
                         (context as? FragmentActivity)?.let { activity ->
-                            Biometrics.authenticate(activity, L("Bevestig om de vergrendeling te wijzigen.")) { ok -> if (ok) Prefs.setAppLock(target) }
+                            Biometrics.authenticate(activity, L("Bevestig om de vergrendeling te wijzigen.")) { ok -> if (ok) Prefs.changeAppLock(target) }
                         }
                     }) {
                         Switch(Prefs.appLock, null, enabled = bioAvailable, colors = SwitchDefaults.colors(checkedTrackColor = Pz.mint))
@@ -218,7 +218,7 @@ fun SettingsScreen(business: Business) {
                             Text(appearanceLabel(Prefs.appearance), color = Pz.muted, fontSize = 17.sp)
                         }
                         DropdownMenu(appearanceMenu, { appearanceMenu = false }) {
-                            for (a in listOf("system", "light", "dark")) DropdownMenuItem(text = { Text(appearanceLabel(a)) }, onClick = { Prefs.setAppearance(a); appearanceMenu = false })
+                            for (a in listOf("system", "light", "dark")) DropdownMenuItem(text = { Text(appearanceLabel(a)) }, onClick = { Prefs.changeAppearance(a); appearanceMenu = false })
                         }
                     }
                     GroupDivider()

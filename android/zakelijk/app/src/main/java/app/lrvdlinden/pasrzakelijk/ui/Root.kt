@@ -70,10 +70,9 @@ import kotlinx.coroutines.launch
 fun RootScreen() {
     val session = Account.session
     LaunchedEffect(session?.userID) {
-        if (session != null) {
-            BusinessStore.load()
-            DeviceRegistry.register()
-        } else BusinessStore.reset()
+        if (session != null) BusinessStore.load() else BusinessStore.reset()
+        // platform en appversie melden (ook zonder account; opnieuw na inloggen of uitloggen)
+        DeviceRegistry.register()
     }
     val current = BusinessStore.current
     when {

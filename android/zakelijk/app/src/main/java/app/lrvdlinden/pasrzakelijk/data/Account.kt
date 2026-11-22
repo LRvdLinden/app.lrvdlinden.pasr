@@ -106,6 +106,7 @@ object Account {
     /** Verwijdert het Pasr-account (ook je zaak als je eigenaar bent). Zelfde functie als in Pasr. */
     suspend fun deleteAccount() {
         rpc("pasr_delete_account", JSONObject())
+        DeviceRegistry.unregister()
         clear()
     }
 
