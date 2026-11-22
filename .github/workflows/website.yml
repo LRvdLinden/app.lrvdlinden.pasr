@@ -40,14 +40,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
-          # Haalt de nieuwste ondertekende APK op: eerst uit de releases (android-pasr-*, android-zakelijk-*), anders het
+          # Haalt de nieuwste ondertekende APK op: eerst uit de branch android-builds, dan de releases, anders het
           # nieuwste artifact van de Android-workflow. Ontbreekt er een, dan blijft wat er op de server staat staan.
           set -uo pipefail
           mkdir -p website/download
+          git fetch -q --depth 1 origin android-builds:refs/remotes/origin/android-builds 2>/dev/null || true
           fetch() {  # $1 = naam op de site (pasr / pasr-zakelijk), $2 = tag-voorvoegsel, $3 = workflowbestand, $4 = artifact
-            local name=$1 prefix=$2 wf=$3 art=$4 tmp; tmp=$(mktemp -d)
-            tag=$(gh api "repos/$REPO/releases?per_page=50" --jq "[.[] | select(.tag_name | startswith(\"$prefix\"))][0].tag_name" 2>/dev/null || true)
-            if [ -n "$tag" ] && [ "$tag" != "null" ]; then
+            local name=$1 prefix=$2 wf=$3 art=$4 tmp; tmp=$(mktemp -d); tag=""
+            # 1. de branch android-builds (de Android-workflows zetten daar de nieuwste APK neer)
+            for dir in "$name" "${name#pasr-}"; do
+              if git show "origin/android-builds:$dir/$name.apk" > "$tmp/$name.apk" 2>/dev/null; then
+                git show "origin/android-builds:$dir/$name.json" > "$tmp/$name.json" 2>/dev/null || rm -f "$tmp/$name.json"
+                tag="android-builds/$dir"; break
+              fi
+              rm -f "$tmp/$name.apk"
+            done
+            [ -f "$tmp/$name.apk" ] || tag=$(gh api "repos/$REPO/releases?per_page=50" --jq "[.[] | select(.tag_name | startswith(\"$prefix\"))][0].tag_name" 2>/dev/null || true)
+            if [ ! -f "$tmp/$name.apk" ] && [ -n "$tag" ] && [ "$tag" != "null" ]; then
               gh release download "$tag" -R "$REPO" -D "$tmp" -p "*.apk" -p "*.json" >/dev/null 2>&1 || true
             fi
             if ! ls "$tmp"/*.apk >/dev/null 2>&1; then

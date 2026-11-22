@@ -168,6 +168,29 @@ jobs:
             "$V" "$C" "$SIZE" "$SHA" "$FP" "$(date -u +%Y-%m-%d)" > dist/pasr.json
           cat dist/pasr.json
 
+      - name: Nieuwste APK naar de branch android-builds (pasr/), voor de website en de oplevering
+        env:
+          SRC: dist
+          SUB: pasr
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/builds"; rm -rf "$W"; mkdir -p "$W"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          for i in 1 2 3 4; do
+            rm -rf "$W"; mkdir -p "$W"; cd "$W"
+            if git clone -q --depth 1 --branch android-builds "$URL" . 2>/dev/null; then :; else
+              git init -q; git checkout -q --orphan android-builds; git remote add origin "$URL"
+              printf 'Nieuwste Android-builds (APK, versie-info en previews), gemaakt door de Android-workflows. Niet mergen.\n' > README.md
+            fi
+            rm -rf "$SUB" && mkdir -p "$SUB" && cp -r "$GITHUB_WORKSPACE/android/pasr/$SRC/." "$SUB/"
+            git add -A && git commit -q -m "Android-build ${SUB} (${GITHUB_SHA::7})" || { echo "Niets nieuw"; exit 0; }
+            git push -q origin HEAD:android-builds && exit 0
+            cd "$GITHUB_WORKSPACE"; sleep 5
+          done
+          echo "::warning::Kon de branch android-builds niet bijwerken"
       - name: Sleutel opruimen
         if: always()
         run: rm -f "$RUNNER_TEMP/pasr.jks"
@@ -222,3 +245,27 @@ jobs:
           name: Pasr-Android-previews
           path: android/pasr/app/src/test/snapshots/
           if-no-files-found: ignore
+      - name: Previews naar de branch android-builds (pasr-previews/)
+        if: always()
+        env:
+          SRC: app/src/test/snapshots/images
+          SUB: pasr-previews
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/builds"; rm -rf "$W"; mkdir -p "$W"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          for i in 1 2 3 4; do
+            rm -rf "$W"; mkdir -p "$W"; cd "$W"
+            if git clone -q --depth 1 --branch android-builds "$URL" . 2>/dev/null; then :; else
+              git init -q; git checkout -q --orphan android-builds; git remote add origin "$URL"
+              printf 'Nieuwste Android-builds (APK, versie-info en previews), gemaakt door de Android-workflows. Niet mergen.\n' > README.md
+            fi
+            rm -rf "$SUB" && mkdir -p "$SUB" && cp -r "$GITHUB_WORKSPACE/android/pasr/$SRC/." "$SUB/"
+            git add -A && git commit -q -m "Android-build ${SUB} (${GITHUB_SHA::7})" || { echo "Niets nieuw"; exit 0; }
+            git push -q origin HEAD:android-builds && exit 0
+            cd "$GITHUB_WORKSPACE"; sleep 5
+          done
+          echo "::warning::Kon de branch android-builds niet bijwerken"
