@@ -741,7 +741,8 @@ html, body { overflow-x: clip; max-width: 100%; }
 .store-badge img { width: 210px; height: auto; aspect-ratio: 246 / 82; object-fit: contain; vertical-align: middle; }
 .store-badge:hover { transform: translateY(-1px); }
 .store-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
-.actions .store-badge { margin: -10px -6px; }
+.actions { align-items: center; }
+.actions .store-badge, .actions .android-badge { margin: 0; }
 @media (max-width: 420px) { .store-badge img { width: 190px; } }
 /* Bento: beelden van de nieuwere functies. Alle animaties lopen alleen terwijl de kaart in beeld is (site.js zet .play). */
 .js .feature.has-visual:not(.play) .fv, .js .feature.has-visual:not(.play) .fv * { animation-play-state: paused !important; }
@@ -943,16 +944,15 @@ html, body { overflow-x: clip; max-width: 100%; }
 @media (prefers-reduced-motion: reduce) { .fv-stamps .st.on, .fv-stamps .scan-chip, .fv-bday .nt { animation: none !important; } .fv-bday .cf { display: none; } }
 
 /* Download-banner voor Android (Pasr-huisstijl, mint), even hoog als de App Store-badge ernaast. */
-.android-badge { display: inline-flex; align-items: center; gap: 12px; height: 70px; padding: 0 24px 0 16px; border-radius: 14px;
+.android-badge { display: inline-flex; align-items: center; justify-content: center; gap: 12px; box-sizing: border-box; width: 210px; height: 70px; padding: 0 14px; border-radius: 12px;
   background: #000; border: 1.5px solid #A6A6A6; color: #fff; text-decoration: none; line-height: 1.05;
   box-shadow: 0 6px 18px rgba(0, 0, 0, .22); transition: transform .15s ease, box-shadow .15s ease; vertical-align: middle; }
-.android-badge svg { width: 42px; height: 42px; flex: none; }
-.android-badge span { display: flex; flex-direction: column; font-weight: 500; font-size: 27px; letter-spacing: -.01em; }
+.android-badge svg { width: 40px; height: 40px; flex: none; }
+.android-badge span { display: flex; flex-direction: column; font-weight: 500; font-size: 26px; letter-spacing: -.01em; }
 .android-badge small { font-size: 13px; font-weight: 500; letter-spacing: 0; margin-bottom: 2px; }
 .android-badge:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(46, 211, 166, .35); color: #fff; }
 .android-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
-.actions .android-badge { margin: 0 4px; }
-@media (max-width: 420px) { .android-badge { height: 63px; padding: 0 18px 0 13px; } .android-badge svg { width: 36px; height: 36px; } .android-badge span { font-size: 23px; } }
+@media (max-width: 420px) { .android-badge { width: 190px; height: 63px; padding: 0 12px; gap: 10px; } .android-badge svg { width: 36px; height: 36px; } .android-badge span { font-size: 23px; } .android-badge small { font-size: 12px; } }
 
 /* Pagina /android/ */
 .apk-list { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 28px 0; }
