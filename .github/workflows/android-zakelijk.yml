@@ -134,6 +134,8 @@ jobs:
             "$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')" "$((100 + ${{ github.run_number }}))" \
             "$(stat -c %s dist/pasr-zakelijk.apk)" "$(sha256sum dist/pasr-zakelijk.apk | cut -d' ' -f1)" "$(date -u +%Y-%m-%d)" "$FP" > dist/pasr-zakelijk.json
           echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "code=$((100 + ${{ github.run_number }}))" >> "$GITHUB_OUTPUT"
+          echo "cert=$FP" >> "$GITHUB_OUTPUT"
           echo "APK $V ($((100 + ${{ github.run_number }}))), $(stat -c %s dist/pasr-zakelijk.apk) bytes, sha256 $(cut -d' ' -f1 dist/pasr-zakelijk.apk.sha256)"
 
       - name: Sleutel opruimen
@@ -150,8 +152,28 @@ jobs:
             android/zakelijk/dist/certificaat-sha256.txt
             android/zakelijk/dist/pasr-zakelijk.json
 
+      - name: Release (nieuwste APK voor pasr.nl/download/pasr-zakelijk.apk)
+        # Zelfde opzet als android-pasr.yml: de workflow Website haalt pasr-zakelijk.apk en .json uit de nieuwste
+        # release android-zakelijk-*; lukt de release niet, dan pakt hij het artifact PasrZakelijk-Android.
+        continue-on-error: true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-zakelijk-${{ steps.verify.outputs.version }}-${{ steps.verify.outputs.code }}
+          target_commitish: ${{ github.sha }}
+          name: Pasr Zakelijk voor Android ${{ steps.verify.outputs.version }} (${{ steps.verify.outputs.code }})
+          make_latest: false
+          body: |
+            Pasr Zakelijk voor Android. Installeer `pasr-zakelijk.apk`; een update installeert over de vorige versie heen (altijd dezelfde sleutel).
+            Certificaat SHA-256: ${{ steps.verify.outputs.cert }}
+            Download: https://pasr.nl/android/#zakelijk
+          files: |
+            android/zakelijk/dist/pasr-zakelijk.apk
+            android/zakelijk/dist/pasr-zakelijk.json
+            android/zakelijk/dist/PasrZakelijk-${{ steps.verify.outputs.version }}.apk
+
   previews:
     name: Schermafbeeldingen (Paparazzi)
+    needs: apk
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -178,3 +200,13 @@ jobs:
           name: PasrZakelijk-Android-previews
           path: android/zakelijk/app/src/test/snapshots/images/*.png
           if-no-files-found: warn
+      - name: Schermafbeeldingen bij de release zetten
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls app/src/test/snapshots/images/*.png >/dev/null 2>&1 || exit 0
+          V=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
+          (cd app/src/test/snapshots/images && zip -q -r "$RUNNER_TEMP/PasrZakelijk-Android-previews.zip" .)
+          gh release upload "android-zakelijk-$V-$((100 + ${{ github.run_number }}))" "$RUNNER_TEMP/PasrZakelijk-Android-previews.zip" --clobber -R "${{ github.repository }}"
