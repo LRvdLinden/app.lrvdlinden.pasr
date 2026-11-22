@@ -341,7 +341,10 @@ html, body { overflow-x: clip; max-width: 100%; }
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: -2px 0 6px; }
 .biz-detail h3 { font-size: 14px; margin: 0 0 8px; }
 .biz-set { display: grid; gap: 10px; align-content: start; }
-.biz-set label.check { display: flex; gap: 8px; align-items: center; font-weight: 500; }
+.biz-set > label:not(.check) { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.biz-set .btn { justify-self: start; }
+.biz-set label.check { display: flex; gap: 8px; align-items: center; justify-content: flex-start; font-weight: 500; }
+.biz-set label.check input { width: auto; flex: none; margin: 0; }
 .biz-bars { display: flex; align-items: flex-end; gap: 2px; height: 70px; }
 .biz-bars i { flex: 1; background: var(--iris, #6A5CFF); border-radius: 3px 3px 0 0; min-height: 2px; }
 .biz-line { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }

@@ -436,11 +436,11 @@
         if (r.color) { state.color = r.color.toUpperCase(); $("#cColor").value = state.color; state.text_color = r.text_color || null; }
         if (r.name && !state.name.trim() && !c.id) { state.name = r.name.slice(0, 40); $("#cName").value = state.name; }
         draw();
-        box.innerHTML = '<p class="small"><b>Overgenomen van ' + esc(r.domain) + '</b>. Je kunt alles aanpassen. <button type="button" class="zk-btn ghost sm" id="cRebrand">Opnieuw ophalen</button></p>';
+        box.innerHTML = '<p class="small"><span><b>Overgenomen van ' + esc(r.domain) + '</b>. Je kunt alles aanpassen.</span> <button type="button" class="zk-btn ghost sm" id="cRebrand">Opnieuw ophalen</button></p>';
       } catch (e) {
         // lukt het niet: neutrale Pasr-kleur en de initiaal; nooit blokkeren
         var why = e.status === 429 ? "Even wachten: je hebt het vaak geprobeerd." : e.message === "bad_url" || e.message === "no_website" ? "Je website klopt niet." : "Je website gaf geen logo of kleur.";
-        box.innerHTML = '<p class="small">' + esc(why) + ' Kies zelf een logo en kleur. <button type="button" class="zk-btn ghost sm" id="cRebrand">Opnieuw ophalen</button></p>';
+        box.innerHTML = '<p class="small"><span>' + esc(why) + ' Kies zelf een logo en kleur.</span> <button type="button" class="zk-btn ghost sm" id="cRebrand">Opnieuw ophalen</button></p>';
       }
       var rb = $("#cRebrand"); if (rb) rb.addEventListener("click", function () { fetchBrand(false); });
     }

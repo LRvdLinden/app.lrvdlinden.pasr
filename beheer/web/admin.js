@@ -1174,7 +1174,7 @@
     box.replaceChildren();
     const z = d.business || b;
     // instellingen
-    const set = el("form", "se-grid biz-set");
+    const set = el("form", "biz-set");
     const field = (label, input) => { const l = el("label", null, label); l.append(input); return l; };
     const cool = Object.assign(document.createElement("input"), { type: "number", min: 0, max: 1440, value: z.cooldown_minutes ?? 5 });
     const max = Object.assign(document.createElement("input"), { type: "number", min: 1, max: 30, value: z.max_per_scan ?? 10 });

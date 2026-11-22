@@ -150,7 +150,7 @@
 }
 /* zakelijk 1.0: tabs in het dashboard, aantal-kiezer in de scanner */
 .zk-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
-.zk-tabs button[aria-pressed="true"] { background: var(--iris); color: #fff; }
+.zk-tabs .zk-btn.ghost[aria-pressed="true"] { background: var(--iris); border-color: var(--iris); color: #fff; }
 .zk-amount { display: grid; gap: 6px; justify-items: center; font-weight: 600; }
 .zk-amount small { font-weight: 400; color: #6B6880; }
 .zk-stepper input { width: 4.5em; text-align: center; font: 700 22px var(--body); border: 1px solid #DAD7EE; border-radius: 10px; padding: 6px; }
