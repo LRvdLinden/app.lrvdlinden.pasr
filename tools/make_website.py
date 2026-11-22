@@ -123,6 +123,7 @@ ICONS = {
     "devices": '<path d="M3 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v8H3zM1 17h18M19 9h3v10h-5"/>',
     "pin": '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
     "history": '<path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4M12 8v4l3 2"/>',
+    "receipt": '<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21zM9 8h6M9 12h6M9 16h3"/>',
     "store": '<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/>',
     "stamp": '<circle cx="7" cy="8" r="2.4"/><circle cx="12" cy="8" r="2.4"/><circle cx="17" cy="8" r="2.4"/><circle cx="7" cy="15" r="2.4"/><path d="M10.3 15.2l1.4 1.4 2.8-2.8M18.5 13v4h-3"/><rect x="2.5" y="4" width="19" height="16" rx="3"/>',
     "cake": '<path d="M4 21h16v-8a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1zM4 16c2 0 2-1.5 4-1.5S10 16 12 16s2-1.5 4-1.5 2 1.5 4 1.5M8 12V9M12 12V9M16 12V9M8 6.5c0-1 1-2 1-2.5M12 6.5c0-1 1-2 1-2.5M16 6.5c0-1 1-2 1-2.5"/>',
@@ -140,6 +141,7 @@ def icon(name):
 
 # Bento: (icoon, kleur, titel, tekst, breedte in kolommen van 6, beeld).
 # Breedtes per rij samen 6; een rij 4+2 wordt altijd gevolgd door een rij 2+4, zodat ook het tablet-raster (2 kolommen) sluit.
+# Een kaart van 6 is een hele rij (ook op tablet en telefoon) en mag alleen tussen twee volle rijen staan.
 FEATURES = [
     ("flip", "#6A5CFF", "Kaarten die omdraaien", "Tik op een kaart: hij komt naar voren, draait om en toont de barcode of QR-code. Je scherm gaat vanzelf op volle helderheid.", 4, "flip"),
     ("scan", "#FF6B57", "Toevoegen in seconden", "Kies je winkel en scan de barcode met de camera. Zoom in op een kleine code en zet de zaklamp aan als hij glimt. Een foto of screenshot van je pas werkt ook.", 2, "scan"),
@@ -147,10 +149,11 @@ FEATURES = [
     ("ticket", "#6A5CFF", "Meer dan klantenkaarten", "Naast klantenkaarten en cadeaukaarten bewaar je ook kortingscodes, coupons, tickets en abonnementen, elk met hun eigen code bij de hand.", 4, "types"),
     ("record", "#FF375F", "Overstappen uit elke app", "Neem je scherm op terwijl je in je oude app je kaarten langsgaat, kies screenshots, of importeer een CSV-bestand. Pasr vindt ze allemaal.", 3, "record"),
     ("watch", "#2ED3A6", "Op je pols en beginscherm", "Je kaarten op je Apple Watch, en je favorieten als widget op je beginscherm.", 3, "watch"),
-    ("history", "#0A84FF", "Je gebruik en uitgaven, zoals in Wallet", "Zie wanneer en bij welk filiaal je een kaart liet zien. Bij een cadeaukaart vraagt Pasr na het tonen wat je uitgaf: je ziet het tegoed afnemen, met elke uitgave in de lijst. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar vanzelf bij.", 4, "history"),
+    ("history", "#0A84FF", "Je gebruik en uitgaven, zoals in Wallet", "Zie wanneer en bij welk filiaal je een kaart gebruikte. Bij een cadeaukaart vul je in wat je uitgaf: je ziet het tegoed afnemen, met elke uitgave in de lijst. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar vanzelf bij.", 4, "history"),
     ("gift", "#E2683C", "Cadeaukaarten met saldo", "Saldo, pincode en vervaldatum bij de hand. Met Saldo checken kijk je het tegoed na bij de uitgever, je kaartnummer staat klaar om te plakken.", 2, "gift"),
     ("bell", "#2ED3A6", "Herinneringen, ook per <span class=\"nw\">e-mail</span>", "Nog tegoed op een cadeaukaart? Pasr herinnert je eraan, ook als de kaart geen vervaldatum heeft. Als melding op je telefoon of per e-mail.", 2, "remind"),
     ("guide", "#E2683C", "Een gids bij elke kaart", "Bij een cadeaukaart zie je hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Bij een klantenkaart zie je welke voordelen het programma geeft. Lees ze ook hier: de <a href=\"/cadeaubon/\">Cadeaubon-gids</a> en de <a href=\"/klantenkaart/\">Klantenkaart-gids</a>.", 4, "guide"),
+    ("receipt", "#0A84FF", "Laatst gebruikt, aankopen vanzelf en je bonnetjes bewaard", "Even kijken telt niet: liet je een kaart een paar seconden zien, dan vraagt Pasr bij het sluiten “Gebruikt bij PLUS?”, en met je locatie alleen als je echt bij de winkel bent. Betaal je met Apple Pay, dan zet Pasr de aankoop vanzelf bij de juiste kaart via de app Opdrachten (op Android via de betaalmelding, als je dat aanzet). Scan de kassabon en Pasr leest het totaal en de datum. Met Garantie tot krijg je een maand van tevoren een herinnering, en je vindt elke bon terug via Bonnetjes, de zoekbalk of Spotlight. Je locatie en je bonnen blijven op je eigen apparaten.", 6, "slim"),
     ("lock", "#17162A", "Versleuteld en met Face ID", "Kaartnummers versleuteld op je apparaten en in iCloud. Vergrendel Pasr met Face ID en blokkeer screenshots van je codes.", 3, "lock"),
     ("share", "#6A5CFF", "Samen of even delen", "Een gedeelde Pasr met je gezin, of een kaart tijdelijk uitlenen met een einddatum. <a href=\"#delen\">Zo werkt het</a>", 3, "share"),
     ("pin", "#FF6B57", "Je kaart verschijnt bij de winkel", "Loop je een winkel binnen, dan staat je kaart klaar met een melding. Zet je vaste filiaal zelf vast, kies welke filialen op je Wallet-pas komen, en met “Ook als Pasr dicht is” zet Pasr de winkels om je heen vanzelf klaar als je ergens anders bent. <a href=\"#waarom-verschijnt-mijn-kaart-niet-altijd-bij-de-winkel\">Zo werkt het</a>", 4, "near"),
@@ -173,8 +176,9 @@ FAQ = [
     ("Waar komen de logo's vandaan?", f"De logo's van ruim {N_LOGOS} bekende winkels zitten in Pasr, in de juiste merkkleur; je ziet ze allemaal op pasr.nl/kaarten. Voor andere winkels haalt je iPhone het icoon van de winkelsite op, of knip je zelf een logo uit een foto van je pas."),
     ("Waarom verschijnt mijn kaart niet altijd bij de winkel?", "iOS laat een app hoogstens 20 plekken tegelijk in de gaten houden. Pasr kiest de 20 beste plekken rond waar je bent: eerst je eigen locaties, dan de dichtstbijzijnde filialen van je kaarten. Zet in Instellingen › Meldingen “Ook als Pasr dicht is” aan (locatie: Altijd); dan zet Pasr de winkels opnieuw klaar zodra je ergens anders bent, ook als je de app niet opent. Bij je vaste filiaal helpt het om bij de kaart onder Wijzig › Locaties op “Ik sta hier” te tikken. Voor Apple Wallet kies je zelf tot 10 filialen; of de pas op je toegangsscherm verschijnt, bepaalt iOS. Je locatie blijft altijd op je iPhone."),
     ("Hoe lang is mijn cadeaukaart geldig?", "Dat verschilt per uitgever: van een jaar tot onbeperkt. In de Cadeaubon-gids op pasr.nl/cadeaubon staat per cadeaukaart hoe lang hij geldig is, of je hem online of in de winkel inwisselt en waar de voorwaarden staan, van de officiële site van de uitgever. Je ziet de gids ook bij je kaart in Pasr, en Pasr herinnert je aan tegoed dat je nog hebt."),
-    ("Haalt Pasr het tegoed van mijn cadeaukaart vanzelf op?", "Nee, dat kan helaas niet: winkels en uitgevers van cadeaukaarten geven het tegoed niet door aan andere apps, en hun saldo-pagina's vragen om je pincode en een controle. Pasr houdt het daarom samen met jou bij: na het tonen van een cadeaukaart vraagt Pasr hoeveel je uitgaf, en het tegoed gaat omlaag met een regel in de geschiedenis. Met Saldo checken open je de saldo-pagina van de uitgever met je kaartnummer klaar om te plakken, en pas je het tegoed met één tik aan. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar bij."),
-    ("Ziet Pasr wanneer ik een kaart heb gebruikt?", "Pasr ziet wanneer je een kaart laat zien, en bij welk filiaal als je locatie aanstaat. Dat staat in de geschiedenis van de kaart, met de laatste 30 dagen bovenaan. Of de kassa hem echt heeft gescand, weet Pasr niet. De geschiedenis blijft op je iPhone; uitgaven van cadeaukaarten gaan mee naar je andere apparaten."),
+    ("Haalt Pasr het tegoed van mijn cadeaukaart vanzelf op?", "Nee, dat kan helaas niet: winkels en uitgevers van cadeaukaarten geven het tegoed niet door aan andere apps, en hun saldo-pagina's vragen om je pincode en een controle. Pasr houdt het daarom samen met jou bij: na het tonen van een cadeaukaart vraagt Pasr of je hem gebruikte en wat je uitgaf, en het tegoed gaat omlaag met een regel in de geschiedenis. Met Saldo checken open je de saldo-pagina van de uitgever met je kaartnummer klaar om te plakken, en pas je het tegoed met één tik aan. Staat de kaart in Apple Wallet, dan werkt Pasr de pas daar bij."),
+    ("Ziet Pasr wanneer ik een kaart heb gebruikt?", "Of de kassa je kaart echt scande, kan Pasr niet zien. Daarom telt even kijken niet: liet je de barcode minstens 5 seconden zien, dan vraagt Pasr bij het sluiten “Gebruikt bij PLUS? Ja · Nee”, en alleen Ja komt in Laatst gebruikt. Met je locatie vraagt Pasr het alleen als je bij een filiaal bent; je locatie blijft op je telefoon. Betaal je met Apple Pay, dan kan de app Opdrachten de aankoop vanzelf aan Pasr doorgeven (op Android de betaalmelding, als je dat aanzet). Een bedrag gaat met je account mee naar je andere apparaten; de filiaalnaam en je bonnetjes niet."),
+    ("Kan ik bonnetjes bewaren voor de garantie?", "Ja. Scan de kassabon bij een aankoop of los, en Pasr leest het totaal en de datum op je telefoon. Vul Garantie tot in en je krijgt een maand van tevoren een herinnering. Onder Bonnetjes staan al je bonnen, nieuwste eerst, en je zoekt op winkel, bedrag of datum; op iPhone ook via Spotlight. Deel een bon als PDF voor een garantieclaim. Bonnen blijven op je apparaten (en in je iCloud) en gaan niet via je Pasr-account."),
     ("Kan ik screenshots van mijn codes blokkeren?", "Ja. Zet in Instellingen › Privacy en beveiliging Screenshots van codes blokkeren aan; dan is de barcode zwart in een screenshot of schermopname. Bij tijdelijk gedeelde kaarten staat dit altijd aan."),
     ("Zijn mijn kaarten versleuteld?", "Ja. Op je iPhone staan ze onder de hardwareversleuteling van iOS. In iCloud zijn je kaartnummers, pincodes en notities end-to-end versleuteld: alleen jouw apparaten hebben de sleutel. Een back-upbestand kun je versleutelen met je eigen wachtwoord."),
     ("Wat gebeurt er als ik mijn telefoon kwijtraak?", "Je kaarten staan in je iCloud. Log op je nieuwe iPhone in met hetzelfde Apple-account en open Pasr: je kaarten komen vanzelf terug."),
@@ -221,7 +225,10 @@ TABLE_MORE = [
     ("Tegoed-herinneringen, ook per e-mail", "y", "-", "-", "-"),
     ("Saldo checken bij de uitgever", "y", "-", "-", "soms"),
     ("Cadeaubon- en klantenkaart-gids per merk", "y", "-", "-", "-"),
-    ("Geschiedenis: wanneer en waar gebruikt", "y", "-", "-", "-"),
+    ("Laatst gebruikt: alleen als je het bevestigt, alleen bij de winkel", "y", "-", "-", "-"),
+    ("Apple Pay-aankopen vanzelf vastleggen (Android: betaalmelding)", "y", "-", "-", "-"),
+    ("Bonnetjes bewaren met garantieherinnering", "y", "-", "-", "-"),
+    ("Bonnetjes terugvinden: zoeken, Spotlight, delen als PDF", "y", "-", "-", "-"),
     ("Tickets, abonnementen en kortingscodes", "y", "-", "-", "soms"),
     ("Tot 4 foto's en een eigen voorkant", "y", "-", "-", "-"),
     ("Overzetten met een schermopname (bijv. uit Klarna)", "y", "y", "-", "-"),
@@ -388,6 +395,27 @@ def feature_visual(kind):
                 f'<span class="bc">{icon("cake")}<small>Klantenkaart</small></span>'
                 '<span class="nt"><img src="/assets/icon.png" alt=""><span><b>Gefeliciteerd!</b>Je verjaardagscadeau staat klaar</span></span>'
                 '<span class="cf c1"></span><span class="cf c2"></span><span class="cf c3"></span><span class="cf c4"></span><span class="cf c5"></span></div>')
+    if kind == "slim":
+        import shutil
+        for d in ("plus.nl", "jumbo.com"):
+            shutil.copy(ROOT.parent / "App" / "StoreLogos" / f"{d}.png", ROOT / "assets" / "logos" / f"{d}.png")
+        colours = _card_colours()
+        plus = colours.get("plus.nl", "#E2001A")
+        jumbo = colours.get("jumbo.com", "#FFC917")
+        bell = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>'
+        lines = "".join(f'<i style="width:{w}%"></i>' for w in (70, 54, 62, 40, 58))
+        return ('<div class="fv fv-slim" aria-hidden="true">'
+                # 1. vraag bij sluiten
+                f'<div class="sl s1"><span class="lbl">Na het tonen</span><span class="ask"><span class="lg" style="background:{plus}"><img src="/assets/logos/plus.nl.png" alt=""></span>'
+                '<span class="q"><b>Gebruikt bij PLUS?</b><span class="bt"><em class="no">Nee</em><em class="yes">Ja</em></span></span></span>'
+                '<span class="tap"></span></div>'
+                # 2. Apple Pay vanzelf in Laatst gebruikt
+                '<div class="sl s2"><span class="lbl">Apple Pay</span><span class="pay"><b>Jumbo</b><span>€ 18,40</span></span>'
+                f'<span class="row"><span class="lg" style="background:{jumbo}"><img src="/assets/logos/jumbo.com.png" alt=""></span><span class="t"><b>Jumbo</b>zojuist</span><span class="a">€ 18,40</span></span></div>'
+                # 3. bonnetje met garantie
+                f'<div class="sl s3"><span class="lbl">Bonnetje</span><span class="paper"><span class="ln">{lines}</span><span class="tot">Totaal <b>649,00</b></span></span>'
+                f'<span class="war">{bell}<span><b>Garantie tot</b>12 nov 2028</span></span></div>'
+                '</div>')
     if kind == "theme":
         return '<div class="fv fv-theme"><span class="fv-toggle"><b></b></span></div>'
     return ""

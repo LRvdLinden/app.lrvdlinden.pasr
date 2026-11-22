@@ -527,6 +527,7 @@ footer a:hover { color: var(--ink); }
   transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s; }
 .feature.span3 { grid-column: span 3; }
 .feature.span4 { grid-column: span 4; }
+.feature.span6 { grid-column: 1 / -1; }
 .feature:hover { transform: translateY(-4px); box-shadow: 0 26px 50px -30px rgba(40,30,120,.45); border-color: #BAB3F6; border-color: color-mix(in srgb, var(--iris), var(--line) 70%); }
 .feature .chip { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; flex: none;
   background: linear-gradient(140deg, var(--c), var(--c)); background: linear-gradient(140deg, color-mix(in srgb, var(--c), #fff 22%), var(--c)); box-shadow: 0 10px 20px -10px var(--c); }
@@ -967,6 +968,68 @@ html, body { overflow-x: clip; max-width: 100%; }
 .apk-steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 30px; height: 30px; border-radius: 50%;
   background: linear-gradient(135deg, #2BB38A, #0E8A62); color: #fff; font-weight: 700; display: grid; place-items: center; }
 .zk-apps { margin-top: 18px; align-items: center; }
+
+/* Laatst gebruikt, Apple Pay en bonnetjes (hele rij): drie stappen naast elkaar; op een telefoon een voor een */
+.feature.span6 .fv { height: 176px; }
+.fv-slim { background: linear-gradient(135deg, #DCEBFF, #EEF4FF 55%, #E6FAF4); display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  padding: 14px 16px; place-items: stretch; }
+.fv-slim .sl { position: relative; background: rgba(255,255,255,.55); border-radius: 14px; padding: 26px 12px 12px; display: grid; place-items: center; gap: 8px; min-width: 0; }
+.fv-slim .lbl { position: absolute; top: 8px; left: 12px; font: 700 11px var(--body); letter-spacing: .06em; text-transform: uppercase; color: #4B4966; }
+.fv-slim .lg { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.08); }
+.fv-slim .lg img { width: 22px; height: 22px; object-fit: contain; }
+.fv-slim b { color: #17162A; }
+/* 1. Gebruikt bij PLUS? Ja wordt aangetikt */
+.fv-slim .ask { width: 100%; max-width: 250px; display: flex; gap: 8px; align-items: center; background: #fff; border-radius: 16px; padding: 8px 10px;
+  box-shadow: 0 12px 24px -16px rgba(20,15,60,.55); animation: fvSlimAsk 7s ease-in-out infinite; }
+.fv-slim .q { display: grid; gap: 5px; min-width: 0; font-size: 12px; }
+.fv-slim .bt { display: flex; gap: 6px; }
+.fv-slim .bt em { font: 700 11px var(--body); font-style: normal; padding: 3px 10px; border-radius: 999px; background: #EEF0F6; color: #4B4966; }
+.fv-slim .bt .yes { background: var(--iris); color: #fff; animation: fvSlimYes 7s ease-in-out infinite; }
+.fv-slim .tap { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: rgba(106,92,255,.35); right: 30%; bottom: 26px;
+  opacity: 0; animation: fvSlimTap 7s ease-in-out infinite; }
+@keyframes fvSlimAsk { 0% { opacity: 0; transform: translateY(12px); } 6%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(6px); } }
+@keyframes fvSlimYes { 0%, 30% { transform: none; } 34% { transform: scale(.9); } 38%, 100% { transform: none; } }
+@keyframes fvSlimTap { 0%, 26% { opacity: 0; transform: scale(.4); } 32% { opacity: 1; transform: scale(1); } 40%, 100% { opacity: 0; transform: scale(1.6); } }
+/* 2. Apple Pay: de betaling komt als regel in Laatst gebruikt */
+.fv-slim .pay { display: flex; gap: 10px; align-items: baseline; padding: 6px 12px; border-radius: 999px; background: #17162A; color: #fff; font-size: 12px;
+  animation: fvSlimPay 7s ease-in-out infinite; }
+.fv-slim .pay b { color: #fff; }
+.fv-slim .row { width: 100%; max-width: 250px; display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; background: #fff; border-radius: 10px;
+  padding: 6px 8px; font-size: 11px; color: #4B4966; box-shadow: 0 10px 20px -16px rgba(20,15,60,.5); animation: fvSlimRow 7s ease-in-out infinite; }
+.fv-slim .row .t { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fv-slim .row .t b { display: block; font-size: 12px; }
+.fv-slim .row .a { font-weight: 700; color: #17162A; font-variant-numeric: tabular-nums; }
+@keyframes fvSlimPay { 0%, 100% { transform: none; } 22% { transform: scale(1.06); } 28% { transform: none; } }
+@keyframes fvSlimRow { 0%, 24% { opacity: 0; transform: translateY(-12px); } 32%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+/* 3. Bonnetje: totaal gelezen, garantie met herinnering */
+.fv-slim .s3 { grid-template-columns: auto 1fr; gap: 10px; }
+.fv-slim .paper { width: 64px; background: #fff; border-radius: 4px; padding: 8px 7px; display: grid; gap: 4px; box-shadow: 0 12px 22px -14px rgba(20,15,60,.55);
+  transform: rotate(-4deg); position: relative; overflow: hidden; }
+.fv-slim .paper::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: rgba(10,132,255,.7); top: 0; animation: fvSlimScan 7s ease-in-out infinite; }
+.fv-slim .ln { display: grid; gap: 4px; }
+.fv-slim .ln i { display: block; height: 3px; border-radius: 2px; background: #D9DCE6; }
+.fv-slim .tot { font-size: 8px; color: #4B4966; border-top: 1px dashed #C9CCD8; padding-top: 3px; }
+.fv-slim .tot b { display: block; font-size: 11px; animation: fvSlimTot 7s ease-in-out infinite; }
+.fv-slim .war { display: flex; gap: 8px; align-items: center; background: #fff; border-radius: 12px; padding: 7px 10px; font-size: 11px; color: #4B4966; min-width: 0;
+  box-shadow: 0 10px 20px -16px rgba(20,15,60,.5); animation: fvSlimWar 7s ease-in-out infinite; }
+.fv-slim .war b { display: block; font-size: 12px; }
+.fv-slim .war svg { width: 20px; height: 20px; color: #1F9E6A; flex: none; animation: fvBell 3.5s ease-in-out infinite; }
+@keyframes fvSlimScan { 0%, 10% { top: 0; opacity: 0; } 14% { opacity: 1; } 40% { top: 100%; opacity: 1; } 44%, 100% { top: 100%; opacity: 0; } }
+@keyframes fvSlimTot { 0%, 36% { color: #17162A; background: transparent; } 42%, 70% { color: #0A84FF; background: rgba(10,132,255,.12); } 80%, 100% { color: #17162A; background: transparent; } }
+@keyframes fvSlimWar { 0%, 36% { opacity: 0; transform: translateX(10px); } 44%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@media (max-width: 900px) { .fv-slim { gap: 10px; padding: 12px; } .fv-slim .sl { padding: 24px 8px 10px; } .fv-slim .s3 { gap: 8px; } .fv-slim .paper { width: 50px; } .fv-slim .war { padding: 6px 8px; } }
+@media (max-width: 620px) {
+  .feature.span6 .fv { height: 160px; }
+  .fv-slim { grid-template-columns: 1fr; padding: 12px; }
+  .fv-slim .sl { grid-area: 1 / 1; opacity: 0; animation: fvSlimStep 15s ease-in-out infinite; }
+  .fv-slim .s2 { animation-delay: 5s; } .fv-slim .s3 { animation-delay: 10s; }
+}
+@keyframes fvSlimStep { 0% { opacity: 0; } 4%, 30% { opacity: 1; } 34%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .fv-slim *, .fv-slim .sl { animation: none !important; opacity: 1 !important; }
+  .fv-slim .tap, .fv-slim .pay { display: none; }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 620px) { .fv-slim .s2, .fv-slim .s3 { display: none; } }
 
 /* Functies naast elkaar: top 5, de rest achter een knop (zonder JS alles zichtbaar) */
 .ft-lead { color: #C9C6E8; margin: -10px 0 14px; font-size: 16px; }
