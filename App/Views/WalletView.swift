@@ -335,10 +335,6 @@ struct WalletView: View {
             let place = await NearbyStores.shared.placeName(for: card)
             shownPlace = place
             card.recordShown(place: place)
-            // plaats en provincie voor "Laatst gebruikt"
-            if let area = await NearbyStores.shared.area() {
-                card.recordShown(place: place, city: area.city, region: area.region)
-            }
         }
         flipAngle = 0
         withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }

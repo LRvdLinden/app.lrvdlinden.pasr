@@ -127,8 +127,10 @@ object Sync {
             c.history.filter { it.kind != "shown" || it.amount != null }.take(60).forEach { e ->
                 put(JSONObject().apply {
                     put("id", e.id); put("date", isoOf(e.date)); put("kind", e.kind)
-                    e.amount?.let { put("amount", it) }; e.balance?.let { put("balance", it) }; e.place?.let { put("place", it) }
-                    e.city?.let { put("city", it) }; e.region?.let { put("region", it) }; e.spentID?.let { put("spentID", it) }
+                    e.amount?.let { put("amount", it) }; e.balance?.let { put("balance", it) }
+                    // filiaalnaam van een gebruiksmoment blijft op het apparaat; plaats en provincie bewaart Pasr niet
+                    if (e.kind != "shown") e.place?.let { put("place", it) }
+                    e.spentID?.let { put("spentID", it) }
                 })
             }
         })
@@ -190,13 +192,15 @@ object Sync {
                 val at = parseIso(e.str("date")) ?: return@mapNotNull null
                 CardEvent(id = e.str("id") ?: newId(), date = at, kind = e.str("kind") ?: return@mapNotNull null,
                     amount = (e.opt("amount") as? Number)?.toDouble(), balance = (e.opt("balance") as? Number)?.toDouble(),
-                    place = e.str("place"), city = e.str("city"), region = e.str("region"), spentID = e.str("spentID")?.uppercase())
+                    place = e.str("place"), spentID = e.str("spentID")?.uppercase())
             } ?: emptyList()
             val oldest = remote.minOfOrNull { it.date }
             val ids = remote.map { it.id }.toSet()
             // een oudere versie (zonder "uses") stuurt geen gebruiksmomenten: dan blijven de ingevulde bedragen van hier staan
             val remoteHasUses = f.optBoolean("uses", false)
-            c = c.copy(history = Card.trimHistory(remote + card.history.filter {
+            val localPlaces = card.history.filter { it.kind == "shown" && it.place != null }.associate { it.id to it.place }
+            val merged = remote.map { if (it.kind == "shown" && it.place == null && localPlaces[it.id] != null) it.copy(place = localPlaces[it.id]) else it }
+            c = c.copy(history = Card.trimHistory(merged + card.history.filter {
                 it.id !in ids && ((it.kind == "shown" && (it.amount == null || !remoteHasUses)) || (oldest != null && it.date < oldest))
             }))
         }

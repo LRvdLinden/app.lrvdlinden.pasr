@@ -489,14 +489,6 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
         return best?.1
     }
 
-    /// Plaats en provincie van waar je nu bent, voor "Laatst gebruikt" ("Apeldoorn", "Gelderland"). Nil zonder locatie.
-    func area() async -> (city: String?, region: String?)? {
-        guard hasLocation, let here = await currentLocation(maxAge: 300) else { return nil }
-        guard let mark = try? await CLGeocoder().reverseGeocodeLocation(here, preferredLocale: Locale(identifier: "nl_NL")).first
-        else { return nil }
-        return (mark.locality, mark.administrativeArea)
-    }
-
     /// "PLUS" + "Hoofdstraat 1, Apeldoorn" → "PLUS Apeldoorn".
     private static func label(name: String, address: String?) -> String {
         guard let city = address?.components(separatedBy: ", ").last?.trimmingCharacters(in: .whitespaces), !city.isEmpty,

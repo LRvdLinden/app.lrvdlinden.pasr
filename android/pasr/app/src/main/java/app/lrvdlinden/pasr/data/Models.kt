@@ -66,7 +66,7 @@ data class CardEvent(
     val amount: Double? = null,
     val balance: Double? = null,
     val place: String? = null,
-    /** Plaats en provincie bij het tonen (sinds "Laatst gebruikt"; op Android alleen van de iPhone via sync). */
+    /** Niet meer gebruikt (plaats en provincie); blijft staan voor compatibiliteit, wordt nooit gevuld. */
     val city: String? = null,
     val region: String? = null,
     /** Bij een getoonde cadeaukaart met een ingevuld bedrag: de afboeking ("spent") die erbij hoort. */
@@ -183,7 +183,7 @@ data class Card(
             use = use.copy(spentID = null)
             if (value != null) {
                 b = Math.round(((b ?: 0.0) - value).coerceAtLeast(0.0) * 100) / 100.0
-                val spent = CardEvent(kind = "spent", amount = value, balance = b, place = use.place)
+                val spent = CardEvent(kind = "spent", amount = value, balance = b)
                 use = use.copy(spentID = spent.id)
                 list = listOf(spent) + list
             }

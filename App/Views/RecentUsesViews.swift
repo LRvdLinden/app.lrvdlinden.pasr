@@ -11,15 +11,9 @@ enum UseFormat {
         return c
     }
 
-    /// Vetgedrukte regel: het filiaal ("PLUS Apeldoorn"), anders de winkel.
+    /// Vetgedrukte regel: het filiaal ("PLUS Apeldoorn", alleen op dit apparaat bekend), anders de winkel.
     static func title(_ e: CardEvent, card: Card) -> String {
         e.place ?? (card.storeName.isEmpty ? String(localized: "Getoond") : card.storeName)
-    }
-
-    /// "Apeldoorn, Gelderland" (nil als Pasr je locatie niet had).
-    static func area(_ e: CardEvent) -> String? {
-        let parts = [e.city, e.region].compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
     static func money(_ value: Double, card: Card) -> String { CardHistoryFormat.money(value, card.currencyCode) }
@@ -77,7 +71,6 @@ enum UseFormat {
     /// Wat VoiceOver voorleest voor een regel.
     static func spoken(_ e: CardEvent, card: Card, withTime: Bool) -> String {
         var parts = [title(e, card: card)]
-        if let a = area(e) { parts.append(a) }
         parts.append(withTime ? whenWithTime(e.date) : when(e.date))
         parts.append(e.amount.map { String(localized: "uitgegeven \(money($0, card: card))") } ?? String(localized: "geen bedrag ingevuld"))
         return parts.joined(separator: ", ")
@@ -113,7 +106,7 @@ struct UseLogoTile: View {
     }
 }
 
-/// Eén regel: logo, filiaal, plaats en provincie, wanneer, en rechts het bedrag of de knop Toevoegen.
+/// Eén regel: logo, filiaal (of winkel), wanneer, en rechts het bedrag of de knop Toevoegen.
 struct UseRow: View {
     let card: Card
     let event: CardEvent
@@ -127,9 +120,6 @@ struct UseRow: View {
                 Text(UseFormat.title(event, card: card))
                     .font(.body.weight(.bold))
                     .foregroundStyle(.primary)
-                if let area = UseFormat.area(event) {
-                    Text(area).font(.footnote).foregroundStyle(.secondary)
-                }
                 Text(withTime ? UseFormat.whenWithTime(event.date) : UseFormat.when(event.date))
                     .font(.footnote).foregroundStyle(.secondary)
             }
@@ -279,7 +269,7 @@ struct RecentUsesView: View {
                             }
                         }
                     }
-                    Text("Filiaal en plaats komen van je locatie bij het tonen. Een bedrag vul je zelf in; tik op een regel om het aan te passen of de regel te verwijderen.")
+                    Text("Pasr bewaart wanneer je de kaart toonde. Een bedrag vul je zelf in; tik op een regel om het aan te passen of de regel te verwijderen.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
@@ -363,7 +353,7 @@ struct UseAmountSheet: View {
                 if let e = event {
                     VStack(spacing: 2) {
                         Text(UseFormat.title(e, card: card)).font(.headline)
-                        Text([UseFormat.area(e), UseFormat.whenWithTime(e.date)].compactMap { $0 }.joined(separator: " · "))
+                        Text(UseFormat.whenWithTime(e.date))
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                     .multilineTextAlignment(.center)

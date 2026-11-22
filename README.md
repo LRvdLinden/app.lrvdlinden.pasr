@@ -88,15 +88,17 @@ kaarten"), voor Pasr, Pasr Zakelijk of beide en voor Alles, Apple of Android, op
 Pasr kent (kaart, tijdelijke kaart, uitnodiging, zakelijke stempelkaart) op die plek in de app, andere in
 SFSafariViewController; pas na splash, welkomst en ontgrendelen. Android: Custom Tabs (anders de browser).
 
-## Laatst gebruikt (build 45)
+## Laatst gebruikt (build 45, privacy aangescherpt in build 46)
 
 Onder de knoppen in het kaartdetail staat **Laatst gebruikt** (zoals de transacties in Apple Wallet): de laatste drie
-keer dat je de kaart liet zien, met het logo, het filiaal (`NearbyStores.placeName`), plaats en provincie (CLGeocoder bij
-het tonen, velden `city`/`region` in `CardEvent`) en de relatieve tijd. Rechts staat het bedrag dat je uitgaf, of
+keer dat je de kaart liet zien, met het logo, het filiaal als Pasr dat lokaal uit de winkels in de buurt kent
+(`NearbyStores.placeName`, zonder geocoding; anders de winkelnaam) en de tijd. Rechts staat het bedrag dat je uitgaf, of
 **Toevoegen**. **Alles** opent `RecentUsesView`: deze maand (aantal keer en totaal ingevuld) en alle keren per periode;
 tik op een regel om het bedrag aan te passen of de regel te verwijderen. Bij een cadeaukaart boekt een bedrag ook af van
 het tegoed (`spentID` koppelt het gebruiksmoment aan de afboeking). Gebruiksmomenten met een bedrag gaan mee met de
-accountsync (`"uses": true` in de kaart-JSON; oudere versies en Android vóór deze build laten ze staan). Geen
+accountsync (winkel, tijd, bedrag; `"uses": true` in de kaart-JSON); de filiaalnaam van een gebruiksmoment gaat nooit
+naar de server en blijft bij het samenvoegen lokaal staan. Plaats en provincie bewaart Pasr niet (de velden
+`city`/`region` in `CardEvent` blijven alleen voor compatibiliteit en worden nooit gevuld). Geen
 CloudKit-schemawijziging: alles zit in `historyData`. Vervangt de regel "Vorige keer …" en, bij klantenkaarten, de oude
 geschiedenis-sheet (de klokknop opent nu Laatst gebruikt; bij cadeaukaarten blijft Tegoed en uitgaven).
 

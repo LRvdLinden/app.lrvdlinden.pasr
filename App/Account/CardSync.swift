@@ -143,7 +143,7 @@ enum CardSync {
             guard let id = (e["id"] as? String).flatMap(UUID.init(uuidString:)), let at = (e["date"] as? String).flatMap(date),
                   let kind = (e["kind"] as? String).flatMap(CardEvent.Kind.init(rawValue:)) else { return nil }
             return CardEvent(id: id, date: at, kind: kind, amount: e["amount"] as? Double, balance: e["balance"] as? Double,
-                             place: e["place"] as? String, city: e["city"] as? String, region: e["region"] as? String,
+                             place: e["place"] as? String,
                              spentID: (e["spentID"] as? String).flatMap(UUID.init(uuidString:)))
         }
         if f["history"] != nil {   // oudere Pasr-versies sturen geen geschiedenis mee: dan blijft die van hier staan
@@ -151,7 +151,15 @@ enum CardSync {
             let ids = Set(remote.map(\.id))
             // een oudere versie (zonder "uses") stuurt geen gebruiksmomenten: dan blijven de ingevulde bedragen van hier staan
             let remoteHasUses = f["uses"] as? Bool == true
-            card.history = remote + card.history.filter { local in
+            // een filiaalnaam bij een gebruiksmoment gaat niet naar de server: die van hier blijft bewaard
+            let localPlaces = Dictionary(card.history.filter { $0.kind == .shown && $0.place != nil }.map { ($0.id, $0.place) },
+                                         uniquingKeysWith: { a, _ in a })
+            let merged = remote.map { incoming -> CardEvent in
+                var event = incoming
+                if event.kind == .shown, event.place == nil, let local = localPlaces[event.id] { event.place = local }
+                return event
+            }
+            card.history = merged + card.history.filter { local in
                 !ids.contains(local.id) && ((local.kind == .shown && (local.amount == nil || !remoteHasUses))
                                             || (oldest.map { local.date < $0 } ?? false))
             }
@@ -200,9 +208,8 @@ enum CardSync {
                 var d: [String: Any] = ["id": e.id.uuidString, "date": iso(e.date), "kind": e.kind.rawValue]
                 d["amount"] = e.amount
                 d["balance"] = e.balance
-                d["place"] = e.place
-                d["city"] = e.city
-                d["region"] = e.region
+                // filiaalnaam van een gebruiksmoment blijft op het apparaat; plaats en provincie bewaart Pasr niet
+                if e.kind != .shown { d["place"] = e.place }
                 d["spentID"] = e.spentID?.uuidString
                 return d
             }

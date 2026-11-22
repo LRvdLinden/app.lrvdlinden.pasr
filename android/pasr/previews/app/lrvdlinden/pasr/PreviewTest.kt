@@ -230,11 +230,11 @@ class PreviewTest {
         val h = 3_600_000L
         Card(storeName = "PLUS", number = "6064365152405021013", formatRaw = "qr", colorHex = "#FFFFFF", logo = logo("plus.nl"),
             history = listOf(
-                CardEvent(date = now - 2 * h, kind = "shown", place = "PLUS Apeldoorn", city = "Apeldoorn", region = "Gelderland", amount = 6.48),
-                CardEvent(date = now - 4 * 24 * h, kind = "shown", place = "PLUS Anklaar", city = "Apeldoorn", region = "Gelderland"),
-                CardEvent(date = now - 13 * 24 * h, kind = "shown", place = "PLUS Twello", city = "Twello", region = "Gelderland", amount = 31.20),
-                CardEvent(date = now - 18 * 24 * h, kind = "shown", place = "PLUS Apeldoorn", city = "Apeldoorn", region = "Gelderland", amount = 32.85),
-                CardEvent(date = now - 35 * 24 * h, kind = "shown", place = "PLUS Apeldoorn", city = "Apeldoorn", region = "Gelderland", amount = 14.10),
+                CardEvent(date = now - 2 * h, kind = "shown", place = "PLUS Apeldoorn", amount = 6.48),
+                CardEvent(date = now - 4 * 24 * h, kind = "shown", place = "PLUS Anklaar"),
+                CardEvent(date = now - 13 * 24 * h, kind = "shown", place = "PLUS Twello", amount = 31.20),
+                CardEvent(date = now - 18 * 24 * h, kind = "shown", place = "PLUS Apeldoorn", amount = 32.85),
+                CardEvent(date = now - 35 * 24 * h, kind = "shown", place = "PLUS Apeldoorn", amount = 14.10),
             ))
     }
 

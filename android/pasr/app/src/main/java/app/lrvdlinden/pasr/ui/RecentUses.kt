@@ -90,9 +90,6 @@ object UseFormat {
 
     fun title(e: CardEvent, card: Card): String = e.place ?: card.storeName.ifBlank { "Getoond" }
 
-    fun area(e: CardEvent): String? =
-        listOfNotNull(e.city?.trim(), e.region?.trim()).filter { it.isNotEmpty() }.joinToString(", ").ifEmpty { null }
-
     private fun cap(s: String) = s.replaceFirstChar { it.titlecase(nl) }
     private fun day(ms: Long): LocalDate = Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
     private fun fmt(pattern: String, ms: Long) = DateTimeFormatter.ofPattern(pattern, nl).format(Instant.ofEpochMilli(ms).atZone(zone))
@@ -148,7 +145,7 @@ object UseFormat {
     fun isThisMonth(ms: Long): Boolean { val d = day(ms); val t = LocalDate.now(zone); return d.year == t.year && d.month == t.month }
 
     fun spoken(e: CardEvent, card: Card, withTime: Boolean): String = listOfNotNull(
-        title(e, card), area(e), if (withTime) whenWithTime(e.date) else whenShort(e.date),
+        title(e, card), if (withTime) whenWithTime(e.date) else whenShort(e.date),
         e.amount?.let { "uitgegeven ${euro(it, card.currencyCode)}" } ?: "geen bedrag ingevuld",
     ).joinToString(", ")
 
@@ -203,7 +200,6 @@ fun UseRow(card: Card, e: CardEvent, withTime: Boolean, onAmount: () -> Unit) {
             Text(UseFormat.title(e, card), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
             val sub = MaterialTheme.colorScheme.onSurfaceVariant
-            UseFormat.area(e)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = sub) }
             Text(if (withTime) UseFormat.whenWithTime(e.date) else UseFormat.whenShort(e.date), style = MaterialTheme.typography.bodySmall, color = sub)
         }
         Spacer(Modifier.width(8.dp))
@@ -300,7 +296,7 @@ fun RecentUsesScreen(id: String) {
                 }
             }
             Gap(16.dp)
-            Text("Filiaal en plaats komen van je locatie bij het tonen. Een bedrag vul je zelf in; tik op een regel om het aan te passen of de regel te verwijderen.",
+            Text("Pasr bewaart wanneer je de kaart toonde. Een bedrag vul je zelf in; tik op een regel om het aan te passen of de regel te verwijderen.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
             if (card.kind == CardKind.VOUCHER) {
                 Gap(6.dp)
@@ -353,7 +349,7 @@ fun UseAmountDialog(card: Card, useId: String, allowsDelete: Boolean = false, on
         title = { Text("Wat gaf je uit?") },
         text = {
             Column {
-                Text(listOfNotNull(UseFormat.title(e, card), UseFormat.area(e), UseFormat.whenWithTime(e.date)).joinToString(" · "),
+                Text(listOf(UseFormat.title(e, card), UseFormat.whenWithTime(e.date)).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Gap(10.dp)
                 OutlinedTextField(text, { text = it.filter { c -> c.isDigit() || c == ',' || c == '.' } }, label = { Text("Bedrag in euro") },

@@ -158,7 +158,7 @@ struct CardEvent: Codable, Hashable, Identifiable {
     var balance: Double?
     /// Waar (filiaal, als dat bekend was).
     var place: String?
-    /// Plaats en provincie bij het tonen (sinds build 45, uit je locatie).
+    /// Niet meer gebruikt (build 45 testte plaats en provincie); blijft staan voor compatibiliteit, wordt nooit gevuld.
     var city: String?
     var region: String?
     /// Bij een getoonde cadeaukaart met een ingevuld bedrag: de afboeking (regel "spent") die erbij hoort.
@@ -182,17 +182,14 @@ extension Card {
     var lastShown: CardEvent? { history.first { $0.kind == .shown } }
 
     /// Kaart getoond. Binnen 10 minuten nog eens dezelfde kaart telt niet opnieuw (wel de plek als die er nog niet was).
-    func recordShown(place: String?, city: String? = nil, region: String? = nil) {
+    /// De filiaalnaam komt uit de winkels in de buurt (zonder geocoding) en blijft op dit apparaat.
+    func recordShown(place: String?) {
         var list = history
         if let last = list.first(where: { $0.kind == .shown }), Date.now.timeIntervalSince(last.date) < 600 {
-            if let i = list.firstIndex(of: last), (last.place == nil && place != nil) || (last.city == nil && city != nil) {
-                if list[i].place == nil { list[i].place = place }
-                if list[i].city == nil { list[i].city = city; list[i].region = region }
-                history = list
-            }
+            if last.place == nil, let place, let i = list.firstIndex(of: last) { list[i].place = place; history = list }
             return
         }
-        list.insert(CardEvent(kind: .shown, place: place, city: city, region: region), at: 0)
+        list.insert(CardEvent(kind: .shown, place: place), at: 0)
         history = list
     }
 
@@ -213,7 +210,7 @@ extension Card {
             use.spentID = nil
             if let value {
                 balance = (max(0, (balance ?? 0) - value) * 100).rounded() / 100
-                let spent = CardEvent(kind: .spent, amount: value, balance: balance, place: use.place)
+                let spent = CardEvent(kind: .spent, amount: value, balance: balance)
                 use.spentID = spent.id
                 list.insert(spent, at: 0)
             }
