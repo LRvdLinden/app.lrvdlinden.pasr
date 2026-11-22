@@ -1,0 +1,174 @@
+# Pasr Zakelijk voor Android: bouwt een ondertekende APK (android/zakelijk) en schermafbeeldingen (Paparazzi).
+#
+# Ondertekenen: altijd met dezelfde sleutel, zodat elke update over de vorige versie heen installeert. Zelfde opzet als
+# Bekendr (LRvdLinden/app.lrvdlinden.bekendr): de sleutel staat versleuteld in android/zakelijk/signing/pasrzakelijk.jks.enc
+# en wordt ontgrendeld met een wachtwoord dat uit de bestaande repo-secret PASR_APNS_KEY_P8 wordt afgeleid. Bestaat het
+# bestand nog niet, dan maakt de eerste run één keer een nieuwe sleutel (RSA 4096, 100 jaar) en zet hem versleuteld terug
+# op deze branch. Het wachtwoord en de sleutel komen nooit in de log of in de repo.
+# Let op: wordt PASR_APNS_KEY_P8 ooit vervangen, dan kan deze workflow de sleutel niet meer openen (hij weigert dan; er
+# wordt nooit stilletjes een nieuwe sleutel gemaakt). Zet in dat geval eerst de oude waarde terug.
+# Optioneel: repository-variabele PASRZAKELIJK_CERT_SHA256 = de vingerafdruk uit de log; dan weigert de workflow elke
+# APK die met een andere sleutel is ondertekend.
+name: Android Pasr Zakelijk
+
+on:
+  push:
+    branches: [gedeelde-pasr]
+    paths: ["android/zakelijk/**", ".github/workflows/android-zakelijk.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: android-zakelijk
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    name: APK bouwen en ondertekenen
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android/zakelijk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Teksten controleren (EnStrings.kt actueel)
+        run: |
+          python3 tools/make_strings.py
+          git diff --exit-code -- app/src/main/java/app/lrvdlinden/pasrzakelijk/core/EnStrings.kt \
+            || { echo "::error::EnStrings.kt is niet bijgewerkt. Draai python3 tools/make_strings.py in android/zakelijk."; exit 1; }
+
+      - name: Vaste ondertekensleutel
+        env:
+          SEED: ${{ secrets.PASR_APNS_KEY_P8 }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SEED" ]; then echo "::error::De secret PASR_APNS_KEY_P8 ontbreekt; zonder die secret kan de vaste sleutel niet worden ontgrendeld."; exit 1; fi
+          PASS=$(printf 'pasrzakelijk-android:%s' "$SEED" | sha256sum | cut -c1-40)
+          echo "::add-mask::$PASS"
+          F=signing/pasrzakelijk.jks.enc
+          umask 077
+          # Een eerdere run kan de sleutel al op de branch hebben gezet na deze commit: die altijd gebruiken.
+          git fetch -q origin "$BRANCH" || true
+          if [ ! -f "$F" ] && git cat-file -e "origin/$BRANCH:android/zakelijk/$F" 2>/dev/null; then
+            mkdir -p signing; git show "origin/$BRANCH:android/zakelijk/$F" > "$F"
+          fi
+          if [ ! -f "$F" ]; then
+            mkdir -p signing
+            keytool -genkeypair -keystore "$RUNNER_TEMP/pz.jks" -storetype PKCS12 -alias pasrzakelijk -keyalg RSA -keysize 4096 \
+              -validity 36500 -storepass "$PASS" -keypass "$PASS" -dname "CN=Leon van der Linden, O=LRvdLinden, C=NL" >/dev/null 2>&1
+            PASS="$PASS" openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$RUNNER_TEMP/pz.jks" -out "$F" -pass env:PASS
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$F"
+            git commit -q -m "Pasr Zakelijk Android: vaste ondertekensleutel (versleuteld)"
+            for i in 1 2 3; do git pull --rebase -q origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break; sleep 5; done
+            echo "::notice::Nieuwe vaste sleutel aangemaakt en versleuteld bewaard in android/zakelijk/$F."
+          else
+            PASS="$PASS" openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$F" -out "$RUNNER_TEMP/pz.jks" -pass env:PASS \
+              || { echo "::error::De vaste sleutel kan niet worden ontgrendeld (is PASR_APNS_KEY_P8 gewijzigd?). Er wordt GEEN nieuwe sleutel gemaakt."; exit 1; }
+            echo "Vaste sleutel ontgrendeld."
+          fi
+          {
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/pz.jks"
+            echo "ANDROID_KEYSTORE_PASSWORD=$PASS"
+            echo "ANDROID_KEY_ALIAS=pasrzakelijk"
+            echo "ANDROID_KEY_PASSWORD=$PASS"
+          } >> "$GITHUB_ENV"
+
+      - name: APK bouwen
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          set -o pipefail
+          export VERSION_CODE=$((100 + VERSION_CODE))
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
+
+      - name: Fouten als annotaties
+        if: failure()
+        run: |
+          [ -f build.log ] || exit 0
+          grep -E "^e: " build.log | sort -u | head -60 | while IFS= read -r line; do
+            path=$(echo "$line" | sed -E 's|^e: file://([^:]+):([0-9]+):.*|\1|'); ln=$(echo "$line" | sed -E 's|^e: file://[^:]+:([0-9]+):.*|\1|')
+            msg=$(echo "$line" | sed -E 's|^e: file://[^ ]+ ||')
+            echo "::error file=${path#$GITHUB_WORKSPACE/},line=$ln::$msg"
+          done
+          grep -E "What went wrong|Could not|error:|ERROR:" -A4 build.log | head -40 | while IFS= read -r line; do echo "::error::$line"; done
+
+      - name: Handtekening controleren
+        id: verify
+        env:
+          EXPECTED: ${{ vars.PASRZAKELIJK_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/release/app-release.apk
+          SIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$SIGNER" verify --print-certs "$APK" > certs.txt
+          FP="$(grep -m1 'SHA-256 digest' certs.txt | sed 's/.*: //' | tr 'a-f' 'A-F')"
+          rm -f certs.txt
+          echo "::notice::Pasr Zakelijk ondertekend met certificaat SHA-256 $FP"
+          if [ -n "$EXPECTED" ]; then
+            WANT="$(printf '%s' "$EXPECTED" | tr -d ': ' | tr 'a-f' 'A-F')"
+            if [ "$FP" != "$WANT" ]; then
+              echo "::error::Deze APK is met een ANDERE sleutel ondertekend dan PASRZAKELIJK_CERT_SHA256. Hij zou niet over de vorige versie installeren."
+              exit 1
+            fi
+          fi
+          V=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
+          mkdir -p dist
+          cp "$APK" dist/pasr-zakelijk.apk
+          cp "$APK" "dist/PasrZakelijk-$V.apk"
+          ( cd dist && sha256sum pasr-zakelijk.apk > pasr-zakelijk.apk.sha256 )
+          echo "$FP" > dist/certificaat-sha256.txt
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "APK $V ($((100 + ${{ github.run_number }}))), $(stat -c %s dist/pasr-zakelijk.apk) bytes, sha256 $(cut -d' ' -f1 dist/pasr-zakelijk.apk.sha256)"
+
+      - name: Sleutel opruimen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/pz.jks"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PasrZakelijk-Android
+          path: |
+            android/zakelijk/dist/pasr-zakelijk.apk
+            android/zakelijk/dist/PasrZakelijk-*.apk
+            android/zakelijk/dist/pasr-zakelijk.apk.sha256
+            android/zakelijk/dist/certificaat-sha256.txt
+
+  previews:
+    name: Schermafbeeldingen (Paparazzi)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android/zakelijk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Opnemen
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:recordPaparazziDebug 2>&1 | tee preview.log
+      - name: Fouten tonen
+        if: failure()
+        run: grep -E "^e: |FAILED|Exception|What went wrong" -A3 preview.log | head -80 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PasrZakelijk-Android-previews
+          path: android/zakelijk/app/src/test/snapshots/images/*.png
+          if-no-files-found: warn
