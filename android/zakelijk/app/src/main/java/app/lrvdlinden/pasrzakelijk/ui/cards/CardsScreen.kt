@@ -172,7 +172,7 @@ private fun Stat(icon: ImageVector, value: Int) {
 @Composable
 fun CardEditorSheet(business: Business, initial: BusinessCard, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val inspection = LocalInspectionMode.current
+    val inspection = isPreview()
     var card by remember { mutableStateOf(initial) }
     var logoChanged by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }

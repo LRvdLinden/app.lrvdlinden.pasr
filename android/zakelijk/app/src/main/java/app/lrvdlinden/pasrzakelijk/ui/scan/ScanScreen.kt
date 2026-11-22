@@ -74,7 +74,7 @@ import kotlinx.coroutines.launch
 fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     val demoCamera = app.lrvdlinden.pasrzakelijk.data.Demo.enabled
     val context = LocalContext.current
-    val inspection = LocalInspectionMode.current
+    val inspection = isPreview()
     var manual by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }

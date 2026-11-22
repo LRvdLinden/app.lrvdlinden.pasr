@@ -121,7 +121,7 @@ fun SplashScreen(static: Boolean = false, onFinish: () -> Unit = {}) {
     var badge by remember { mutableStateOf(static) }
     var wordmark by remember { mutableStateOf(static) }
     val glow = remember { Animatable(if (static) 1f else 0f) }
-    val inspection = LocalInspectionMode.current
+    val inspection = isPreview()
     LaunchedEffect(Unit) {
         if (static || inspection) { cardsIn = true; fanned = true; badge = true; wordmark = true; return@LaunchedEffect }
         cardsIn = true

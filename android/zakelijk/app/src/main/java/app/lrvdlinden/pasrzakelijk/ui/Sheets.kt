@@ -62,7 +62,7 @@ fun FullSheet(
         }
     }
     // In voorbeelden (screenshots) zonder apart venster tekenen.
-    if (LocalInspectionMode.current) body()
+    if (isPreview()) body()
     else Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) { body() }
 }
 

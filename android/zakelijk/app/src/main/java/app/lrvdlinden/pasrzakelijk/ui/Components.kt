@@ -366,3 +366,7 @@ fun rememberOpenUrl(): (String) -> Unit {
     val context = LocalContext.current
     return { context.openUrl(it) }
 }
+
+/** Voorbeeldweergave (Android Studio of de schermafbeeldingen in CI): geen camera, biometrie of vensters. */
+@Composable
+fun isPreview(): Boolean = androidx.compose.ui.platform.LocalInspectionMode.current || app.lrvdlinden.pasrzakelijk.data.Demo.enabled

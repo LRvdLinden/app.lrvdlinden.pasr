@@ -104,7 +104,7 @@ fun SettingsScreen(business: Business) {
     var confirmSignOut by remember { mutableStateOf(false) }
     var cooldownMenu by remember { mutableStateOf(false) }
     var appearanceMenu by remember { mutableStateOf(false) }
-    val inspection = androidx.compose.ui.platform.LocalInspectionMode.current
+    val inspection = isPreview()
     val bioAvailable = remember { inspection || Biometrics.isAvailable(context) }
 
     fun save() {
