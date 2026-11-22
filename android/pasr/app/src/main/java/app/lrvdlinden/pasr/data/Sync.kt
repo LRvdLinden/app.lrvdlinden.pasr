@@ -198,8 +198,14 @@ object Sync {
             val ids = remote.map { it.id }.toSet()
             // een oudere versie (zonder "uses") stuurt geen gebruiksmomenten: dan blijven de ingevulde bedragen van hier staan
             val remoteHasUses = f.optBoolean("uses", false)
-            val localPlaces = card.history.filter { it.kind == "shown" && it.place != null }.associate { it.id to it.place }
-            val merged = remote.map { if (it.kind == "shown" && it.place == null && localPlaces[it.id] != null) it.copy(place = localPlaces[it.id]) else it }
+            // filiaalnaam, bonnetje en herkomst van een moment gaan niet naar de server: die van hier blijven staan
+            val localUses = card.history.filter { it.kind == "shown" }.associateBy { it.id }
+            val merged = remote.map { r ->
+                val l = localUses[r.id]
+                if (r.kind != "shown" || l == null) r
+                else r.copy(place = r.place ?: l.place, receiptID = l.receiptID, source = l.source,
+                    pendingAmount = if (r.amount == null) l.pendingAmount else null)
+            }
             c = c.copy(history = Card.trimHistory(merged + card.history.filter {
                 it.id !in ids && ((it.kind == "shown" && (it.amount == null || !remoteHasUses)) || (oldest != null && it.date < oldest))
             }))

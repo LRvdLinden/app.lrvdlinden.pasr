@@ -13,6 +13,7 @@ class PasrApp : Application() {
         app.lrvdlinden.pasr.ui.appContext = this
         Prefs.init(this)
         CardStore.init(this)
+        app.lrvdlinden.pasr.data.ReceiptStore.init(this)
         Account.init()
         Catalog.init(this)
         Reminders.setup(this)

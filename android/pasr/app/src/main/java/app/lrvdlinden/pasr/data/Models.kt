@@ -71,6 +71,12 @@ data class CardEvent(
     val region: String? = null,
     /** Bij een getoonde cadeaukaart met een ingevuld bedrag: de afboeking ("spent") die erbij hoort. */
     val spentID: String? = null,
+    /** Hoe het moment erin kwam (sinds 1.0.3 slim; blijft op het toestel): "ask" = Ja na het tonen, "pay" = betaalmelding. */
+    val source: String? = null,
+    /** Cadeaukaart via een betaalmelding: dit bedrag wacht op bevestiging voordat het van het tegoed gaat. */
+    val pendingAmount: Double? = null,
+    /** Bewaard bonnetje bij dit moment (Receipt.id); blijft op het toestel. */
+    val receiptID: String? = null,
 )
 
 /** Extra gegevens per soort (zelfde velden als CardDetails op iOS). Datums in milliseconden. */
@@ -155,13 +161,26 @@ data class Card(
     val showsCodeAsText get() = kind == CardKind.CODE && details.codeAsBarcode != true
     val isBusinessStamps get() = kind == CardKind.STAMPS && details.isBusiness
 
-    fun shown(place: String? = null): Card {
-        val list = history.toMutableList()
-        val last = list.firstOrNull { it.kind == "shown" }
-        val now = nowMs()
-        val events = if (last != null && now - last.date < 600_000) list else listOf(CardEvent(kind = "shown", place = place)) + list
-        return copy(useCount = useCount + 1, lastUsed = now, history = trimHistory(events))
+    /** Kaart geopend: telt voor de volgorde "Meest gebruikt", maar niet meer als gebruik in Laatst gebruikt. */
+    fun opened(): Card = copy(useCount = useCount + 1, lastUsed = nowMs())
+
+    /**
+     * Een gebruiksmoment vastleggen: na "Ja" bij het sluiten of via een betaalmelding. Binnen 15 minuten van een ander
+     * moment (eerst Ja, daarna de betaling) komt er geen dubbele regel. Geeft de kaart en de id van het moment terug.
+     */
+    fun used(place: String? = null, source: String, at: Long = nowMs()): Pair<Card, String> {
+        val existing = history.firstOrNull { it.kind == "shown" && kotlin.math.abs(at - it.date) < 900_000 }
+        if (existing != null) {
+            val e = existing.copy(place = existing.place ?: place, source = existing.source ?: source)
+            return copy(history = history.map { if (it.id == e.id) e else it }) to e.id
+        }
+        val e = CardEvent(date = at, kind = "shown", place = place, source = source)
+        return copy(history = trimHistory(listOf(e) + history), updatedAt = nowMs()) to e.id
     }
+
+    /** Lokale velden van een moment aanpassen (bonnetje, wachtend bedrag). */
+    fun updatingUse(useId: String, change: (CardEvent) -> CardEvent): Card =
+        copy(history = history.map { if (it.id == useId) change(it) else it })
 
     /** Gebruiksmomenten ("Laatst gebruikt"): wanneer je de kaart liet zien, nieuwste eerst. */
     val uses: List<CardEvent> get() = history.filter { it.kind == "shown" }
@@ -188,7 +207,7 @@ data class Card(
                 list = listOf(spent) + list
             }
         }
-        use = use.copy(amount = value)
+        use = use.copy(amount = value, pendingAmount = null)
         list = list.map { if (it.id == useId) use else it }
         return copy(balance = b, history = trimHistory(list), updatedAt = nowMs())
     }

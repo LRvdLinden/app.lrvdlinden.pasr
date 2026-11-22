@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Alleen de tijdelijke deelmap (bonnetjes als PDF of afbeelding); de versleutelde opslag blijft privé. -->
+<paths>
+    <cache-path name="shared" path="shared/" />
+</paths>

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Share
@@ -78,6 +79,8 @@ import androidx.fragment.app.FragmentActivity
 import app.lrvdlinden.pasr.Incoming
 import app.lrvdlinden.pasr.data.Business
 import app.lrvdlinden.pasr.data.CardKind
+import app.lrvdlinden.pasr.data.CardPlace
+import app.lrvdlinden.pasr.data.UseCapture
 import app.lrvdlinden.pasr.data.CardStore
 import app.lrvdlinden.pasr.data.Catalog
 import app.lrvdlinden.pasr.data.GoogleWallet
@@ -102,9 +105,35 @@ fun CardDetailScreen(id: String) {
     var confirmDelete by remember { mutableStateOf(false) }
     var amountDialog by remember { mutableStateOf<String?>(null) }
     var useAmount by remember { mutableStateOf<String?>(null) }
+    val locationAsk = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { r ->
+        if (r.values.any { it }) scope.launch { pinHere(context, id, snack) }
+    }
+
+    // Hoe lang de barcode in beeld is (alleen als de app vooraan staat en de code zichtbaar is). Bij het sluiten vraagt
+    // Pasr onderin "Gebruikt bij …?" als dat minstens 5 seconden was; even kijken telt niet meer als gebruik.
+    val visible = remember(id) { longArrayOf(0L, 0L) }   // [0] opgeteld, [1] sinds (0 = niet in beeld)
+    val codeShown = revealed && card.number.isNotEmpty()
+    LaunchedEffect(codeShown) {
+        if (codeShown && visible[1] == 0L) visible[1] = System.currentTimeMillis()
+        if (!codeShown && visible[1] != 0L) { visible[0] += System.currentTimeMillis() - visible[1]; visible[1] = 0L }
+    }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+        if (visible[1] != 0L) { visible[0] += System.currentTimeMillis() - visible[1]; visible[1] = 0L }
+    }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_START) {
+        if (codeShown && visible[1] == 0L) visible[1] = System.currentTimeMillis()
+    }
+    DisposableEffect(id) {
+        onDispose {
+            val total = visible[0] + (if (visible[1] != 0L) System.currentTimeMillis() - visible[1] else 0L)
+            CardStore.get(id)?.let { UsePrompts.cardClosed(context.applicationContext, it, total) }
+        }
+    }
 
     LaunchedEffect(id) {
-        CardStore.upsert(card.shown(), touch = false)
+        UsePrompts.cardOpened()
+        CardStore.upsert(card.opened(), touch = false)
         gwAvailable = GoogleWallet.isAvailable()
         if (card.isBusinessStamps) Business.refresh(card)?.let { GoogleWallet.updateIfSaved(it) }
     }
@@ -256,6 +285,12 @@ fun CardDetailScreen(id: String) {
                 if (card.number.isNotEmpty() && revealed) RowItem(Icons.Outlined.ContentCopy, "Nummer kopiëren") {
                     copy(context, card.number); scope.launch { snack.showSnackbar("Gekopieerd") }
                 }
+                // eigen filiaal bewaren: dan vraagt "Alleen bij de winkel" het hier wel, en elders niet
+                RowItem(Icons.Outlined.Place, "Ik sta hier", if (card.places.isEmpty()) "Bewaar dit filiaal, dan vraagt Pasr alleen hier of je de kaart gebruikte"
+                    else "${card.places.size} filia${if (card.places.size == 1) "al" else "len"} bewaard; voeg deze plek toe") {
+                    if (!UseCapture.hasLocation(context)) { locationAsk.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)); return@RowItem }
+                    scope.launch { pinHere(context, card.id, snack) }
+                }
                 RowItem(Icons.Outlined.Delete, "Verwijderen", tint = MaterialTheme.colorScheme.error) { confirmDelete = true }
             }
             Gap(40.dp)
@@ -277,7 +312,7 @@ fun CardDetailScreen(id: String) {
         dismissButton = { TextButton({ confirmDelete = false }) { Text("Annuleren") } },
     )
 
-    useAmount?.let { useId -> UseAmountDialog(card, useId) { useAmount = null } }
+    useAmount?.let { useId -> UseAmountDialog(card, useId, offersReceipt = true) { useAmount = null } }
 
     amountDialog?.let { mode ->
         var text by remember { mutableStateOf("") }
@@ -301,6 +336,21 @@ fun CardDetailScreen(id: String) {
             },
             dismissButton = { TextButton({ amountDialog = null }) { Text("Annuleren") } },
         )
+    }
+}
+
+/** "Ik sta hier": deze plek als filiaal van de kaart bewaren (zoals op iPhone). */
+private suspend fun pinHere(context: Context, id: String, snack: androidx.compose.material3.SnackbarHostState) {
+    val loc = UseCapture.currentLocation(context)
+    val card = CardStore.get(id) ?: return
+    when {
+        loc == null -> snack.showSnackbar("Je plek is nu niet bekend. Probeer het buiten of bij een raam.")
+        !UseCapture.isNew(card, loc) -> snack.showSnackbar("Deze plek is al bewaard")
+        card.places.size >= 10 -> snack.showSnackbar("Je kunt hoogstens 10 filialen bewaren")
+        else -> {
+            CardStore.upsert(card.copy(places = card.places + CardPlace(name = card.storeName, latitude = loc.latitude, longitude = loc.longitude)))
+            snack.showSnackbar("Filiaal bewaard")
+        }
     }
 }
 

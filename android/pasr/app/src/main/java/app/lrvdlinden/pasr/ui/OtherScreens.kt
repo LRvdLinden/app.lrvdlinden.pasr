@@ -183,6 +183,7 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
             }
             Toggle("Volle helderheid bij een kaart", brightness, "Makkelijker scannen bij de kassa") { brightness = it; Prefs.brightness = it }
         }
+        UseSettings()
         SectionHeader("Meldingen")
         Group {
             Toggle("Herinneringen", reminders, "Cadeaukaarten en codes die verlopen, abonnementen die verlengen") { reminders = it; Prefs.remindersEnabled = it }

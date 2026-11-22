@@ -74,6 +74,7 @@ import app.lrvdlinden.pasr.data.CardKind
 import app.lrvdlinden.pasr.data.CardStore
 import app.lrvdlinden.pasr.data.Catalog
 import app.lrvdlinden.pasr.data.GoogleWallet
+import app.lrvdlinden.pasr.data.ReceiptStore
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Instant
@@ -200,12 +201,21 @@ fun UseRow(card: Card, e: CardEvent, withTime: Boolean, onAmount: () -> Unit) {
             Text(UseFormat.title(e, card), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
             val sub = MaterialTheme.colorScheme.onSurfaceVariant
-            Text(if (withTime) UseFormat.whenWithTime(e.date) else UseFormat.whenShort(e.date), style = MaterialTheme.typography.bodySmall, color = sub)
+            val marks = listOfNotNull(if (e.receiptID != null) "bonnetje" else null, if (e.source == "pay") "betaling" else null)
+            Text((if (withTime) UseFormat.whenWithTime(e.date) else UseFormat.whenShort(e.date)) + marks.joinToString("") { " · $it" },
+                style = MaterialTheme.typography.bodySmall, color = sub)
         }
         Spacer(Modifier.width(8.dp))
         val amount = e.amount
+        val pending = e.pendingAmount
         if (amount != null) {
             Text(euro(amount, card.currencyCode), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        } else if (pending != null) {
+            // cadeaukaart via een betaalmelding: wacht op bevestiging
+            FilledTonalButton(onAmount, colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = Brand.coral.copy(alpha = 0.18f), contentColor = Brand.coral)) {
+                Text("Afboeken ${euro(pending, card.currencyCode)}?", fontWeight = FontWeight.SemiBold)
+            }
         } else {
             FilledTonalButton(onAmount, colors = ButtonDefaults.filledTonalButtonColors(
                 containerColor = Brand.iris.copy(alpha = 0.16f), contentColor = irisText())) {
@@ -235,7 +245,9 @@ fun RecentUsesSection(card: Card, onAll: () -> Unit, onAmount: (CardEvent) -> Un
         }
         UsesPanel {
             uses.forEachIndexed { i, e ->
-                UseRow(card, e, withTime = false) { onAmount(e) }
+                SwipeToDelete(e.id, onDelete = { CardStore.upsert(card.removingEvent(e)) }) {
+                    UseRow(card, e, withTime = false) { onAmount(e) }
+                }
                 if (i < uses.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
@@ -252,6 +264,9 @@ fun RecentUsesScreen(id: String) {
     if (card == null) { LaunchedEffect(Unit) { nav.pop() }; return }
     var editing by remember { mutableStateOf<String?>(null) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val receipts by ReceiptStore.receipts.collectAsState()
+    val cardReceipts = receipts.filter { it.cardID == card.id }
+    val scan = rememberReceiptScan(card.id, null)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -279,7 +294,7 @@ fun RecentUsesScreen(id: String) {
                     Icon(Icons.Outlined.Schedule, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(36.dp))
                     Gap(10.dp)
                     Text("Nog niet gebruikt", fontWeight = FontWeight.Bold)
-                    Text("Als je de kaart laat zien, zie je hier wanneer. Dan kun je ook invullen wat je uitgaf.",
+                    Text("Laat je de kaart minstens 5 seconden zien, dan vraagt Pasr bij het sluiten of je hem gebruikte. Zeg je Ja, dan staat het hier.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -290,13 +305,31 @@ fun RecentUsesScreen(id: String) {
                     modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 6.dp).semantics { heading(); contentDescription = title })
                 UsesPanel {
                     events.forEachIndexed { i, e ->
-                        UseRow(card, e, withTime = true) { editing = e.id }
+                        SwipeToDelete(e.id, onDelete = { CardStore.upsert(card.removingEvent(e)) }) {
+                            UseRow(card, e, withTime = true) { editing = e.id }
+                        }
                         if (i < events.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
             }
             Gap(16.dp)
-            Text("Pasr bewaart wanneer je de kaart toonde. Een bedrag vul je zelf in; tik op een regel om het aan te passen of de regel te verwijderen.",
+            // bonnetjes van deze kaart
+            Row(Modifier.fillMaxWidth().padding(start = 4.dp, top = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("BONNETJES", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).semantics { heading(); contentDescription = "Bonnetjes" })
+                TextButton(scan) { Text("Bon scannen", color = irisText(), fontWeight = FontWeight.SemiBold) }
+            }
+            if (cardReceipts.isEmpty()) {
+                Text("Bewaar de kassabon van een grote aankoop, met een herinnering voordat de garantie afloopt.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
+            } else UsesPanel {
+                cardReceipts.forEachIndexed { i, r ->
+                    ReceiptRow(r) { nav.push(Screen.ReceiptDetail(r.id)) }
+                    if (i < cardReceipts.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+            Gap(16.dp)
+            Text("Even kijken telt niet: een moment komt erbij als je na het tonen Ja zegt, of via een betaalmelding als je dat aanzet. Tik op een regel om het bedrag aan te passen of een bonnetje toe te voegen; veeg naar links om te verwijderen.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
             if (card.kind == CardKind.VOUCHER) {
                 Gap(6.dp)
@@ -306,7 +339,7 @@ fun RecentUsesScreen(id: String) {
             Gap(40.dp)
         }
     }
-    editing?.let { useId -> UseAmountDialog(card, useId, allowsDelete = true) { editing = null } }
+    editing?.let { useId -> UseAmountDialog(card, useId, allowsDelete = true, offersReceipt = true) { editing = null } }
 }
 
 @Composable
@@ -320,11 +353,13 @@ private fun Tile(label: String, value: String, spoken: String, modifier: Modifie
 
 /** "Wat gaf je uit?" bij één gebruiksmoment: invullen, aanpassen of weghalen; vanuit de lijst ook de regel verwijderen. */
 @Composable
-fun UseAmountDialog(card: Card, useId: String, allowsDelete: Boolean = false, onDismiss: () -> Unit) {
+fun UseAmountDialog(card: Card, useId: String, allowsDelete: Boolean = false, offersReceipt: Boolean = false, onDismiss: () -> Unit) {
     val e = card.history.firstOrNull { it.id == useId }
     if (e == null) { LaunchedEffect(useId) { onDismiss() }; return }
     val scope = rememberCoroutineScope()
-    var text by remember(useId) { mutableStateOf(e.amount?.let { "%.2f".format(Locale("nl", "NL"), it) } ?: "") }
+    var text by remember(useId) { mutableStateOf((e.amount ?: e.pendingAmount)?.let { "%.2f".format(Locale("nl", "NL"), it) } ?: "") }
+    val nav = LocalNav.current
+    val scan = rememberReceiptScan(card.id, useId)
     var confirmDelete by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val value = UseFormat.parse(text)
@@ -362,6 +397,15 @@ fun UseAmountDialog(card: Card, useId: String, allowsDelete: Boolean = false, on
                 if (e.amount != null || allowsDelete) Gap(6.dp)
                 if (e.amount != null) TextButton({ done(card.withAmount(null, useId)) }) { Text("Bedrag weghalen", color = MaterialTheme.colorScheme.error) }
                 if (allowsDelete) TextButton({ confirmDelete = true }) { Text("Regel verwijderen", color = MaterialTheme.colorScheme.error) }
+                if (offersReceipt) {
+                    val rid = e.receiptID
+                    if (rid != null && ReceiptStore.get(rid) != null) TextButton({ onDismiss(); nav.push(Screen.ReceiptDetail(rid)) }) { Text("Bonnetje bekijken") }
+                    else TextButton({
+                        // bedrag van nu eerst bewaren, dan scannen
+                        if (value != null && text.isNotBlank()) CardStore.upsert(card.withAmount(value, useId))
+                        onDismiss(); scan()
+                    }) { Text("Bonnetje scannen") }
+                }
             }
         },
         confirmButton = {

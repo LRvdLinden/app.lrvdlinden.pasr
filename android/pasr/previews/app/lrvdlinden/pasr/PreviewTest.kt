@@ -65,6 +65,11 @@ import app.lrvdlinden.pasr.ui.UseFormat
 import app.lrvdlinden.pasr.ui.UseRow
 import app.lrvdlinden.pasr.ui.UsesPanel
 import androidx.compose.material3.HorizontalDivider
+import app.lrvdlinden.pasr.data.Receipt
+import app.lrvdlinden.pasr.ui.ReceiptRow
+import app.lrvdlinden.pasr.ui.Toggle
+import app.lrvdlinden.pasr.ui.UsePromptBar
+import app.lrvdlinden.pasr.ui.UsePromptData
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -276,6 +281,90 @@ class PreviewTest {
                         UseRow(c, e, withTime = true) {}
                         if (i < events.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
+                }
+            }
+        }
+    }
+
+    // Gebruik slim bijhouden (1.0.3): vraag bij sluiten, betaalmelding bij een cadeaukaart, bonnetjes
+    @Test fun slimVraag() = paparazzi.snapshot {
+        Frame(dark = true) {
+            Box(Modifier.fillMaxSize()) {
+                Column {
+                    Title("Pasr")
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        cards.take(2).forEach { c -> Box(Modifier.weight(1f)) { CardFace(c, Modifier.fillMaxWidth(), compact = true) } }
+                    }
+                }
+                Box(Modifier.align(Alignment.BottomCenter)) {
+                    UsePromptBar(UsePromptData(cardId = plus.id, title = "PLUS Apeldoorn", place = "PLUS Apeldoorn"), plus, onYes = {}, onNo = {})
+                }
+            }
+        }
+    }
+
+    @Test fun slimAfboeken() = paparazzi.snapshot {
+        val now = System.currentTimeMillis()
+        val hema = cards[3].copy(history = listOf(
+            CardEvent(date = now - 60_000, kind = "shown", source = "pay", pendingAmount = 12.95),
+            CardEvent(date = now - 3 * 86_400_000L, kind = "shown", place = "HEMA Apeldoorn", amount = 7.50, receiptID = "r1"),
+        ))
+        Frame(dark = true) {
+            Title("HEMA", icon = false)
+            Text("Laatst gebruikt", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 8.dp))
+            UsesPanel {
+                hema.uses.forEachIndexed { i, e ->
+                    UseRow(hema, e, withTime = true) {}
+                    if (i < hema.uses.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+        }
+    }
+
+    @Test fun slimBonnetjes() = paparazzi.snapshot {
+        val day = 86_400_000L
+        val now = System.currentTimeMillis()
+        val list = listOf(
+            Receipt(storeName = "Coolblue", title = "Wasmachine", date = now - 2 * day, total = 649.0, warrantyUntil = now + 728 * day),
+            Receipt(storeName = "PLUS", date = now - 5 * day, total = 23.45),
+            Receipt(storeName = "MediaMarkt", title = "Koptelefoon", date = now - 400 * day, total = 129.99, warrantyUntil = now + 330 * day),
+            Receipt(storeName = "IKEA", title = "Bureaustoel", date = now - 800 * day, total = 89.0, warrantyUntil = now - 70 * day),
+        )
+        Frame(dark = true) {
+            Title("Bonnetjes", icon = false)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(true, {}, { Text("Alles") })
+                FilterChip(false, {}, { Text("Garantie loopt nog") })
+                FilterChip(false, {}, { Text("PLUS") })
+            }
+            list.groupBy { UseFormat.group(it.date) }.forEach { (title, items) ->
+                Text(title.uppercase(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, top = 18.dp, bottom = 6.dp))
+                UsesPanel {
+                    items.forEachIndexed { i, r ->
+                        ReceiptRow(r) {}
+                        if (i < items.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test fun slimInstellingen() = paparazzi.snapshot {
+        Frame {
+            Title("Instellingen", icon = false)
+            SectionHeader("Laatst gebruikt")
+            Group {
+                Toggle("Vraag na het tonen", true, "Was de barcode 5 seconden in beeld, dan vraagt Pasr bij het sluiten of je de kaart gebruikte") {}
+                Toggle("Alleen bij de winkel", true, "Niet vragen als je niet bij een bewaard filiaal bent (Ik sta hier). Je plek blijft op je telefoon.") {}
+                RowItem(Icons.Outlined.Notifications, "Aankopen vanzelf vastleggen", "Uit") {}
+                RowItem(Icons.Outlined.Search, "Bonnetjes", "Alle bewaarde kassabonnen, met garantie") {}
+            }
+            SectionHeader("Wat Pasr leest bij betaalmeldingen")
+            Group {
+                Column(Modifier.padding(16.dp)) {
+                    listOf("Alleen betaalmeldingen met een €-bedrag.", "Daaruit alleen de winkel en het bedrag.",
+                        "Alles op je telefoon; niets bewaard of verstuurd.").forEach { Text("• $it", Modifier.padding(vertical = 3.dp)) }
                 }
             }
         }

@@ -64,13 +64,14 @@ object Reminders {
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
     fun notify(context: Context, id: String, channel: String, title: String, text: String, cardId: String?, store: String? = null,
-               url: String? = null) {
+               url: String? = null, receipt: String? = null) {
         if (!canNotify(context)) return
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             cardId?.let { putExtra("cardId", it) }
             store?.let { putExtra("store", it) }
             url?.let { putExtra("url", it) }
+            receipt?.let { putExtra("receipt", it); removeExtra("cardId") }
         }
         val pi = PendingIntent.getActivity(context, id.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = NotificationCompat.Builder(context, channel)
@@ -104,6 +105,20 @@ object Reminders {
             }
             if (c.kind == CardKind.SUBSCRIPTION) c.details.renewsAt?.let { r ->
                 if (daysUntil(r) == 2L) once(context, "renew-${c.id}-$r", "Abonnement $name", "Je abonnement bij $name verlengt over 2 dagen.", c)
+            }
+        }
+        // bonnetjes: een maand voordat de garantie afloopt (en tot een week erna nog, als de telefoon uit stond)
+        for (r in app.lrvdlinden.pasr.data.ReceiptStore.receipts.value) {
+            val until = r.warrantyUntil ?: continue
+            val d = daysUntil(until)
+            if (d in 23L..31L) {
+                val k = "note.warranty-${r.id}-$until"
+                if (Prefs.bool(k)) continue
+                Prefs.setBool(k, true)
+                val what = r.title.ifBlank { r.storeName }
+                notify(context, "warranty-${r.id}", CHANNEL, "Garantie loopt over een maand af",
+                    "De garantie op $what (${r.storeName}) loopt tot ${app.lrvdlinden.pasr.ui.dateText(until)}. Je bon staat in Pasr.",
+                    r.cardID, receipt = r.id)
             }
         }
     }

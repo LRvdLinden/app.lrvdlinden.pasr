@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.SortByAlpha
@@ -92,6 +93,9 @@ fun WalletScreen() {
         }
     }.ordered(order)
     val favorites = if (filter == Filter.ALL && q.isEmpty()) cards.filter { it.isFavorite } else emptyList()
+    // de zoekbalk vindt ook bonnetjes (winkel, bedrag of datum)
+    val receipts by app.lrvdlinden.pasr.data.ReceiptStore.receipts.collectAsState()
+    val foundReceipts = if (query.isBlank()) emptyList() else receipts.filter { it.matches(query) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -111,6 +115,7 @@ fun WalletScreen() {
                             }
                         }
                     }
+                    IconButton({ nav.push(Screen.Receipts()) }) { Icon(Icons.Outlined.Receipt, "Bonnetjes") }
                     IconButton({ nav.push(Screen.Settings) }) { Icon(Icons.Outlined.Settings, "Instellingen") }
                 },
             )
@@ -149,7 +154,7 @@ fun WalletScreen() {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Column {
                         OutlinedTextField(
-                            query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Zoek in je kaarten") },
+                            query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Zoek in je kaarten en bonnetjes") },
                             leadingIcon = { Icon(Icons.Outlined.Search, null) }, singleLine = true, shape = RoundedCornerShape(16.dp),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -169,7 +174,20 @@ fun WalletScreen() {
                     item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("Alle kaarten") }
                 }
                 items(cards, key = { it.id }) { c -> CardTile(c) { nav.push(Screen.Detail(c.id)) } }
-                if (cards.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
+                if (foundReceipts.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SectionHeader(if (foundReceipts.size == 1) "1 bonnetje" else "${foundReceipts.size} bonnetjes", Modifier.weight(1f))
+                            androidx.compose.material3.TextButton({ nav.push(Screen.Receipts(query)) }, Modifier.padding(top = 14.dp)) { Text("Alles") }
+                        }
+                    }
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        UsesPanel {
+                            foundReceipts.take(5).forEach { r -> ReceiptRow(r) { nav.push(Screen.ReceiptDetail(r.id)) } }
+                        }
+                    }
+                }
+                if (cards.isEmpty() && foundReceipts.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
                     Text("Geen kaarten gevonden.", Modifier.padding(32.dp).fillMaxWidth(), textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

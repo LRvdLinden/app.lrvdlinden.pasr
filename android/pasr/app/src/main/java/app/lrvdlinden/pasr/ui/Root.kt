@@ -55,6 +55,12 @@ sealed interface Screen {
     data object Settings : Screen
     data object AccountScreen : Screen
     data object Deleted : Screen
+    /** Bonnetjes: alle bonnen (met een zoekterm), één bon, en controleren of wijzigen. */
+    data class Receipts(val query: String = "") : Screen
+    data class ReceiptDetail(val id: String) : Screen
+    data class ReceiptReview(val cardId: String?, val useId: String?, val receiptId: String? = null) : Screen
+    /** Uitleg en aan/uit voor aankopen vanzelf vastleggen (betaalmeldingen). */
+    data object PayCapture : Screen
 }
 
 class Nav {
@@ -115,6 +121,12 @@ fun Root() {
             Incoming.cardId.value = null
             if (CardStore.get(id) != null) { nav.home(); nav.push(Screen.Detail(id)) }
         }
+        val openReceipt by Incoming.receipt.collectAsState()
+        LaunchedEffect(openReceipt) {
+            val id = openReceipt ?: return@LaunchedEffect
+            Incoming.receipt.value = null
+            if (app.lrvdlinden.pasr.data.ReceiptStore.get(id) != null) { nav.home(); nav.push(Screen.ReceiptDetail(id)) }
+        }
         val openStore by Incoming.store.collectAsState()
         LaunchedEffect(openStore) {
             val id = openStore ?: return@LaunchedEffect
@@ -142,6 +154,8 @@ fun Root() {
                         !onboarded -> Onboarding(onDone = { Prefs.onboarded = true; onboarded = true })
                         else -> Screens(nav, onAppearance = { appearance = it })
                     }
+                    if (onboarded && !locked) UsePromptHost()
+                    ReceiptScanHost()
                     if (locked && onboarded) LockScreen(onUnlock = { Incoming.locked.value = false })
                     if (splash) SplashOverlay(onFinished = { splash = false })
                 }
@@ -189,6 +203,10 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             Screen.Settings -> SettingsScreen(onAppearance)
             Screen.AccountScreen -> AccountScreen()
             Screen.Deleted -> DeletedScreen()
+            is Screen.Receipts -> ReceiptsScreen(s.query)
+            is Screen.ReceiptDetail -> ReceiptDetailScreen(s.id)
+            is Screen.ReceiptReview -> ReceiptReviewScreen(s.cardId, s.useId, s.receiptId)
+            Screen.PayCapture -> PayCaptureScreen()
         }
     }
 }

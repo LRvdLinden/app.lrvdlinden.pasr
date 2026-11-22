@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 object Incoming {
     val link = MutableStateFlow<Uri?>(null)
     val cardId = MutableStateFlow<String?>(null)
+    /** Bonnetje uit een garantieherinnering. */
+    val receipt = MutableStateFlow<String?>(null)
     /** Winkel uit een pushbericht: open die kaart, of Kaart toevoegen bij die winkel. */
     val store = MutableStateFlow<String?>(null)
     /** https-link uit een pushbericht die Pasr zelf niet kent: openen in Custom Tabs (na splash en ontgrendelen). */
@@ -64,6 +66,7 @@ class MainActivity : FragmentActivity() {
         intent ?: return
         intent.data?.let { Incoming.link.value = it }
         intent.getStringExtra("cardId")?.let { Incoming.cardId.value = it }
+        intent.getStringExtra("receipt")?.let { Incoming.receipt.value = it }
         intent.getStringExtra("store")?.let { Incoming.store.value = it }
         intent.getStringExtra("url")?.let { Uri.parse(it) }?.takeIf { it.scheme == "https" }?.let { uri ->
             if (Incoming.isAppLink(uri)) Incoming.link.value = uri else Incoming.web.value = uri
