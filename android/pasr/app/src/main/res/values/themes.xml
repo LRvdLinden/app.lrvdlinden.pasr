@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Pasr" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash</item>
+        <item name="android:colorAccent">@color/iris</item>
+    </style>
+    <!-- Systeemsplash (Android 12+ en ouder via core-splashscreen); daarna de geanimeerde splash in Compose. -->
+    <style name="Theme.Pasr.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Pasr</item>
+    </style>
+</resources>

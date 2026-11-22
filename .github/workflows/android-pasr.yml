@@ -1,0 +1,219 @@
+# Pasr voor Android: bouwt een ondertekende APK, altijd met dezelfde sleutel, zodat elke update over de vorige
+# versie heen installeert.
+#
+# Sleutel (in deze volgorde):
+#  1. Repo-secrets PASR_KEYSTORE_BASE64 + PASR_KEYSTORE_PASSWORD + PASR_KEY_ALIAS + PASR_KEY_PASSWORD (conventie
+#     Noodpakket), als Léon die zet. Alleen geldig als de vingerafdruk gelijk is aan android/pasr/signing/cert-sha256.txt.
+#  2. Anders (conventie Bekendr): android/pasr/signing/pasr.jks.enc, versleuteld (AES-256, pbkdf2) met een wachtwoord
+#     afgeleid van een vaste, bestaande repo-secret (naam in android/pasr/signing/seed-name.txt). Bestaat het bestand
+#     nog niet, dan maakt de eerste run de sleutel één keer aan in CI en commit alleen de versleutelde versie en de
+#     vingerafdruk. De sleutel zelf staat nergens leesbaar en komt nooit in het log.
+# Elke run controleert de handtekening van de APK tegen cert-sha256.txt en faalt bij een andere sleutel.
+#
+# Uitvoer: artifact "Pasr-Android" (Pasr-Android-<versie>.apk, pasr.apk, pasr.json met versie/grootte/SHA-256) en een
+# GitHub-release android-pasr-<versie>-<code> waar de workflow Website de nieuwste pasr.apk uit haalt
+# (pasr.nl/download/pasr.apk). Een tweede job maakt previews van de schermen (Paparazzi, zonder emulator).
+name: Android Pasr
+
+on:
+  push:
+    branches: [gedeelde-pasr, main]
+    paths: ["android/pasr/**", ".github/workflows/android-pasr.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-pasr-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    name: APK bouwen
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: android/pasr
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Versie bepalen
+        id: version
+        run: |
+          NAME=$(grep -m1 'System.getenv("VERSION_NAME")' app/build.gradle.kts | sed -E 's/.*\?: "([^"]+)".*/\1/')
+          CODE=$(( 100 + GITHUB_RUN_NUMBER ))
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "Versie $NAME ($CODE)"
+
+      - name: Vaste ondertekensleutel
+        env:
+          KS_B64: ${{ secrets.PASR_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.PASR_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.PASR_KEY_ALIAS }}
+          KS_KEYPASS: ${{ secrets.PASR_KEY_PASSWORD }}
+          SEED_PASR_APNS_KEY_P8: ${{ secrets.PASR_APNS_KEY_P8 }}
+          SEED_APN_P8_CERT: ${{ secrets.APN_P8_CERT }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          umask 077
+          KS="$RUNNER_TEMP/pasr.jks"
+          D=signing
+          # nieuwste stand van de sleutelbestanden van de branch (een eerdere run kan ze net hebben gemaakt)
+          git fetch -q origin "$BRANCH" || true
+          for f in pasr.jks.enc seed-name.txt cert-sha256.txt; do
+            git show "origin/$BRANCH:android/pasr/$D/$f" > "/tmp/$f" 2>/dev/null && { mkdir -p $D; cp "/tmp/$f" "$D/$f"; } || true
+          done
+          if [ -n "$KS_B64" ]; then
+            printf '%s' "$KS_B64" | base64 -d > "$KS"
+            {
+              echo "ANDROID_KEYSTORE_FILE=$KS"; echo "ANDROID_KEYSTORE_PASSWORD=$KS_PASS"
+              echo "ANDROID_KEY_ALIAS=$KS_ALIAS"; echo "ANDROID_KEY_PASSWORD=${KS_KEYPASS:-$KS_PASS}"
+            } >> "$GITHUB_ENV"
+            echo "Sleutel uit de repo-secrets PASR_KEYSTORE_*."
+            exit 0
+          fi
+          # welke vaste secret het wachtwoord levert: eenmaal gekozen, altijd dezelfde
+          if [ -f $D/seed-name.txt ]; then
+            NAME=$(tr -d '[:space:]' < $D/seed-name.txt)
+          else
+            NAME=""
+            for c in PASR_APNS_KEY_P8 APN_P8_CERT; do
+              v="SEED_$c"; if [ -n "${!v:-}" ]; then NAME=$c; break; fi
+            done
+          fi
+          v="SEED_$NAME"
+          SEED="${!v:-}"
+          if [ -z "$NAME" ] || [ -z "$SEED" ]; then
+            echo "::error::Geen vaste secret gevonden om de sleutel te ontgrendelen (${NAME:-PASR_APNS_KEY_P8 of APN_P8_CERT})."
+            exit 1
+          fi
+          PASS=$(printf '%s' "$SEED" | sha256sum | cut -c1-40)
+          echo "::add-mask::$PASS"
+          if [ ! -f $D/pasr.jks.enc ]; then
+            mkdir -p $D
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias pasr -keyalg RSA -keysize 4096 -validity 36500 \
+              -storepass "$PASS" -keypass "$PASS" -dname "CN=Leon van der Linden, O=LRvdLinden, C=NL" >/dev/null 2>&1
+            PASS="$PASS" openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$KS" -out $D/pasr.jks.enc -pass env:PASS
+            echo "$NAME" > $D/seed-name.txt
+            keytool -list -v -keystore "$KS" -storepass "$PASS" -alias pasr | grep -m1 'SHA256:' | sed 's/.*SHA256: *//' \
+              | tr -d ':' | tr 'a-f' 'A-F' > $D/cert-sha256.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add $D/pasr.jks.enc $D/seed-name.txt $D/cert-sha256.txt
+            git commit -q -m "Android Pasr: vaste ondertekensleutel (versleuteld) en vingerafdruk"
+            for i in 1 2 3; do
+              git pull -q --rebase origin "$BRANCH" && git push -q origin "HEAD:$BRANCH" && break
+              sleep 5
+            done
+            echo "::notice::Nieuwe vaste sleutel aangemaakt en versleuteld bewaard (vingerafdruk $(cat $D/cert-sha256.txt))."
+          else
+            PASS="$PASS" openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in $D/pasr.jks.enc -out "$KS" -pass env:PASS
+            echo "Vaste sleutel ontgrendeld."
+          fi
+          {
+            echo "ANDROID_KEYSTORE_FILE=$KS"; echo "ANDROID_KEYSTORE_PASSWORD=$PASS"
+            echo "ANDROID_KEY_ALIAS=pasr"; echo "ANDROID_KEY_PASSWORD=$PASS"
+          } >> "$GITHUB_ENV"
+
+      - name: APK bouwen
+        env:
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
+
+      - name: Fouten als annotaties
+        if: failure()
+        run: |
+          grep -E "^e: " build.log | sort -u | head -60 | while IFS= read -r line; do
+            path=$(echo "$line" | sed -E 's|^e: file://([^:]+):([0-9]+):.*|\1|'); ln=$(echo "$line" | sed -E 's|^e: file://[^:]+:([0-9]+):.*|\1|')
+            msg=$(echo "$line" | sed -E 's|^e: file://[^ ]+ ||')
+            echo "::error file=${path#$GITHUB_WORKSPACE/},line=$ln::$msg"
+          done
+          grep -E "FAILURE|What went wrong|Could not|error:|ERROR:" -A4 build.log | head -60 | while IFS= read -r line; do echo "::error::$line"; done
+
+      - name: Handtekening controleren
+        id: verify
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/release/app-release.apk
+          SIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$SIGNER" verify --print-certs "$APK" > /tmp/certs.txt
+          FP="$(grep -m1 'SHA-256 digest' /tmp/certs.txt | sed 's/.*: //' | tr 'a-f' 'A-F')"
+          rm -f /tmp/certs.txt
+          WANT="$(tr -d ': \n' < signing/cert-sha256.txt 2>/dev/null | tr 'a-f' 'A-F' || true)"
+          if [ -n "$WANT" ] && [ "$FP" != "$WANT" ]; then
+            echo "::error::Deze APK is met een ANDERE sleutel ondertekend dan signing/cert-sha256.txt. Hij zou niet over de vorige versie installeren."
+            exit 1
+          fi
+          echo "::notice::Ondertekend met certificaat SHA-256 $FP"
+          V=${{ steps.version.outputs.name }}; C=${{ steps.version.outputs.code }}
+          mkdir -p dist
+          cp "$APK" "dist/Pasr-Android-$V.apk"
+          cp "$APK" dist/pasr.apk
+          SHA=$(sha256sum dist/pasr.apk | cut -d' ' -f1); SIZE=$(stat -c %s dist/pasr.apk)
+          printf '{"app":"pasr","version":"%s","code":%s,"size":%s,"sha256":"%s","cert_sha256":"%s","date":"%s"}\n' \
+            "$V" "$C" "$SIZE" "$SHA" "$FP" "$(date -u +%Y-%m-%d)" > dist/pasr.json
+          cat dist/pasr.json
+
+      - name: Sleutel opruimen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/pasr.jks"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pasr-Android
+          path: android/pasr/dist/
+          retention-days: 90
+
+      - name: Release (nieuwste APK voor pasr.nl/download)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-pasr-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
+          target_commitish: ${{ github.sha }}
+          name: Pasr voor Android ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})
+          make_latest: false
+          body: |
+            Pasr voor Android. Installeer `pasr.apk`; een update installeert over de vorige versie heen (altijd dezelfde sleutel).
+            Download: https://pasr.nl/android/
+          files: |
+            android/pasr/dist/pasr.apk
+            android/pasr/dist/pasr.json
+            android/pasr/dist/Pasr-Android-${{ steps.version.outputs.name }}.apk
+
+  previews:
+    name: Previews (Paparazzi)
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: android/pasr
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Screenshots maken
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon -Ppreviews recordPaparazziDebug 2>&1 | tail -60
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Pasr-Android-previews
+          path: android/pasr/app/src/test/snapshots/
+          if-no-files-found: ignore

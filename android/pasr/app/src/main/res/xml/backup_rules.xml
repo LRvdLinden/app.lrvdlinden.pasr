@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Geen back-up van kaarten en sessie: die zijn versleuteld met een sleutel die alleen op dit toestel bestaat. -->
+<full-backup-content>
+    <exclude domain="file" path="." />
+    <exclude domain="sharedpref" path="." />
+</full-backup-content>

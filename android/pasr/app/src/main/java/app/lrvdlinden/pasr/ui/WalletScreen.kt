@@ -1,0 +1,205 @@
+package app.lrvdlinden.pasr.ui
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SortByAlpha
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import app.lrvdlinden.pasr.data.Account
+import app.lrvdlinden.pasr.data.Business
+import app.lrvdlinden.pasr.data.CardKind
+import app.lrvdlinden.pasr.data.CardOrder
+import app.lrvdlinden.pasr.data.CardStore
+import app.lrvdlinden.pasr.data.Catalog
+import app.lrvdlinden.pasr.data.Prefs
+import app.lrvdlinden.pasr.data.Sync
+import app.lrvdlinden.pasr.data.ordered
+import kotlinx.coroutines.launch
+
+private enum class Filter(val title: String) { ALL("Alles"), FAV("Favorieten"), LOYALTY("Klantenkaarten"), GIFT("Cadeaukaarten"), STAMPS("Stempelkaarten"), OTHER("Overig") }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WalletScreen() {
+    val nav = LocalNav.current
+    val snack = LocalSnack.current
+    val scope = rememberCoroutineScope()
+    val all by CardStore.cards.collectAsState()
+    var query by remember { mutableStateOf("") }
+    var filter by remember { mutableStateOf(Filter.ALL) }
+    var order by remember { mutableStateOf(Prefs.order) }
+    var orderMenu by remember { mutableStateOf(false) }
+    var refreshing by remember { mutableStateOf(false) }
+    val visible = all.filter { it.deletedAt == null }
+    val q = Catalog.fold(query.trim())
+    val cards = visible.filter { c ->
+        (q.isEmpty() || Catalog.fold("${c.storeName} ${c.note}").contains(q)) && when (filter) {
+            Filter.ALL -> true
+            Filter.FAV -> c.isFavorite
+            Filter.LOYALTY -> c.kind == CardKind.LOYALTY
+            Filter.GIFT -> c.kind == CardKind.VOUCHER
+            Filter.STAMPS -> c.kind == CardKind.STAMPS
+            Filter.OTHER -> c.kind in CardKind.others
+        }
+    }.ordered(order)
+    val favorites = if (filter == Filter.ALL && q.isEmpty()) cards.filter { it.isFavorite } else emptyList()
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snack) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Pasr", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                actions = {
+                    Box {
+                        IconButton({ orderMenu = true }) { Icon(Icons.Outlined.SortByAlpha, "Volgorde") }
+                        DropdownMenu(orderMenu, { orderMenu = false }) {
+                            CardOrder.entries.forEach { o ->
+                                DropdownMenuItem({ Text((if (o == order) "✓ " else "") + o.title) }, {
+                                    order = o; Prefs.order = o; orderMenu = false
+                                })
+                            }
+                        }
+                    }
+                    IconButton({ nav.push(Screen.Settings) }) { Icon(Icons.Outlined.Settings, "Instellingen") }
+                },
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { nav.push(Screen.Add) }, containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary, icon = { Icon(Icons.Filled.Add, null) },
+                text = { Text("Kaart toevoegen") },
+            )
+        },
+    ) { pad ->
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = {
+                scope.launch {
+                    refreshing = true
+                    Business.refreshAll(force = true)
+                    if (Account.isSignedIn) Sync.sync()
+                    Catalog.refresh(force = true)
+                    refreshing = false
+                    Sync.lastError.value?.let { snack.showSnackbar(it) }
+                }
+            },
+            modifier = Modifier.padding(pad).fillMaxSize(),
+        ) {
+            if (visible.isEmpty()) {
+                EmptyWallet { nav.push(Screen.Add) }
+                return@PullToRefreshBox
+            }
+            LazyVerticalGrid(
+                GridCells.Adaptive(160.dp), Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Column {
+                        OutlinedTextField(
+                            query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Zoek in je kaarten") },
+                            leadingIcon = { Icon(Icons.Outlined.Search, null) }, singleLine = true, shape = RoundedCornerShape(16.dp),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            ),
+                        )
+                        Row(Modifier.fillMaxWidth().padding(top = 8.dp).horizontalScrollCompat(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Filter.entries.forEach { f -> FilterChip(f == filter, { filter = f }, { Text(f.title) }) }
+                        }
+                    }
+                }
+                if (favorites.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("Favorieten") }
+                    items(favorites, key = { "fav-" + it.id }) { c -> CardTile(c) { nav.push(Screen.Detail(c.id)) } }
+                    item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("Alle kaarten") }
+                }
+                items(cards, key = { it.id }) { c -> CardTile(c) { nav.push(Screen.Detail(c.id)) } }
+                if (cards.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text("Geen kaarten gevonden.", Modifier.padding(32.dp).fillMaxWidth(), textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CardTile(card: app.lrvdlinden.pasr.data.Card, onClick: () -> Unit) {
+    Column(Modifier.clickable(onClick = onClick)) {
+        CardFace(card, Modifier.fillMaxWidth(), compact = true)
+        Text(card.storeName.ifBlank { card.kind.title }, style = MaterialTheme.typography.labelLarge, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
+    }
+}
+
+@Composable
+private fun EmptyWallet(onAdd: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        PasrMark(140.dp)
+        Spacer(Modifier.height(24.dp))
+        Text("Nog geen kaarten", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text("Voeg je eerste klantenkaart, cadeaukaart of stempelkaart toe. Kies de winkel en scan de barcode.",
+            textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(24.dp))
+        BrandButton("Kaart toevoegen", Modifier.size(width = 240.dp, height = 52.dp), onClick = onAdd)
+    }
+}
+
+@Composable
+fun Modifier.horizontalScrollCompat(): Modifier = this.then(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()))
