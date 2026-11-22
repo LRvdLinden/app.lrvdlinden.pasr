@@ -70,6 +70,14 @@ fun openUrl(context: Context, url: String) {
     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }
 
+/** Link in de app openen met Custom Tabs (Chrome of een andere browser die het kent), anders gewoon in de browser. */
+fun openInApp(context: Context, url: String) {
+    val ok = runCatching {
+        androidx.browser.customtabs.CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(context, Uri.parse(url))
+    }.isSuccess
+    if (!ok) openUrl(context, url)
+}
+
 fun euro(v: Double, currency: String? = "EUR"): String = runCatching {
     NumberFormat.getCurrencyInstance(Locale("nl", "NL")).apply { this.currency = java.util.Currency.getInstance(currency ?: "EUR") }.format(v)
 }.getOrDefault("€ %.2f".format(v))

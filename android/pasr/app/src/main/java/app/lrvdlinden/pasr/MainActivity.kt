@@ -21,6 +21,16 @@ object Incoming {
     val cardId = MutableStateFlow<String?>(null)
     /** Winkel uit een pushbericht: open die kaart, of Kaart toevoegen bij die winkel. */
     val store = MutableStateFlow<String?>(null)
+    /** https-link uit een pushbericht die Pasr zelf niet kent: openen in Custom Tabs (na splash en ontgrendelen). */
+    val web = MutableStateFlow<Uri?>(null)
+
+    /** Links van pasr.nl die Pasr zelf opent (zelfde paden als de App Links in het manifest). */
+    fun isAppLink(uri: Uri): Boolean {
+        val host = uri.host?.lowercase() ?: return false
+        val path = uri.path ?: ""
+        return uri.scheme == "https" && (host == "pasr.nl" || host == "www.pasr.nl") &&
+            (path.startsWith("/kaart") || path.startsWith("/zakelijk/kaart"))
+    }
     /** Vergrendeld (app-slot): bij opstarten en elke keer dat Pasr weer naar voren komt. */
     val locked = MutableStateFlow(false)
     /** Even naar een ander scherm (fotokiezer, delen, Google Wallet): dan niet vergrendelen bij terugkomst. */
@@ -55,6 +65,9 @@ class MainActivity : FragmentActivity() {
         intent.data?.let { Incoming.link.value = it }
         intent.getStringExtra("cardId")?.let { Incoming.cardId.value = it }
         intent.getStringExtra("store")?.let { Incoming.store.value = it }
+        intent.getStringExtra("url")?.let { Uri.parse(it) }?.takeIf { it.scheme == "https" }?.let { uri ->
+            if (Incoming.isAppLink(uri)) Incoming.link.value = uri else Incoming.web.value = uri
+        }
         if (intent.action == Intent.ACTION_SEND) {
             intent.getStringExtra(Intent.EXTRA_TEXT)?.let { text ->
                 Regex("(https://(www\\.)?pasr\\.nl/\\S+|pasr://\\S+)").find(text)?.value?.let { Incoming.link.value = Uri.parse(it) }

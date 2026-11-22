@@ -98,6 +98,16 @@ fun Root() {
             Incoming.link.value = null
             handleLink(uri, nav)
         }
+        // link uit een pushmelding: pas na splash, welkomst en ontgrendelen, in Custom Tabs
+        val web by Incoming.web.collectAsState()
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        LaunchedEffect(web, splash, onboarded, locked) {
+            val uri = web ?: return@LaunchedEffect
+            if (splash || !onboarded || locked) return@LaunchedEffect
+            Incoming.web.value = null
+            Incoming.leavingOnPurpose = true
+            openInApp(ctx, uri.toString())
+        }
         LaunchedEffect(openCard) {
             val id = openCard ?: return@LaunchedEffect
             Incoming.cardId.value = null

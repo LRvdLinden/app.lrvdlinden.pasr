@@ -63,10 +63,12 @@ class PasrMessagingService : FirebaseMessagingService() {
             }
             else -> {
                 // nieuws (met of zonder winkel) of een nieuwe winkel: tik opent de kaart van die winkel, anders Kaart toevoegen
+                // met een https-link (bericht uit het beheer) opent een tik die link
                 val store = d["store"]?.lowercase()
                 val card = store?.let { s -> CardStore.visible.firstOrNull { it.templateID?.lowercase() == s } }
+                val url = d["url"]?.takeIf { it.startsWith("https://", ignoreCase = true) && it.length <= 500 }
                 Reminders.notify(applicationContext, "news-${d["id"] ?: title}", Reminders.CHANNEL_NEWS, title, body, card?.id,
-                    store = if (card == null) store else null)
+                    store = if (card == null) store else null, url = if (store == null) url else null)
             }
         }
     }

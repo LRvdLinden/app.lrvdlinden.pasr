@@ -63,12 +63,14 @@ object Reminders {
     fun canNotify(context: Context) = Build.VERSION.SDK_INT < 33 ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    fun notify(context: Context, id: String, channel: String, title: String, text: String, cardId: String?, store: String? = null) {
+    fun notify(context: Context, id: String, channel: String, title: String, text: String, cardId: String?, store: String? = null,
+               url: String? = null) {
         if (!canNotify(context)) return
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             cardId?.let { putExtra("cardId", it) }
             store?.let { putExtra("store", it) }
+            url?.let { putExtra("url", it) }
         }
         val pi = PendingIntent.getActivity(context, id.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = NotificationCompat.Builder(context, channel)
