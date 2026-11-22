@@ -64,7 +64,7 @@
     var left = count == null ? total + " stempels" : (n >= total ? "Beloning klaar" : (total - shown) + " te gaan");
     return '<div class="sc' + (ink ? " ink" : "") + (extraClass ? " " + extraClass : "") + '" style="--c:' + color + ";background:" + bg + ";--cols:" + cols + '">' +
       '<div class="sc-head"><span class="sc-logo">' + (card.logo ? '<img src="' + imgSrc(card.logo) + '" alt="">' : esc(mono)) + "</span>" +
-      '<span style="min-width:0"><span class="sc-name">' + esc(card.name) + '</span><span class="sc-biz">' + esc([card.business, card.city].filter(Boolean).join(" · ")) + "</span></span>" +
+      '<span class="sc-title"><span class="sc-name">' + esc(card.name) + '</span><span class="sc-biz">' + esc([card.business, card.city].filter(Boolean).join(" · ")) + "</span></span>" +
       '<span class="sc-kind">Stempelkaart</span></div>' +
       '<div class="sc-stamps" role="img" aria-label="' + shown + " van " + total + ' stempels">' + stamps + "</div>" +
       '<div class="sc-reward"><span>' + esc(card.reward) + "</span><span>" + esc(left) + "</span></div></div>";

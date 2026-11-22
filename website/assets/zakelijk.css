@@ -24,11 +24,13 @@
   background: linear-gradient(135deg, color-mix(in srgb, var(--c) 84%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 78%, #000));
   box-shadow: 0 30px 60px -28px rgba(30, 20, 90, .55), inset 0 0 0 .75px rgba(255,255,255,.2); display: flex; flex-direction: column; gap: 10px; text-align: left; }
 .sc.ink { color: #17162A; }
+.sc { min-width: 0; max-width: 100%; }
 .sc-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sc-title { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .sc-logo { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.22); display: grid; place-items: center; overflow: hidden; flex: none; font: 800 14px var(--display); }
 .sc-logo img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
-.sc-name { font: 700 18px/1.15 var(--display); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sc-biz { font-size: 12px; font-weight: 600; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-name { display: block; font: 700 18px/1.15 var(--display); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-biz { display: block; font-size: 12px; font-weight: 600; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sc-kind { margin-left: auto; font-size: 12px; font-weight: 700; opacity: .8; flex: none; }
 .sc-stamps { flex: 1; display: grid; grid-template-columns: repeat(var(--cols, 5), 1fr); gap: 6px; align-content: center; justify-items: center; }
 .sc-stamp { width: min(100%, 38px); aspect-ratio: 1; border-radius: 50%; border: 2px dashed rgba(255,255,255,.55); display: grid; place-items: center; }
@@ -121,6 +123,8 @@
 .zk-cam .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; color: #fff; font-weight: 600; font-size: 15px; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
 .zk-result { margin-top: 18px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 22px; padding: 18px; display: grid; gap: 14px; justify-items: center; text-align: center; }
 .zk-result .sc { width: 100%; }
+.zk-result > * { max-width: 100%; }
+@media (max-width: 420px) { .sc-kind { display: none; } .sc-stamp { border-width: 1.5px; } }
 .zk-result .big { font: 800 28px var(--display); letter-spacing: -0.02em; }
 .zk-stepper { display: flex; align-items: center; gap: 10px; }
 .zk-stepper output { font: 800 22px var(--display); min-width: 2ch; text-align: center; }
