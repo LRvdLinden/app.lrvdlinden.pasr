@@ -165,7 +165,8 @@ jobs:
           ./gradlew --no-daemon :app:recordPaparazziDebug 2>&1 | tee preview.log
       - name: Fouten tonen
         if: failure()
-        run: grep -E "^e: |FAILED|Exception|What went wrong" -A3 preview.log | head -80 || true
+        run: |
+          grep -E "^e: |FAILED|Exception|What went wrong" -A3 preview.log | head -80 || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
