@@ -9,6 +9,9 @@ struct BusinessesView: View {
     @State private var error: String?
     @State private var blocking: Business?
     @State private var showing: Business?
+    @State private var editing: Business?
+    @State private var creating = false
+    @State private var newCardFor: Business?
 
     private static let filters = [("pending", "Wacht"), ("approved", "Goedgekeurd"), ("blocked", "Geblokkeerd"), ("all", "Alle")]
     private var shown: [Business] { filter == "all" ? businesses : businesses.filter { $0.status == filter } }
@@ -37,8 +40,13 @@ struct BusinessesView: View {
                                 Button(role: .destructive) { blocking = b } label: { Label("Blokkeren", systemImage: "hand.raised") }
                             }
                         }
+                        .swipeActions(edge: .leading) {
+                            Button { editing = b } label: { Label("Bewerken", systemImage: "pencil") }.tint(Theme.iris)
+                        }
                         .contextMenu {
                             Button { showing = b } label: { Label("Details", systemImage: "list.bullet.rectangle") }
+                            Button { editing = b } label: { Label("Bewerken", systemImage: "pencil") }
+                            if b.allCards.count < 5 { Button { newCardFor = b } label: { Label("Nieuwe stempelkaart", systemImage: "plus.rectangle.on.rectangle") } }
                             if b.status != "approved" { Button { Task { await set(b, "approved") } } label: { Label("Goedkeuren", systemImage: "checkmark.circle") } }
                             if b.status != "blocked" { Button(role: .destructive) { blocking = b } label: { Label("Blokkeren", systemImage: "hand.raised") } }
                             if b.status == "blocked" { Button { Task { await set(b, "pending") } } label: { Label("Terug naar wachten", systemImage: "clock") } }
@@ -55,6 +63,25 @@ struct BusinessesView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
         .navigationTitle("Ondernemers")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { creating = true } label: { Label("Nieuwe ondernemer", systemImage: "plus") }
+            }
+        }
+        .sheet(isPresented: $creating) {
+            BusinessFormView(business: nil, onSaved: { _ in filter = filter == "pending" ? "approved" : filter; Task { await load() } },
+                             onNewCard: { b in Task { try? await Task.sleep(for: .milliseconds(400)); newCardFor = b } })
+                .environmentObject(session)
+        }
+        .sheet(item: $editing) { b in
+            BusinessFormView(business: b, onSaved: { _ in Task { await load() } },
+                             onNewCard: { b in Task { try? await Task.sleep(for: .milliseconds(400)); newCardFor = b } })
+                .environmentObject(session)
+        }
+        .sheet(item: $newCardFor) { b in
+            StampCardEditorView(business: b, card: nil, onChanged: { Task { await load() } })
+                .environmentObject(session)
+        }
         .refreshable { await load() }
         .task(id: session.refreshTick) { await load() }
         .sheet(item: $showing) { b in
@@ -109,7 +136,7 @@ private struct BusinessRow: View {
                   business.last_event_at.map { "laatste actie " + Fmt.ago($0) }].compactMap { $0 }.joined(separator: " · "))
                 .font(.caption).foregroundStyle(Theme.muted)
             if let note = business.note, !note.isEmpty { Text(note).font(.subheadline) }
-            ForEach(business.cards) { c in
+            ForEach(business.allCards) { c in
                 HStack(spacing: 10) {
                     LogoTile(hex: c.color, logo: c.logo, name: c.name, key: "biz|\(c.id)|\(c.updated_at ?? "")")
                     VStack(alignment: .leading, spacing: 1) {

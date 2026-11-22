@@ -301,6 +301,38 @@ struct BusinessCard: Decodable, Identifiable, Hashable {
     let stamps: Int?
     let rewards: Int?
     let updated_at: String?
+    // zakelijk 1.1
+    var text_color: String? = nil
+    var business: String? = nil
+    var test_members: [TestMember]? = nil
+
+    var joinLink: String { "https://pasr.nl/zakelijk/kaart/#\(id)" }
+    var flyerLink: String { "https://pasr.nl/zakelijk/flyer/#\(id)" }
+}
+
+/// Testklant voor de App Review van Pasr Zakelijk (lid met label).
+struct TestMember: Decodable, Identifiable, Hashable {
+    let id: String
+    let member_code: String
+    let label: String?
+    let stamps_count: Int
+    let rewards_redeemed: Int?
+
+    /// PZK7 M3QX 9RT4 HWNB
+    var spaced: String { stride(from: 0, to: member_code.count, by: 4).map { i in
+        let a = member_code.index(member_code.startIndex, offsetBy: i)
+        return String(member_code[a..<(member_code.index(a, offsetBy: 4, limitedBy: member_code.endIndex) ?? member_code.endIndex)])
+    }.joined(separator: " ") }
+}
+
+/// Open eigenaarsuitnodiging van een zaak die het beheer aanmaakte.
+struct OwnerInvite: Decodable, Hashable {
+    let id: String?
+    let email: String?
+    let link: String
+    let app_link: String?
+    let expires_at: String?
+    let expired: Bool?
 }
 struct Business: Decodable, Identifiable, Hashable {
     let id: String
@@ -312,7 +344,7 @@ struct Business: Decodable, Identifiable, Hashable {
     let status: String
     let created_at: String?
     let reviewed_at: String?
-    let cards: [BusinessCard]
+    var cards: [BusinessCard]? = nil
     // zakelijk 1.0
     let cooldown_minutes: Int?
     let max_per_scan: Int?
@@ -322,6 +354,18 @@ struct Business: Decodable, Identifiable, Hashable {
     let lng: Double?
     let staff_count: Int?
     let last_event_at: String?
+    // zakelijk 1.1: zaken van het beheer
+    var has_owner: Bool? = nil
+    var owner_email: String? = nil
+    var owner_invite: OwnerInvite? = nil
+    var created_by: String? = nil
+
+    var allCards: [BusinessCard] { cards ?? [] }
+    var ownerTitle: String {
+        if has_owner != false { return owner_email.map { "Eigenaar: \($0)" } ?? "Eigenaar: Pasr-account" }
+        if let i = owner_invite { return i.expired == true ? "Eigenaarslink verlopen" : "Eigenaarslink open" }
+        return "Zonder eigenaar"
+    }
 
     var statusTitle: String {
         switch status {
@@ -332,6 +376,24 @@ struct Business: Decodable, Identifiable, Hashable {
     }
 }
 struct BusinessesResponse: Decodable { let businesses: [Business] }
+struct BusinessSaveResponse: Decodable {
+    let business: Business
+    let owner: String?
+    let invite: OwnerInvite?
+    let mailed: Bool?
+    let mail_ready: Bool?
+}
+struct BusinessCardResponse: Decodable { let card: BusinessCard }
+struct BusinessCardDeleteResponse: Decodable { let ok: Bool?; let members: Int? }
+struct TestMemberResponse: Decodable { let member: TestMember }
+/// Huisstijl van een website (actie business_brand, zelfde als de functie business-brand).
+struct BrandResponse: Decodable {
+    let name: String?
+    let logo: String?
+    let color: String?
+    let text_color: String?
+    let domain: String?
+}
 
 // MARK: Ondernemers: details per zaak (zakelijk 1.0, actie business_detail)
 
@@ -377,9 +439,13 @@ struct BusinessEvent: Decodable, Identifiable, Hashable {
     let stamps_before: Int?
     let stamps_after: Int?
     let undone: Bool?
+    // zakelijk 1.1: regels van het beheer (kind admin)
+    var note: String? = nil
+    var actor: String? = nil
 
     var title: String {
         switch kind {
+        case "admin": return note ?? "Beheer"
         case "stamp": return (amount ?? 1) == 1 ? "1 stempel" : "\(amount ?? 1) stempels"
         case "redeem": return "Beloning ingewisseld"
         case "undo": return "Ongedaan gemaakt"
@@ -407,7 +473,7 @@ struct BusinessStats: Decodable, Hashable {
     let totals: BusinessTotals
 }
 struct BusinessDetail: Decodable {
-    let business: BusinessInfo
+    let business: Business
     let staff: [BusinessStaff]
     let log: [BusinessEvent]
     let stats: BusinessStats

@@ -17,11 +17,65 @@ struct BusinessDetailView: View {
     @State private var saving = false
     @State private var saved = false
     @State private var revoking: BusinessStaff?
+    @State private var editingCard: BusinessCard?
+    @State private var newCard = false
+    @State private var editingBusiness = false
+    @State private var confirmInvite = false
+    @State private var inviteBusy = false
+
+    private var biz: Business { detail?.business ?? business }
 
     var body: some View {
         NavigationStack {
             List {
                 if let error { Text(error).foregroundStyle(Theme.coral).font(.subheadline) }
+                Section("Eigenaar") {
+                    if biz.has_owner != false {
+                        Text(biz.owner_email.map { "\($0) (Pasr-account)" } ?? String(localized: "Pasr-account")).font(.subheadline)
+                    } else if let inv = biz.owner_invite {
+                        Text(inv.expired == true ? "Nog geen eigenaar; de eigenaarslink voor \(inv.email ?? "—") is verlopen."
+                             : "Nog geen eigenaar. Eigenaarslink voor \(inv.email ?? "—"):").font(.subheadline)
+                        if inv.expired != true { OwnerInviteBlock(invite: inv) }
+                    } else {
+                        Text("Geen eigenaar: jij beheert deze zaak. Vul bij Bewerken een e-mailadres in om een eigenaar uit te nodigen.")
+                            .font(.subheadline).foregroundStyle(Theme.muted)
+                    }
+                    if biz.has_owner == false && (biz.owner_invite != nil || !(biz.email ?? "").isEmpty) {
+                        Button {
+                            confirmInvite = true
+                        } label: {
+                            HStack { Text(biz.owner_invite == nil ? "Eigenaarslink maken en mailen" : "Nieuwe link maken en mailen"); if inviteBusy { Spacer(); ProgressView() } }
+                        }
+                        .disabled(inviteBusy)
+                    }
+                }
+
+                Section {
+                    ForEach(biz.allCards) { c in
+                        Button { editingCard = c } label: {
+                            HStack(spacing: 10) {
+                                LogoTile(hex: c.color, logo: c.logo, name: c.name, key: "biz|\(c.id)|\(c.updated_at ?? "")")
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text("\(c.name): \(c.stamps_total) stempels, \(c.reward)").font(.subheadline)
+                                    Text("\(c.published == true ? "Online" : "Concept") · \(Fmt.plural(c.members ?? 0, "lid", "leden"))\((c.test_members ?? []).isEmpty ? "" : " · testklant")")
+                                        .font(.caption).foregroundStyle(Theme.muted)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.muted)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    if biz.allCards.count < 5 {
+                        Button { newCard = true } label: { Label("Nieuwe stempelkaart", systemImage: "plus.rectangle.on.rectangle") }
+                    }
+                } header: {
+                    Text("Stempelkaarten")
+                } footer: {
+                    Text("Tik op een kaart om hem te bewerken, de QR-code en flyer te zien of een testklant voor de App Review te maken.")
+                }
+
                 Section {
                     Stepper(value: $cooldown, in: 0...1440, step: cooldown >= 60 ? 15 : 1) {
                         LabeledContent("Afkoeltijd", value: cooldown == 0 ? "uit" : "\(cooldown) min")
@@ -93,7 +147,7 @@ struct BusinessDetailView: View {
                                     Spacer()
                                     Text(Fmt.ago(e.at)).font(.caption).foregroundStyle(Theme.muted)
                                 }
-                                Text([e.card_name ?? "verwijderde kaart", "…" + (e.member_suffix ?? ""), who(e), e.device].compactMap { $0 }.joined(separator: " · "))
+                                Text((e.kind == "admin" ? [e.card_name, who(e)] : [e.card_name ?? "verwijderde kaart", "…" + (e.member_suffix ?? ""), who(e), e.device]).compactMap { $0 }.joined(separator: " · "))
                                     .font(.caption).foregroundStyle(Theme.muted)
                             }
                         }
@@ -102,12 +156,29 @@ struct BusinessDetailView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
-            .navigationTitle(business.name)
+            .navigationTitle(biz.name)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } }
+                ToolbarItem(placement: .primaryAction) { Button("Bewerken", systemImage: "pencil") { editingBusiness = true } }
+            }
+            .sheet(item: $editingCard) { c in
+                StampCardEditorView(business: biz, card: c, onChanged: { Task { await load(); onChanged() } }).environmentObject(session)
+            }
+            .sheet(isPresented: $newCard) {
+                StampCardEditorView(business: biz, card: nil, onChanged: { Task { await load(); onChanged() } }).environmentObject(session)
+            }
+            .sheet(isPresented: $editingBusiness) {
+                BusinessFormView(business: biz, onSaved: { _ in Task { await load(); onChanged() } },
+                                 onNewCard: { _ in Task { try? await Task.sleep(for: .milliseconds(400)); newCard = true } })
+                    .environmentObject(session)
+            }
+            .confirmationDialog("Eigenaarslink versturen?", isPresented: $confirmInvite, titleVisibility: .visible) {
+                Button("Versturen") { Task { await sendInvite() } }
+            } message: {
+                Text("Een eventuele oude link werkt dan niet meer. De nieuwe gaat naar \(biz.owner_invite?.email ?? biz.email ?? "") en is 30 dagen geldig.")
             }
             .refreshable { await load() }
             .task { await load() }
@@ -127,6 +198,7 @@ struct BusinessDetailView: View {
 
     private func who(_ e: BusinessEvent) -> String {
         if e.by_role == "customer" { return String(localized: "klant") }
+        if e.by_role == "beheer" { return String(localized: "beheer") }
         return (e.by_name ?? "?") + (e.by_role == "staff" ? String(localized: " (medewerker)") : "")
     }
 
@@ -154,6 +226,17 @@ struct BusinessDetailView: View {
             saved = true
             onChanged()
             await load()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func sendInvite() async {
+        inviteBusy = true
+        defer { inviteBusy = false }
+        do {
+            let r = try await session.call("business_owner_invite", ["id": biz.id, "send": true], as: BusinessSaveResponse.self)
+            error = r.owner == "account" ? nil : (r.mailed == true ? nil : String(localized: "Nieuwe link gemaakt, maar niet gemaild (geen SMTP). Kopieer hem."))
+            await load()
+            onChanged()
         } catch { self.error = error.localizedDescription }
     }
 
