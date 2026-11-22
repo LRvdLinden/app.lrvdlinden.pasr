@@ -648,3 +648,4 @@
 }
 @media (prefers-reduced-motion: reduce) { .zk-toast, .zd-tabs [role=tab], .zd-switch input, .zd-switch input::after { transition: none; } }
 .zd-scan .zk-cam { aspect-ratio: 4 / 3; }
+@media (min-width: 621px) and (max-width: 900px) { .zk-home .steps { grid-template-columns: repeat(3, 1fr); gap: 14px; } .zk-home .steps li { padding: 20px; } }
