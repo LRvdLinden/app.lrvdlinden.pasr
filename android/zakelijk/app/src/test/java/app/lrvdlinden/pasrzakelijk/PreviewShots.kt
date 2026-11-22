@@ -39,7 +39,7 @@ import org.junit.Test
 
 /**
  * Schermafbeeldingen van Pasr Zakelijk voor Android met voorbeeldgegevens (Paparazzi, zonder toestel).
- * CI: ./gradlew :app:recordPaparazziDebug → app/src/test/snapshots/images/*.png
+ * CI: ./gradlew :app:recordPaparazziDebug → app/src/test/snapshots/images (PNG)
  */
 class PreviewShots {
     @get:Rule

@@ -22,7 +22,7 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.MarkEmailUnread
 import androidx.compose.material.icons.outlined.PanTool
 import androidx.compose.material.icons.outlined.QrCodeScanner
-import androidx.compose.material.icons.outlined.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -119,7 +119,7 @@ fun WelcomeScreen() {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Feature(Icons.Outlined.QrCodeScanner, L("Scannen aan de kassa"), L("Stempel erbij, beloning inwisselen of ongedaan maken."))
                 Feature(Icons.Outlined.Group, L("Medewerkers"), L("Nodig je team uit; zij zien alleen de scanner."))
-                Feature(Icons.Outlined.ShowChart, L("Overzicht en logboek"), L("Zie per dag wat er gebeurt en wie wat deed."))
+                Feature(Icons.AutoMirrored.Outlined.ShowChart, L("Overzicht en logboek"), L("Zie per dag wat er gebeurt en wie wat deed."))
             }
             if (mode == Mode.CheckInbox) {
                 CardBox(padding = 18.dp) {

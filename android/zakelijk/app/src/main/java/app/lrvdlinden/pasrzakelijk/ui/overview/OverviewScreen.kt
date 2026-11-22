@@ -35,7 +35,7 @@ import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.ListAlt
+import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -240,7 +240,7 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
                 }
                 Spacer(Modifier.height(18.dp))
                 Group {
-                    SettingsRow(L("Logboek"), Icons.Outlined.ListAlt, Pz.iris, onClick = onLog) {
+                    SettingsRow(L("Logboek"), Icons.AutoMirrored.Outlined.ListAlt, Pz.iris, onClick = onLog) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Pz.muted)
                     }
                 }
@@ -355,7 +355,7 @@ fun LogScreen(business: Business, onBack: () -> Unit) {
             when {
                 error != null -> EmptyState(Icons.Filled.WifiOff, L("Laden lukt niet"), error)
                 !loaded -> Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Pz.accent) }
-                events.isEmpty() -> EmptyState(Icons.Outlined.ListAlt, L("Nog niets gebeurd"), L("Hier komt elke stempel en inwisseling te staan."))
+                events.isEmpty() -> EmptyState(Icons.AutoMirrored.Outlined.ListAlt, L("Nog niets gebeurd"), L("Hier komt elke stempel en inwisseling te staan."))
                 else -> LazyColumn(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Pz.card)) {
                     items(filtered, key = { it.id }) { e -> LogRow(e); GroupDivider() }
                 }
@@ -372,7 +372,7 @@ private fun LogRow(e: LogEvent) {
         "undo" -> Icons.AutoMirrored.Filled.Undo to Pz.amber
         "join" -> Icons.Filled.PersonAdd to Pz.iris
         "claim" -> Icons.Filled.Download to Pz.iris
-        else -> Icons.Outlined.ListAlt to Pz.iris
+        else -> Icons.AutoMirrored.Outlined.ListAlt to Pz.iris
     }
     val title = when (e.kind) {
         "stamp" -> if (e.amount == 1) L("1 stempel") else L("%lld stempels", e.amount)

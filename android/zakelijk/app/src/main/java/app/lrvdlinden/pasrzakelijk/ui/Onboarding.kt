@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PersonAddAlt1
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -240,7 +240,7 @@ fun PendingScreen(business: Business) {
                 BigButton(L("Opnieuw kijken"), { scope.launch { BusinessStore.load() } }, icon = Icons.Filled.Refresh, busy = BusinessStore.loading)
                 if (business.isOwner && business.status == BusinessStatus.pending) LinkButton(L("Gegevens wijzigen"), { editing = true })
                 TextButton(onClick = { open("https://pasr.nl/support/") }) {
-                    Icon(Icons.Outlined.HelpOutline, null, tint = Pz.accent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Outlined.HelpOutline, null, tint = Pz.accent, modifier = Modifier.size(18.dp))
                     Text("  " + L("Support"), color = Pz.accent)
                 }
             }

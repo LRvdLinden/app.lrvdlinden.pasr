@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Place
@@ -230,7 +230,7 @@ fun SettingsScreen(business: Business) {
                 // Hulp
                 SectionHeader(L("Hulp"))
                 Group {
-                    SettingsRow(L("Hulp en contact"), Icons.Filled.Help, Pz.iris, external = true, onClick = { open("https://pasr.nl/support/") })
+                    SettingsRow(L("Hulp en contact"), Icons.AutoMirrored.Filled.Help, Pz.iris, external = true, onClick = { open("https://pasr.nl/support/") })
                     GroupDivider()
                     SettingsRow(L("Privacyverklaring"), Icons.Filled.PanTool, Pz.iris, external = true, onClick = { open("https://pasr.nl/privacy/#stempelkaarten-van-ondernemers") })
                     GroupDivider()

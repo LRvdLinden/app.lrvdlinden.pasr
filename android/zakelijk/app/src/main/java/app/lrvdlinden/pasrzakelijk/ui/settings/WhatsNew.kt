@@ -15,7 +15,7 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material.icons.outlined.QrCodeScanner
-import androidx.compose.material.icons.outlined.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -46,7 +46,7 @@ fun WhatsNewSheet(onDismiss: () -> Unit) {
                     Item(Icons.AutoMirrored.Filled.Undo, L("Ongedaan maken"), L("Vergist? Maak de laatste stempel of inwisseling binnen 2 minuten ongedaan."))
                     Item(Icons.Outlined.Timer, L("Afkoeltijd"), L("Een klant krijgt niet twee keer kort na elkaar een stempel. Je kiest zelf hoe lang."))
                     Item(Icons.Outlined.Group, L("Medewerkers"), L("Nodig je team uit met een link. Medewerkers zien alleen de scanner."))
-                    Item(Icons.Outlined.ShowChart, L("Overzicht en logboek"), L("Stempels, beloningen en nieuwe leden per dag, en wie wat deed."))
+                    Item(Icons.AutoMirrored.Outlined.ShowChart, L("Overzicht en logboek"), L("Stempels, beloningen en nieuwe leden per dag, en wie wat deed."))
                     Item(Icons.Outlined.Print, L("Flyer"), L("Deel de QR-code of maak een A4-flyer voor op de toonbank."))
                     Item(Icons.Outlined.Fingerprint, L("Vergrendelen met vingerafdruk of gezicht"), L("Zet in Instellingen de vergrendeling aan; bij openen vraagt de app om je vingerafdruk, gezicht of schermvergrendeling."))
                     Item(Icons.Outlined.Place, L("Vindbaar in Pasr"), L("Klanten vinden je stempelkaart in de lijst in Pasr, ook in de buurt."))

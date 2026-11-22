@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -112,7 +112,7 @@ private fun LoadingScreen() {
 private enum class Tab(val key: String, val icon: ImageVector, val title: String, val ownerOnly: Boolean) {
     Scan("scan", Icons.Outlined.QrCodeScanner, "Scannen", false),
     Cards("cards", Icons.Outlined.Style, "Kaarten", true),
-    Overview("overview", Icons.Outlined.ShowChart, "Overzicht", true),
+    Overview("overview", Icons.AutoMirrored.Outlined.ShowChart, "Overzicht", true),
     Staff("staff", Icons.Outlined.Group, "Medewerkers", true),
     Settings("settings", Icons.Outlined.Settings, "Instellingen", false),
 }
