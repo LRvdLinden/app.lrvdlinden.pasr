@@ -1,0 +1,18 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.lrvdlinden.pasr",
+      "sha256_cert_fingerprints": ["A9:8D:8C:30:C3:D6:A5:C1:87:CB:09:67:D5:9D:70:F7:E2:72:70:EF:F7:27:CC:E5:D9:9D:B6:A5:6F:AB:F3:DA"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.lrvdlinden.pasrzakelijk",
+      "sha256_cert_fingerprints": ["F7:02:B1:17:E1:FD:27:CC:DA:0A:CF:BF:D4:E9:73:F0:07:55:11:46:21:5F:6C:A6:5D:01:56:61:21:BB:10:13"]
+    }
+  }
+]

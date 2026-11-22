@@ -941,3 +941,28 @@ html, body { overflow-x: clip; max-width: 100%; }
 @keyframes fvConf { 0% { transform: translateY(0) rotate(0); opacity: 0; } 8% { opacity: 1; } 45% { transform: translateY(170px) rotate(320deg); opacity: 1; } 46%, 100% { opacity: 0; transform: translateY(170px); } }
 @media (max-width: 420px) { .fv-bday .bc { display: none; } }
 @media (prefers-reduced-motion: reduce) { .fv-stamps .st.on, .fv-stamps .scan-chip, .fv-bday .nt { animation: none !important; } .fv-bday .cf { display: none; } }
+
+/* Download-banner voor Android (Pasr-huisstijl, mint), even hoog als de App Store-badge ernaast. */
+.android-badge { display: inline-flex; align-items: center; gap: 10px; height: 70px; padding: 0 22px 0 16px; border-radius: 14px;
+  background: linear-gradient(135deg, #2BB38A 0%, #0E8A62 100%); color: #fff; text-decoration: none; line-height: 1.05;
+  box-shadow: 0 6px 18px rgba(14, 138, 98, .28); transition: transform .15s ease, box-shadow .15s ease; vertical-align: middle; }
+.android-badge svg { width: 34px; height: 34px; flex: none; }
+.android-badge span { display: flex; flex-direction: column; font-weight: 700; font-size: 24px; letter-spacing: -.01em; }
+.android-badge small { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; opacity: .92; margin-bottom: 3px; }
+.android-badge:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(14, 138, 98, .34); color: #fff; }
+.android-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
+.actions .android-badge { margin: 0 4px; }
+@media (max-width: 420px) { .android-badge { height: 63px; padding: 0 18px 0 14px; } .android-badge span { font-size: 21px; } }
+
+/* Pagina /android/ */
+.apk-list { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 28px 0; }
+.apk-card { background: var(--raised, #fff); border-radius: 22px; padding: 22px; box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 8px 30px rgba(20, 16, 60, .07); }
+.apk-card h2 { margin: 6px 0 4px; font-size: 24px; }
+.apk-card .apk-meta { font-size: 14px; color: var(--muted, #5E6072); margin: 10px 0 16px; display: grid; gap: 4px; }
+.apk-card .apk-meta code { word-break: break-all; font-size: 12px; }
+.apk-card .apk-icon { width: 56px; height: 56px; border-radius: 14px; }
+.apk-steps { counter-reset: s; list-style: none; padding: 0; display: grid; gap: 12px; }
+.apk-steps li { counter-increment: s; position: relative; padding-left: 44px; }
+.apk-steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #2BB38A, #0E8A62); color: #fff; font-weight: 700; display: grid; place-items: center; }
+.zk-apps { margin-top: 18px; align-items: center; }

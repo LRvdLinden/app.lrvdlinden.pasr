@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: website
@@ -34,6 +35,36 @@ jobs:
               "// Written by the Website workflow (public values).\nwindow.PASR_ACCOUNT = " + json.dumps({"url": url, "key": key}) + ";\n")
           print("Account config:", "set" if url and key else "empty (secrets PASR_SUPABASE_URL / PASR_SUPABASE_KEY missing)")
           PY
+      - name: Android-APK's naar website/download (nieuwste van Pasr en Pasr Zakelijk)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Haalt de nieuwste ondertekende APK op: eerst uit de releases (android-pasr-*, android-zakelijk-*), anders het
+          # nieuwste artifact van de Android-workflow. Ontbreekt er een, dan blijft wat er op de server staat staan.
+          set -uo pipefail
+          mkdir -p website/download
+          fetch() {  # $1 = naam op de site (pasr / pasr-zakelijk), $2 = tag-voorvoegsel, $3 = workflowbestand, $4 = artifact
+            local name=$1 prefix=$2 wf=$3 art=$4 tmp; tmp=$(mktemp -d)
+            tag=$(gh api "repos/$REPO/releases?per_page=50" --jq "[.[] | select(.tag_name | startswith(\"$prefix\"))][0].tag_name" 2>/dev/null || true)
+            if [ -n "$tag" ] && [ "$tag" != "null" ]; then
+              gh release download "$tag" -R "$REPO" -D "$tmp" -p "*.apk" -p "*.json" >/dev/null 2>&1 || true
+            fi
+            if ! ls "$tmp"/*.apk >/dev/null 2>&1; then
+              run=$(gh run list -R "$REPO" -w "$wf" -s success -L 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+              [ -n "$run" ] && gh run download "$run" -R "$REPO" -n "$art" -D "$tmp" >/dev/null 2>&1 || true
+            fi
+            apk=$(ls "$tmp"/$name.apk 2>/dev/null || ls -S "$tmp"/*.apk 2>/dev/null | head -1)
+            if [ -z "$apk" ]; then echo "::warning::Geen APK gevonden voor $name"; return 0; fi
+            cp "$apk" "website/download/$name.apk"
+            if [ -f "$tmp/$name.json" ]; then cp "$tmp/$name.json" "website/download/$name.json"; else
+              printf '{"app":"%s","size":%s,"sha256":"%s","date":"%s"}\n' "$name" "$(stat -c %s "$apk")" "$(sha256sum "$apk" | cut -d' ' -f1)" \
+                "$(date -u +%Y-%m-%d)" > "website/download/$name.json"
+            fi
+            echo "::notice::$name.apk klaargezet ($(stat -c %s "$apk") bytes, ${tag:-artifact})"
+          }
+          fetch pasr android-pasr- android-pasr.yml Pasr-Android
+          fetch pasr-zakelijk android-zakelijk- android-zakelijk.yml PasrZakelijk-Android
       - name: Versie achter css en js (geen oude bestanden uit de cache)
         run: python3 tools/version_assets.py
       - name: Install lftp

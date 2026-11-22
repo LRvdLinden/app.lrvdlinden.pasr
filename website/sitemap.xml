@@ -11,6 +11,11 @@
     <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
   </url>
   <url>
+    <loc>https://pasr.nl/android/</loc>
+    <lastmod>2026-11-22</lastmod>
+    <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
+  </url>
+  <url>
     <loc>https://pasr.nl/cadeaubon/</loc>
     <lastmod>2026-11-22</lastmod>
     <image:image><image:loc>https://pasr.nl/og/cadeaubon.png</image:loc></image:image>
@@ -258,6 +263,6 @@
   <url>
     <loc>https://pasr.nl/zakelijk/</loc>
     <lastmod>2026-11-22</lastmod>
-    <image:image><image:loc>https://pasr.nl/og/home.png</image:loc></image:image>
+    <image:image><image:loc>https://pasr.nl/og/zakelijk.png</image:loc></image:image>
   </url>
 </urlset>

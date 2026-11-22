@@ -29,7 +29,7 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <script src="/assets/consent.js?v=77ae25ae" defer></script>
-  <link rel="stylesheet" href="/assets/style.css?v=e0872217">
+  <link rel="stylesheet" href="/assets/style.css?v=4eff03fd">
 </head>
 <body>
   <header class="wrap nav">
@@ -51,16 +51,17 @@
     <p>Pasr is gemaakt om je kaarten te bewaren, niet om iets over jou te weten. Daarom is dit een korte pagina.</p>
 
     <h2 id="wat-pasr-bewaart">Wat Pasr bewaart</h2>
-    <p>De kaarten die je toevoegt: de naam van de winkel, het kaartnummer, de barcode, de kleur, je notities, foto's en logo's, en bij cadeaukaarten het saldo, de pincode en de vervaldatum. Dat staat op je eigen apparaten en wordt via je eigen iCloud gesynchroniseerd.</p>
+    <p>De kaarten die je toevoegt: de naam van de winkel, het kaartnummer, de barcode, de kleur, je notities, foto's en logo's, en bij cadeaukaarten het saldo, de pincode en de vervaldatum. Dat staat op je eigen apparaten. Op iPhone, iPad en Watch synchroniseert het via je eigen iCloud; op Android blijft het op je telefoon, tenzij je een Pasr-account gebruikt.</p>
 
     <h2 id="pasr-account-optioneel">Pasr-account (optioneel)</h2>
-    <p>Je kunt Pasr gebruiken zonder account. Maak je wel een gratis account, dan bewaren we je e-mailadres, je voornaam (voor de aanhef in mails), een versleuteld wachtwoord en je kaarten. Foto's van kaarten blijven op je apparaten en in je iCloud. Je kaarten staan in het account versleuteld opgeslagen (AES-256); medewerkers kijken er niet in. Je account verwijder je zelf in de app onder Instellingen; dan worden ook de kaarten in je account gewist. Accounts die binnen 48 uur niet zijn bevestigd, verwijderen we automatisch.</p>
+    <p>Je kunt Pasr gebruiken zonder account. Maak je wel een gratis account, dan bewaren we je e-mailadres, je voornaam (voor de aanhef in mails), een versleuteld wachtwoord en je kaarten. Foto's van kaarten blijven op je apparaten (en op iPhone en iPad in je iCloud). Je kaarten staan in het account versleuteld opgeslagen (AES-256); medewerkers kijken er niet in. Je account verwijder je zelf in de app onder Instellingen; dan worden ook de kaarten in je account gewist. Accounts die binnen 48 uur niet zijn bevestigd, verwijderen we automatisch.</p>
     <p>Herinneringen per e-mail zijn optioneel en werken alleen met een Pasr-account. Zet je ze aan in de app (Instellingen › Meldingen), dan kijkt onze server één keer per dag naar de vervaldatum, het tegoed en de verlengdatum van de kaarten in je eigen account, en stuurt een mail vanaf support@pasr.nl als er iets te melden is. We bewaren je keuze en per kaart welke herinnering al is verstuurd, zodat je niets dubbel krijgt. Afmelden kan altijd: in de app, via de link onderaan elke mail of op <a href="/afmelden/">pasr.nl/afmelden</a>.</p>
     <p>Bij het aanmaken bewaren we ook het land uit de regio-instelling van je apparaat of browser (bijvoorbeeld NL), om te zien uit welke landen Pasr wordt gebruikt; dat is geen locatie. In ons eigen beheer zien we per account het e-mailadres, de voornaam, het land, wanneer het is aangemaakt en voor het laatst gebruikt, en hoeveel kaarten erin staan; de kaarten zelf niet. Tegen nepaccounts gebruiken we een onzichtbaar veld en een tijdmeting in het aanmeldformulier, en tellen we aanmeldingen per netwerk. Daarvoor bewaren we geen IP-adres: alleen een onomkeerbare, gezouten code van je netwerk, en die is na 7 dagen weg.</p>
 
     <h2 id="versleuteling">Versleuteling</h2>
     <ul>
       <li>Op je iPhone, iPad en Watch staan je kaarten onder de hardwareversleuteling van het apparaat (Data Protection), gekoppeld aan je toegangscode.</li>
+      <li>Op Android staan je kaarten, foto's en je inlog versleuteld (AES-256) met een sleutel in de beveiligde sleutelopslag van je telefoon (Android Keystore). Ze gaan niet mee in een Google-back-up; gebruik een Pasr-account om ze over te zetten naar een nieuwe telefoon.</li>
       <li>In iCloud worden kaartnummers, pincodes en notities end-to-end versleuteld opgeslagen. Alleen jouw apparaten hebben de sleutel; Apple en wij kunnen ze niet lezen.</li>
       <li>In je Pasr-account staat elke kaart versleuteld (AES-256) en gaat alles over een versleutelde verbinding.</li>
       <li>Een back-upbestand kun je versleutelen met je eigen wachtwoord (AES-256). Zonder dat wachtwoord kan niemand het openen, ook wij niet.</li>
@@ -73,8 +74,8 @@
       <li>Geen verkoop of doorgifte van gegevens.</li>
     </ul>
 
-    <h2 id="camera-foto-s-en-face-id">Camera, foto's en Face ID</h2>
-    <p>De camera gebruikt Pasr alleen om een barcode te scannen. Foto's en screenshots die je kiest, worden op je apparaat gelezen en niet geüpload. Face ID wordt door je iPhone zelf afgehandeld; Pasr krijgt alleen te horen of het gelukt is.</p>
+    <h2 id="camera-foto-s-en-face-id">Camera, foto's, Face ID en vingerafdruk</h2>
+    <p>De camera gebruikt Pasr alleen om een barcode te scannen. Foto's en screenshots die je kiest, worden op je apparaat gelezen en niet geüpload. Op Android leest Pasr barcodes met ML Kit van Google, dat in de app zelf zit en op je telefoon werkt; er gaat geen beeld naar Google of naar ons. Face ID, vingerafdruk of gezichtsherkenning wordt door je telefoon zelf afgehandeld; Pasr krijgt alleen te horen of het gelukt is.</p>
 
     <h2 id="logo-s-van-winkels">Logo's van winkels</h2>
     <p>De logo's van bekende winkels zitten in de app zelf. Voor andere winkels haalt je apparaat, als de instelling "Winkellogo's" aanstaat, het icoon op van de website van de winkel. Die website ziet dan een gewone aanvraag van je apparaat, zoals bij elk bezoek. Je kunt dit uitzetten in de instellingen van Pasr.</p>
@@ -88,6 +89,15 @@
     <h2 id="apple-wallet">Apple Wallet</h2>
     <p>Zet je een kaart in Apple Wallet, dan stuurt de app de kaart (naam, nummer, soort code, kleur, logo en bij een cadeaukaart het saldo en de vervaldatum) over een versleutelde verbinding naar onze server. Die maakt er een ondertekende Wallet-pas van en stuurt die meteen terug; de server bewaart niets, alleen hoeveel passen er per dag zijn gemaakt (een getal, zonder gegevens van de kaart of van jou). Ook gaan de plekken mee van maximaal tien filialen die je zelf kiest (je eigen locaties en filialen in de buurt), zodat iOS de pas op je toegangsscherm kan tonen als je daar bent. Je eigen locatie wordt niet verstuurd. Verandert het tegoed of de geschiedenis, dan maakt Pasr op dezelfde manier een nieuwe pas en vervangt die in Wallet; ook dan bewaart de server niets. De pas staat daarna in Apple Wallet en valt onder het privacybeleid van Apple.</p>
 
+    <h2 id="google-wallet">Google Wallet (Android)</h2>
+    <p>Zet je op Android een kaart in Google Wallet, dan stuurt de app de kaart (naam, nummer, soort code, kleur, logo, notitie en bij een cadeaukaart het saldo, de pincode en de vervaldatum) over een versleutelde verbinding naar onze server. Die maakt er met het Google Wallet-account van Pasr een pas van bij Google en geeft je een link om hem op te slaan. Op onze server bewaren we alleen een willekeurige code van de pas, een onomkeerbare code van de sleutel die alleen jouw app kent, het logo (zodat Google het kan tonen) en bij een stempelkaart van een zaak de lidcode; zo kan de pas vanzelf bijwerken als je kaart verandert of de zaak een stempel zet. Verwijder je de kaart in Pasr, dan zetten we de pas op inactief en wissen we die gegevens. De pas zelf staat bij Google en valt onder het privacybeleid van Google. We tellen hoeveel passen er per dag worden gemaakt (alleen een getal).</p>
+
+    <h2 id="apparaten-en-versies">Apparaten en versies</h2>
+    <p>Om te weten op welke toestellen en versies Pasr en Pasr Zakelijk draaien (bijvoorbeeld om te weten wanneer een oude versie niet meer nodig is), meldt de app zich hoogstens één keer per dag bij onze server met: een willekeurige code van deze installatie, welke app (Pasr of Pasr Zakelijk), het platform (iOS of Android), de versie van de app en van het besturingssysteem, het land uit de regio-instelling en, als je bent ingelogd, je Pasr-account. Daarnaast tellen we per dag welke installaties actief waren. Geen naam, geen locatie, geen IP-adres en geen gegevens van je kaarten. Gegevens van een installatie die 400 dagen niets van zich liet horen, wissen we.</p>
+
+    <h2 id="android-download">Pasr voor Android</h2>
+    <p>De Android-app download je rechtstreeks van <a href="/android/">pasr.nl/android</a>, niet via de Play Store. Bij het downloaden houdt onze webhoster, zoals bij elk bezoek, gewone serverlogs bij. Pasr voor Android heeft geen pushmeldingen van onze server; herinneringen maakt de app zelf op je telefoon.</p>
+
     <h2 id="kaarten-delen">Kaarten delen</h2>
     <p>Als je een kaart blijvend deelt, zit de kaart zelf in de link: de naam, het nummer, het soort code en de kleur, en bij een cadeaukaart het saldo en de vervaldatum. Dat deel staat na het #-teken, en dat stuurt een browser nooit naar onze server. Iedereen die de link heeft, kan de kaart gebruiken; deel hem dus alleen met wie je vertrouwt.</p>
 
@@ -98,7 +108,7 @@
     <p>In een gedeelde Pasr gebruik je kaarten samen met maximaal vijf anderen, elk met een eigen Pasr-account. Kaarten in de gedeelde Pasr staan versleuteld (AES-256) op onze server en zijn te zien voor iedereen in die gedeelde Pasr. De leden zien elkaars voornaam en e-mailadres. Wie je uitnodigt, krijgt een mail van ons met jouw voornaam (of e-mailadres) en de naam van de gedeelde Pasr; het e-mailadres van de uitnodiging bewaren we tot die is geaccepteerd of geweigerd, en hoogstens 14 dagen. Verlaat de laatste persoon een gedeelde Pasr, of verwijdert die zijn account, dan wissen we de gedeelde Pasr met alle kaarten erin. In ons beheer zien we alleen aantallen (hoeveel gedeelde Pasrs, personen en kaarten), niet de kaarten zelf.</p>
 
     <h2 id="nieuws-over-mijn-kaarten">Nieuws over je kaarten (optioneel)</h2>
-    <p>Zet je in de app &ldquo;Nieuws over mijn kaarten&rdquo; aan (Instellingen › Meldingen), dan kun je af en toe een pushmelding van Pasr krijgen, bijvoorbeeld over een winkel waarvan je een kaart hebt. Daarvoor bewaren we op onze server: een willekeurige code van je apparaat, het pushadres dat Apple voor Pasr geeft, de winkels waarvan je een kaart hebt (alleen welke winkel, zoals &ldquo;ah&rdquo;; nooit kaartnummers, saldo of andere gegevens van de kaart), wanneer je het aanzette en wanneer je de app voor het laatst opende. Zo kunnen we een bericht sturen aan bijvoorbeeld iedereen met een kaart van een bepaalde winkel, of aan wie de app een tijd niet gebruikte. Dit werkt ook zonder Pasr-account; heb je er een, dan koppelen we het apparaat aan je account. Zet je het uit, dan wissen we deze gegevens meteen. Een apparaat dat 400 dagen niets van zich liet horen, wissen we ook. We sturen geen reclame van anderen en verkopen niets door.</p>
+    <p>Zet je in de app &ldquo;Nieuws over mijn kaarten&rdquo; aan (Instellingen › Meldingen), dan kun je af en toe een pushmelding van Pasr krijgen, bijvoorbeeld over een winkel waarvan je een kaart hebt. Daarvoor bewaren we op onze server: een willekeurige code van je apparaat, het pushadres dat Apple voor Pasr geeft (alleen op iPhone en iPad; op Android is dit er nog niet), de winkels waarvan je een kaart hebt (alleen welke winkel, zoals &ldquo;ah&rdquo;; nooit kaartnummers, saldo of andere gegevens van de kaart), wanneer je het aanzette en wanneer je de app voor het laatst opende. Zo kunnen we een bericht sturen aan bijvoorbeeld iedereen met een kaart van een bepaalde winkel, of aan wie de app een tijd niet gebruikte. Dit werkt ook zonder Pasr-account; heb je er een, dan koppelen we het apparaat aan je account. Zet je het uit, dan wissen we deze gegevens meteen. Een apparaat dat 400 dagen niets van zich liet horen, wissen we ook. We sturen geen reclame van anderen en verkopen niets door.</p>
 
     <h2 id="stempelkaarten-van-ondernemers">Stempelkaarten van ondernemers</h2>
     <p>Een zaak kan via <a href="/zakelijk/">pasr.nl/zakelijk</a> een eigen stempelkaart maken. Sluit je je aan, dan krijg je een willekeurige lidcode. Bij die code bewaren we alleen het aantal stempels, hoe vaak je de beloning hebt ingewisseld en wanneer je stempels kreeg; geen naam, e-mailadres of telefoonnummer. Sluit je aan in de app terwijl je bent ingelogd, dan koppelen we het lidmaatschap aan je Pasr-account, zodat je het terugziet op een ander apparaat. Op de website bewaart je browser je lidcode (in de lokale opslag van je browser). De zaak ziet per lid alleen de laatste vier tekens van de code, het aantal stempels en wanneer die zijn gezet; niet wie je bent.</p>

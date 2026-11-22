@@ -543,7 +543,7 @@
         '<div class="zk-member-qr">' + qrSvg(m.member_code) + '</div><p class="zk-code">' + esc(m.member_code.replace(/(.{4})(?=.)/g, "$1 ")) + "</p>" +
         "<p>" + (m.stamps_count >= m.stamps_total ? "Je beloning staat klaar: " + esc(m.reward) + "." : "Nog " + (m.stamps_total - m.stamps_count) + " stempels tot " + esc(m.reward) + ".") + "</p>" +
         '<div class="actions"><button class="btn btn-ghost" id="jRefresh" type="button">Vernieuwen</button><a class="btn btn-primary" href="pasr://zakelijk?code=' + encodeURIComponent(m.member_code) + "#" + esc(id) + '">Bewaar in Pasr</a></div>' +
-        '<p class="note">Deze kaart staat in deze browser. Met Bewaar in Pasr gaan je stempels mee naar de app. Met de gratis app <a href="' + APP_STORE + '" rel="noopener">Pasr</a> heb je hem altijd bij de hand, ook in Apple Wallet.</p>';
+        '<p class="note">Deze kaart staat in deze browser. Met Bewaar in Pasr gaan je stempels mee naar de app. Met de gratis app Pasr (<a href="' + APP_STORE + '" rel="noopener">iPhone</a> of <a href="/android/">Android</a>) heb je hem altijd bij de hand, ook in Apple Wallet of Google Wallet.</p>';
       $("#jRefresh").addEventListener("click", load);
     }
     async function load() {
@@ -562,7 +562,7 @@
       document.title = card.name + " | " + card.business + " | Pasr";
       root.innerHTML = '<span class="zk-kicker">Stempelkaart</span><h1>' + esc(card.name) + "</h1><p>Spaar stempels bij " + esc(card.business) + (card.city ? " in " + esc(card.city) : "") + ". Bij " + card.stamps_total + " stempels: " + esc(card.reward) + ".</p>" +
         stampCard(card, null) +
-        '<div class="actions"><a class="btn btn-primary" href="pasr://zakelijk#' + esc(id) + '">Open in Pasr</a><a class="btn btn-ghost" href="' + APP_STORE + '" rel="noopener">Download Pasr</a></div>' +
+        '<div class="actions"><a class="btn btn-primary" href="pasr://zakelijk#' + esc(id) + '">Open in Pasr</a><a class="btn btn-ghost" href="' + APP_STORE + '" rel="noopener">Pasr voor iPhone</a><a class="btn btn-ghost" href="/android/">Pasr voor Android</a></div>' +
         '<p class="note">Geen app? <button class="zk-btn sm" id="jJoin" type="button">Gebruik de kaart in je browser</button></p><p class="zk-msg" id="jMsg" role="status"></p>' +
         '<p class="note" style="font-size:14px">Je krijgt een anonieme lidcode; Pasr vraagt geen naam of e-mailadres. <a href="/privacy/#stempelkaarten-van-ondernemers">Privacy</a></p>';
       $("#jJoin").addEventListener("click", async function (ev) {

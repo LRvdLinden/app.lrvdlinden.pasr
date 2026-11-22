@@ -209,7 +209,12 @@ def build(write=True):
 
     badge = (f'<a class="store-badge" href="{APP_STORE}?itscg=30200&amp;itsct=apps_box_badge&amp;mttnsubad=6829229123" rel="noopener">'
              '<img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/nl-nl?releaseDate=1794096000" '
-             'alt="Download in de App Store" width="246" height="82" loading="lazy"></a>')
+             'alt="Download in de App Store" width="246" height="82" loading="lazy"></a>'
+             ' <a class="android-badge" href="/android/" aria-label="Download voor Android"><svg viewBox="0 0 24 24" aria-hidden="true">'
+             '<rect x="6" y="2.5" width="12" height="19" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/>'
+             '<path d="M12 7v7m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+             '<path d="M10.5 18.2h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'
+             '<span><small>Download voor</small>Android</span></a>')
     store_icon = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
                   '<path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5"/></svg>')
 

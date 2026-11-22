@@ -26,4 +26,18 @@ ErrorDocument 404 /404.html
 <Files "apple-app-site-association">
   ForceType application/json
 </Files>
+# Android: APK's als download, altijd de nieuwste (niet cachen); assetlinks.json als JSON (App Links)
+AddType application/vnd.android.package-archive .apk
+<IfModule mod_headers.c>
+  <FilesMatch "\.apk$">
+    Header set Cache-Control "no-cache"
+    Header set Content-Disposition "attachment"
+  </FilesMatch>
+  <FilesMatch "^(pasr|pasr-zakelijk)\.json$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+<Files "assetlinks.json">
+  ForceType application/json
+</Files>
 # END pasr
