@@ -491,8 +491,8 @@ def page():
         <p>{a}</p>
       </details>''' for q, a in FAQ)
     faq_ld = ",".join('{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (json.dumps(q), json.dumps(a)) for q, a in FAQ)
-    desc = ("Maak gratis een digitale stempelkaart voor je zaak. Klanten sparen in de app Pasr of in hun browser, "
-            "jij zet stempels met je telefoon. Zonder kassakoppeling.")
+    desc = ("Gratis digitale stempelkaart voor je zaak. Stempelen met de app Pasr Zakelijk op iPhone, iPad of Android, "
+            "of gewoon in je browser. Klanten sparen in Pasr of hun browser.")
     og_alt = "Twee digitale stempelkaarten van een koffiebar en een bakkerij, naast de tekst: Gratis digitale stempelkaart voor je zaak"
     feature_list = json.dumps([re.sub(r"<[^>]+>", "", f[2]) for f in FEATURES], ensure_ascii=False)
     steps = [("Meld je zaak aan", "Maak een gratis Pasr-account en meld je zaak aan. We keuren hem met de hand goed, meestal binnen een werkdag."),
@@ -528,7 +528,7 @@ def page():
   <meta name="twitter:image" content="https://pasr.nl/og/zakelijk.png">
   <meta name="twitter:image:alt" content="{og_alt}">
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{{"@type":"ListItem","position":1,"name":"Pasr","item":"https://pasr.nl/"}},{{"@type":"ListItem","position":2,"name":"Pasr voor ondernemers","item":"https://pasr.nl/zakelijk/"}}]}}</script>
-  <script type="application/ld+json">{{"@context":"https://schema.org","@type":"MobileApplication","name":"Pasr Zakelijk","operatingSystem":"iOS, Android 8","applicationCategory":"BusinessApplication","url":"{APP_URL}","description":"Digitale stempelkaart voor je zaak: stempels zetten met je telefoon, klanten sparen in Pasr.","featureList":{feature_list},"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@type":"Organization","name":"Pasr","url":"https://pasr.nl/"}}}}</script>
+  <script type="application/ld+json">{{"@context":"https://schema.org","@type":"MobileApplication","name":"Pasr Zakelijk","operatingSystem":"iOS 17, iPadOS 17, Android 8, webbrowser","applicationCategory":"BusinessApplication","url":"{APP_URL}","description":"Digitale stempelkaart voor je zaak: stempels zetten met je telefoon, klanten sparen in Pasr.","featureList":{feature_list},"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@type":"Organization","name":"Pasr","url":"https://pasr.nl/"}}}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
   <meta name="theme-color" content="#F4F3FF">
   <link rel="icon" type="image/png" href="/assets/favicon.png">

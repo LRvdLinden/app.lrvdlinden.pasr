@@ -526,6 +526,7 @@ const SOCIAL = {
   p3: { bg: "light", title: "Kaarten delen <em>met je gezin</em>", sub: "Samen één Pasr, tot 6 personen. Of leen een kaart tijdelijk uit.", screen: "shared" },
   p4: { bg: "dark", title: "Je kaart staat klaar <em>bij de winkel</em>", sub: "Een melding als je binnenloopt, en ook in Apple Wallet.", screen: "lockscreen" },
 };
+const ANDROID = '<svg viewBox="0 0 24 24" style="width:calc(var(--u)*5);height:calc(var(--u)*5)"><g fill="#2ED3A6"><path d="M6.2 9.3a5.8 5.8 0 0 1 11.6 0z"/><path d="M8.3 4.4 7 2.4M15.7 4.4 17 2.4" stroke="#2ED3A6" stroke-width=".9" stroke-linecap="round"/><path d="M6.2 10h11.6v7.6a1.4 1.4 0 0 1-1.4 1.4H7.6a1.4 1.4 0 0 1-1.4-1.4z"/><rect x="3.4" y="10" width="2.1" height="6.6" rx="1.05"/><rect x="18.5" y="10" width="2.1" height="6.6" rx="1.05"/><rect x="8.4" y="17.6" width="2.1" height="4.4" rx="1.05"/><rect x="13.5" y="17.6" width="2.1" height="4.4" rx="1.05"/></g><circle cx="9.4" cy="7.1" r=".65" fill="#111"/><circle cx="14.6" cy="7.1" r=".65" fill="#111"/></svg>';
 const APPLE = '<svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.6-1-2.5-3.9zM14 5.3c.7-.8 1.1-1.9 1-3-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.9-1.4z"/></svg>';
 function social(sc) {
   const story = H / W > 1.6, tall = H / W > 1.15;
@@ -549,7 +550,7 @@ function social(sc) {
 
 // ---------- og:image (1200x630, voor het delen van pasr.nl) ----------
 const OG = {
-  home: { title: "Al je klantenkaarten <em>in één app</em>", sub: "Gratis en zonder reclame. Voor iPhone, iPad, Apple Watch en Mac.", screen: "stack" },
+  home: { title: "Al je klantenkaarten <em>in één app</em>", sub: "Gratis en zonder reclame. Voor iPhone, iPad, Apple Watch en Android.", screen: "stack" },
   overstappen: { title: "Overstappen in <em>één minuut</em>", sub: "Neem je scherm op in je oude kaarten-app. Pasr vindt al je kaarten.", screen: "importrec" },
 };
 function og(sc) {
@@ -559,7 +560,7 @@ function og(sc) {
     <div class="promo-logo"><img src="icon.png" style="width:calc(var(--u)*13);height:calc(var(--u)*13);border-radius:calc(var(--u)*3)"><span style="font-size:calc(var(--u)*11)">pasr</span></div>
     <h1 style="margin-top:calc(var(--u)*6);font-size:calc(var(--u)*12.4);line-height:1.02">${sc.title}</h1>
     <p class="sub" style="font-size:calc(var(--u)*4.6);margin-top:calc(var(--u)*3.6);max-width:92%">${sc.sub}</p>
-    <div style="margin-top:calc(var(--u)*5.5)"><span class="store" style="font-size:calc(var(--u)*4.3);padding:calc(var(--u)*2.4) calc(var(--u)*4.4);gap:calc(var(--u)*1.8)">${APPLE.replace("<svg", '<svg style="width:calc(var(--u)*5);height:calc(var(--u)*5)"')}Nu in de App Store</span></div></div>`;
+    <div style="margin-top:calc(var(--u)*5.5)"><span class="store" style="font-size:calc(var(--u)*4.3);padding:calc(var(--u)*2.4) calc(var(--u)*4.4);gap:calc(var(--u)*1.8)">${APPLE.replace("<svg", '<svg style="width:calc(var(--u)*5);height:calc(var(--u)*5)"')}App Store</span> <span class="store" style="font-size:calc(var(--u)*4.3);padding:calc(var(--u)*2.4) calc(var(--u)*4.4);gap:calc(var(--u)*1.8);margin-left:calc(var(--u)*2)">${ANDROID}Android</span></div></div>`;
   html += device("iphone", sc.screen, `left:79%;top:9%;width:calc(var(--u) * 66);transform:translateX(-50%) rotate(4deg)`);
   return html + "</div>";
 }
