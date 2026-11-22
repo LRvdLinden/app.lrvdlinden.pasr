@@ -359,6 +359,7 @@ struct Business: Decodable, Identifiable, Hashable {
     var owner_email: String? = nil
     var owner_invite: OwnerInvite? = nil
     var created_by: String? = nil
+    var unconfirmed_account: Bool? = nil
 
     var allCards: [BusinessCard] { cards ?? [] }
     var ownerTitle: String {
@@ -382,6 +383,7 @@ struct BusinessSaveResponse: Decodable {
     let invite: OwnerInvite?
     let mailed: Bool?
     let mail_ready: Bool?
+    var unconfirmed_account: Bool? = nil
 }
 struct BusinessCardResponse: Decodable { let card: BusinessCard }
 struct BusinessCardDeleteResponse: Decodable { let ok: Bool?; let members: Int? }

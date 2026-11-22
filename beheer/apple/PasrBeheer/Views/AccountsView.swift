@@ -9,6 +9,7 @@ struct AccountsView: View {
     @State private var loading = false
     @State private var error: String?
     @State private var deleting: User?
+    @State private var confirming: User?
     @State private var toast: String?
     @State private var showReview = false
 
@@ -36,11 +37,14 @@ struct AccountsView: View {
                             if !u.isConfirmed {
                                 Button { Task { await resend(u) } } label: { Label("Mail opnieuw", systemImage: "envelope.arrow.triangle.branch") }
                                     .tint(Theme.iris)
+                                Button { confirming = u } label: { Label("E-mail bevestigen", systemImage: "checkmark.seal") }
+                                    .tint(Theme.mint)
                             }
                         }
                         .contextMenu {
                             if !u.isConfirmed {
                                 Button { Task { await resend(u) } } label: { Label("Bevestigingsmail opnieuw", systemImage: "envelope") }
+                                Button { confirming = u } label: { Label("E-mail bevestigen", systemImage: "checkmark.seal") }
                             }
                             Button(role: .destructive) { deleting = u } label: { Label("Verwijder account", systemImage: "trash") }
                         }
@@ -65,7 +69,7 @@ struct AccountsView: View {
         .background(Theme.bg)
         .navigationTitle("Accounts")
         .navigationDestination(for: User.self) { u in
-            UserDetailView(user: u, onResend: { await resend(u) }, onDelete: { deleting = u })
+            UserDetailView(user: u, onResend: { await resend(u) }, onConfirm: { confirming = u }, onDelete: { deleting = u })
         }
         .searchable(text: $search, prompt: "Zoek op e-mail of naam")
         .toolbar {
@@ -85,6 +89,12 @@ struct AccountsView: View {
             Button("Verwijder \(u.email ?? "account")", role: .destructive) { Task { await delete(u) } }
         } message: { u in
             Text("Het account en de \(Fmt.plural(u.cards, "kaart", "kaarten")) erin worden van de server verwijderd. De kaarten op de apparaten van deze persoon blijven staan. Dit kan niet ongedaan worden.")
+        }
+        .confirmationDialog("E-mailadres bevestigen?", isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
+                            titleVisibility: .visible, presenting: confirming) { u in
+            Button("Bevestigen") { Task { await confirm(u) } }
+        } message: { u in
+            Text("\(u.email ?? "Dit account") wordt als bevestigd gemarkeerd, zonder bevestigingsmail. Doe dit alleen als je zeker weet dat dit adres klopt (bijvoorbeeld een review-account). Het wachtwoord blijft van de gebruiker.")
         }
         .overlay(alignment: .bottom) {
             if let toast {
@@ -112,6 +122,17 @@ struct AccountsView: View {
         } catch let e as APIError where e.isUnauthorized {
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    /// E-mailadres bevestigen via de admin-functie (Auth admin API, email_confirm); nooit wachtwoorden.
+    private func confirm(_ u: User) async {
+        do {
+            try await session.call("user_confirm", ["id": u.id])
+            show(String(localized: "E-mailadres bevestigd"))
+            await load(reset: true)
+        } catch {
+            show(error.localizedDescription)
         }
     }
 
@@ -195,6 +216,7 @@ struct StatusBadge: View {
 struct UserDetailView: View {
     let user: User
     var onResend: () async -> Void
+    var onConfirm: () -> Void = {}
     var onDelete: () -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -223,6 +245,7 @@ struct UserDetailView: View {
             Section {
                 if !user.isConfirmed {
                     Button { Task { await onResend() } } label: { Label("Bevestigingsmail opnieuw sturen", systemImage: "envelope") }
+                    Button { dismiss(); onConfirm() } label: { Label("E-mail bevestigen", systemImage: "checkmark.seal") }
                 }
                 Button(role: .destructive) {
                     dismiss()

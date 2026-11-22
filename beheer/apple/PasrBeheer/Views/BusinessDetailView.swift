@@ -22,6 +22,7 @@ struct BusinessDetailView: View {
     @State private var editingBusiness = false
     @State private var confirmInvite = false
     @State private var inviteBusy = false
+    @State private var confirmOwner = false
 
     private var biz: Business { detail?.business ?? business }
 
@@ -39,6 +40,11 @@ struct BusinessDetailView: View {
                     } else {
                         Text("Geen eigenaar: jij beheert deze zaak. Vul bij Bewerken een e-mailadres in om een eigenaar uit te nodigen.")
                             .font(.subheadline).foregroundStyle(Theme.muted)
+                    }
+                    if biz.has_owner == false && biz.unconfirmed_account == true {
+                        Text("Er bestaat al een Pasr-account met dit adres, maar het e-mailadres is niet bevestigd.").font(.footnote).foregroundStyle(Theme.muted)
+                        Button { confirmOwner = true } label: { Label("Account bevestigen en eigenaar maken", systemImage: "checkmark.seal") }
+                            .disabled(inviteBusy)
                     }
                     if biz.has_owner == false && (biz.owner_invite != nil || !(biz.email ?? "").isEmpty) {
                         Button {
@@ -175,6 +181,11 @@ struct BusinessDetailView: View {
                                  onNewCard: { _ in Task { try? await Task.sleep(for: .milliseconds(400)); newCard = true } })
                     .environmentObject(session)
             }
+            .confirmationDialog("Account bevestigen en eigenaar maken?", isPresented: $confirmOwner, titleVisibility: .visible) {
+                Button("Bevestigen") { Task { await confirmAccount() } }
+            } message: {
+                Text("Bevestig het e-mailadres alleen als je zeker weet dat het klopt. Het account wordt dan eigenaar van \(biz.name); het wachtwoord blijft van de gebruiker.")
+            }
             .confirmationDialog("Eigenaarslink versturen?", isPresented: $confirmInvite, titleVisibility: .visible) {
                 Button("Versturen") { Task { await sendInvite() } }
             } message: {
@@ -226,6 +237,17 @@ struct BusinessDetailView: View {
             saved = true
             onChanged()
             await load()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func confirmAccount() async {
+        inviteBusy = true
+        defer { inviteBusy = false }
+        do {
+            _ = try await session.call("business_owner_confirm", ["id": biz.id], as: BusinessSaveResponse.self)
+            error = nil
+            await load()
+            onChanged()
         } catch { self.error = error.localizedDescription }
     }
 

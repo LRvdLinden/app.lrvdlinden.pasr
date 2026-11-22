@@ -78,7 +78,8 @@
       case "unreachable": return "Van deze website kon geen huisstijl worden gehaald. Kies zelf een kleur en logo.";
       case "bad_business": return "Vul de gegevens van de zaak in.";
       case "test_limit": return "Hoogstens 10 testklanten per kaart.";
-      case "create_failed": case "update_failed": case "seed_failed": return "Het review-account kon niet worden gemaakt. Probeer het opnieuw.";
+      case "update_failed": return "Het account kon niet worden bijgewerkt. Probeer het opnieuw.";
+      case "create_failed": case "seed_failed": return "Het review-account kon niet worden gemaakt. Probeer het opnieuw.";
       default: return `Er ging iets mis op de server (${code}).`;
     }
   }
@@ -566,7 +567,15 @@
         catch (err) { toast(err.message); }
         finally { re.disabled = false; }
       });
-      acts.append(re);
+      const cf = el("button", "btn ghost sm", "E-mail bevestigen");
+      cf.type = "button";
+      cf.addEventListener("click", async () => {
+        if (!(await ask("E-mailadres bevestigen?", `${u.email} wordt als bevestigd gemarkeerd, zonder bevestigingsmail. Doe dit alleen als je zeker weet dat dit adres klopt (bijvoorbeeld een review-account). Het wachtwoord blijft van de gebruiker.`, "Bevestigen"))) return;
+        cf.disabled = true;
+        try { await api("user_confirm", { id: u.id }); toast(`${u.email} is bevestigd`); loadUsers(true); }
+        catch (err) { toast(err.message); cf.disabled = false; }
+      });
+      acts.append(re, cf);
     }
     const del = el("button", "btn danger sm", "Verwijder");
     del.type = "button";
@@ -1275,6 +1284,10 @@
     box.append(el("p", "muted sm", inv ? `Nog geen eigenaar. Eigenaarslink voor ${inv.email || "—"}, ${inv.expired ? "verlopen" : "geldig tot " + new Date(inv.expires_at).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}.`
       : "Geen eigenaar: jij beheert deze zaak. Vul bij Bewerken een e-mailadres in om een eigenaar uit te nodigen."));
     if (inv && !inv.expired) box.append(inviteLinkBlock(inv));
+    if (z.unconfirmed_account) {
+      box.append(el("p", "muted sm", "Er bestaat al een Pasr-account met dit adres, maar het e-mailadres is niet bevestigd."));
+      box.append(confirmOwnerButton(z, refresh));
+    }
     if (inv || z.email) {
       const again = el("button", "btn sm ghost", inv ? "Nieuwe link maken en mailen" : "Eigenaarslink maken en mailen"); again.type = "button";
       again.addEventListener("click", async () => {
@@ -1289,6 +1302,17 @@
       box.append(el("div", "se-row")); box.lastChild.append(again);
     }
     return box;
+  }
+  /** Onbevestigd Pasr-account met het adres van de zaak: bevestigen en eigenaar maken (nooit wachtwoorden). */
+  function confirmOwnerButton(z, done) {
+    const x = el("button", "btn sm", "Account bevestigen en eigenaar maken"); x.type = "button";
+    x.addEventListener("click", async () => {
+      if (!(await ask("Account bevestigen en eigenaar maken?", `Er is al een Pasr-account met ${z.email || "dit adres"}, maar het e-mailadres is nog niet bevestigd. Bevestig het alleen als je zeker weet dat het adres klopt. Het account wordt dan eigenaar van ${z.name}; het wachtwoord blijft van de gebruiker.`, "Bevestigen"))) return;
+      x.disabled = true;
+      try { const r = await api("business_owner_confirm", { id: z.id }); toast(`${z.email || "Account"} bevestigd en eigenaar`); done(r); }
+      catch (err) { toast(err.message); x.disabled = false; }
+    });
+    return x;
   }
   function qrData(text, cell) {
     if (typeof qrcode !== "function") return "";
@@ -1368,6 +1392,10 @@
       box.append(el("p", null, r.mailed ? `Eigenaarslink gemaild naar ${r.invite.email}. Je kunt hem ook kopiëren:`
         : `Eigenaarslink gemaakt voor ${r.invite.email}${r.mail_ready === false ? " (mailen staat uit: geen SMTP)" : ""}. Kopieer hem en stuur hem zelf:`));
       box.append(inviteLinkBlock(r.invite));
+      if (r.unconfirmed_account) {
+        box.append(el("p", null, "Er bestaat al een Pasr-account met dit adres, maar het e-mailadres is niet bevestigd (bijvoorbeeld een review-adres zonder mailbox)."));
+        box.append(confirmOwnerButton(r.business, (x) => { bizEditing = x.business; showBizResult({ ...x, owner: "account" }); loadBusinesses(); }));
+      }
     } else if (r.owner === "none") box.append(el("p", null, r.invite ? "Nog geen eigenaar; de eigenaarslink staat open (zie Details)." : "Zonder eigenaar: jij beheert deze zaak. Maak nu de stempelkaart."));
     else box.append(el("p", null, "Opgeslagen."));
     box.classList.remove("hidden");

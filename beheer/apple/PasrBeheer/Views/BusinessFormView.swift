@@ -22,6 +22,7 @@ struct BusinessFormView: View {
     @State private var saving = false
     @State private var error: String?
     @State private var saved: BusinessSaveResponse?
+    @State private var confirmOwner = false
 
     private var current: Business? { saved?.business ?? business }
     private var hasOwner: Bool { current.map { $0.has_owner != false } ?? false }
@@ -80,6 +81,11 @@ struct BusinessFormView: View {
                                 Text(r.mailed == true ? "Eigenaarslink gemaild naar \(inv.email ?? ""). Je kunt hem ook kopiëren of delen."
                                      : "Eigenaarslink gemaakt\(r.mail_ready == false ? " (mailen staat uit: geen SMTP)" : ""). Kopieer of deel hem.")
                                 OwnerInviteBlock(invite: inv)
+                                if r.unconfirmed_account == true {
+                                    Text("Er bestaat al een Pasr-account met dit adres, maar het e-mailadres is niet bevestigd (bijvoorbeeld een review-adres zonder mailbox).")
+                                        .font(.footnote).foregroundStyle(Theme.muted)
+                                    Button { confirmOwner = true } label: { Label("Account bevestigen en eigenaar maken", systemImage: "checkmark.seal") }
+                                }
                             }
                         case "none":
                             Text(r.invite == nil ? "Zonder eigenaar: jij beheert deze zaak. Maak nu de stempelkaart." : "Nog geen eigenaar; de eigenaarslink staat open.")
@@ -107,6 +113,11 @@ struct BusinessFormView: View {
                 }
             }
             .onAppear(perform: fill)
+            .confirmationDialog("Account bevestigen en eigenaar maken?", isPresented: $confirmOwner, titleVisibility: .visible) {
+                Button("Bevestigen") { Task { await confirmAccount() } }
+            } message: {
+                Text("Bevestig het e-mailadres alleen als je zeker weet dat het klopt. Het account wordt dan eigenaar van de zaak; het wachtwoord blijft van de gebruiker.")
+            }
         }
     }
 
@@ -114,6 +125,19 @@ struct BusinessFormView: View {
         guard let b = business else { return }
         name = b.name; city = b.city ?? ""; address = b.address ?? ""; website = b.website ?? ""; email = b.email ?? ""
         cooldown = b.cooldown_minutes ?? 5; maxPerScan = b.max_per_scan ?? 10; listed = b.listed ?? true
+    }
+
+    /// Onbevestigd account met het adres van de zaak bevestigen en eigenaar maken (business_owner_confirm); nooit wachtwoorden.
+    private func confirmAccount() async {
+        guard let id = current?.id else { return }
+        saving = true
+        defer { saving = false }
+        do {
+            let r = try await session.call("business_owner_confirm", ["id": id], as: BusinessSaveResponse.self)
+            saved = r
+            error = nil
+            onSaved(r.business)
+        } catch { self.error = error.localizedDescription }
     }
 
     private func save() async {
