@@ -12,7 +12,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "app.lrvdlinden.pasrzakelijk",
-      "sha256_cert_fingerprints": ["F7:02:B1:17:E1:FD:27:CC:DA:0A:CF:BF:D4:E9:73:F0:07:55:11:46:21:5F:6C:A6:5D:01:56:61:21:BB:10:13"]
+      "sha256_cert_fingerprints": ["42:7D:E5:2C:8D:98:9C:03:03:68:18:42:D5:92:B7:56:80:D4:D9:76:FE:11:13:B1:7C:A1:CF:A6:50:D3:F1:BC"]
     }
   }
 ]
