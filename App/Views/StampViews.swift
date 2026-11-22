@@ -59,6 +59,8 @@ struct StampControls: View {
 /// Een join-link of QR-code van een zaak (pasr.nl/zakelijk/kaart/#…): de kaart bekijken en toevoegen.
 struct JoinBusinessSheet: View {
     let cardID: String
+    /// Na toevoegen of "Toon kaart" (bijv. om Kaart toevoegen ook te sluiten).
+    var onDone: (() -> Void)? = nil
     /// Lidcode uit de browser ("Bewaar in Pasr" op pasr.nl): die nemen we over, zodat de stempels meegaan.
     var memberCode: String? = nil
     @Environment(\.modelContext) private var context
@@ -104,6 +106,7 @@ struct JoinBusinessSheet: View {
                         Button {
                             NotificationRouter.pendingCardID = existing.id
                             dismiss()
+                            onDone?()
                         } label: {
                             Label("Toon kaart", systemImage: "rectangle.portrait.on.rectangle.portrait").frame(maxWidth: 260).padding(.vertical, 6)
                         }
@@ -162,6 +165,7 @@ struct JoinBusinessSheet: View {
             }
             NotificationRouter.pendingCardID = card.id
             dismiss()
+            onDone?()
         } catch {
             self.error = error.localizedDescription
         }
@@ -173,4 +177,153 @@ struct IncomingBusinessCard: Identifiable {
     let cardID: String
     var memberCode: String? = nil
     var id: String { cardID + (memberCode ?? "") }
+}
+
+/// Kaart toevoegen › Stempelkaart (sinds build 43): je maakt zelf geen stempelkaart, je kiest er een van een zaak.
+/// Lijst uit pasr_business_directory (gepubliceerde kaarten van goedgekeurde zaken die vindbaar willen zijn), zoeken op
+/// zaak, kaart en plaats. Heeft Pasr al toestemming voor je locatie, dan staat wat in de buurt is bovenaan.
+struct StampDirectoryView: View {
+    let search: String
+    var onPick: (String) -> Void
+
+    struct Entry: Identifiable, Hashable {
+        let id: String
+        let cardName: String
+        let business: String
+        let city: String
+        let logo: String?
+        let color: String
+        let stampsTotal: Int
+        let reward: String
+        let distanceKm: Double?
+
+        init?(_ d: [String: Any]) {
+            guard let id = d["card_id"] as? String else { return nil }
+            self.id = id.lowercased()
+            cardName = d["card_name"] as? String ?? ""
+            business = d["business_name"] as? String ?? cardName
+            city = d["city"] as? String ?? ""
+            logo = d["logo"] as? String
+            color = (d["color"] as? String).flatMap { $0.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil ? $0 : nil } ?? "#6A5CFF"
+            stampsTotal = (d["stamps_total"] as? NSNumber)?.intValue ?? CardDetails.defaultStamps
+            reward = d["reward"] as? String ?? ""
+            distanceKm = (d["distance_km"] as? NSNumber)?.doubleValue
+        }
+    }
+
+    @State private var entries: [Entry] = []
+    @State private var loading = true
+    @State private var failed = false
+
+    private var nearby: [Entry] { entries.filter { ($0.distanceKm ?? .infinity) <= 25 } }
+    private var rest: [Entry] {
+        let near = Set(nearby.map(\.id))
+        return entries.filter { !near.contains($0.id) }
+            .sorted { $0.business.localizedStandardCompare($1.business) == .orderedAscending }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if loading && entries.isEmpty {
+                ProgressView().frame(maxWidth: .infinity).padding(.vertical, 30)
+            } else if entries.isEmpty {
+                empty
+            } else {
+                if !nearby.isEmpty {
+                    header("In de buurt")
+                    ForEach(nearby) { row($0) }
+                }
+                if !rest.isEmpty {
+                    if !nearby.isEmpty { header("Alle stempelkaarten") }
+                    ForEach(rest) { row($0) }
+                }
+                Text("Staat jouw zaak er niet tussen? Vraag de ondernemer om Pasr Zakelijk, of scan de QR-code bij de toonbank.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 6)
+            }
+        }
+        .task(id: search) {
+            try? await Task.sleep(for: .milliseconds(search.isEmpty ? 0 : 300))
+            guard !Task.isCancelled else { return }
+            await load()
+        }
+    }
+
+    private func header(_ text: LocalizedStringKey) -> some View {
+        Text(text).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 4)
+    }
+
+    private var empty: some View {
+        VStack(spacing: 10) {
+            Image(systemName: CardKind.stamps.symbol).font(.system(size: 34, weight: .semibold)).foregroundStyle(.secondary)
+            Text(failed ? "De lijst kon niet worden geladen." : search.isEmpty ? "Nog geen stempelkaarten" : "Geen stempelkaart gevonden")
+                .font(.headline)
+            Text("Nog geen stempelkaart van jouw zaak? Vraag de ondernemer om Pasr Zakelijk.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            if failed {
+                Button("Opnieuw", systemImage: "arrow.clockwise") { Task { await load() } }.pasrGlassButton()
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+    }
+
+    private func row(_ e: Entry) -> some View {
+        Button { onPick(e.id) } label: {
+            HStack(spacing: 14) {
+                logo(e)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(e.business).font(.headline).lineLimit(1)
+                    Text([e.cardName == e.business ? nil : e.cardName, e.city.isEmpty ? nil : e.city,
+                          e.distanceKm.map { String(localized: "\($0.formatted(.number.precision(.fractionLength(0...1)))) km") }]
+                        .compactMap { $0 }.joined(separator: " · "))
+                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                    Label("\(e.stampsTotal) stempels: \(e.reward)", systemImage: "gift")
+                        .font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+            }
+            .padding(12)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(Text("Bekijk de stempelkaart en voeg hem toe"))
+    }
+
+    @ViewBuilder private func logo(_ e: Entry) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        if let b64 = e.logo, let data = Data(base64Encoded: b64), let image = Image(data: data) {
+            image.resizable().scaledToFit().padding(6)
+                .frame(width: 46, height: 46).background(Color(hex: e.color), in: shape)
+        } else {
+            Text(String(e.business.prefix(1)).uppercased())
+                .font(.title3.weight(.bold)).foregroundStyle(.white)
+                .frame(width: 46, height: 46).background(Color(hex: e.color), in: shape)
+        }
+    }
+
+    private func load() async {
+        loading = true
+        defer { loading = false }
+        var body: [String: Any] = ["p_limit": 100]
+        let q = search.trimmingCharacters(in: .whitespaces)
+        if !q.isEmpty { body["p_query"] = q }
+        // alleen als Pasr al toestemming heeft; hier vragen we er niet om
+        if let here = await NearbyStores.shared.currentLocation(maxAge: 900) {
+            body["p_lat"] = here.coordinate.latitude
+            body["p_lng"] = here.coordinate.longitude
+        }
+        do {
+            let json = try await AccountService.shared.publicRPC("pasr_business_directory", body: body)
+            entries = ((json as? [[String: Any]]) ?? []).compactMap(Entry.init)
+            failed = false
+        } catch {
+            failed = entries.isEmpty
+        }
+    }
 }

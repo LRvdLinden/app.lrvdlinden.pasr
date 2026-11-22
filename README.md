@@ -60,6 +60,10 @@ het openen van de app klantenkaarten met de notitie "Stempelkaart: X van Y, belo
 nooit twee keer bij), dus veilig met iCloud-sync, back-ups en gedeelde links. Oudere Pasr-versies tonen een
 stempelkaart als klantenkaart.
 
+Kaart toevoegen › Stempelkaart (build 43): een doorzoekbare lijst van stempelkaarten van zaken
+(`pasr_business_directory`; zaken met "Vindbaar in Pasr" aan), met "In de buurt" bovenaan als Pasr al locatietoestemming
+heeft. Tik → voorbeeld → Voeg toe aan Pasr (`pasr_business_join`). De QR-code bij de toonbank scannen werkt ook.
+
 "Bewaar in Pasr" vanuit de browser (`pasr://zakelijk?code=<lidcode>#<kaart-id>`): de app neemt de lidcode over met
 `pasr_business_claim`, zodat de stempels uit de browser meegaan (anders `pasr_business_join`).
 

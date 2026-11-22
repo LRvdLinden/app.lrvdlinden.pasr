@@ -6,8 +6,10 @@ struct AddCardView: View {
     @State private var search = ""
     @State private var path: [Choice]
     @State private var requesting = false
-    /// Wat je toevoegt: een klantenkaart of een cadeaukaart/voucher. De lijst toont alleen die soort.
+    /// Wat je toevoegt: een klantenkaart, een cadeaukaart/voucher of een stempelkaart van een zaak. De lijst toont
+    /// alleen die soort; bij Stempelkaart de lijst van zaken (pasr_business_directory).
     @State private var kind: CardKind
+    @State private var pickedStampCard: IncomingBusinessCard?
     private var catalog = StoreCatalog.shared
 
     /// `store`: meteen naar die winkel (bijvoorbeeld vanuit de melding "nieuwe winkel").
@@ -82,7 +84,8 @@ struct AddCardView: View {
     private var kindPicker: some View {
         Picker("Soort kaart", selection: $kind.animation(.snappy)) {
             Label("Klantenkaart", systemImage: "creditcard").tag(CardKind.loyalty)
-            Label("Cadeaukaart / voucher", systemImage: "gift").tag(CardKind.voucher)
+            Label("Cadeaukaart", systemImage: "gift").tag(CardKind.voucher)
+            Label("Stempelkaart", systemImage: CardKind.stamps.symbol).tag(CardKind.stamps)
         }
         .pickerStyle(.segmented)
         .labelStyle(.titleAndIcon)
@@ -140,6 +143,14 @@ struct AddCardView: View {
                 kindPicker
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
+                if kind == .stamps {
+                    scanBanner
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                    StampDirectoryView(search: search) { id in pickedStampCard = IncomingBusinessCard(cardID: id) }
+                        .padding(16)
+                        .padding(.bottom, 12)
+                } else {
                 otherKinds
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -184,13 +195,14 @@ struct AddCardView: View {
                 missingStore
                     .padding(.horizontal, 16)
                     .padding(.bottom, 28)
+                }
             }
             .background(Brand.ink.ignoresSafeArea())
             .navigationTitle("Kaart toevoegen")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .searchable(text: $search, prompt: Text("Naam van de winkel"))
+            .searchable(text: $search, prompt: kind == .stamps ? Text("Zaak of plaats") : Text("Naam van de winkel"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
@@ -204,6 +216,9 @@ struct AddCardView: View {
             }
         }
         .sheet(isPresented: $requesting) { StoreRequestSheet(name: search) }
+        .sheet(item: $pickedStampCard) { item in
+            JoinBusinessSheet(cardID: item.cardID, onDone: { dismiss() })
+        }
         .task { await catalog.refresh() }
         .fullScreenCover(isPresented: $showScan) {
             CardScanView(onAdded: { _ in dismiss() },
@@ -239,8 +254,10 @@ struct AddCardView: View {
                         .frame(width: 52, height: 52)
                         .background(.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(kind == .voucher ? "Scan je cadeaukaart" : "Scan je kaart").font(.headline)
-                        Text(kind == .voucher ? "Met saldo, vervaldatum en saldo-checker" : "Pasr herkent de winkel en zet hem er meteen in")
+                        Text(kind == .voucher ? "Scan je cadeaukaart" : kind == .stamps ? "Scan de QR-code bij de zaak" : "Scan je kaart").font(.headline)
+                        Text(kind == .voucher ? "Met saldo, vervaldatum en saldo-checker"
+                             : kind == .stamps ? "Van de toonbank of de flyer: zo meld je je aan"
+                             : "Pasr herkent de winkel en zet hem er meteen in")
                             .font(.subheadline).opacity(0.85)
                     }
                     Spacer(minLength: 0)
