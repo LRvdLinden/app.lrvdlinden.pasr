@@ -124,6 +124,7 @@ fun MainTabs(business: Business, initialTab: String? = null) {
     var selected by remember {
         mutableStateOf((initialTab ?: Prefs.string("ui.tab", "scan")).let { k -> tabs.firstOrNull { it.key == k } ?: Tab.Scan })
     }
+    NotificationPermissionAsk()
     Column(Modifier.fillMaxSize().background(Pz.bg)) {
         Box(Modifier.weight(1f)) {
             when (selected) {
@@ -211,3 +212,20 @@ fun BusinessPicker() {
     }
 }
 
+
+/** Eén keer om toestemming voor meldingen vragen (Android 13+), een paar seconden na het openen van de app. */
+@Composable
+private fun NotificationPermissionAsk() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    if (isPreview()) return
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { }
+    LaunchedEffect(Unit) {
+        if (!app.lrvdlinden.pasrzakelijk.push.Push.isAvailable(context)) return@LaunchedEffect
+        if (!app.lrvdlinden.pasrzakelijk.push.Push.needsPermission(context) || Prefs.string("push.asked") == "1") return@LaunchedEffect
+        kotlinx.coroutines.delay(4000)
+        Prefs.putString("push.asked", "1")
+        launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+}

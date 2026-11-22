@@ -5,6 +5,10 @@ plugins {
     id("app.cash.paparazzi")
 }
 
+// Push (FCM): google-services.json komt in CI uit de secret FIREBASE_GOOGLE_SERVICES_JSON en staat nooit in de repo.
+// Zonder dat bestand bouwt de app gewoon, alleen zonder push.
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+
 // Ondertekenen komt uit de omgeving (GitHub Actions), nooit uit bestanden in de repo. Elke release wordt met dezelfde
 // sleutel ondertekend, zodat een update over de vorige versie heen installeert. Zelfde opzet als Noodpakket en Bekendr.
 val keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")?.takeIf { it.isNotBlank() }?.let { file(it) }?.takeIf { it.exists() }
@@ -72,6 +76,9 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$camerax")
     implementation("androidx.camera:camera-view:$camerax")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    // Push via Firebase Cloud Messaging (zonder Analytics)
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
     // QR-codes maken (kaartlink, uitnodiging, flyer)
     implementation("com.google.zxing:core:3.5.3")
     debugImplementation("androidx.compose.ui:ui-tooling")

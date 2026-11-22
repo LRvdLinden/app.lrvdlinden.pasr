@@ -4,7 +4,7 @@ package app.lrvdlinden.pasrzakelijk.core
 // Niet met de hand wijzigen.
 
 internal object EnStrings {
-    val map: Map<String, String> = HashMap<String, String>(614).apply {
+    val map: Map<String, String> = HashMap<String, String>(618).apply {
         part0(this)
         part1(this)
         part2(this)
@@ -195,6 +195,8 @@ internal object EnStrings {
         m["Medewerkers"] = "Staff"
         m["Meer"] = "More"
         m["Meld je zaak aan"] = "Sign up your business"
+        m["Meldingen"] = "Notifications"
+        m["Meldingen over je zaak, zoals goedkeuring en medewerkers."] = "Notifications about your business, such as approval and staff."
         m["Met een account ga je akkoord met de privacyverklaring van Pasr."] = "By creating an account you agree to Pasr's privacy policy."
         m["Met je website neemt Pasr je logo en kleuren over op je stempelkaart."] = "With your website, Pasr uses your logo and colours on your stamp card."
         m["Minder"] = "Fewer"
@@ -256,11 +258,11 @@ internal object EnStrings {
         m["Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen."] = "Scan your customer's QR code, choose the number of stamps and tap Add stamps."
         m["Scan de kaart van je klant en zet een stempel. Alleen jij en je medewerkers kunnen stempels zetten."] = "Scan your customer's card and add a stamp. Only you and your staff can add stamps."
         m["Scan met je camera"] = "Scan with your camera"
-        m["Scannen"] = "Scan"
-        m["Scannen aan de kassa"] = "Scanning at the till"
     }
 
     private fun part3(m: HashMap<String, String>) {
+        m["Scannen"] = "Scan"
+        m["Scannen aan de kassa"] = "Scanning at the till"
         m["Spaar bij %@"] = "Collect stamps at %@"
         m["Spaar bij %@ met de digitale stempelkaart."] = "Collect stamps at %@ with the digital stamp card."
         m["Stel eerst een schermvergrendeling of vingerafdruk in op dit toestel."] = "First set up a screen lock or fingerprint on this device."

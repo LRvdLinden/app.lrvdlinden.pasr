@@ -10,6 +10,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.fragment.app.FragmentActivity
 import app.lrvdlinden.pasrzakelijk.core.I18n
 import app.lrvdlinden.pasrzakelijk.data.BusinessStore
+import app.lrvdlinden.pasrzakelijk.push.Push
 import app.lrvdlinden.pasrzakelijk.ui.AppShell
 import app.lrvdlinden.pasrzakelijk.ui.LocalDark
 import app.lrvdlinden.pasrzakelijk.ui.PasrTheme
@@ -19,7 +20,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         I18n.update(resources.configuration.locales[0])
-        if (savedInstanceState == null) BusinessStore.handle(intent?.data)
+        if (savedInstanceState == null) handle(intent)
         setContent {
             PasrTheme {
                 val dark = LocalDark.current
@@ -39,7 +40,15 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handle(intent)
+    }
+
+    /** Link (uitnodiging) of tik op een pushmelding (zaak kiezen, link openen). */
+    private fun handle(intent: Intent?) {
+        intent ?: return
         BusinessStore.handle(intent.data)
+        intent.getStringExtra(Push.EXTRA_URL)?.let { BusinessStore.handle(android.net.Uri.parse(it)) }
+        intent.getStringExtra(Push.EXTRA_BUSINESS)?.let { BusinessStore.select(it) }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

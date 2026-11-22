@@ -42,3 +42,6 @@ max per scan, vergrendelen met vingerafdruk of gezicht, Meer apps-kaart). Nederl
 - Ondertekenen: altijd dezelfde sleutel (versleuteld in `android/zakelijk/signing/pasrzakelijk.jks.enc`, ontgrendeld met
   de secret `PASR_APNS_KEY_P8`). Vingerafdruk: `android/zakelijk/signing/cert-sha256.txt` (staat ook in
   `website/.well-known/assetlinks.json`). Geen Play Store: geen beoordelingsvraag of "Beoordeel"-link.
+- Push: Firebase Cloud Messaging. `google-services.json` schrijft de workflow uit de secret `FIREBASE_GOOGLE_SERVICES_JSON`
+  (nooit in de repo); het token gaat als `p_push_token` mee in `pasr_device_register`. De server verstuurt (ANDROID-PASR).
+- Nieuwste APK en schermafbeeldingen: branch `android-builds`, mappen `zakelijk/` en `zakelijk-previews/`.

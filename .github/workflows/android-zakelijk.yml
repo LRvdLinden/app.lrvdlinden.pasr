@@ -45,6 +45,24 @@ jobs:
           git diff --exit-code -- app/src/main/java/app/lrvdlinden/pasrzakelijk/core/EnStrings.kt \
             || { echo "::error::EnStrings.kt is niet bijgewerkt. Draai python3 tools/make_strings.py in android/zakelijk."; exit 1; }
 
+      - name: Firebase (google-services.json uit de secret, nooit in de repo)
+        env:
+          GSJ: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
+        run: |
+          set -euo pipefail
+          rm -f app/google-services.json
+          if [ -z "$GSJ" ]; then echo "::warning::FIREBASE_GOOGLE_SERVICES_JSON ontbreekt: de APK wordt zonder push gebouwd."; exit 0; fi
+          umask 077
+          printf '%s' "$GSJ" > "$RUNNER_TEMP/gs.json"
+          # alleen gebruiken als Pasr Zakelijk (app.lrvdlinden.pasrzakelijk) als Android-app in het Firebase-project staat
+          if python3 -c "import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if any(c.get('client_info',{}).get('android_client_info',{}).get('package_name')=='app.lrvdlinden.pasrzakelijk' for c in d.get('client',[])) else 1)" "$RUNNER_TEMP/gs.json"; then
+            cp "$RUNNER_TEMP/gs.json" app/google-services.json
+            echo "::notice::Firebase staat aan (push via FCM)."
+          else
+            echo "::warning::app.lrvdlinden.pasrzakelijk staat niet in google-services.json: voeg Pasr Zakelijk als Android-app toe aan het Firebase-project. Deze APK heeft geen push."
+          fi
+          rm -f "$RUNNER_TEMP/gs.json"
+
       - name: Vaste ondertekensleutel
         env:
           SEED: ${{ secrets.PASR_APNS_KEY_P8 }}
@@ -138,9 +156,33 @@ jobs:
           echo "cert=$FP" >> "$GITHUB_OUTPUT"
           echo "APK $V ($((100 + ${{ github.run_number }}))), $(stat -c %s dist/pasr-zakelijk.apk) bytes, sha256 $(cut -d' ' -f1 dist/pasr-zakelijk.apk.sha256)"
 
-      - name: Sleutel opruimen
+      - name: Nieuwste APK naar de branch android-builds (zakelijk/), voor de website en de oplevering
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/builds"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          for i in 1 2 3 4; do
+            rm -rf "$W"; mkdir -p "$W"; cd "$W"
+            if git clone -q --depth 1 --branch android-builds "$URL" . 2>/dev/null; then :; else
+              git init -q; git checkout -q --orphan android-builds; git remote add origin "$URL"
+              printf 'Nieuwste Android-builds (APK, versie-info en previews), gemaakt door de Android-workflows. Niet mergen.\n' > README.md
+            fi
+            rm -rf zakelijk && mkdir -p zakelijk
+            cp "$GITHUB_WORKSPACE/android/zakelijk/dist/pasr-zakelijk.apk" "$GITHUB_WORKSPACE/android/zakelijk/dist/pasr-zakelijk.json" \
+               "$GITHUB_WORKSPACE"/android/zakelijk/dist/PasrZakelijk-*.apk "$GITHUB_WORKSPACE/android/zakelijk/dist/certificaat-sha256.txt" zakelijk/
+            git add -A && git commit -q -m "Android-build zakelijk (${GITHUB_SHA::7})" || { echo "Niets nieuw"; exit 0; }
+            git push -q origin HEAD:android-builds && exit 0
+            cd "$GITHUB_WORKSPACE"; sleep 5
+          done
+          echo "::warning::Kon de branch android-builds niet bijwerken"
+
+      - name: Sleutel en Firebase-bestand opruimen
         if: always()
-        run: rm -f "$RUNNER_TEMP/pz.jks"
+        run: rm -f "$RUNNER_TEMP/pz.jks" app/google-services.json
 
       - uses: actions/upload-artifact@v4
         with:
@@ -210,3 +252,23 @@ jobs:
           V=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
           (cd app/src/test/snapshots/images && zip -q -r "$RUNNER_TEMP/PasrZakelijk-Android-previews.zip" .)
           gh release upload "android-zakelijk-$V-$((100 + ${{ github.run_number }}))" "$RUNNER_TEMP/PasrZakelijk-Android-previews.zip" --clobber -R "${{ github.repository }}"
+      - name: Schermafbeeldingen naar de branch android-builds (zakelijk-previews/)
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/builds"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          for i in 1 2 3 4; do
+            rm -rf "$W"; mkdir -p "$W"; cd "$W"
+            git clone -q --depth 1 --branch android-builds "$URL" . || { cd "$GITHUB_WORKSPACE"; sleep 5; continue; }
+            rm -rf zakelijk-previews && mkdir -p zakelijk-previews
+            cp "$GITHUB_WORKSPACE"/android/zakelijk/app/src/test/snapshots/images/*.png zakelijk-previews/
+            git add -A && git commit -q -m "Android-previews zakelijk (${GITHUB_SHA::7})" || { echo "Niets nieuw"; exit 0; }
+            git push -q origin HEAD:android-builds && exit 0
+            cd "$GITHUB_WORKSPACE"; sleep 5
+          done
+          echo "::warning::Kon de previews niet in android-builds zetten"

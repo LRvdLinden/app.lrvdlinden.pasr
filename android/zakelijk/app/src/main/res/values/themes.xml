@@ -7,4 +7,5 @@
     </style>
     <color name="splash_bg">#0A0B10</color>
     <color name="ic_launcher_background">#1A1B2E</color>
+    <color name="notification_mint">#2ED3A6</color>
 </resources>

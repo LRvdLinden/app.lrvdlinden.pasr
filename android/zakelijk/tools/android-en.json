@@ -1,6 +1,21 @@
 {
-  "_dynamic": ["Scannen", "Kaarten", "Overzicht", "Medewerkers", "Instellingen", "Stempels", "Beloningen", "Nieuwe leden",
-               "stempels", "beloningen", "leden", "W", "M", "K", "J"],
+  "_dynamic": [
+    "Scannen",
+    "Kaarten",
+    "Overzicht",
+    "Medewerkers",
+    "Instellingen",
+    "Stempels",
+    "Beloningen",
+    "Nieuwe leden",
+    "stempels",
+    "beloningen",
+    "leden",
+    "W",
+    "M",
+    "K",
+    "J"
+  ],
   "_uitleg": "Engelse teksten die alleen in de Android-app staan (de rest komt uit Localizable.xcstrings van de iOS-app).",
   "%lld dagen": "%lld days",
   "%lld s": "%lld s",
@@ -23,5 +38,7 @@
   "Taal": "Language",
   "Terug": "Back",
   "Vergrendelen met vingerafdruk of gezicht": "Lock with fingerprint or face",
-  "Zet in Instellingen de vergrendeling aan; bij openen vraagt de app om je vingerafdruk, gezicht of schermvergrendeling.": "Turn on the lock in Settings; when opening, the app asks for your fingerprint, face or screen lock."
+  "Zet in Instellingen de vergrendeling aan; bij openen vraagt de app om je vingerafdruk, gezicht of schermvergrendeling.": "Turn on the lock in Settings; when opening, the app asks for your fingerprint, face or screen lock.",
+  "Meldingen": "Notifications",
+  "Meldingen over je zaak, zoals goedkeuring en medewerkers.": "Notifications about your business, such as approval and staff."
 }

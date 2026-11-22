@@ -19,6 +19,7 @@ class PasrZakelijkApplication : Application() {
         DeviceRegistry.init(this)
         Account.restore()
         BusinessStore.restore()
+        app.lrvdlinden.pasrzakelijk.push.Push.ensureChannel(this)
         BusinessApi.setDevice(resources.configuration.smallestScreenWidthDp >= 600)
     }
 

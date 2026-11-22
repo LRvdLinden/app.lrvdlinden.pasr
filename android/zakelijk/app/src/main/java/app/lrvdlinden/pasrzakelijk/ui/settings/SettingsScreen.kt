@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Timer
@@ -221,6 +222,15 @@ fun SettingsScreen(business: Business) {
                         DropdownMenu(appearanceMenu, { appearanceMenu = false }) {
                             for (a in listOf("system", "light", "dark")) DropdownMenuItem(text = { Text(appearanceLabel(a)) }, onClick = { Prefs.changeAppearance(a); appearanceMenu = false })
                         }
+                    }
+                    if (!inspection && app.lrvdlinden.pasrzakelijk.push.Push.isAvailable(context)) {
+                        GroupDivider()
+                        SettingsRow(L("Meldingen"), Icons.Filled.Notifications, Pz.coral, onClick = {
+                            runCatching {
+                                context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName))
+                            }
+                        })
                     }
                     GroupDivider()
                     SettingsRow(L("Taal"), Icons.Filled.Translate, Pz.sky, onClick = { openLanguageSettings(context) }) {
