@@ -63,7 +63,7 @@ export function stamps(card: Card): Stamps {
 /** Velden van een stempelkaart op de pas. */
 export function stampFields(card: Card) {
   const s = stamps(card);
-  const progress = s.full ? "Vol: wissel je beloning in" : `nog ${s.left} tot ${s.reward || "je beloning"}`;
+  const progress = s.full ? "Vol: wissel je beloning in" : `${s.left} tot ${s.reward || "je beloning"}`;
   return {
     header: { key: "stamps", label: "STEMPELS", value: `${s.count}/${s.total}`, changeMessage: "Stempels nu %@" },
     // tot 12 vakjes past de rij bolletjes groot op de pas; daarboven klein bij de andere velden

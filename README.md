@@ -40,9 +40,30 @@ Een gedeelde kaart is een link `https://pasr.nl/kaart/#<gegevens>`. De kaart sta
 
 Zaken maken op `pasr.nl/zakelijk/` gratis een digitale stempelkaart. Ze melden zich aan met een Pasr-account; Léon keurt ze goed in het beheer (tab Ondernemers). Daarna: kaart ontwerpen (naam, logo, kleur, 2 tot 30 stempels, beloning), QR-code/link/flyer (`/zakelijk/flyer/#<id>`), leden en stempels per dag, en de web-scanner `/zakelijk/scan/` (camera via BarcodeDetector of jsQR, stempel erbij of beloning inwisselen). Klanten sluiten aan via `https://pasr.nl/zakelijk/kaart/#<kaart-id>` (universal link naar de app, anders in de browser) met een anonieme lidcode (`PZ` + 10 tekens). Database: `pasr_businesses`, `pasr_business_cards`, `pasr_business_members`, `pasr_business_events` en de functies `pasr_business_*` in `supabase/schema.sql` (blok `-- 1.0.3 web`).
 
+In de app: de join-link of QR-code (ook via de scanner in Kaart toevoegen) opent het venster Stempelkaart; aanmelden
+geeft een kaart van de soort Stempelkaart met de lidcode als QR op de achterkant. De stand komt van
+`pasr_business_member` (bij openen van de kaart, bij omlaag trekken en als de app naar voren komt); de zaak zet de
+stempels, de app niet.
+
+## Stempelkaarten (1.0.3)
+
+Soort `stamps` (in `detailsData`: `stampsTotal`, `stampsCount`, `reward`; zakelijk ook `issuer`, `businessCardId`,
+`memberCode`). Toevoegen via Kaart toevoegen › Stempelkaart. Op de kaart de vakjes en "nog 3 tot je beloning"; onder
+de kaart een stempel erbij of eraf, en bij een volle kaart een melding en "Ingewisseld" (begint weer leeg). Ook op de
+Watch (+/-), in de widgets (stand, en een meter op het toegangsscherm), bij delen, in het account, de back-up en de
+Wallet-pas. Oudere Pasr-versies tonen hem als klantenkaart.
+
+## Verjaardagsvoordeel (1.0.3)
+
+Instellingen › Verjaardagsvoordeel: dag en maand (geen jaar), lokaal en met een account via `pasr_birthday_get` /
+`pasr_birthday_set` (tabel `pasr_birthdays`). Op de 1e van je verjaardagsmaand een melding voor kaarten waarvan de gids
+`birthday` heeft; de tekst staat ook bij de kaart onder Details › Haal meer uit je kaart.
+
 ## Gerichte pushberichten (1.0.3)
 
-Opt-in in de app ("Nieuws over mijn kaarten"): het apparaat meldt zich met `pasr_news_register` (token en alleen winkel-id's, ook zonder account). In het beheer (tab Berichten, ook in PasrBeheer en LRbeheer) kies je een doelgroep en stuur je via de functie `admin` (`news_send`) en APNs.
+Opt-in in de app (Instellingen › Meldingen › "Nieuws over mijn kaarten"): met account `pasr_push_stores`, zonder account
+`pasr_news_register` / `pasr_news_unregister` (token en alleen winkel-id's). Een melding met `kind: "news"` en `store`
+opent je kaart van die winkel, of anders Kaart toevoegen bij die winkel. In het beheer (tab Berichten, ook in PasrBeheer en LRbeheer) kies je een doelgroep en stuur je via de functie `admin` (`news_send`) en APNs.
 
 ## Website
 
@@ -54,13 +75,24 @@ Publiceren gaat via FTP met de workflow **Website** (`.github/workflows/website.
 
 ## Apple Wallet (build 17)
 
-"Voeg toe aan Apple Wallet" bij een kaart die naar voren is gehaald. De app stuurt de kaart naar de functie `supabase/functions/wallet-pass` (Supabase Edge Function), die er een `.pkpass` van maakt, ondertekent met het Pass Type ID-certificaat en direct terugstuurt. Er wordt niets bewaard. Tot 10 filialen in de buurt gaan mee als `locations`, zodat iOS de pas op het toegangsscherm toont. EAN-codes worden Code 128 (Wallet kent geen EAN).
+"Voeg toe aan Apple Wallet" bij een kaart die naar voren is gehaald. De app stuurt de kaart naar de functie `supabase/functions/wallet-pass` (Supabase Edge Function), die er een `.pkpass` van maakt, ondertekent met het Pass Type ID-certificaat en direct terugstuurt. Zonder token (Pasr tot en met 1.0.2) wordt er niets bewaard. Tot 10 filialen in de buurt gaan mee als `locations`, zodat iOS de pas op het toegangsscherm toont. EAN-codes worden Code 128 (Wallet kent geen EAN).
 
 Instellen:
 1. developer.apple.com › Identifiers › + › **Pass Type IDs** › `pass.nl.lrvdlinden.pasr`.
 2. Certificaat aanmaken met een CSR uit Sleutelhangertoegang, downloaden, dubbelklikken, en in Sleutelhangertoegang exporteren als `.p12` met wachtwoord.
 3. Repository-secrets: `PASS_CERT_P12` (`base64 -i Pasr.p12 | pbcopy`), `PASS_CERT_PASSWORD`, optioneel `PASS_TYPE_ID`.
 4. Draai Actions › Backend. De knop verschijnt in de app zodra `AccountConfig` is ingevuld.
+
+### Passen bijwerken vanaf de server (1.0.3)
+
+Stuurt de app een token mee, dan krijgt de pas `webServiceURL` (deze functie) en `authenticationToken`. De functie is
+dan ook de Apple PassKit-webservice (`/v1/devices/…/registrations/…`, `/v1/passes/…`, `/v1/log`). De kaart staat in
+`pasr_wallet_passes`, versleuteld (AES-GCM) met een sleutel uit het token; de database kent alleen een hash van het
+token. Verandert de kaart (de app stuurt `push: true` of `action: "update"`, of een zaak zet een stempel: trigger
+`pasr_wallet_business` → `action: "business"`), dan stuurt de functie een lege push via APNs (productie, met hetzelfde
+Pass Type ID-certificaat als TLS-clientcertificaat) en haalt Wallet de nieuwe pas op. Bestaande passen in Wallet geeft
+de app eenmalig opnieuw uit, zodat ook zij meedoen. Het token van een pas staat in de iCloud-sleutelhanger. Er zijn
+geen nieuwe secrets nodig; tests: `deno test supabase/functions/wallet-pass/passkit_test.ts`.
 
 ## Beoordelingsvraag (build 21)
 

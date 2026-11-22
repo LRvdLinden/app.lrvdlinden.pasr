@@ -45,7 +45,7 @@ Deno.test("stempels binnen de grenzen", () => {
   assertEquals(s.dots, "●●●●●●●○○○");
   const f = stampFields({ id: serial, name: "x", number: "", format: "qr", colorHex: "#000000", stampsTotal: 10, stampsCount: 7, reward: "1 gratis koffie" });
   assertEquals(f.header.value, "7/10");
-  assertEquals(f.auxiliary.at(-1)?.value, "nog 3 tot 1 gratis koffie");
+  assertEquals(f.auxiliary.at(-1)?.value, "3 tot 1 gratis koffie");
   assertEquals(f.primary.length, 1);
   const big = stampFields({ id: serial, name: "x", number: "", format: "qr", colorHex: "#000000", stampsTotal: 20, stampsCount: 20 });
   assertEquals(big.primary.length, 0);
