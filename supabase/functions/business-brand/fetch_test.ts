@@ -1,6 +1,6 @@
 // Het ophalen zonder internet: DNS en fetch nagebootst. Controleert SSRF (privé-IP, redirect naar binnen), limieten en
 // de keuze van logo en kleur.
-import { Image } from "npm:imagescript@1.3.0";
+import { encodePng } from "./image.ts";
 import { brand, fetchSafe } from "./fetch.ts";
 const ok = (c: unknown, m: string) => { if (!c) throw new Error(m); };
 
@@ -9,10 +9,13 @@ const DNS: Record<string, string[]> = {
   "intern.nl": ["10.0.0.5"], "gemengd.nl": ["93.184.216.36", "127.0.0.1"], "redirect.nl": ["93.184.216.37"],
   "lus.nl": ["93.184.216.38"], "groot.nl": ["93.184.216.39"],
 };
-const red = new Image(300, 300); red.fill(0xd9161eff);
-const logoPng = await red.encode();
-const wide = new Image(1200, 630); wide.fill(0x123456ff);
-const widePng = await wide.encode();
+const solid = (w: number, h: number, rgba: number[]) => {
+  const data = new Uint8Array(w * h * 4);
+  for (let i = 0; i < data.length; i += 4) data.set(rgba, i);
+  return encodePng({ width: w, height: h, data });
+};
+const logoPng = solid(300, 300, [0xd9, 0x16, 0x1e, 0xff]);
+const widePng = solid(1200, 630, [0x12, 0x34, 0x56, 0xff]);
 
 type R = { status?: number; body?: Uint8Array | string; headers?: Record<string, string> };
 const SITES: Record<string, R> = {
