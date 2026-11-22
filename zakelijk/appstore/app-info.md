@@ -9,7 +9,7 @@ Versie **1.0.0 (build 2)** · iPhone en iPad · iOS 17 of nieuwer
 | Name | Pasr Zakelijk |
 | Bundle ID | `app.lrvdlinden.pasrzakelijk` |
 | SKU | `app.lrvdlinden.pasrzakelijk` |
-| Apple ID | **TODO** — bestaat pas als Léon de app in App Store Connect aanmaakt. Vul het daarna ook in `zakelijk/apple/PasrZakelijk/Core/AppStoreID.swift` in (zie `zakelijk/README.md`). |
+| Apple ID | 6837907454 |
 | Primary Language | Dutch (Nederlands) |
 | App-talen | Nederlands en Engels |
 | Primary Category | Business (Zakelijk) — de app is een werkinstrument voor ondernemers (stempels zetten, kaarten beheren, medewerkers). |

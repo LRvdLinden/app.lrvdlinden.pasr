@@ -48,7 +48,7 @@ python3 zakelijk/appstore/source/flatten.py zakelijk/appstore
 ## Uploaden — checklist
 
 1. App aanmaken in App Store Connect (bundle `app.lrvdlinden.pasrzakelijk`, SKU gelijk), taal Nederlands; taal English (U.S.) toevoegen.
-2. **Apple ID (TODO)**: noteer het en vul het in `zakelijk/apple/PasrZakelijk/Core/AppStoreID.swift` in (zie `zakelijk/README.md`).
+2. **Apple ID**: 6837907454 (https://apps.apple.com/nl/app/pasrzakelijk/id6837907454), ingevuld in `AppStoreID.swift`.
 3. Teksten uit `metadata/nl-NL` en `metadata/en-US`, URL's, categorie Business + Productivity, copyright.
 4. Screenshots per toestel en taal; productpagina-beelden uit `marketing/`.
 5. App Privacy en Toegankelijkheid volgens `app-info.md`; leeftijd 4+.

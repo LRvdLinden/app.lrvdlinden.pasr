@@ -4,7 +4,7 @@ import Foundation
 /// Nog leeg zolang de app niet in App Store Connect staat; dan is "Beoordeel Pasr Zakelijk" in Instellingen verborgen.
 /// De beoordelingsvraag in de app (requestReview) werkt ook zonder dit ID.
 enum AppStoreID {
-    static let zakelijk = ""
+    static let zakelijk = "6837907454"
 
     /// https://apps.apple.com/nl/app/id<ID>?action=write-review, of nil zolang het ID leeg is.
     static var reviewURL: URL? {
