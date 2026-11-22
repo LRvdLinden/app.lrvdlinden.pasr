@@ -9,6 +9,7 @@
 //   users            {search?, filter?, limit?, offset?} -> {total, users:[…]}
 //   user_delete      {id}                           -> {ok}                     (account + kaarten op de server)
 //   user_resend      {id}                           -> {ok}                     (bevestigingsmail opnieuw)
+//   user_confirm     {id}                           -> {ok}                     (e-mailadres bevestigen; nooit wachtwoorden)
 //   push_register    {device_id, apns_token, platform, sandbox, app_build, prefs} -> {ok}
 //   push_unregister  {device_id}                    -> {ok}
 //   push_prefs       {device_id, prefs}             -> {ok} | 404 not_registered
@@ -35,6 +36,8 @@
 //                    -> {business, owner: account|invite|none, invite, mailed}  (meteen goedgekeurd; 409 owner_taken)
 //   business_update  {id, business:{…zelfde, weglaten = laten staan}, send?} -> {business, owner, invite, mailed}
 //   business_owner_invite {id, email?, send?}       -> {business, owner, invite, mailed} (nieuwe link; 409 has_owner)
+//   business_owner_confirm {id}                     -> {business, owner, invite} (onbevestigd account met het adres van
+//                    de zaak bevestigen en eigenaar maken; 404 not_found, 409 already_confirmed/has_owner/owner_taken)
 //   business_card_save {business_id, card:{id?, name, reward, stamps_total, color, text_color?, logo?, published?}} -> {card}
 //   business_card_publish {id, published}           -> {card}                 (409 not_approved)
 //   business_card_delete {id}                       -> {ok, members}
@@ -392,6 +395,17 @@ Deno.serve(async (req) => {
         await audit("user_resend", ipHash);
         return json({ ok: true });
       }
+      case "user_confirm": {
+        // E-mailadres bevestigen (bijv. een review-adres dat geen mail kan ontvangen). Alleen email_confirm, nooit wachtwoorden.
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.auth.admin.getUserById(body.id);
+        if (error || !data?.user) return json({ error: "not_found" }, 404);
+        if (data.user.email_confirmed_at) return json({ error: "already_confirmed" }, 409);
+        const { error: ue } = await db.auth.admin.updateUserById(body.id, { email_confirm: true });
+        if (ue) return json({ error: "update_failed" }, 502);
+        await audit("user_confirm", ipHash, String(body.id));
+        return json({ ok: true });
+      }
       case "push_register": {
         const v = cleanRegister(body);
         if (!v.ok) return json({ error: v.error }, 400);
@@ -657,6 +671,27 @@ Deno.serve(async (req) => {
         const d = data as Record<string, unknown>;
         await audit("business_owner_invite", ipHash, `${body.id} owner=${d.owner}`);
         return json(await withMail(d, body.send !== false));
+      }
+      case "business_owner_confirm": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data: biz, error: be } = await db.from("pasr_businesses").select("id, owner, email").eq("id", body.id).maybeSingle();
+        if (be) throw new Error(be.message);
+        if (!biz) return json({ error: "not_found" }, 404);
+        if (biz.owner) return json({ error: "has_owner" }, 409);
+        const { data: uid } = await db.rpc("pasr_admin_user_id", { p_email: String(biz.email ?? "") });
+        if (typeof uid !== "string") return json({ error: "not_found" }, 404);
+        const { data: u, error: ge } = await db.auth.admin.getUserById(uid);
+        if (ge || !u?.user) return json({ error: "not_found" }, 404);
+        if (!u.user.email_confirmed_at) {
+          const { error: ue } = await db.auth.admin.updateUserById(uid, { email_confirm: true });
+          if (ue) return json({ error: "update_failed" }, 502);
+          await audit("user_confirm", ipHash, uid);
+        }
+        const { data, error } = await db.rpc("pasr_admin_owner_invite", { p_business: body.id, p_email: null });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        await db.rpc("pasr_admin_event", { p_business: body.id, p_card: null, p_note: "E-mailadres van de eigenaar bevestigd door het beheer" });
+        await audit("business_owner_confirm", ipHash, String(body.id));
+        return json({ ...(data as Record<string, unknown>), mailed: false });
       }
       case "business_card_save": {
         const v = cleanCardInput(body);

@@ -3095,7 +3095,9 @@ begin
   values (b.id, 'owner', '', mail, public.pasr_business_invite_code(), now() + interval '30 days') returning * into s;
   update public.pasr_businesses set email = mail, updated_at = now() where id = b.id and email is distinct from mail;
   perform public.pasr_admin_event(b.id, null, 'Eigenaarsuitnodiging gemaakt (30 dagen geldig)');
-  return jsonb_build_object('owner', 'invite', 'invite', public.pasr_admin_owner_invite_json(b.id));
+  -- bestaat er al een onbevestigd account met dit adres, dan kan het beheer dat bevestigen en eigenaar maken
+  return jsonb_build_object('owner', 'invite', 'invite', public.pasr_admin_owner_invite_json(b.id),
+    'unconfirmed_account', exists (select 1 from auth.users where lower(email) = mail and email_confirmed_at is null));
 end $$;
 
 -- ---- beheer: zaak aanmaken of bewerken ----
@@ -3410,6 +3412,7 @@ language sql stable security definer set search_path = public as $$
     'owner_email', (select u.email from auth.users u where u.id = b.owner),
     'owner_invite', public.pasr_admin_owner_invite_json(b.id),
     'created_by', b.created_by,
+    'unconfirmed_account', b.owner is null and b.email <> '' and exists (select 1 from auth.users u where lower(u.email) = lower(b.email) and u.email_confirmed_at is null),
     'staff_count', (select count(*) from public.pasr_business_staff s where s.business_id = b.id and s.role = 'staff'
                     and s.revoked_at is null and s.user_id is not null),
     'last_event_at', (select max(at) from public.pasr_business_events e where e.business_id = b.id and e.kind <> 'admin'));
@@ -3435,3 +3438,5 @@ grant execute on function public.pasr_admin_business_save(jsonb), public.pasr_ad
   public.pasr_admin_test_member_create(uuid), public.pasr_admin_test_member(uuid, text),
   public.pasr_admin_businesses(), public.pasr_admin_business_detail(uuid, int, int), public.pasr_admin_business_status(uuid, text),
   public.pasr_admin_business_settings(uuid, jsonb), public.pasr_admin_business_staff_revoke(uuid) to service_role;
+-- beheer: e-mailadres bevestigen (user_confirm, business_owner_confirm) loggen via de functie admin
+grant execute on function public.pasr_admin_event(uuid, uuid, text), public.pasr_admin_user_id(text) to service_role;
