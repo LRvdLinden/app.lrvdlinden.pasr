@@ -74,6 +74,8 @@ struct SettingsView: View {
 
                 RemindersSettingsSection()
 
+                BirthdaySettingsSection()
+
                 Section {
                     Picker(selection: $appearance) {
                         Text("Automatisch").tag(AppAppearance.auto.rawValue)
@@ -301,5 +303,64 @@ extension Bundle {
         let version = infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
+    }
+}
+
+/// Instellingen › Verjaardag: optioneel, alleen dag en maand. Voor het verjaardagsvoordeel van je kaarten.
+struct BirthdaySettingsSection: View {
+    @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
+    @State private var enabled = Birthday.value != nil
+    @State private var day = Birthday.value?.day ?? 1
+    @State private var month = Birthday.value?.month ?? 1
+
+    private static let months: [String] = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "nl_NL")
+        return f.standaloneMonthSymbols ?? f.monthSymbols ?? []
+    }()
+
+    private var maxDay: Int { [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][max(0, min(11, month - 1))] }
+
+    var body: some View {
+        let perks = Birthday.cardsWithPerk(cards)
+        Section {
+            Toggle(isOn: Binding(get: { enabled }, set: { on in
+                enabled = on
+                save()
+            }).animation()) {
+                SettingsLabel("Verjaardag", symbol: "birthday.cake.fill", color: Brand.coral)
+            }
+            if enabled {
+                Picker("Dag", selection: Binding(get: { day }, set: { day = $0; save() })) {
+                    ForEach(1...maxDay, id: \.self) { Text("\($0)").tag($0) }
+                }
+                Picker("Maand", selection: Binding(get: { month }, set: { new in
+                    month = new
+                    day = min(day, maxDay)
+                    save()
+                })) {
+                    ForEach(1...12, id: \.self) { m in
+                        Text(m - 1 < Self.months.count ? Self.months[m - 1] : "\(m)").tag(m)
+                    }
+                }
+            }
+        } header: {
+            Text("Verjaardagsvoordeel")
+        } footer: {
+            if enabled && !perks.isEmpty {
+                Text("In je verjaardagsmaand krijg je een seintje voor \(Self.names(perks)). Alleen dag en maand, geen jaar; met een Pasr-account staat hij ook in je account.")
+            } else {
+                Text("Veel winkels geven iets extra in je verjaardagsmaand. Vul je verjaardag in (alleen dag en maand, geen jaar) en Pasr herinnert je eraan voor de kaarten met verjaardagsvoordeel. Met een Pasr-account staat hij ook in je account.")
+            }
+        }
+    }
+
+    private static func names(_ perks: [(card: Card, perk: String)]) -> String {
+        let names = perks.prefix(3).map { $0.card.storeName }.joined(separator: ", ")
+        return perks.count > 3 ? names + String(localized: " en meer") : names
+    }
+
+    private func save() {
+        Birthday.set(enabled ? Birthday.Value(day: min(day, maxDay), month: month) : nil, cards: cards)
     }
 }

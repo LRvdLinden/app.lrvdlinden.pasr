@@ -203,6 +203,11 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     @MainActor static var pendingStoreID: String? {
         didSet { NotificationCenter.default.post(name: .pasrOpenStore, object: nil) }
     }
+    /// Pushmelding "Nieuws over mijn kaarten" (kind "news"): RootView opent je kaart van die winkel, of anders
+    /// Kaart toevoegen bij die winkel; zonder winkel (alleen een https-link) die link.
+    @MainActor static var pendingNews: (store: String?, url: URL?)? {
+        didSet { if pendingNews != nil { NotificationCenter.default.post(name: .pasrOpenNews, object: nil) } }
+    }
 
     func activate() { UNUserNotificationCenter.current().delegate = self }
 
@@ -212,10 +217,15 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
         let cardID = (info["cardID"] as? String).flatMap(UUID.init)
-        let storeID = info["kind"] as? String == "store" ? info["store"] as? String : nil
+        let kind = info["kind"] as? String
+        let storeID = kind == "store" ? info["store"] as? String : nil
+        let newsStore = kind == "news" ? (info["store"] as? String).flatMap { $0.isEmpty ? nil : $0 } : nil
+        let newsURL = kind == "news" ? (info["url"] as? String).flatMap(URL.init(string:)).flatMap { $0.scheme == "https" ? $0 : nil } : nil
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
-                if let cardID { Self.pendingCardID = cardID } else if let storeID { Self.pendingStoreID = storeID }
+                if let cardID { Self.pendingCardID = cardID }
+                else if let storeID { Self.pendingStoreID = storeID }
+                else if kind == "news" { Self.pendingNews = (newsStore, newsURL) }
             }
             completionHandler()
         }
@@ -231,6 +241,9 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
 extension Notification.Name {
     static let pasrOpenCard = Notification.Name("pasrOpenCard")
     static let pasrOpenStore = Notification.Name("pasrOpenStore")
+    static let pasrOpenNews = Notification.Name("pasrOpenNews")
+    /// Een Pasr-link die in de app zelf is gescand (object: URL); RootView behandelt hem als een universal link.
+    static let pasrOpenLink = Notification.Name("pasrOpenLink")
     /// Sluit open vensters (voor een binnenkomende link).
     static let pasrCloseSheets = Notification.Name("pasrCloseSheets")
 }
@@ -271,6 +284,7 @@ struct RemindersSettingsSection: View {
     @AppStorage(Reminders.channelKey) private var channel = Reminders.Channel.push.rawValue
     @AppStorage(Reminders.nearbyKey) private var nearby = false
     @AppStorage(UserPush.newStoresKey) private var newStores = false
+    @AppStorage(StorePush.key) private var cardNews = false
     @State private var note: String?
     @State private var savingChannel = false
     private var stores: NearbyStores { .shared }
@@ -390,6 +404,19 @@ struct RemindersSettingsSection: View {
                 })) {
                     SettingsLabel("Nieuwe winkels in Pasr", symbol: "storefront.fill", color: Brand.mint)
                 }
+                Toggle(isOn: Binding(get: { cardNews }, set: { on in
+                    cardNews = on
+                    Task {
+                        if let problem = await StorePush.setEnabled(on, cards: cards) {
+                            cardNews = StorePush.isEnabled
+                            note = problem
+                        } else {
+                            note = nil
+                        }
+                    }
+                })) {
+                    SettingsLabel("Nieuws over mijn kaarten", symbol: "megaphone.fill", color: .orange)
+                }
             }
         } header: {
             Text("Meldingen")
@@ -414,7 +441,11 @@ struct RemindersSettingsSection: View {
     }
 
     private var footer: String {
-        remindersFooter + (remindersFooter.isEmpty ? "" : "\n\n") + nearbyFooter
+        var text = remindersFooter + (remindersFooter.isEmpty ? "" : "\n\n") + nearbyFooter
+        if account.isSignedIn {
+            text += "\n\n" + String(localized: "Met Nieuws over mijn kaarten krijg je af en toe een bericht van Pasr over winkels waarvan je een kaart hebt, zoals een nieuwe actie. Pasr weet daarvoor alleen welke winkels in je Pasr staan, geen kaartnummers.")
+        }
+        return text
     }
 
     private var nearbyFooter: String {

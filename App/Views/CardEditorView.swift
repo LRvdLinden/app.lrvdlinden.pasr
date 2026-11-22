@@ -93,6 +93,14 @@ struct CardEditorView: View {
                 d.period = details.periodValue.rawValue
             case .code:
                 d.codeAsBarcode = details.codeAsBarcode == true ? true : nil
+            case .stamps:
+                d.stampsTotal = details.stampsTotalValue
+                d.stampsCount = details.stampsCountValue
+                d.reward = details.reward?.trimmingCharacters(in: .whitespaces).nilIfEmpty
+                // zakelijke kaart: de koppeling met de zaak blijft staan
+                d.issuer = details.issuer
+                d.businessCardId = details.businessCardId
+                d.memberCode = details.memberCode
             default: break
             }
             let caps = Array(captions.prefix(notePhotos.count)).map { $0.trimmingCharacters(in: .whitespaces) }
@@ -108,7 +116,7 @@ struct CardEditorView: View {
 
         var appearance: CardAppearance {
             var a = CardAppearance(storeName: storeName,
-                           number: number.isEmpty ? (kind == .subscription ? "" : kind == .code ? "CODE" : "0000000000000") : number,
+                           number: number.isEmpty ? (kind == .subscription || kind == .stamps ? "" : kind == .code ? "CODE" : "0000000000000") : number,
                            format: format,
                            colorHex: colorHex, kind: kind, isFavorite: isFavorite, logoData: logoData,
                            balance: kind == .voucher ? balance : nil, currencyCode: currencyCode,
@@ -193,6 +201,7 @@ struct CardEditorView: View {
         d.kind = kind
         d.number = number ?? ""
         if let format { d.format = format } else if kind == .ticket { d.format = .qr }
+        if kind == .stamps { d.details.stampsTotal = CardDetails.defaultStamps; d.details.stampsCount = 0 }
         d.colorHex = Brand.palette.randomElement() ?? "#6A5CFF"
         _draft = State(initialValue: d)
     }
@@ -201,7 +210,7 @@ struct CardEditorView: View {
 
     private var codeIsValid: Bool {
         let value = draft.number.trimmingCharacters(in: .whitespaces)
-        if value.isEmpty { return draft.kind == .subscription }   // een abonnement mag zonder lidnummer
+        if value.isEmpty { return draft.kind == .subscription || draft.kind == .stamps }   // abonnement en stempelkaart mogen zonder nummer
         if draft.codeAsText { return true }
         if draft.format.isLinear { return (try? BarcodeEncoder.encode(value, as: draft.format)) != nil }
         return true
@@ -265,7 +274,7 @@ struct CardEditorView: View {
             .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
 
             codeSection
-                .disabled(existing?.isTemporary == true)
+                .disabled(existing?.isTemporary == true || draft.details.isBusiness)
             if showsPlacePicker { placeSection }
             cardSection
             switch draft.kind {
@@ -280,6 +289,7 @@ struct CardEditorView: View {
             case .code: discountSection
             case .ticket: ticketSection
             case .subscription: subscriptionSection
+            case .stamps: stampsSection
             case .loyalty: ProgramGuideSection(guide: RemoteStores.guide(for: draft.templateID, storeName: draft.storeName))
             }
             logoSection
@@ -320,7 +330,7 @@ struct CardEditorView: View {
         .onAppear {
             // New card from a store: open the scanner straight away, like the old card apps did.
             if existing == nil && draft.number.isEmpty && ScannerView.isAvailable,
-               draft.kind != .code && draft.kind != .subscription { showScanner = true }
+               draft.kind != .code && draft.kind != .subscription && draft.kind != .stamps { showScanner = true }
         }
         #endif
         .task {
@@ -369,7 +379,8 @@ struct CardEditorView: View {
 
     private var codeSection: some View {
         Section {
-            TextField(draft.kind == .subscription ? String(localized: "Lidnummer (optioneel)") : draft.kind.codeLabel,
+            TextField(draft.kind == .subscription ? String(localized: "Lidnummer (optioneel)")
+                      : draft.kind == .stamps ? String(localized: "Kaartnummer (optioneel)") : draft.kind.codeLabel,
                       text: $draft.number)
                 .font(.system(.body, design: .monospaced))
                 .autocorrectionDisabled()
@@ -436,6 +447,7 @@ struct CardEditorView: View {
                 Label("Soort", systemImage: draft.kind.symbol)
             }
             .pickerStyle(.menu)
+            .disabled(draft.details.isBusiness)
 
             ScrollView(.horizontal) {
                 HStack(spacing: 10) {
@@ -574,6 +586,37 @@ struct CardEditorView: View {
             Text("Abonnement")
         } footer: {
             Text("Met een verlengdatum krijg je twee dagen ervoor een herinnering, zodat je op tijd kunt opzeggen.")
+        }
+    }
+
+    /// Stempelkaart: aantal vakjes, de beloning en hoeveel stempels er al op staan. Een zakelijke kaart volgt de zaak.
+    private var stampsSection: some View {
+        Section {
+            if draft.details.isBusiness {
+                LabeledContent("Stempels", value: "\(draft.details.stampsCountValue) van \(draft.details.stampsTotalValue)")
+                if let reward = draft.details.reward, !reward.isEmpty { LabeledContent("Beloning", value: reward) }
+            } else {
+                Stepper(value: Binding(get: { draft.details.stampsTotalValue }, set: { new in
+                    draft.details.stampsTotal = new
+                    draft.details.stampsCount = min(draft.details.stampsCountValue, new)
+                }), in: CardDetails.stampsRange) {
+                    LabeledContent("Vakjes", value: "\(draft.details.stampsTotalValue)")
+                }
+                TextField("Beloning, bijv. 1 gratis koffie", text: Binding(get: { draft.details.reward ?? "" },
+                                                                         set: { draft.details.reward = String($0.prefix(60)) }))
+                Stepper(value: Binding(get: { draft.details.stampsCountValue }, set: { draft.details.stampsCount = $0 }),
+                        in: 0...draft.details.stampsTotalValue) {
+                    LabeledContent("Stempels nu", value: "\(draft.details.stampsCountValue)")
+                }
+            }
+        } header: {
+            Text("Stempelkaart")
+        } footer: {
+            if draft.details.isBusiness {
+                Text("Deze kaart komt van de zaak zelf. De zaak zet de stempels; Pasr haalt de stand op als je de kaart opent of omlaag trekt.")
+            } else {
+                Text("Tik op de kaart op + bij elke aankoop. Is hij vol, dan krijg je een melding; na het inwisselen begint hij weer leeg.")
+            }
         }
     }
 

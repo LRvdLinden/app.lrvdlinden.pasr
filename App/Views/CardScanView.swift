@@ -114,6 +114,13 @@ struct CardScanView: View {
     }
 
     private func handle(_ scan: CardScanner.Scan) {
+        // QR-code van een zaak (stempelkaart) of een gedeelde kaart: die link openen in Pasr
+        if let url = URL(string: scan.payload.trimmingCharacters(in: .whitespaces)),
+           BusinessLink.cardID(from: url) != nil || CardShare.decode(url) != nil {
+            dismiss()
+            NotificationCenter.default.post(name: .pasrOpenLink, object: url)
+            return
+        }
         let compact = scan.payload.replacingOccurrences(of: " ", with: "")
         if let existing = cards.first(where: { $0.number.replacingOccurrences(of: " ", with: "") == compact }) {
             withAnimation(.snappy) { duplicate = existing }

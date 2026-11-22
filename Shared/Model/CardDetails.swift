@@ -16,6 +16,18 @@ struct CardDetails: Codable, Equatable, Hashable {
     var codeAsBarcode: Bool?
     /// Onderschriften bij foto 1 tot en met 4.
     var captions: [String]?
+    // Stempelkaart (sinds 1.0.3)
+    /// Aantal vakjes (2 tot 30).
+    var stampsTotal: Int?
+    /// Gezette stempels (0 tot en met stampsTotal).
+    var stampsCount: Int?
+    /// De beloning, bijv. "1 gratis koffie".
+    var reward: String?
+    /// "business" als de kaart van een ondernemer komt (Pasr voor ondernemers); de stand komt dan van de server.
+    var issuer: String?
+    /// Kaart van de zaak (pasr_business_cards.id) en de code die de zaak scant (pasr_business_members.member_code).
+    var businessCardId: String?
+    var memberCode: String?
 
     var isEmpty: Bool { self == CardDetails() }
 
@@ -54,6 +66,12 @@ struct CardDetails: Codable, Equatable, Hashable {
         d["period"] = period
         d["codeAsBarcode"] = codeAsBarcode
         d["captions"] = captions
+        d["stampsTotal"] = stampsTotal
+        d["stampsCount"] = stampsCount
+        d["reward"] = reward
+        d["issuer"] = issuer
+        d["businessCardId"] = businessCardId
+        d["memberCode"] = memberCode
         return d
     }
 
@@ -74,6 +92,12 @@ struct CardDetails: Codable, Equatable, Hashable {
         period = d["period"] as? String
         codeAsBarcode = d["codeAsBarcode"] as? Bool
         captions = (d["captions"] as? [String]).map { Array($0.prefix(Card.maxNotePhotos)) }
+        stampsTotal = (d["stampsTotal"] as? NSNumber)?.intValue
+        stampsCount = (d["stampsCount"] as? NSNumber)?.intValue
+        reward = d["reward"] as? String
+        issuer = d["issuer"] as? String
+        businessCardId = d["businessCardId"] as? String
+        memberCode = d["memberCode"] as? String
     }
 }
 
@@ -114,16 +138,18 @@ struct StoreGuide: Codable, Hashable {
     var earn: String?
     var perks: [String]?
     var programURL: String?
+    /// Verjaardagsvoordeel (sinds 1.0.3), bijv. "Gratis taartje in je verjaardagsmaand".
+    var birthday: String?
 
     enum CodingKeys: String, CodingKey {
-        case validity, online, store, how, shipping, checked, earn, perks
+        case validity, online, store, how, shipping, checked, earn, perks, birthday
         case termsURL = "terms_url"
         case programURL = "program_url"
     }
 
     var isEmpty: Bool {
         validity == nil && online == nil && store == nil && how == nil && shipping == nil && terms == nil
-            && earn == nil && (perks ?? []).isEmpty && program == nil
+            && earn == nil && (perks ?? []).isEmpty && program == nil && birthday == nil
     }
 
     /// Heeft iets voor een cadeaukaart (geldigheid, waar, uitleg, verzendkosten, voorwaarden).
@@ -132,7 +158,7 @@ struct StoreGuide: Codable, Hashable {
     }
 
     /// Heeft iets voor een klantenkaart (sparen, voordelen, programmapagina).
-    var hasProgramInfo: Bool { earn != nil || !(perks ?? []).isEmpty || program != nil }
+    var hasProgramInfo: Bool { earn != nil || !(perks ?? []).isEmpty || program != nil || birthday != nil }
 
     var program: URL? {
         guard let programURL, let url = URL(string: programURL), url.scheme == "https" else { return nil }
@@ -165,6 +191,7 @@ struct StoreGuide: Codable, Hashable {
         }
         if perks?.isEmpty == true { perks = nil }
         programURL = dict["program_url"] as? String
+        birthday = (dict["birthday"] as? String).flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : String($0.prefix(160)) }
         if isEmpty { return nil }
     }
 

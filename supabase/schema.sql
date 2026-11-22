@@ -1524,3 +1524,116 @@ begin
 exception when others then
   raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
 end $$;
+
+-- ===============================================================================================================
+-- 1.0.3 app
+-- ===============================================================================================================
+
+-- Wallet-passen bijwerken vanaf de server (Apple PassKit-webservice, functie wallet-pass). Per pas staan de gegevens
+-- hier versleuteld (AES-GCM) met een sleutel uit het authenticationToken van de pas; dat token kent alleen het
+-- apparaat met de pas (en de iCloud-sleutelhanger van de eigenaar). Hier staat alleen een hash ervan, zodat de server
+-- een verzoek van Wallet kan controleren. member_code alleen bij een zakelijke stempelkaart (om de pas bij een nieuwe
+-- stempel bij te werken); dat is geen persoonsgegeven.
+create table if not exists public.pasr_wallet_passes (
+  serial text primary key check (serial ~ '^[0-9A-Fa-f-]{36}$'),
+  token_hash text not null check (token_hash ~ '^[0-9a-f]{64}$'),
+  data text not null check (char_length(data) <= 1400000),
+  member_code text check (member_code is null or char_length(member_code) <= 120),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists pasr_wallet_passes_member on public.pasr_wallet_passes (member_code) where member_code is not null;
+-- Welk apparaat (Wallet) welke pas heeft, met het push-token dat Apple daarvoor gaf.
+create table if not exists public.pasr_wallet_registrations (
+  device text not null check (char_length(device) between 1 and 128),
+  serial text not null references public.pasr_wallet_passes (serial) on delete cascade,
+  push_token text not null check (char_length(push_token) between 16 and 200),
+  created_at timestamptz not null default now(),
+  primary key (device, serial)
+);
+create index if not exists pasr_wallet_registrations_serial on public.pasr_wallet_registrations (serial);
+alter table public.pasr_wallet_passes enable row level security;
+alter table public.pasr_wallet_registrations enable row level security;
+revoke all on public.pasr_wallet_passes, public.pasr_wallet_registrations from anon, authenticated;
+
+-- Nieuwe stand van een zakelijke stempelkaart: seintje aan de functie wallet-pass, die Apple vraagt de passen in
+-- Wallet bij te werken. Alleen als er een pas van die klantcode is. Via pg_net: houdt de stempel nooit op.
+create or replace function public.pasr_wallet_business_kick() returns trigger
+language plpgsql security definer set search_path = public, extensions as $$
+declare u text; s text;
+begin
+  if new.stamps_count is not distinct from old.stamps_count then return new; end if;
+  if not exists (select 1 from public.pasr_wallet_passes where member_code = new.member_code) then return new; end if;
+  select admin_url into u from public.pasr_admin_config where id = 1;
+  select hook_secret into s from public.pasr_secret where id = 1;
+  if coalesce(u, '') = '' or s is null then return new; end if;
+  u := regexp_replace(u, '/admin/?$', '/wallet-pass');
+  perform net.http_post(url := u, body := jsonb_build_object('action', 'business', 'code', new.member_code),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-pasr-hook', s), timeout_milliseconds := 30000);
+  return new;
+exception when others then
+  raise warning 'pasr_wallet_business_kick: %', sqlerrm;
+  return new;
+end $$;
+revoke all on function public.pasr_wallet_business_kick() from public, anon, authenticated;
+-- De tabel pasr_business_members maakt het blok "1.0.3 web"; bestaat hij (nog) niet, dan volgt de trigger bij de
+-- volgende keer dat dit schema draait.
+do $$
+begin
+  if to_regclass('public.pasr_business_members') is not null then
+    drop trigger if exists pasr_wallet_business on public.pasr_business_members;
+    create trigger pasr_wallet_business after update of stamps_count on public.pasr_business_members
+      for each row execute function public.pasr_wallet_business_kick();
+  end if;
+exception when others then
+  raise notice 'pasr_wallet_business trigger: %', sqlerrm;
+end $$;
+
+-- Opruimen: passen die meer dan 400 dagen niet zijn bijgewerkt en op geen enkel apparaat meer staan.
+do $$
+begin
+  perform cron.unschedule(jobid) from cron.job where jobname = 'pasr-wallet-cleanup';
+  perform cron.schedule('pasr-wallet-cleanup', '35 3 * * *',
+    $q$delete from public.pasr_wallet_passes p where p.updated_at < now() - interval '400 days'
+       and not exists (select 1 from public.pasr_wallet_registrations r where r.serial = p.serial)$q$);
+exception when others then
+  raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
+end $$;
+
+-- Verjaardag (alleen dag en maand) voor het verjaardagsvoordeel. Optioneel; wissen laat een lege rij met de tijd
+-- staan, zodat je andere apparaten ook zien dat hij weg is.
+create table if not exists public.pasr_birthdays (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  day smallint check (day between 1 and 31),
+  month smallint check (month between 1 and 12),
+  updated_at timestamptz not null default now(),
+  check ((day is null) = (month is null))
+);
+alter table public.pasr_birthdays enable row level security;
+revoke all on public.pasr_birthdays from anon, authenticated;
+
+create or replace function public.pasr_birthday_get() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce((select jsonb_build_object('day', b.day, 'month', b.month, 'updated_at', b.updated_at)
+                   from public.pasr_birthdays b where b.user_id = auth.uid()), '{}'::jsonb);
+$$;
+
+create or replace function public.pasr_birthday_set(p_day int, p_month int) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); ts timestamptz := now();
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  if (p_day is null) <> (p_month is null) then raise exception 'bad_birthday' using errcode = '22023'; end if;
+  if p_day is not null then
+    begin
+      perform make_date(2000, p_month, p_day);   -- 2000 is een schrikkeljaar: 29 februari mag
+    exception when others then
+      raise exception 'bad_birthday' using errcode = '22023';
+    end;
+  end if;
+  insert into public.pasr_birthdays as b (user_id, day, month, updated_at) values (uid, p_day, p_month, ts)
+  on conflict (user_id) do update set day = excluded.day, month = excluded.month, updated_at = ts;
+  return jsonb_build_object('ok', true, 'updated_at', ts);
+end $$;
+revoke all on function public.pasr_birthday_get(), public.pasr_birthday_set(int, int) from public, anon;
+grant execute on function public.pasr_birthday_get(), public.pasr_birthday_set(int, int) to authenticated;

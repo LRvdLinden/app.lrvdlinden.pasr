@@ -155,6 +155,7 @@ struct WalletView: View {
             await CardSync.sync(in: context)
             await GroupService.shared.sync(in: context)
         }
+        await BusinessCards.refreshAll(in: context, force: true)
     }
 
     private func openRequestedCard(_ id: UUID?) {
@@ -245,13 +246,18 @@ struct WalletView: View {
                         actionButton("square.and.arrow.up", label: "Deel") { share(card) }
                     }
                     // tijdelijk gedeelde kaarten mogen niet in Apple Wallet
-                    if WalletPass.isAvailable, !card.number.isEmpty, !card.isTemporary {
+                    if WalletPass.isAvailable, WalletPass.canMakePass(card) {
                         WalletActionButton(card: card).id(card.id)
                     }
                     // details (gids, foto's, ticket, abonnement) en verwijderen, zoals de achterkant van een pas in Wallet
                     actionButton("info.circle", label: "Details") { sheet = .info(card) }
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                if card.kind == .stamps {
+                    StampControls(card: card, width: width)
+                        .transition(.opacity)
+                }
 
                 if let previous = previousUse(card) {
                     Text("Vorige keer \(previous.date.formatted(.relative(presentation: .named)))\(previous.place.map { " · \($0)" } ?? "")")
@@ -502,12 +508,12 @@ enum ScreenBrightness {
 
 /// Filter van de kaartenstapel.
 enum WalletFilter: Hashable {
-    case all, favorites, loyalty, voucher, code, ticket, subscription, personal, temporary
+    case all, favorites, loyalty, voucher, stamps, code, ticket, subscription, personal, temporary
     case group(UUID)
 
     static let basic: [WalletFilter] = [.all, .favorites, .loyalty, .voucher]
     /// Alleen in het menu als je zo'n pas hebt.
-    static let extra: [WalletFilter] = [.code, .ticket, .subscription]
+    static let extra: [WalletFilter] = [.stamps, .code, .ticket, .subscription]
 
     init?(rawValue: String) {
         switch rawValue {
@@ -516,6 +522,7 @@ enum WalletFilter: Hashable {
         case "loyalty": self = .loyalty
         case "voucher": self = .voucher
         case "code": self = .code
+        case "stamps": self = .stamps
         case "ticket": self = .ticket
         case "subscription": self = .subscription
         case "personal": self = .personal
@@ -533,6 +540,7 @@ enum WalletFilter: Hashable {
         case .loyalty: "loyalty"
         case .voucher: "voucher"
         case .code: "code"
+        case .stamps: "stamps"
         case .ticket: "ticket"
         case .subscription: "subscription"
         case .personal: "personal"
@@ -548,6 +556,7 @@ enum WalletFilter: Hashable {
         case .loyalty: String(localized: "Klantenkaarten")
         case .voucher: String(localized: "Cadeaukaarten en vouchers")
         case .code: String(localized: "Kortingscodes")
+        case .stamps: String(localized: "Stempelkaarten")
         case .ticket: String(localized: "Tickets")
         case .subscription: String(localized: "Abonnementen")
         case .personal: String(localized: "Alleen privé")
@@ -568,6 +577,7 @@ enum WalletFilter: Hashable {
         case .loyalty: "creditcard"
         case .voucher: "giftcard"
         case .code: CardKind.code.symbol
+        case .stamps: CardKind.stamps.symbol
         case .ticket: CardKind.ticket.symbol
         case .subscription: CardKind.subscription.symbol
         case .personal: "person.fill"
@@ -583,6 +593,7 @@ enum WalletFilter: Hashable {
         case .loyalty: card.kind == .loyalty
         case .voucher: card.kind == .voucher
         case .code: card.kind == .code
+        case .stamps: card.kind == .stamps
         case .ticket: card.kind == .ticket
         case .subscription: card.kind == .subscription
         case .personal: card.groupID == nil && !card.isTemporary

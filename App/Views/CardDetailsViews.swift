@@ -88,6 +88,20 @@ struct ProgramGuideSection: View {
                     }
                     .accessibilityElement(children: .combine)
                 }
+                if let birthday = guide.birthday {
+                    HStack(alignment: .top, spacing: 12) {
+                        guideIcon("birthday.cake.fill", Brand.coral)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Verjaardag").font(.footnote).foregroundStyle(.secondary)
+                            Text(birthday)
+                            if Birthday.value == nil {
+                                Text("Zet je verjaardag in Instellingen › Verjaardag, dan krijg je in je verjaardagsmaand een seintje.")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                }
                 ForEach(guide.perks ?? [], id: \.self) { perk in
                     HStack(alignment: .top, spacing: 12) {
                         guideIcon("checkmark.seal.fill", Brand.mint)
@@ -313,6 +327,17 @@ struct CardInfoSheet: View {
             }
             if let renews = details.renewsAt { LabeledContent("Verlengt op", value: renews.formatted(date: .long, time: .omitted)) }
             if !card.number.isEmpty { LabeledContent("Lidnummer", value: card.number) }
+        case .stamps:
+            LabeledContent("Stempels", value: "\(details.stampsCountValue) van \(details.stampsTotalValue)")
+            if let reward = details.reward, !reward.isEmpty { LabeledContent("Beloning", value: reward) }
+            Text(details.stampsProgressText).foregroundStyle(.secondary)
+            if details.isBusiness {
+                if let code = details.memberCode { LabeledContent("Klantcode", value: code) }
+                Label("Kaart van de zaak: de stempels zet de zaak", systemImage: "storefront")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else if !card.number.isEmpty {
+                LabeledContent("Kaartnummer", value: card.number)
+            }
         }
     }
 }

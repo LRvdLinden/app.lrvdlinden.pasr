@@ -22,6 +22,8 @@ struct WidgetCard: Codable, Identifiable, Hashable {
     var coverStore: String? = nil
     /// Versie van dat ontwerp, zodat de snapshot (en de widget) verandert als het ontwerp verandert.
     var coverVersion: String? = nil
+    /// Stand van een stempelkaart en de gegevens van ticket of abonnement (sinds 1.0.3), zonder onderschriften.
+    var details: CardDetails? = nil
 
     var format: BarcodeFormat { BarcodeFormat(rawValue: formatRaw) ?? .code128 }
     var kind: CardKind { CardKind(rawValue: kindRaw) ?? .loyalty }
@@ -34,6 +36,7 @@ struct WidgetCard: Codable, Identifiable, Hashable {
                        isFavorite: isFavorite, logoData: logoData, balance: balance, currencyCode: currencyCode,
                        expiresAt: expiresAt, isLocked: isLocked, logoStyle: StoreLogoStyles.style(for: logoDomain))
         a.storeCover = kind == .voucher ? RemoteStores.cover(for: coverStore) : nil
+        if let details { a.details = details }
         return a
     }
 
@@ -103,13 +106,18 @@ extension Array where Element == Card {
         var logos: [String: Data] = [:]
         let cards = filter { $0.deletedAt == nil && !$0.isTemporary }.ordered(order, distances: distances).map { card -> WidgetCard in
             if let logo = card.logoData { logos[card.id.uuidString] = logo }
-            return WidgetCard(id: card.id.uuidString, name: card.storeName, colorHex: card.colorHex,
+            var details = card.details
+            details.captions = nil
+            details.memberCode = nil
+            var item = WidgetCard(id: card.id.uuidString, name: card.storeName, colorHex: card.colorHex,
                               number: card.number, formatRaw: card.formatRaw, kindRaw: card.kindRaw,
                               isFavorite: card.isFavorite, isLocked: card.isLocked, balance: card.balance,
                               currencyCode: card.currencyCode, expiresAt: card.expiresAt, score: Card.score(card),
                               logoDomain: card.logoFromWebsite ? card.logoDomain : nil,
                               coverStore: card.storeCover != nil ? card.templateID : nil,
                               coverVersion: card.storeCover != nil ? RemoteStores.coverVersion(for: card.templateID) : nil)
+            item.details = details.isEmpty ? nil : details
+            return item
         }
         return (cards, logos)
     }

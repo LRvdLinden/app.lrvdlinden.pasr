@@ -28,6 +28,10 @@ struct SharedCard: Codable, Equatable {
         e = card.kind.hasExpiry ? card.expiresAt.map { Int($0.timeIntervalSince1970) } : nil
         var details = card.details
         details.captions = nil
+        // een zakelijke stempelkaart deelt nooit de klantcode (zie CardShare.url: die gaat als join-link)
+        details.issuer = nil
+        details.businessCardId = nil
+        details.memberCode = nil
         x = details.isEmpty ? nil : details
     }
 
@@ -60,7 +64,10 @@ enum CardShare {
     static let webBase = "https://pasr.nl/kaart/"
 
     /// https://pasr.nl/kaart/#<data> — opens Pasr when installed, otherwise shows the card on the web.
+    /// Een zakelijke stempelkaart: de join-link van de zaak, zodat de ander een eigen kaart krijgt.
     static func url(for card: Card) -> URL? {
+        let details = card.details
+        if details.isBusiness, let id = details.businessCardId { return BusinessLink.url(for: id) }
         guard let data = try? JSONEncoder().encode(SharedCard(card)) else { return nil }
         return URL(string: webBase + "#" + base64URL(data))
     }
@@ -71,7 +78,7 @@ enum CardShare {
         let isApp = url.scheme == "pasr" && url.host() == "kaart"
         guard isWeb || isApp, let fragment = url.fragment(), let data = fromBase64URL(fragment),
               let card = try? JSONDecoder().decode(SharedCard.self, from: data),
-              !card.n.isEmpty, !card.c.isEmpty else { return nil }
+              !card.n.isEmpty, !card.c.isEmpty || card.kind == .stamps else { return nil }
         return card
     }
 
@@ -86,5 +93,28 @@ enum CardShare {
         var s = text.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
         while s.count % 4 != 0 { s += "=" }
         return Data(base64Encoded: s)
+    }
+}
+
+/// Join-link van een zakelijke stempelkaart (Pasr voor ondernemers): https://pasr.nl/zakelijk/kaart/#<business_card_id>.
+/// Opent Pasr als die er is (universal link), anders de webpagina van de kaart met de App Store-link.
+enum BusinessLink {
+    static let webBase = "https://pasr.nl/zakelijk/kaart/"
+
+    static func url(for businessCardID: String) -> URL? { URL(string: webBase + "#" + businessCardID.lowercased()) }
+
+    /// Leest https://pasr.nl/zakelijk/kaart/#<uuid> (ook www. en ?id=) en pasr://zakelijk/kaart#<uuid>.
+    static func cardID(from url: URL) -> String? {
+        let host = url.host()?.lowercased() ?? ""
+        let isWeb = (host == "pasr.nl" || host == "www.pasr.nl") && url.path().hasPrefix("/zakelijk/kaart")
+        let isApp = url.scheme == "pasr" && host == "zakelijk"
+        guard isWeb || isApp else { return nil }
+        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "id" }?.value
+        let candidates = [url.fragment(), query, url.lastPathComponent].compactMap { $0 }
+        for raw in candidates {
+            let value = raw.trimmingCharacters(in: CharacterSet(charactersIn: "/ ")).lowercased()
+            if UUID(uuidString: value) != nil { return value }
+        }
+        return nil
     }
 }

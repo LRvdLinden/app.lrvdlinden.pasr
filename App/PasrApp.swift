@@ -42,6 +42,8 @@ struct RootView: View {
     @State private var openCardID: UUID?
     @State private var incoming: IncomingShare?
     @State private var incomingTemp: IncomingTempShare?
+    @State private var incomingBusiness: IncomingBusinessCard?
+    @Environment(\.openURL) private var openURL
     @State private var newStore: NewStore?
     @State private var invite: GroupService.Invite?
     @State private var seenInvites: Set<String> = []
@@ -83,10 +85,13 @@ struct RootView: View {
         .background(Brand.ink.ignoresSafeArea())
         // "Vind je Pasr leuk?": eerst een paar uur na het eerste gebruik, daarna hoogstens 1 keer per week
         .reviewPrompt(ready: !showSplash && onboarded && !locked && !covered && !cards.isEmpty && incoming == nil
-                       && incomingTemp == nil && invite == nil)
+                       && incomingTemp == nil && invite == nil && incomingBusiness == nil)
         // A tapped notification (voucher reminder or "you're at the store") opens its card.
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenCard)) { _ in openFromNotification() }
-        .onAppear { openFromNotification() }
+        .onAppear {
+            openFromNotification()
+            openNewsFromNotification()
+        }
         .onOpenURL { url in handle(url) }
         // Universele links (pasr.nl/kaart, /tijdelijk, /uitnodiging) komen soms als NSUserActivity binnen
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
@@ -96,6 +101,13 @@ struct RootView: View {
             ReceiveCardSheet(shared: share.card)
         }
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenStore)) { _ in openStoreFromNotification() }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrOpenNews)) { _ in openNewsFromNotification() }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrOpenLink)) { note in
+            if let url = note.object as? URL { handle(url) }
+        }
+        .sheet(item: $incomingBusiness) { item in
+            JoinBusinessSheet(cardID: item.cardID)
+        }
         .sheet(item: $newStore) { item in
             AddCardView(store: item.template)
         }
@@ -115,6 +127,11 @@ struct RootView: View {
             TempShare.scrubExpired(in: context)
             await StoreCatalog.shared.refresh()
             await TempShare.refreshStatuses(in: context)
+            await BusinessCards.refreshAll(in: context)
+            await WalletPass.upgradeExistingPasses(cards)
+            await StorePush.syncIfEnabled()
+            await Birthday.syncWithAccount()
+            await Birthday.reschedule(cards)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -146,6 +163,11 @@ extension RootView {
             openCardID = id
             return
         }
+        // zakelijke stempelkaart: pasr.nl/zakelijk/kaart/#<id> of pasr://zakelijk/kaart#<id>
+        if let businessID = BusinessLink.cardID(from: url) {
+            present { incomingBusiness = IncomingBusinessCard(cardID: businessID) }
+            return
+        }
         let isTemp = (url.host() == "pasr.nl" && url.path().hasPrefix("/tijdelijk")) || (url.scheme == "pasr" && url.host() == "tijdelijk")
         if isTemp {
             // ook een onvolledige link tonen we (met "Deze link werkt niet"), zodat er nooit niets gebeurt
@@ -164,6 +186,7 @@ extension RootView {
         invite = nil
         incoming = nil
         incomingTemp = nil
+        incomingBusiness = nil
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(450))
             show()
@@ -179,8 +202,23 @@ extension RootView {
         }
     }
 
+    /// Pushmelding "Nieuws over mijn kaarten": je kaart van die winkel, anders Kaart toevoegen bij die winkel.
+    fileprivate func openNewsFromNotification() {
+        guard let news = NotificationRouter.pendingNews else { return }
+        NotificationRouter.pendingNews = nil
+        if let store = news.store {
+            if let card = cards.alphabetical().first(where: { $0.templateID == store && !$0.isTemporary }) {
+                openCardID = card.id
+                return
+            }
+            NotificationRouter.pendingStoreID = store
+        } else if let url = news.url {
+            openURL(url)
+        }
+    }
+
     fileprivate func offerInvite() {
-        guard invite == nil, !showSplash, onboarded, !locked, incoming == nil, incomingTemp == nil,
+        guard invite == nil, !showSplash, onboarded, !locked, incoming == nil, incomingTemp == nil, incomingBusiness == nil,
               let next = groups.invites.first(where: { !seenInvites.contains($0.id) }) else { return }
         seenInvites.insert(next.id)
         invite = next

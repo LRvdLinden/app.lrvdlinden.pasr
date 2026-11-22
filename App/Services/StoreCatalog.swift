@@ -124,6 +124,9 @@ enum UserPush {
 
     private static var syncedFor: String?
 
+    /// Heeft dit apparaat een APNs-token (meldingen toegestaan en aangemeld bij Apple)?
+    static var hasToken: Bool { UserDefaults.standard.string(forKey: tokenKey) != nil }
+
     /// Eén keer per account per keer dat de app draait (na inloggen of synchroniseren).
     static func syncOnce() async {
         guard let user = AccountService.shared.session?.userID, syncedFor != user else { return }
@@ -141,6 +144,8 @@ enum UserPush {
             "p_device": deviceID, "p_token": token, "p_sandbox": sandbox,
             "p_new_stores": UserDefaults.standard.bool(forKey: newStoresKey),
         ])
+        // daarna (het apparaat staat nu op de server) de winkels voor "Nieuws over mijn kaarten"
+        await StorePush.syncIfEnabled(force: true)
     }
 }
 

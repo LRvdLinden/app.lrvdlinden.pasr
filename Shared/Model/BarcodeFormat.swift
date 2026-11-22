@@ -45,11 +45,13 @@ enum BarcodeFormat: String, CaseIterable, Identifiable, Codable {
 /// oudere versies tonen die als klantenkaart.
 enum CardKind: String, CaseIterable, Identifiable, Codable {
     case loyalty, voucher, code, ticket, subscription
+    /// Stempelkaart (sinds 1.0.3): vakjes sparen tot een beloning. Oudere versies lezen hem als klantenkaart.
+    case stamps
 
     var id: String { rawValue }
 
     /// De soorten die niet in de winkellijst staan (je voegt ze zelf toe).
-    static let others: [CardKind] = [.code, .ticket, .subscription]
+    static let others: [CardKind] = [.stamps, .code, .ticket, .subscription]
 
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
@@ -63,6 +65,7 @@ enum CardKind: String, CaseIterable, Identifiable, Codable {
         case .code: String(localized: "Kortingscode")
         case .ticket: String(localized: "Ticket")
         case .subscription: String(localized: "Abonnement")
+        case .stamps: String(localized: "Stempelkaart")
         }
     }
 
@@ -73,6 +76,7 @@ enum CardKind: String, CaseIterable, Identifiable, Codable {
         case .code: "tag"
         case .ticket: "ticket"
         case .subscription: "arrow.triangle.2.circlepath"
+        case .stamps: "seal"
         }
     }
 
@@ -87,6 +91,7 @@ enum CardKind: String, CaseIterable, Identifiable, Codable {
         case .code: String(localized: "Code")
         case .ticket: String(localized: "Ticketcode")
         case .subscription: String(localized: "Lidnummer")
+        case .stamps: String(localized: "Kaartnummer")
         }
     }
 }

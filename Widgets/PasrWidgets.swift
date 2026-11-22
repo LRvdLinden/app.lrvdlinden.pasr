@@ -113,9 +113,21 @@ struct CardTile: View {
                 }
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            // stempelkaart: de stand rechtsonder
+            if card.kind == .stamps, let d = card.details {
+                Text("\(d.stampsCountValue)/\(d.stampsTotalValue)")
+                    .font(.system(size: compact ? 8 : 9, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(ink)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(ink.opacity(0.18), in: Capsule())
+                    .padding(compact ? 3 : 5)
+            }
+        }
         .aspectRatio(Brand.cardAspect, contentMode: .fit)
         .clipShape(shape)
-        .accessibilityLabel(Text(card.name))
+        .accessibilityLabel(Text(card.kind == .stamps ? "\(card.name), \(card.details?.stampsCountValue ?? 0) van \(card.details?.stampsTotalValue ?? 0) stempels" : card.name))
     }
 }
 
@@ -250,15 +262,29 @@ struct CardWidgetView: View {
     @ViewBuilder private func content(_ card: WidgetCard) -> some View {
         switch family {
         case .accessoryCircular:
-            ZStack {
-                AccessoryWidgetBackground()
-                Text(card.monogram).font(.system(.title3, design: .rounded).weight(.bold))
+            if card.kind == .stamps, let d = card.details {
+                Gauge(value: Double(d.stampsCountValue), in: 0...Double(d.stampsTotalValue)) {
+                    Text(card.monogram)
+                } currentValueLabel: {
+                    Text("\(d.stampsCountValue)")
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .containerBackground(.clear, for: .widget)
+            } else {
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Text(card.monogram).font(.system(.title3, design: .rounded).weight(.bold))
+                }
+                .containerBackground(.clear, for: .widget)
             }
-            .containerBackground(.clear, for: .widget)
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 2) {
-                Label(card.name, systemImage: "wallet.pass").font(.headline).lineLimit(1)
-                Text("Tik om de code te tonen").font(.caption).foregroundStyle(.secondary)
+                Label(card.name, systemImage: card.kind == .stamps ? CardKind.stamps.symbol : "wallet.pass").font(.headline).lineLimit(1)
+                if card.kind == .stamps, let d = card.details {
+                    Text("\(d.stampsCountValue) van \(d.stampsTotalValue) · \(d.stampsProgressText)").font(.caption).lineLimit(2)
+                } else {
+                    Text("Tik om de code te tonen").font(.caption).foregroundStyle(.secondary)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .containerBackground(.clear, for: .widget)

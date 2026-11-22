@@ -29,6 +29,14 @@
           {
             "/": "/uitnodiging",
             "comment": "Uitnodiging voor een gedeelde Pasr"
+          },
+          {
+            "/": "/zakelijk/kaart/*",
+            "comment": "Zakelijke stempelkaart (join-link van een ondernemer) openen in Pasr"
+          },
+          {
+            "/": "/zakelijk/kaart",
+            "comment": "Zakelijke stempelkaart (join-link van een ondernemer) openen in Pasr"
           }
         ]
       }

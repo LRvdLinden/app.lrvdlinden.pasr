@@ -119,6 +119,8 @@ struct CardAppearance: Equatable {
             if let renews = details.renewsAt {
                 parts.append(String(localized: "verlengt \(renews.formatted(.dateTime.day().month(.abbreviated)))"))
             }
+        case .stamps:
+            parts.append(details.stampsProgressText)
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
@@ -160,6 +162,9 @@ struct CardFaceView: View {
         if appearance.isFavorite { parts.append(String(localized: "favoriet")) }
         if appearance.isShared { parts.append(String(localized: "gedeeld")) }
         if let info = voucherInfo { parts.append(info) }
+        if appearance.kind == .stamps {
+            parts.append(String(localized: "\(appearance.details.stampsCountValue) van \(appearance.details.stampsTotalValue) stempels"))
+        }
         if showsCode {
             if appearance.tempExpired {
                 parts.append(String(localized: "verlopen, de code wordt niet meer getoond"))
@@ -301,6 +306,10 @@ struct CardFaceView: View {
                     } else {
                         codePanel
                     }
+                } else if appearance.kind == .stamps {
+                    StampGridView(total: appearance.details.stampsTotalValue, count: appearance.details.stampsCountValue,
+                                  ink: ink)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     Spacer(minLength: 0)
                     frontFooter
@@ -405,7 +414,18 @@ struct CardFaceView: View {
         .background(.white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var noCodePanel: some View {
+    @ViewBuilder private var noCodePanel: some View {
+        if appearance.kind == .stamps {
+            StampGridView(total: appearance.details.stampsTotalValue, count: appearance.details.stampsCountValue, ink: ink)
+                .padding(10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        } else {
+            noCodeInfoPanel
+        }
+    }
+
+    private var noCodeInfoPanel: some View {
         VStack(spacing: 6) {
             Image(systemName: appearance.kind.symbol).font(.title3)
             Text(appearance.infoLine ?? appearance.kind.displayName)
@@ -488,6 +508,59 @@ private struct KindLabelStyle: LabelStyle {
         HStack(spacing: 3) {
             configuration.icon.imageScale(.small)
             configuration.title
+        }
+    }
+}
+
+/// De vakjes van een stempelkaart: gevuld met een vinkje, leeg als rondje; het laatste lege vakje is de beloning.
+struct StampGridView: View {
+    let total: Int
+    let count: Int
+    var ink: Color = .white
+
+    private var rows: Int { total <= 6 ? 1 : total <= 16 ? 2 : 3 }
+    private var columns: Int { Int((Double(total) / Double(rows)).rounded(.up)) }
+
+    var body: some View {
+        GeometryReader { geo in
+            let spacing: CGFloat = 6
+            let side = max(6, min((geo.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns),
+                                  (geo.size.height - spacing * CGFloat(rows - 1)) / CGFloat(rows), 44))
+            VStack(spacing: spacing) {
+                ForEach(0..<rows, id: \.self) { row in
+                    HStack(spacing: spacing) {
+                        ForEach(0..<columns, id: \.self) { column in
+                            let index = row * columns + column
+                            if index < total { cell(index, side: side) } else { Color.clear.frame(width: side, height: side) }
+                        }
+                    }
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("\(count) van \(total) stempels"))
+    }
+
+    @ViewBuilder private func cell(_ index: Int, side: CGFloat) -> some View {
+        if index < count {
+            Circle().fill(ink)
+                .frame(width: side, height: side)
+                .overlay {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: side * 0.45, weight: .heavy))
+                        .foregroundStyle(ink == .white ? Color.black.opacity(0.75) : Color.white)
+                }
+        } else {
+            Circle().strokeBorder(ink.opacity(0.55), style: StrokeStyle(lineWidth: max(1.2, side * 0.06), dash: [side * 0.12, side * 0.08]))
+                .frame(width: side, height: side)
+                .overlay {
+                    if index == total - 1 {
+                        Image(systemName: "gift.fill")
+                            .font(.system(size: side * 0.42, weight: .semibold))
+                            .foregroundStyle(ink.opacity(0.7))
+                    }
+                }
         }
     }
 }

@@ -121,6 +121,16 @@ struct WatchWalletView: View {
         }
     }
 
+    /// Eigen stempelkaart: ook op de Watch een stempel erbij of eraf; gaat via iCloud naar de iPhone.
+    private func stamper(_ live: Card?) -> ((Int) -> CardDetails?)? {
+        guard let live, live.stampsEditable else { return nil }
+        return { delta in
+            live.changeStamps(by: delta)
+            try? live.modelContext?.save()
+            return live.details
+        }
+    }
+
     var body: some View {
         NavigationStack {
             let cards = cards
@@ -151,9 +161,10 @@ struct WatchWalletView: View {
             }
             .navigationTitle("Pasr")
             .navigationDestination(for: WatchCard.self) { card in
+                let live = stored.first { $0.id.uuidString == card.id }
                 WatchPassView(card: card, onShown: {
-                    stored.first { $0.id.uuidString == card.id }?.markUsed()
-                })
+                    live?.markUsed()
+                }, onStamp: stamper(live))
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -166,7 +177,16 @@ struct WatchWalletView: View {
 struct WatchPassView: View {
     let card: WatchCard
     var onShown: () -> Void = {}
+    /// Stempel erbij (+1) of eraf (-1); geeft de nieuwe stand terug. Nil = niet aan te passen (zakelijke kaart).
+    var onStamp: ((Int) -> CardDetails?)? = nil
     @State private var codeOnly = false
+    @State private var stamps: CardDetails?
+
+    private var appearance: CardAppearance {
+        var a = card.appearance
+        if let stamps { a.details = stamps }
+        return a
+    }
 
     var body: some View {
         Group {
@@ -184,13 +204,34 @@ struct WatchPassView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.white)
                 .ignoresSafeArea()
+            } else if card.kind == .stamps {
+                ScrollView {
+                    VStack(spacing: 8) {
+                        CardFaceView(appearance: appearance, showsCode: card.number.isEmpty, revealed: true, cornerRadius: 14)
+                            .aspectRatio(Brand.cardAspect, contentMode: .fit)
+                        Text(appearance.details.stampsProgressText)
+                            .font(.footnote)
+                            .multilineTextAlignment(.center)
+                        if let onStamp {
+                            HStack {
+                                Button { stamps = onStamp(-1) ?? stamps } label: { Image(systemName: "minus") }
+                                    .disabled(appearance.details.stampsCountValue == 0)
+                                    .accessibilityLabel(Text("Stempel eraf"))
+                                Button { stamps = onStamp(1) ?? stamps } label: { Image(systemName: "plus") }
+                                    .disabled(appearance.details.stampsFull)
+                                    .tint(Brand.iris)
+                                    .accessibilityLabel(Text("Stempel erbij"))
+                            }
+                        }
+                    }
+                }
             } else {
                 CardFaceView(appearance: card.appearance, revealed: true, cornerRadius: 14)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, 2)
             }
         }
-        .onTapGesture { withAnimation(.easeInOut(duration: 0.25)) { codeOnly.toggle() } }
+        .onTapGesture { if !card.number.isEmpty { withAnimation(.easeInOut(duration: 0.25)) { codeOnly.toggle() } } }
         .navigationTitle(card.name)
         .onAppear(perform: onShown)
     }

@@ -366,7 +366,10 @@ struct ReceiveCardSheet: View {
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
     @State private var angle: Double = 0
 
-    private var alreadyAdded: Bool { cards.contains { $0.number == shared.c && $0.formatRaw == shared.f } }
+    private var alreadyAdded: Bool {
+        cards.contains { $0.number == shared.c && $0.formatRaw == shared.f
+            && (!shared.c.isEmpty || ($0.storeName == shared.n && $0.kindRaw == shared.k)) }
+    }
 
     var body: some View {
         NavigationStack {

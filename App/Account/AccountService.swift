@@ -157,7 +157,7 @@ final class AccountService {
             throw AccountError(message: String(localized: "Geen verbinding. Controleer je internet en probeer het opnieuw."))
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        let json = data.isEmpty ? [:] : ((try? JSONSerialization.jsonObject(with: data)) ?? [:])
+        let json = data.isEmpty ? [:] : ((try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)) ?? [:])
         guard (200..<300).contains(status) else {
             let dict = json as? [String: Any] ?? [:]
             let code = (dict["error_code"] ?? dict["code"] ?? dict["error"]) as? String ?? ""

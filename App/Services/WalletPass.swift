@@ -1,5 +1,6 @@
 import SwiftUI
 import PassKit
+import Security
 import CoreLocation
 import MapKit
 
@@ -15,6 +16,23 @@ enum WalletPass {
 
     static var isAvailable: Bool { PKAddPassesViewController.canAddPasses() && AccountConfig.isConfigured }
 
+    /// Kan deze kaart een Wallet-pas worden? Niet tijdelijk gedeeld, en met een code (een stempelkaart mag zonder).
+    static func canMakePass(_ card: Card) -> Bool {
+        !card.isTemporary && (!card.number.isEmpty || card.kind == .stamps)
+    }
+
+    /// Geheim van de pas (authenticationToken): 32 willekeurige bytes als hex, eenmalig per kaart. Staat in de
+    /// iCloud-sleutelhanger (zo kunnen je andere apparaten de pas ook bijwerken), niet in het datamodel of het account.
+    @MainActor
+    static func token(for card: Card) -> String {
+        if let token = WalletTokens.load(card.id), token.count >= 32 { return token }
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let token = bytes.map { String(format: "%02x", $0) }.joined()
+        WalletTokens.save(token, for: card.id)
+        return token
+    }
+
     /// Already in Wallet? (Same serial number = the card's id.)
     static func isInWallet(_ card: Card) -> Bool {
         PKPassLibrary().pass(withPassTypeIdentifier: passTypeID, serialNumber: card.id.uuidString) != nil
@@ -28,16 +46,29 @@ enum WalletPass {
     /// `locations`: de plekken waar iOS de pas laat zien (hoogstens 10). Nil = vanzelf: eigen locaties, dan de
     /// dichtstbijzijnde filialen.
     @MainActor
-    static func make(for card: Card, locations: [CLLocationCoordinate2D]? = nil) async throws -> PKPass {
+    static func make(for card: Card, locations: [CLLocationCoordinate2D]? = nil, push: Bool = false) async throws -> PKPass {
         guard !card.isTemporary else {
             throw Failure(message: String(localized: "Een tijdelijk gedeelde kaart kan niet in Apple Wallet."))
         }
-        guard AccountConfig.isConfigured, let url = URL(string: "\(AccountConfig.url)/functions/v1/wallet-pass") else {
+        guard AccountConfig.isConfigured else {
             throw Failure(message: String(localized: "Apple Wallet is in deze versie nog niet beschikbaar."))
         }
+        var body = try await payload(for: card, locations: locations)
+        if push { body["push"] = true }
+        let (data, status) = try await post(body)
+        guard status == 200, let pass = try? PKPass(data: data) else {
+            throw Failure(message: String(localized: "De Wallet-pas kon niet worden gemaakt. Probeer het later opnieuw."))
+        }
+        return pass
+    }
+
+    /// Alles wat de server nodig heeft om de pas te maken (en later, als Wallet erom vraagt, opnieuw te maken).
+    /// Met `token` versleutelt de server de pas, zodat alleen een apparaat met de pas hem kan ophalen.
+    @MainActor
+    private static func payload(for card: Card, locations: [CLLocationCoordinate2D]?) async throws -> [String: Any] {
         var body: [String: Any] = [
             "id": card.id.uuidString, "name": card.storeName, "number": card.number, "format": card.formatRaw,
-            "colorHex": card.colorHex, "kind": card.kindRaw,
+            "colorHex": card.colorHex, "kind": card.kindRaw, "token": token(for: card),
         ]
         if !card.note.isEmpty { body["note"] = card.note }
         if let balance = card.balance { body["balance"] = balance; body["currency"] = card.currencyCode ?? "EUR" }
@@ -51,6 +82,17 @@ enum WalletPass {
         if let d = details.renewsAt { body["renewsAt"] = iso.string(from: d) }
         if let c = details.cost { body["cost"] = c; body["currency"] = card.currencyCode ?? "EUR"; body["period"] = details.periodValue.rawValue }
         if card.showsCodeAsText { body["codeAsText"] = true }
+        // stempelkaart (sinds 1.0.3); een zakelijke kaart werkt de server zelf bij met de stand van de zaak
+        if card.kind == .stamps {
+            body["stampsTotal"] = details.stampsTotalValue
+            body["stampsCount"] = details.stampsCountValue
+            if let r = details.reward, !r.isEmpty { body["reward"] = r }
+            if details.isBusiness, let code = details.memberCode {
+                body["issuer"] = "business"
+                body["memberCode"] = code
+                body["businessCardId"] = details.businessCardId
+            }
+        }
         if let logo = logoPNG(for: card) { body["logo"] = logo.base64EncodedString() }
         let lines = historyLines(card)
         if !lines.isEmpty { body["history"] = lines }
@@ -63,33 +105,81 @@ enum WalletPass {
             body["locations"] = spots.prefix(maxLocations).map { ["latitude": $0.latitude, "longitude": $0.longitude] }
         }
         saveLocations(Array(spots.prefix(maxLocations)), for: card)
+        return body
+    }
 
+    private static func post(_ body: [String: Any]) async throws -> (Data, Int) {
+        guard AccountConfig.isConfigured, let url = URL(string: "\(AccountConfig.url)/functions/v1/wallet-pass") else {
+            throw Failure(message: String(localized: "Apple Wallet is in deze versie nog niet beschikbaar."))
+        }
         var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(AccountConfig.publishableKey, forHTTPHeaderField: "apikey")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let data: Data, response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
         } catch {
             throw Failure(message: String(localized: "Geen verbinding. Controleer je internet en probeer het opnieuw."))
         }
-        guard (response as? HTTPURLResponse)?.statusCode == 200, let pass = try? PKPass(data: data) else {
-            throw Failure(message: String(localized: "De Wallet-pas kon niet worden gemaakt. Probeer het later opnieuw."))
-        }
-        return pass
     }
 
     // MARK: Bijwerken
 
     /// Staat de kaart in Wallet, dan de pas daar vervangen door een nieuwe met het actuele tegoed en de laatste regels.
     /// Gaat zonder vraag (PKPassLibrary.replacePass); Wallet laat bij een nieuw tegoed zelf "Tegoed nu …" zien.
+    /// Sinds 1.0.3 werkt de server de pas ook bij op je andere apparaten (PassKit-webservice met een push van Apple):
+    /// staat de pas hier niet in Wallet maar wel ergens anders (er is een token), dan krijgt de server de nieuwe
+    /// gegevens en seint hij die apparaten in.
     @MainActor
     static func refreshIfInWallet(_ card: Card) async {
-        guard isAvailable, !card.isTemporary, !card.number.isEmpty, isInWallet(card),
-              let pass = try? await make(for: card, locations: savedLocations(card)) else { return }
-        _ = PKPassLibrary().replacePass(with: pass)
+        guard isAvailable, canMakePass(card) else { return }
+        if isInWallet(card) {
+            guard let pass = try? await make(for: card, locations: savedLocations(card), push: true) else { return }
+            _ = PKPassLibrary().replacePass(with: pass)
+        } else if WalletTokens.load(card.id) != nil, var body = try? await payload(for: card, locations: savedLocations(card)) {
+            body["action"] = "update"
+            _ = try? await post(body)
+        }
+    }
+
+    /// Na een paar tikken achter elkaar (stempels) één keer bijwerken.
+    @MainActor private static var pending: [UUID: Task<Void, Never>] = [:]
+    @MainActor
+    static func scheduleRefresh(_ card: Card) {
+        pending[card.id]?.cancel()
+        pending[card.id] = Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            pending[card.id] = nil
+            await refreshIfInWallet(card)
+        }
+    }
+
+    /// Eenmalig na de update naar 1.0.3: passen die al in Wallet staan opnieuw uitgeven met de webservice erin, zodat
+    /// ook zij voortaan vanzelf worden bijgewerkt. Lukt het niet (geen internet), dan de volgende keer opnieuw.
+    @MainActor
+    static func upgradeExistingPasses(_ cards: [Card]) async {
+        let key = "pasr.wallet.webservice.103"
+        guard isAvailable, !UserDefaults.standard.bool(forKey: key) else { return }
+        // hoogstens één poging per dag (bijvoorbeeld als de server nog niet is bijgewerkt)
+        let triedKey = key + ".tried"
+        if Date.now.timeIntervalSince1970 - UserDefaults.standard.double(forKey: triedKey) < 86_400 { return }
+        UserDefaults.standard.set(Date.now.timeIntervalSince1970, forKey: triedKey)
+        let library = PKPassLibrary()
+        var allDone = true
+        for card in cards where card.deletedAt == nil && canMakePass(card) {
+            guard let current = library.pass(withPassTypeIdentifier: passTypeID, serialNumber: card.id.uuidString),
+                  current.webServiceURL == nil else { continue }
+            if let pass = try? await make(for: card, locations: savedLocations(card)) {
+                _ = library.replacePass(with: pass)
+                if pass.webServiceURL == nil { allDone = false }   // de server kan het nog niet: later opnieuw
+            } else {
+                allDone = false
+            }
+        }
+        if allDone { UserDefaults.standard.set(true, forKey: key) }
     }
 
     private static func locationsKey(_ card: Card) -> String { "pasr.wallet.locations.\(card.id.uuidString)" }
@@ -340,5 +430,32 @@ private struct AddPassSheet: UIViewControllerRepresentable {
             controller.dismiss(animated: true)
             onDone()
         }
+    }
+}
+
+/// Tokens van Wallet-passen in de sleutelhanger, per kaart-id; via iCloud-sleutelhanger op al je apparaten.
+enum WalletTokens {
+    private static let service = "nl.lrvdlinden.pasr.wallet"
+
+    static func load(_ id: UUID) -> String? {
+        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+                                    kSecAttrAccount as String: id.uuidString, kSecReturnData as String: true,
+                                    kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
+                                    kSecMatchLimit as String: kSecMatchLimitOne]
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    static func save(_ token: String, for id: UUID) {
+        let match: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+                                    kSecAttrAccount as String: id.uuidString,
+                                    kSecAttrSynchronizable as String: kSecAttrSynchronizableAny]
+        SecItemDelete(match as CFDictionary)
+        let add: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+                                  kSecAttrAccount as String: id.uuidString, kSecValueData as String: Data(token.utf8),
+                                  kSecAttrSynchronizable as String: true,
+                                  kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock]
+        SecItemAdd(add as CFDictionary, nil)
     }
 }
