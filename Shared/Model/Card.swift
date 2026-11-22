@@ -163,6 +163,13 @@ struct CardEvent: Codable, Hashable, Identifiable {
     var region: String?
     /// Bij een getoonde cadeaukaart met een ingevuld bedrag: de afboeking (regel "spent") die erbij hoort.
     var spentID: UUID?
+    /// Hoe het moment erin kwam (sinds build 47; blijft op het apparaat, gaat niet mee met de accountsync):
+    /// "ask" = bevestigd na het tonen, "pay" = aankoop vastgelegd via Opdrachten (Apple Pay), nil = ouder.
+    var source: String?
+    /// Cadeaukaart, via Opdrachten vastgelegd: dit bedrag wacht op bevestiging voordat het van het tegoed gaat.
+    var pendingAmount: Double?
+    /// Bewaard bonnetje bij dit moment (Receipt.id). Blijft op het apparaat (iCloud), niet via het Pasr-account.
+    var receiptID: UUID?
 
     static let keepDays: Double = 90
     static let maxCount = 150
@@ -181,15 +188,33 @@ extension Card {
     /// Laatst getoond (uit de geschiedenis, anders lastUsed).
     var lastShown: CardEvent? { history.first { $0.kind == .shown } }
 
-    /// Kaart getoond. Binnen 10 minuten nog eens dezelfde kaart telt niet opnieuw (wel de plek als die er nog niet was).
+    /// Een gebruiksmoment vastleggen. Sinds build 47 alleen als je het bevestigt ("Gebruikt bij PLUS? Ja") of als een
+    /// aankoop via Opdrachten binnenkomt; even openen telt niet meer. Een tweede melding binnen 15 minuten (eerst Ja,
+    /// daarna de Apple Pay-automatisering) wordt geen dubbele regel: het bedrag komt bij het moment van zojuist.
     /// De filiaalnaam komt uit de winkels in de buurt (zonder geocoding) en blijft op dit apparaat.
-    func recordShown(place: String?) {
+    @discardableResult
+    func recordUse(place: String?, source: String, date: Date = .now) -> UUID {
         var list = history
-        if let last = list.first(where: { $0.kind == .shown }), Date.now.timeIntervalSince(last.date) < 600 {
-            if last.place == nil, let place, let i = list.firstIndex(of: last) { list[i].place = place; history = list }
-            return
+        if let i = list.firstIndex(where: { $0.kind == .shown && abs(date.timeIntervalSince($0.date)) < 900 }) {
+            if list[i].place == nil, let place { list[i].place = place }
+            if list[i].source == nil { list[i].source = source }
+            history = list
+            return list[i].id
         }
-        list.insert(CardEvent(kind: .shown, place: place), at: 0)
+        var e = CardEvent(kind: .shown, place: place)
+        e.date = date
+        e.source = source
+        list.insert(e, at: 0)
+        history = list
+        updatedAt = .now
+        return e.id
+    }
+
+    /// Lokale velden van een gebruiksmoment aanpassen (bonnetje koppelen, wachtend bedrag).
+    func updateUse(_ id: UUID, _ change: (inout CardEvent) -> Void) {
+        var list = history
+        guard let i = list.firstIndex(where: { $0.id == id }) else { return }
+        change(&list[i])
         history = list
     }
 
@@ -216,6 +241,7 @@ extension Card {
             }
         }
         use.amount = value
+        use.pendingAmount = nil
         if let i = list.firstIndex(where: { $0.id == id }) { list[i] = use }
         history = list
         updatedAt = .now

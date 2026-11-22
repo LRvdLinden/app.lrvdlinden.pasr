@@ -489,6 +489,30 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
         return best?.1
     }
 
+    /// Waar je bent ten opzichte van een winkel, voor "Gebruikt bij …?" bij het sluiten (alleen in de winkel vragen).
+    enum StoreCheck: Equatable {
+        /// Bij een filiaal of eigen locatie (binnen 300 m): met de filiaalnaam, die op dit apparaat blijft.
+        case atStore(String)
+        /// Pasr kent de filialen rond je plek en je bent bij geen ervan: niets vragen, niets bewaren.
+        case elsewhere
+        /// Geen toestemming, geen bruikbare plek of de filialen hier zijn niet bekend: gewoon vragen.
+        case unknown
+    }
+
+    /// Alleen met wat Pasr al op dit apparaat weet (eigen locaties en de filialen die "Kaart tonen bij de winkel" of de
+    /// volgorde "In de buurt" eerder vond): er gaat geen zoekopdracht naar Apple Kaarten en je locatie gaat nergens heen.
+    func storeCheck(for card: Card) async -> StoreCheck {
+        guard hasLocation, let here = await currentLocation(maxAge: 120), here.horizontalAccuracy >= 0,
+              here.horizontalAccuracy <= 150 else { return .unknown }
+        if let name = await placeName(for: card) { return .atStore(name) }
+        let store = StoreTemplates.template(id: card.templateID)?.name ?? card.storeName
+        // "Elders" alleen als de bekende filialen ook echt over deze buurt gaan (gezocht rond een plek vlakbij)
+        guard let cache = loadCache()[Self.key(store)],
+              here.distance(from: CLLocation(latitude: cache.latitude, longitude: cache.longitude)) < Self.cacheReuse
+        else { return .unknown }
+        return .elsewhere
+    }
+
     /// "PLUS" + "Hoofdstraat 1, Apeldoorn" → "PLUS Apeldoorn".
     private static func label(name: String, address: String?) -> String {
         guard let city = address?.components(separatedBy: ", ").last?.trimmingCharacters(in: .whitespaces), !city.isEmpty,

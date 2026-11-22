@@ -210,13 +210,43 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
         didSet { if pendingNews != nil { NotificationCenter.default.post(name: .pasrOpenNews, object: nil) } }
     }
 
-    func activate() { UNUserNotificationCenter.current().delegate = self }
+    /// Garantieherinnering of Spotlight: WalletView opent dat bonnetje.
+    @MainActor static var pendingReceiptID: UUID? {
+        didSet { if pendingReceiptID != nil { NotificationCenter.default.post(name: .pasrOpenReceipt, object: nil) } }
+    }
+
+    func activate() {
+        UNUserNotificationCenter.current().delegate = self
+        PurchaseCapture.registerCategories()
+    }
 
     // Met completion handlers in plaats van async: de async-varianten roepen de afhandeling van iOS niet op de
     // hoofdthread aan, en dan crasht de app bij het openen van een melding.
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
+        // aankoop via Opdrachten bij een cadeaukaart: afboeken of niet, zonder de app te openen
+        if response.actionIdentifier == PurchaseCapture.bookAction || response.actionIdentifier == PurchaseCapture.skipAction,
+           let card = (info["cardID"] as? String).flatMap(UUID.init), let use = (info["useID"] as? String).flatMap(UUID.init) {
+            let book = response.actionIdentifier == PurchaseCapture.bookAction
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    let context = PasrStore.app.mainContext
+                    if book { PurchaseCapture.book(cardID: card, useID: use, in: context) }
+                    else { PurchaseCapture.skip(cardID: card, useID: use, in: context) }
+                }
+                completionHandler()
+            }
+            return
+        }
+        // garantieherinnering: dat bonnetje openen
+        if let receipt = (info["receiptID"] as? String).flatMap(UUID.init) {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { Self.pendingReceiptID = receipt }
+                completionHandler()
+            }
+            return
+        }
         let cardID = (info["cardID"] as? String).flatMap(UUID.init)
         let kind = info["kind"] as? String
         let storeID = kind == "store" ? info["store"] as? String : nil
@@ -245,6 +275,7 @@ extension Notification.Name {
     static let pasrOpenCard = Notification.Name("pasrOpenCard")
     static let pasrOpenStore = Notification.Name("pasrOpenStore")
     static let pasrOpenNews = Notification.Name("pasrOpenNews")
+    static let pasrOpenReceipt = Notification.Name("pasrOpenReceipt")
     /// Een Pasr-link die in de app zelf is gescand (object: URL); RootView behandelt hem als een universal link.
     static let pasrOpenLink = Notification.Name("pasrOpenLink")
     /// Sluit open vensters (voor een binnenkomende link).

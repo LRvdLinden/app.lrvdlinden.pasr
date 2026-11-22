@@ -12,6 +12,23 @@ struct PasrBackup: Codable {
     var version = 1
     var createdAt = Date()
     var cards: [BackupCard]
+    /// Bonnetjes (sinds build 47; oudere back-ups hebben ze niet).
+    var receipts: [BackupReceipt]?
+
+    struct BackupReceipt: Codable {
+        var id: UUID
+        var cardID: UUID?
+        var useID: UUID?
+        var storeName: String
+        var date: Date
+        var total: Double?
+        var currencyCode: String?
+        var title: String
+        var note: String
+        var warrantyUntil: Date?
+        var createdAt: Date
+        var pages: [Data]
+    }
 
     struct BackupCard: Codable {
         var id: UUID
@@ -45,7 +62,12 @@ struct PasrBackup: Codable {
         var photos: [Data]?
     }
 
-    init(cards: [Card]) {
+    init(cards: [Card], receipts: [Receipt] = []) {
+        self.receipts = receipts.isEmpty ? nil : receipts.map { r in
+            BackupReceipt(id: r.id, cardID: r.cardID, useID: r.useID, storeName: r.storeName, date: r.date, total: r.total,
+                          currencyCode: r.currencyCode, title: r.title, note: r.note, warrantyUntil: r.warrantyUntil,
+                          createdAt: r.createdAt, pages: r.pages)
+        }
         self.cards = cards.filter { $0.deletedAt == nil }.map { c in
             BackupCard(id: c.id, kind: c.kindRaw, storeName: c.storeName, templateID: c.templateID, number: c.number,
                        format: c.formatRaw, colorHex: c.colorHex, note: c.note, isFavorite: c.isFavorite,
@@ -97,6 +119,21 @@ struct PasrBackup: Codable {
             card.refreshCodeImage()
             context.insert(card)
             added += 1
+        }
+        // bonnetjes die er nog niet zijn
+        let receiptIDs = Set(((try? context.fetch(FetchDescriptor<Receipt>())) ?? []).map(\.id))
+        for b in receipts ?? [] where !receiptIDs.contains(b.id) {
+            let r = Receipt(cardID: b.cardID, useID: b.useID, storeName: b.storeName, date: b.date)
+            r.id = b.id
+            r.total = b.total
+            r.currencyCode = b.currencyCode
+            r.title = b.title
+            r.note = b.note
+            r.warrantyUntil = b.warrantyUntil
+            r.createdAt = b.createdAt
+            r.pages = b.pages
+            context.insert(r)
+            Task { await ReceiptReminders.schedule(r) }
         }
         try? context.save()
         return added

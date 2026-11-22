@@ -29,10 +29,12 @@ struct WalletView: View {
     @State private var search = ""
     @State private var sheet: Sheet?
     @State private var deleting: Card?
-    /// Wanneer de kaart naar voren kwam en waar (voor de vraag "Hoeveel heb je uitgegeven?" bij een voucher).
-    @State private var shownAt: Date?
-    @State private var shownPlace: String?
-    @AppStorage(SpendSheet.askKey) private var askSpent = true
+    /// Sinds wanneer de barcode in beeld is, en hoe lang al eerder (de app op de achtergrond telt niet mee).
+    @State private var codeVisibleSince: Date?
+    @State private var codeVisible: TimeInterval = 0
+    /// "Gebruikt bij PLUS? Ja · Nee" onderin na het sluiten.
+    @State private var usePrompt: UsePrompt?
+    @Query(sort: \Receipt.date, order: .reverse) private var receipts: [Receipt]
     /// 0 = front, 180 = back with the code.
     @State private var flipAngle: Double = 0
     @Namespace private var namespace
@@ -41,11 +43,15 @@ struct WalletView: View {
 
     enum Sheet: Identifiable {
         case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?), info(Card)
+        /// Bonnetjes: alle bonnen (eventueel met een zoekterm), of één bon.
+        case receipts(String), receipt(Receipt)
         /// "Laatst gebruikt": alles, of het bedrag bij één keer.
         case uses(Card), useAmount(Card, UUID)
         var id: String {
             switch self {
             case .uses(let card): "uses-\(card.id)"
+            case .receipts: "receipts"
+            case .receipt(let r): "receipt-\(r.id)"
             case .useAmount(let card, let use): "useAmount-\(card.id)-\(use)"
             case .info(let card): "info-\(card.id)"
             case .history(let card): "history-\(card.id)"
@@ -90,6 +96,24 @@ struct WalletView: View {
                     if let card = selectedCard {
                         forward(card, width: min(geo.size.width - 24, 470), height: geo.size.height)
                     }
+                    if selectedID == nil, !search.trimmingCharacters(in: .whitespaces).isEmpty, !matchingReceipts.isEmpty {
+                        receiptMatches
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if let prompt = usePrompt {
+                        UsePromptBar(prompt: prompt, card: cards.first { $0.id == prompt.cardID },
+                                     onYes: { confirmUse(prompt) },
+                                     onNo: { withAnimation(.snappy) { usePrompt = nil } })
+                            .padding(.bottom, 12)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .id(prompt.id)
+                            .task(id: prompt.id) {
+                                try? await Task.sleep(for: .seconds(UseCapture.promptDuration))
+                                // geen reactie: niet tellen
+                                if usePrompt?.id == prompt.id { withAnimation(.snappy) { usePrompt = nil } }
+                            }
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .onChange(of: geo.size) { _, _ in ScreenBrightness.screenChanged() }
@@ -108,7 +132,9 @@ struct WalletView: View {
             case .share(let card): ShareCardSheet(card: card)
             case .history(let card): CardHistorySheet(card: card)
             case .uses(let card): RecentUsesView(card: card)
-            case .useAmount(let card, let use): UseAmountSheet(card: card, useID: use)
+            case .useAmount(let card, let use): UseAmountSheet(card: card, useID: use, offersReceipt: true)
+            case .receipts(let query): ReceiptsView(initialQuery: query)
+            case .receipt(let r): ReceiptDetailView(receipt: r)
             case .info(let card):
                 CardInfoSheet(card: card) {
                     Task { @MainActor in
@@ -133,11 +159,24 @@ struct WalletView: View {
         .onChange(of: selectedID) { _, newValue in
             if newValue != nil { ScreenBrightness.boost() } else { ScreenBrightness.restore() }
         }
+        .onChange(of: scenePhase) { _, phase in
+            // op de achtergrond is de barcode niet in beeld
+            if phase != .active, let since = codeVisibleSince {
+                codeVisible += Date.now.timeIntervalSince(since)
+                codeVisibleSince = nil
+            } else if phase == .active, selectedID != nil, codeVisibleSince == nil, flipAngle == 180 {
+                codeVisibleSince = .now
+            }
+        }
         .onDisappear { ScreenBrightness.restore() }
         .task(id: "\(catalog.version)|" + WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
+        // bonnetjes in Spotlight (alleen de index op dit toestel)
+        .task(id: receipts.map { "\($0.id)\($0.updatedAt.timeIntervalSince1970)" }.joined()) { ReceiptSpotlight.index(receipts) }
         .task(id: "\(order)|\(scenePhase == .active)|\(cards.count)") { await updateDistances(search: false) }
         .onChange(of: openCardID, initial: true) { _, id in openRequestedCard(id) }
         .onReceive(NotificationCenter.default.publisher(for: .pasrCloseSheets)) { _ in sheet = nil }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrOpenReceipt)) { _ in openPendingReceipt() }
+        .onAppear { openPendingReceipt() }
         .onChange(of: cards.count) { _, _ in openRequestedCard(openCardID) }
     }
 
@@ -328,13 +367,16 @@ struct WalletView: View {
     }
 
     private func bringForward(_ card: Card) {
+        // telt voor de volgorde "Meest gebruikt"; in Laatst gebruikt komt pas iets na "Ja" bij het sluiten
         card.markUsed()
-        shownAt = .now
-        shownPlace = nil
-        Task {
-            let place = await NearbyStores.shared.placeName(for: card)
-            shownPlace = place
-            card.recordShown(place: place)
+        withAnimation(.snappy) { usePrompt = nil }
+        codeVisible = 0
+        codeVisibleSince = nil
+        let id = card.id
+        Task { @MainActor in
+            // de barcode staat in beeld zodra de kaart is omgedraaid
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 350 : 900))
+            if selectedID == id, scenePhase == .active { codeVisibleSince = .now }
         }
         flipAngle = 0
         withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
@@ -344,21 +386,89 @@ struct WalletView: View {
 
     private func deselect() {
         guard let id = selectedID else { return }
-        // Voucher langer dan een paar seconden getoond: vragen hoeveel je uitgaf (tegoed bijhouden)
-        if askSpent, let card = cards.first(where: { $0.id == id }), card.kind == .voucher, !card.isTemporary,
-           (card.balance ?? 0) > 0, let at = shownAt, Date.now.timeIntervalSince(at) > 4 {
-            let place = shownPlace
+        // Barcode minstens 5 seconden in beeld: onderin vragen of je de kaart gebruikte (met Alleen bij de winkel
+        // alleen als je bij een filiaal bent). Geen reactie of Nee: er komt niets bij.
+        let visible = codeVisible + (codeVisibleSince.map { Date.now.timeIntervalSince($0) } ?? 0)
+        codeVisible = 0
+        codeVisibleSince = nil
+        if let card = cards.first(where: { $0.id == id }) {
             Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(650))
-                if sheet == nil { sheet = .spend(card, place) }
+                let decision = await UseCapture.decide(for: card, visible: visible)
+                guard decision.ask, selectedID == nil || selectedID == id else { return }   // niet over een andere kaart heen
+                let title = decision.place ?? (card.storeName.isEmpty ? String(localized: "deze winkel") : card.storeName)
+                withAnimation(.snappy) { usePrompt = UsePrompt(cardID: card.id, title: title, place: decision.place) }
             }
         }
-        shownAt = nil
         withAnimation(.easeInOut(duration: 0.32)) { flipAngle = 0 }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))
             withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
         }
+    }
+
+    /// Bonnetje uit een garantieherinnering, Spotlight of de opdracht "Toon bonnetje".
+    private func openPendingReceipt() {
+        guard let id = NotificationRouter.pendingReceiptID else { return }
+        NotificationRouter.pendingReceiptID = nil
+        Task { @MainActor in
+            // de query kan net een tel later zijn bijgewerkt
+            for _ in 0..<10 {
+                if let r = receipts.first(where: { $0.id == id }) {
+                    if selectedID != nil { deselect() }
+                    sheet = .receipt(r)
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
+    }
+
+    /// "Ja": het moment komt in Laatst gebruikt, daarna optioneel het bedrag (bij een cadeaukaart van het tegoed).
+    private func confirmUse(_ prompt: UsePrompt) {
+        withAnimation(.snappy) { usePrompt = nil }
+        guard let card = cards.first(where: { $0.id == prompt.cardID }) else { return }
+        let use = card.recordUse(place: prompt.place, source: "ask")
+        try? context.save()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            if sheet == nil { sheet = .useAmount(card, use) }
+        }
+    }
+
+    // MARK: Bonnetjes in de zoekresultaten
+
+    private var matchingReceipts: [Receipt] {
+        let q = search.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return [] }
+        return receipts.filter { $0.matches(q) }
+    }
+
+    /// Onder de gevonden kaarten: de bonnetjes die bij de zoekterm passen (winkel, bedrag of datum).
+    private var receiptMatches: some View {
+        let list = matchingReceipts
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(list.count == 1 ? String(localized: "1 bonnetje") : String(localized: "\(list.count) bonnetjes"),
+                      systemImage: "doc.text.fill")
+                    .font(.subheadline.weight(.bold))
+                Spacer()
+                Button("Alles") { sheet = .receipts(search) }
+                    .font(.subheadline.weight(.semibold))
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(list.prefix(12)) { r in
+                        Button { sheet = .receipt(r) } label: { ReceiptChip(receipt: r) }
+                            .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .background(Brand.inkRaised, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .frame(maxHeight: .infinity, alignment: .bottom)
     }
 
     // MARK: Empty state and toolbar
@@ -459,6 +569,12 @@ struct WalletView: View {
                 Button("Klaar", systemImage: "xmark") { deselect() }
             } else {
                 Button { sheet = .settings } label: { Label("Instellingen", systemImage: "gearshape") }
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            // vaste ingang naar alle bonnetjes (nieuwste eerst, zoeken op winkel, bedrag of datum)
+            if selectedID == nil, !cards.isEmpty || !receipts.isEmpty {
+                Button { sheet = .receipts("") } label: { Label("Bonnetjes", systemImage: "doc.text") }
             }
         }
         ToolbarItem(placement: .primaryAction) {

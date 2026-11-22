@@ -151,12 +151,17 @@ enum CardSync {
             let ids = Set(remote.map(\.id))
             // een oudere versie (zonder "uses") stuurt geen gebruiksmomenten: dan blijven de ingevulde bedragen van hier staan
             let remoteHasUses = f["uses"] as? Bool == true
-            // een filiaalnaam bij een gebruiksmoment gaat niet naar de server: die van hier blijft bewaard
-            let localPlaces = Dictionary(card.history.filter { $0.kind == .shown && $0.place != nil }.map { ($0.id, $0.place) },
-                                         uniquingKeysWith: { a, _ in a })
+            // filiaalnaam, bonnetje en herkomst van een gebruiksmoment gaan niet naar de server: die van hier blijven bewaard
+            let localUses = Dictionary(card.history.filter { $0.kind == .shown }.map { ($0.id, $0) },
+                                       uniquingKeysWith: { a, _ in a })
             let merged = remote.map { incoming -> CardEvent in
                 var event = incoming
-                if event.kind == .shown, event.place == nil, let local = localPlaces[event.id] { event.place = local }
+                if event.kind == .shown, let local = localUses[event.id] {
+                    if event.place == nil { event.place = local.place }
+                    event.receiptID = local.receiptID
+                    event.source = local.source
+                    if event.amount == nil { event.pendingAmount = local.pendingAmount }
+                }
                 return event
             }
             card.history = merged + card.history.filter { local in

@@ -5,11 +5,20 @@ enum PasrStore {
     static let cloudContainer = "iCloud.nl.lrvdlinden.pasr"
     static let appGroup = "group.nl.lrvdlinden.pasr"
 
+    /// De container van de app; ook App Intents (Opdrachten, Spotlight) gebruiken deze, zodat er één is.
+    @MainActor static let app = makeContainer()
+
     /// The shared store: SwiftData mirrored to the user's private iCloud database.
     /// Falls back to a local-only store if CloudKit cannot be set up, so the app always opens.
     static func makeContainer(inMemory: Bool = false) -> ModelContainer {
         protectSharedFolder()
+        // Bonnetjes (sinds build 47) alleen op iPhone en iPad (app en widgets delen hetzelfde bestand); de Watch laat
+        // ze in iCloud links liggen.
+        #if os(watchOS)
         let schema = Schema([Card.self])
+        #else
+        let schema = Schema([Card.self, Receipt.self])
+        #endif
         do {
             #if os(watchOS)
             let config = ModelConfiguration("Pasr", schema: schema, isStoredInMemoryOnly: inMemory,

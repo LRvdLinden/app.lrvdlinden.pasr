@@ -1,9 +1,10 @@
 import SwiftUI
 import SwiftData
+import CoreSpotlight
 
 @main
 struct PasrApp: App {
-    let container = PasrStore.makeContainer()
+    let container = PasrStore.app
     #if canImport(UIKit)
     @UIApplicationDelegateAdaptor(PasrAppDelegate.self) private var appDelegate
     #endif
@@ -19,6 +20,12 @@ struct PasrApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // bonnetje gekozen in Spotlight ("PLUS bon")
+                .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                    if let id = (activity.userInfo?[CSSearchableItemActivityIdentifier] as? String).flatMap(UUID.init) {
+                        NotificationRouter.pendingReceiptID = id
+                    }
+                }
                 .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
                 .environment(\.codeShield, ScreenShield.wrapper)
                 .task {

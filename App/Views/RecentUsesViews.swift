@@ -120,8 +120,16 @@ struct UseRow: View {
                 Text(UseFormat.title(event, card: card))
                     .font(.body.weight(.bold))
                     .foregroundStyle(.primary)
-                Text(withTime ? UseFormat.whenWithTime(event.date) : UseFormat.when(event.date))
-                    .font(.footnote).foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Text(withTime ? UseFormat.whenWithTime(event.date) : UseFormat.when(event.date))
+                    if event.receiptID != nil {
+                        Image(systemName: "doc.text.fill").imageScale(.small).accessibilityLabel(Text("met bonnetje"))
+                    }
+                    if event.source == "pay" {
+                        Image(systemName: "wave.3.right").imageScale(.small).accessibilityLabel(Text("via Opdrachten"))
+                    }
+                }
+                .font(.footnote).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .multilineTextAlignment(.leading)
@@ -129,6 +137,15 @@ struct UseRow: View {
                 Text(UseFormat.money(amount, card: card))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.primary)
+            } else if let pending = event.pendingAmount {
+                // cadeaukaart via Opdrachten: wacht op bevestiging voordat het van het tegoed gaat
+                Button(action: onAmount) {
+                    Text("Afboeken \(UseFormat.money(pending, card: card))?").font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .tint(Brand.coral)
             } else {
                 Button(action: onAmount) {
                     Text("Toevoegen").font(.subheadline.weight(.semibold))
@@ -151,6 +168,7 @@ struct RecentUsesSection: View {
     let card: Card
     var onAll: () -> Void
     var onAmount: (CardEvent) -> Void
+    @Environment(\.modelContext) private var context
 
     var body: some View {
         let uses = Array(card.uses.prefix(3))
@@ -178,8 +196,10 @@ struct RecentUsesSection: View {
                     ForEach(Array(uses.enumerated()), id: \.element.id) { index, e in
                         UseRow(card: card, event: e) { onAmount(e) }
                             .onTapGesture { onAmount(e) }
+                            .swipeToDelete { UseActions.delete(e, from: card, in: context) }
                             .accessibilityElement(children: .ignore)
                             .accessibilityAction { onAmount(e) }
+                            .accessibilityAction(named: Text("Verwijder")) { UseActions.delete(e, from: card, in: context) }
                             .accessibilityLabel(Text(UseFormat.spoken(e, card: card, withTime: false)))
                             .accessibilityHint(Text(e.amount == nil ? "Dubbeltik om een bedrag toe te voegen" : "Dubbeltik om het bedrag aan te passen"))
                             .accessibilityAddTraits(.isButton)
@@ -211,7 +231,12 @@ extension Brand {
 struct RecentUsesView: View {
     @Bindable var card: Card
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
     @State private var editing: CardEvent?
+    @State private var scanning = false
+    @State private var openReceipt: Receipt?
+    @Query(sort: \Receipt.date, order: .reverse) private var allReceipts: [Receipt]
+    private var receipts: [Receipt] { allReceipts.filter { $0.cardID == card.id } }
 
     private var uses: [CardEvent] { card.uses }
     private var thisMonth: [CardEvent] {
@@ -241,7 +266,7 @@ struct RecentUsesView: View {
                         ContentUnavailableView {
                             Label("Nog niet gebruikt", systemImage: "clock")
                         } description: {
-                            Text("Als je de kaart laat zien, zie je hier wanneer en waar. Dan kun je ook invullen wat je uitgaf.")
+                            Text("Laat je de kaart minstens 5 seconden zien, dan vraagt Pasr bij het sluiten of je hem gebruikte. Zeg je Ja, dan staat het hier, en kun je invullen wat je uitgaf.")
                         }
                         .padding(.top, 20)
                     }
@@ -260,7 +285,9 @@ struct RecentUsesView: View {
                                         UseRow(card: card, event: e, withTime: true) { editing = e }
                                     }
                                     .buttonStyle(.plain)
+                                    .swipeToDelete { UseActions.delete(e, from: card, in: context) }
                                     .accessibilityElement(children: .ignore)
+                                    .accessibilityAction(named: Text("Verwijder")) { UseActions.delete(e, from: card, in: context) }
                                     .accessibilityLabel(Text(UseFormat.spoken(e, card: card, withTime: true)))
                                     .accessibilityHint(Text("Dubbeltik om het bedrag aan te passen of de regel te verwijderen"))
                                     .accessibilityAddTraits(.isButton)
@@ -269,7 +296,8 @@ struct RecentUsesView: View {
                             }
                         }
                     }
-                    Text("Pasr bewaart wanneer je de kaart toonde. Een bedrag vul je zelf in; tik op een regel om het aan te passen of de regel te verwijderen.")
+                    receiptsSection
+                    Text("Even kijken telt niet: een moment komt erbij als je na het tonen Ja zegt, of als een aankoop via Opdrachten binnenkomt. Tik op een regel om het bedrag aan te passen of een bonnetje toe te voegen; veeg naar links om te verwijderen.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
@@ -295,7 +323,40 @@ struct RecentUsesView: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Klaar", systemImage: "checkmark") { dismiss() } }
             }
             .sheet(item: $editing) { e in
-                UseAmountSheet(card: card, useID: e.id, allowsDelete: true)
+                UseAmountSheet(card: card, useID: e.id, allowsDelete: true, offersReceipt: true)
+            }
+            .sheet(isPresented: $scanning) { ReceiptScanFlow(card: card, useID: nil) }
+            .sheet(item: $openReceipt) { r in ReceiptDetailView(receipt: r) }
+        }
+    }
+
+    /// Bonnetjes van deze kaart, nieuwste eerst, en een knop om er een (los) toe te voegen.
+    private var receiptsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("BONNETJES")
+                    .font(.footnote.weight(.bold)).tracking(0.6).foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityLabel(Text("Bonnetjes"))
+                Spacer()
+                Button { scanning = true } label: { Label("Bon scannen", systemImage: "doc.viewfinder") }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Brand.irisText)
+            }
+            .padding(.horizontal, 4)
+            .padding(.top, 6)
+            if receipts.isEmpty {
+                Text("Bewaar de kassabon van een grote aankoop, met een herinnering voordat de garantie afloopt.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+            } else {
+                UsesPanel {
+                    ForEach(Array(receipts.enumerated()), id: \.element.id) { index, r in
+                        Button { openReceipt = r } label: { ReceiptRow(receipt: r) }
+                            .buttonStyle(.plain)
+                        if index < receipts.count - 1 { Divider() }
+                    }
+                }
             }
         }
     }
@@ -331,10 +392,15 @@ struct UseAmountSheet: View {
     @Bindable var card: Card
     let useID: UUID
     var allowsDelete = false
+    /// Met de knop "Bonnetje scannen" (of het gekoppelde bonnetje tonen).
+    var offersReceipt = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var text = ""
     @State private var confirmDelete = false
+    @State private var scanning = false
+    @State private var showReceipt: Receipt?
+    @Query private var receipts: [Receipt]
     @FocusState private var focused: Bool
 
     private var event: CardEvent? { card.history.first { $0.id == useID } }
@@ -381,6 +447,16 @@ struct UseAmountSheet: View {
                 if event?.amount != nil {
                     Button("Bedrag weghalen", role: .destructive) { save(nil) }
                 }
+                if offersReceipt {
+                    if let rid = event?.receiptID, let r = receipts.first(where: { $0.id == rid }) {
+                        Button { showReceipt = r } label: { Label("Bonnetje bekijken", systemImage: "doc.text.fill") }
+                            .buttonStyle(.bordered).buttonBorderShape(.capsule)
+                    } else {
+                        Button { scanning = true } label: { Label("Bonnetje scannen", systemImage: "doc.viewfinder") }
+                            .buttonStyle(.bordered).buttonBorderShape(.capsule)
+                            .tint(Brand.iris)
+                    }
+                }
                 Spacer(minLength: 0)
                 if allowsDelete {
                     Button(role: .destructive) { confirmDelete = true } label: {
@@ -408,11 +484,20 @@ struct UseAmountSheet: View {
                 }
             }
             .onAppear {
-                if let a = event?.amount {
+                if let a = event?.amount ?? event?.pendingAmount {
                     text = a.formatted(.number.precision(.fractionLength(2)).locale(UseFormat.locale))
                 }
                 focused = true
             }
+            .sheet(isPresented: $scanning) {
+                ReceiptScanFlow(card: card, useID: useID) { total in
+                    // bedrag van de bon voorvullen als er nog niets staat
+                    if trimmed.isEmpty, let total {
+                        text = total.formatted(.number.precision(.fractionLength(2)).locale(UseFormat.locale))
+                    }
+                }
+            }
+            .sheet(item: $showReceipt) { r in ReceiptDetailView(receipt: r) }
         }
         .presentationDetents([.medium, .large])
     }
@@ -423,8 +508,8 @@ struct UseAmountSheet: View {
     }
 
     private func delete() {
-        if let e = event { card.removeEvent(e) }
-        finish()
+        if let e = event { UseActions.delete(e, from: card, in: context) }
+        dismiss()
     }
 
     private func finish() {
@@ -433,4 +518,72 @@ struct UseAmountSheet: View {
         if card.kind == .voucher { Task { await WalletPass.refreshIfInWallet(card) } }
         dismiss()
     }
+}
+
+/// Een gebruiksmoment verwijderen (vegen of de knop): bij een cadeaukaart gaat een afgeboekt bedrag terug naar het
+/// tegoed. Een bonnetje bij het moment blijft bewaard (los bij de kaart).
+enum UseActions {
+    @MainActor
+    static func delete(_ e: CardEvent, from card: Card, in context: ModelContext) {
+        withAnimation(.snappy) { card.removeEvent(e) }
+        if let rid = e.receiptID,
+           let r = try? context.fetch(FetchDescriptor<Receipt>(predicate: #Predicate { $0.id == rid })).first {
+            r.useID = nil
+        }
+        try? context.save()
+        if card.kind == .voucher { Task { await WalletPass.refreshIfInWallet(card) } }
+    }
+}
+
+/// Naar links vegen om te verwijderen, ook buiten een List (zoals in Wallet). Alleen horizontaal: verticaal scrollen
+/// blijft gewoon werken.
+struct SwipeToDelete: ViewModifier {
+    var onDelete: () -> Void
+    @State private var offset: CGFloat = 0
+    @State private var dragging = false
+    private let reveal: CGFloat = 88
+
+    func body(content: Content) -> some View {
+        ZStack(alignment: .trailing) {
+            if offset < 0 {
+                Button(role: .destructive) {
+                    withAnimation(.snappy) { offset = 0 }
+                    onDelete()
+                } label: {
+                    Label("Verwijder", systemImage: "trash.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: max(-offset, 0), height: 44)
+                        .background(Color.red, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHidden(true)
+            }
+            content
+                .background(Brand.inkRaised)
+                .offset(x: offset)
+        }
+        .clipped()
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 18)
+                .onChanged { v in
+                    guard abs(v.translation.width) > abs(v.translation.height) * 1.4 || dragging else { return }
+                    dragging = true
+                    offset = min(0, v.translation.width + (offset <= -reveal && !dragging ? -reveal : 0))
+                }
+                .onEnded { v in
+                    defer { dragging = false }
+                    guard dragging else { return }
+                    withAnimation(.snappy) {
+                        if v.translation.width < -220 { offset = 0; onDelete() }
+                        else { offset = v.translation.width < -reveal / 2 ? -reveal : 0 }
+                    }
+                }
+        )
+    }
+}
+
+extension View {
+    func swipeToDelete(_ onDelete: @escaping () -> Void) -> some View { modifier(SwipeToDelete(onDelete: onDelete)) }
 }

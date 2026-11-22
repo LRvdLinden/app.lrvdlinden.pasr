@@ -1,0 +1,96 @@
+{
+  "sourceLanguage": "nl",
+  "strings": {
+    "CFBundleDisplayName": {
+      "comment": "Info.plist",
+      "extractionState": "manual",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr"
+          }
+        }
+      }
+    },
+    "NSFaceIDUsageDescription": {
+      "comment": "Info.plist",
+      "extractionState": "manual",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr gebruikt Face ID om je kaarten te beschermen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr uses Face ID to protect your cards."
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "comment": "Info.plist",
+      "extractionState": "manual",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr gebruikt de camera om de barcode op je kaart en kassabonnen te scannen. Foto's blijven op je apparaten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr uses the camera to scan the barcode on your card and your receipts. Photos stay on your devices."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "comment": "Info.plist",
+      "extractionState": "manual",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr gebruikt je locatie om je kaart te tonen als je bij een winkel bent, en om alleen in de winkel te vragen of je hem gebruikte. Je locatie blijft op je iPhone."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr uses your location to show your card when you are at a store, and to ask whether you used it only when you are at the store. Your location stays on your iPhone."
+          }
+        }
+      }
+    },
+    "NSLocationAlwaysAndWhenInUseUsageDescription": {
+      "comment": "Info.plist",
+      "extractionState": "manual",
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Met Altijd ziet Pasr of je echt bij een winkel staat (binnen 5 meter, niet als je langsrijdt) en toont dan je kaart, ook als de app dicht is. Je locatie blijft op je iPhone."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With Always, Pasr can tell whether you are really at a store (within 5 metres, not when driving past) and then shows your card, even when the app is closed. Your location stays on your iPhone."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

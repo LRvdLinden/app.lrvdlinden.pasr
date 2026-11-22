@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var active: [Card]
+    @Query private var allReceipts: [Receipt]
     @State private var iCloudStatus: CKAccountStatus?
     @AppStorage(LogoService.settingKey) private var fetchLogos = true
     @AppStorage(Biometrics.appLockKey) private var appLock = false
@@ -71,6 +72,8 @@ struct SettingsView: View {
                         Text("Deel kaarten met je gezin of huisgenoten, elk met een eigen account, of leen een kaart tijdelijk uit.")
                     }
                 }
+
+                UseSettingsSection()
 
                 RemindersSettingsSection()
 
@@ -139,7 +142,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Back-up")
                 } footer: {
-                    Text(backupMessage ?? String(localized: "Een extra kopie met logo's en foto's, versleuteld met je eigen wachtwoord."))
+                    Text(backupMessage ?? String(localized: "Een extra kopie met logo's, foto's en bonnetjes, versleuteld met je eigen wachtwoord."))
                 }
 
                 Section("Hulp") {
@@ -198,7 +201,7 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $askBackupPassword) {
                 BackupPasswordSheet { password in
-                    if let doc = try? BackupDocument(backup: PasrBackup(cards: active.filter { !$0.isTemporary }), password: password) {
+                    if let doc = try? BackupDocument(backup: PasrBackup(cards: active.filter { !$0.isTemporary }, receipts: allReceipts), password: password) {
                         exportDoc = doc
                         Task { @MainActor in
                             try? await Task.sleep(for: .milliseconds(400))
