@@ -220,6 +220,9 @@ final class AccountService {
         if s.contains("bad_email") { return String(localized: "Dit e-mailadres klopt niet.") }
         if s.contains("rate_limited") { return String(localized: "Je hebt vandaag al veel gedeeld, uitgenodigd of aangevraagd. Probeer het morgen opnieuw.") }
         if s.contains("invite_not_found") { return String(localized: "Deze uitnodiging bestaat niet meer.") }
+        if s.contains("P0002") && s.contains("not_found") {
+            return String(localized: "Deze stempelkaart bestaat niet (meer) of de zaak heeft hem nog niet gepubliceerd.")
+        }
         if s.contains("not_confirmed") { return String(localized: "Bevestig eerst je e-mailadres. Daarna kun je de uitnodiging accepteren.") }
         if s.contains("not a member") || s.contains("not_a_member") { return String(localized: "Je bent geen lid meer van deze gedeelde Pasr.") }
         return nil

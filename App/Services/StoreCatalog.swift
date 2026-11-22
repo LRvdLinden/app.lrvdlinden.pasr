@@ -119,13 +119,18 @@ enum UserPush {
     static func didRegister(token: Data) {
         let hex = token.map { String(format: "%02x", $0) }.joined()
         UserDefaults.standard.set(hex, forKey: tokenKey)
-        Task { await sync() }
+        Task {
+            await sync()
+            // zonder account: "Nieuws over mijn kaarten" gaat via pasr_news_register (met account doet sync() het)
+            if !(await AccountService.shared.isSignedIn) { await StorePush.syncIfEnabled(force: true) }
+        }
     }
 
     private static var syncedFor: String?
 
     /// Heeft dit apparaat een APNs-token (meldingen toegestaan en aangemeld bij Apple)?
-    static var hasToken: Bool { UserDefaults.standard.string(forKey: tokenKey) != nil }
+    static var hasToken: Bool { token != nil }
+    static var token: String? { UserDefaults.standard.string(forKey: tokenKey) }
 
     /// Eén keer per account per keer dat de app draait (na inloggen of synchroniseren).
     static func syncOnce() async {

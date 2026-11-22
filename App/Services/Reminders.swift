@@ -404,19 +404,20 @@ struct RemindersSettingsSection: View {
                 })) {
                     SettingsLabel("Nieuwe winkels in Pasr", symbol: "storefront.fill", color: Brand.mint)
                 }
-                Toggle(isOn: Binding(get: { cardNews }, set: { on in
-                    cardNews = on
-                    Task {
-                        if let problem = await StorePush.setEnabled(on, cards: cards) {
-                            cardNews = StorePush.isEnabled
-                            note = problem
-                        } else {
-                            note = nil
-                        }
+            }
+            // ook zonder account (pasr_news_register)
+            Toggle(isOn: Binding(get: { cardNews }, set: { on in
+                cardNews = on
+                Task {
+                    if let problem = await StorePush.setEnabled(on, cards: cards) {
+                        cardNews = StorePush.isEnabled
+                        note = problem
+                    } else {
+                        note = nil
                     }
-                })) {
-                    SettingsLabel("Nieuws over mijn kaarten", symbol: "megaphone.fill", color: .orange)
                 }
+            })) {
+                SettingsLabel("Nieuws over mijn kaarten", symbol: "megaphone.fill", color: .orange)
             }
         } header: {
             Text("Meldingen")
@@ -442,7 +443,7 @@ struct RemindersSettingsSection: View {
 
     private var footer: String {
         var text = remindersFooter + (remindersFooter.isEmpty ? "" : "\n\n") + nearbyFooter
-        if account.isSignedIn {
+        do {
             text += "\n\n" + String(localized: "Met Nieuws over mijn kaarten krijg je af en toe een bericht van Pasr over winkels waarvan je een kaart hebt, zoals een nieuwe actie. Pasr weet daarvoor alleen welke winkels in je Pasr staan, geen kaartnummers.")
         }
         return text

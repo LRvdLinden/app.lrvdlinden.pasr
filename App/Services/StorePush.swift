@@ -3,7 +3,8 @@ import Foundation
 /// "Nieuws over mijn kaarten" (sinds 1.0.3): wie dit aanzet, krijgt af en toe een pushbericht van Pasr over een
 /// winkel waarvan hij een kaart heeft (bijvoorbeeld een nieuwe actie). De app meldt daarvoor welke winkels
 /// (template-ids uit de catalogus) er in Pasr staan: alleen die ids, nooit kaartnummers of andere gegevens.
-/// Uitzetten wist de lijst op de server. Kan alleen met een Pasr-account (zoals "Nieuwe winkels in Pasr").
+/// Uitzetten wist de lijst op de server. Met een Pasr-account via pasr_push_stores (het token staat dan al in
+/// pasr_user_push), zonder account via pasr_news_register / pasr_news_unregister met het token van dit apparaat.
 @MainActor
 enum StorePush {
     static let key = "pasr.push.cardNews"
@@ -37,7 +38,9 @@ enum StorePush {
                 return String(localized: "Sta meldingen voor Pasr toe in de Instellingen van je iPhone.")
             }
             UserDefaults.standard.set(true, forKey: key)
-            await UserPush.sync()   // registreert het apparaat en stuurt daarna de winkels (zie UserPush.sync)
+            if AccountService.shared.isSignedIn {
+                await UserPush.sync()   // registreert het apparaat en stuurt daarna de winkels (zie UserPush.sync)
+            }
             if !UserPush.hasToken { return nil }   // het token komt zo; dan gaat het via didRegister vanzelf
             return await send(force: true) ? nil : String(localized: "Aanmelden lukte nu niet. Pasr probeert het later opnieuw.")
         }
@@ -54,15 +57,26 @@ enum StorePush {
 
     @discardableResult
     private static func send(force: Bool) async -> Bool {
-        guard AccountService.shared.isSignedIn, let user = AccountService.shared.session?.userID else { return false }
+        let account = AccountService.shared
         let on = isEnabled
         let ids = on ? (UserDefaults.standard.stringArray(forKey: idsKey) ?? []) : []
-        let fingerprint = "\(on ? 1 : 0)|\(user)|\(UserPush.deviceID)|" + ids.joined(separator: ",")
+        let user = account.session?.userID ?? "-"
+        let token = UserPush.token ?? ""
+        let fingerprint = "\(on ? 1 : 0)|\(user)|\(UserPush.deviceID)|\(token.suffix(8))|" + ids.joined(separator: ",")
         if !force, UserDefaults.standard.string(forKey: sentKey) == fingerprint { return true }
         do {
-            _ = try await AccountService.shared.rpc("pasr_push_stores", body: [
-                "p_device": UserPush.deviceID, "p_enabled": on, "p_stores": ids,
-            ])
+            if account.isSignedIn {
+                _ = try await account.rpc("pasr_push_stores", body: [
+                    "p_device": UserPush.deviceID, "p_enabled": on, "p_stores": ids,
+                ])
+            } else if on {
+                guard !token.isEmpty else { return false }   // het token komt nog (didRegister stuurt dan opnieuw)
+                _ = try await account.publicRPC("pasr_news_register", body: [
+                    "p_device": UserPush.deviceID, "p_token": token, "p_sandbox": PushEnvironment.isSandbox, "p_stores": ids,
+                ])
+            } else {
+                _ = try await account.publicRPC("pasr_news_unregister", body: ["p_device": UserPush.deviceID])
+            }
             UserDefaults.standard.set(fingerprint, forKey: sentKey)
             return true
         } catch {
