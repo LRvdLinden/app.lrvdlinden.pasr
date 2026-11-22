@@ -742,7 +742,8 @@ html, body { overflow-x: clip; max-width: 100%; }
 .store-badge:hover { transform: translateY(-1px); }
 .store-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
 .actions { align-items: center; }
-.actions .store-badge, .actions .android-badge { margin: 0; }
+.actions .store-badge, .actions .android-badge { margin: 0; flex: none; }
+.store-badge, .android-badge { flex-shrink: 0; }
 @media (max-width: 420px) { .store-badge img { width: 190px; } }
 /* Bento: beelden van de nieuwere functies. Alle animaties lopen alleen terwijl de kaart in beeld is (site.js zet .play). */
 .js .feature.has-visual:not(.play) .fv, .js .feature.has-visual:not(.play) .fv * { animation-play-state: paused !important; }
