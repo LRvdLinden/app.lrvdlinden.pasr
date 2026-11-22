@@ -137,6 +137,16 @@ kaarten" toont ook passende bonnen; per kaart onder Alles. Groot tonen met zoome
 bestanden in SwiftData onder iOS-gegevensbescherming, iCloud (privédatabase) en de versleutelde Pasr-back-up; niet via
 het Pasr-account (de foto's van een pas gaan daar ook niet mee).
 
+**Android** (`android/pasr`): zelfde gedrag. Vraag bij sluiten in `ui/UsePrompt.kt` (`UsePrompts`, host in Root); Alleen
+bij de winkel met één locatiebepaling (alleen met toestemming) tegen de eigen filialen van een kaart (`UseCapture.check`,
+nieuw "Ik sta hier" in het kaartdetail); zonder filialen of toestemming gewoon vragen. Aankopen vanzelf: opt-in
+`notify/PaymentListener` (NotificationListenerService) voor betaalmeldingen van Google Wallet en bekende bank-apps,
+anders alleen met een betaalwoord en een €-bedrag; alleen winkel en bedrag, lokaal, niets bewaard of verstuurd;
+cadeaukaart via Afboeken/Niet afboeken (`PayActionReceiver`). Bonnetjes in `data/Receipts.kt` (versleuteld met de
+Keystore-sleutel, zoals de foto's; geen Android-back-up, want die staat voor Pasr uit) en `ui/Receipts.kt` (ML
+Kit-documentscanner en tekstherkenning via Play-services, garantieherinnering via de dagelijkse controle, delen via
+FileProvider).
+
 `App/InfoPlist.xcstrings` (nl en en) vertaalt de toestemmingsteksten; `App/PrivacyInfo.xcprivacy` en
 `Widgets/PrivacyInfo.xcprivacy` zijn de privacy manifests (gelijk aan `appstore/teksten/09-app-privacy.txt`).
 
