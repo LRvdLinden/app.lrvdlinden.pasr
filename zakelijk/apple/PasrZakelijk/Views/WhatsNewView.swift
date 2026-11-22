@@ -8,6 +8,11 @@ struct WhatsNewView: View {
         NavigationStack {
             List {
                 Section {
+                    item("bell.badge", "Meldingen", "Belangrijke berichten van Pasr Zakelijk als pushmelding. Een tik op een melding met een link opent die link in de app.")
+                } header: {
+                    Text(verbatim: "1.0.0 (4)")
+                }
+                Section {
                     item("qrcode.viewfinder", "Scannen aan de kassa", "Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen.")
                     item("gift", "Beloning inwisselen", "Is de kaart vol, dan wissel je de beloning in met één tik.")
                     item("arrow.uturn.backward", "Ongedaan maken", "Vergist? Maak de laatste stempel of inwisseling binnen 2 minuten ongedaan.")

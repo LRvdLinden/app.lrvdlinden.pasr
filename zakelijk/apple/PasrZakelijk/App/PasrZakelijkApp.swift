@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct PasrZakelijkApp: App {
+    @UIApplicationDelegateAdaptor(ZakelijkAppDelegate.self) private var appDelegate
     @AppStorage(AppearanceSetting.key) private var appearance: AppearanceSetting = .system
     @State private var store = BusinessStore.shared
     @State private var account = Account.shared
@@ -31,6 +32,8 @@ struct AppShell: View {
     @State private var locked = Biometrics.isAppLockEnabled
     @State private var covered = false
     @State private var modals = ModalTracker.shared
+    @State private var links = NotificationLink.shared
+    @State private var safariLink: IdentifiedURL?
 
     var body: some View {
         ZStack {
@@ -53,7 +56,29 @@ struct AppShell: View {
             }
         }
         .background(Theme.bg.ignoresSafeArea())
-        .onChange(of: showSplash || locked, initial: true) { _, hidden in ModalTracker.shared.locked = hidden }
+        .onChange(of: showSplash || locked, initial: true) { _, hidden in
+            ModalTracker.shared.locked = hidden
+            openPendingLink()
+        }
+        // Link uit een getikte melding (pas na splash en Face ID-slot)
+        .onChange(of: links.pending) { _, _ in openPendingLink() }
+        #if canImport(SafariServices)
+        .sheet(item: $safariLink) { item in
+            SafariView(url: item.url).ignoresSafeArea().trackModal()
+        }
+        #endif
+        // Meldingen: één keer vragen op een rustig moment (zaak goedgekeurd, niets open); daarna token en apparaat melden
+        .task(id: !showSplash && !locked && account.isSignedIn && store.current?.isApproved == true && modals.isCalm) {
+            guard !showSplash, !locked, account.isSignedIn, store.current?.isApproved == true, modals.isCalm else { return }
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            await ZakelijkPush.askOnce()
+        }
+        .task(id: "\(scenePhase == .active)|\(account.session?.userID ?? "-")") {
+            guard scenePhase == .active, account.isSignedIn else { return }
+            await ZakelijkPush.refreshIfAllowed()
+            await DeviceRegistry.registerIfNeeded()
+        }
         // Beoordelingsvraag alleen op een rustig moment: niet tijdens splash, slot, inloggen, wachten op goedkeuring,
         // een uitnodiging, een sheet of dialoog, of terwijl er een klant geholpen wordt.
         .reviewPrompt(isCalm: !showSplash && !locked && !covered && account.isSignedIn && store.current?.isApproved == true
@@ -71,6 +96,24 @@ struct AppShell: View {
                 break
             }
         }
+    }
+}
+
+extension AppShell {
+    /// Een link van pasr.nl die de app kent (uitnodiging voor medewerkers) gaat naar die plek in de app; elke andere
+    /// https-link opent in Safari in de app (SFSafariViewController).
+    fileprivate func openPendingLink() {
+        guard let url = links.pending, !showSplash, !locked else { return }
+        links.pending = nil
+        if store.handles(url: url) {
+            store.handle(url: url)
+            return
+        }
+        #if canImport(SafariServices)
+        safariLink = IdentifiedURL(url: url)
+        #else
+        UIApplication.shared.open(url)
+        #endif
     }
 }
 

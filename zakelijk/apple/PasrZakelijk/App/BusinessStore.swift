@@ -52,10 +52,16 @@ final class BusinessStore {
     }
 
     /// Een link uit Safari, Berichten of de camera.
-    func handle(url: URL) {
-        let isInvite = (url.scheme == "pasrzakelijk" && (url.host() == "uitnodiging" || url.path().contains("uitnodiging")))
+    /// Kent de app deze link zelf (uitnodiging voor medewerkers)?
+    func handles(url: URL) -> Bool { Self.isInvite(url) }
+
+    private static func isInvite(_ url: URL) -> Bool {
+        (url.scheme == "pasrzakelijk" && (url.host() == "uitnodiging" || url.path().contains("uitnodiging")))
             || (url.host()?.hasSuffix("pasr.nl") == true && url.path().contains("/zakelijk/uitnodiging"))
-        if isInvite {
+    }
+
+    func handle(url: URL) {
+        if Self.isInvite(url) {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             let code = url.fragment ?? items.first(where: { $0.name == "code" })?.value
             if let code = code?.trimmingCharacters(in: .whitespacesAndNewlines), !code.isEmpty, code.count <= 80 {

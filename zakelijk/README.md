@@ -2,7 +2,7 @@
 
 De iOS-app voor ondernemers (iPhone en iPad, iOS 17+, Nederlands en Engels): stempels zetten met de scanner,
 stempelkaarten maken, QR-code en flyer, overzicht en logboek, medewerkers, vergrendelen met Face ID.
-Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.0 (build 2). Beheer van ondernemers blijft in PasrBeheer, LRbeheer en beheer.pasr.nl.
+Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.0 (build 4). Beheer van ondernemers blijft in PasrBeheer, LRbeheer en beheer.pasr.nl.
 
 | Map | Inhoud |
 |---|---|
@@ -11,6 +11,15 @@ Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.0 (build 2). Beheer van onde
 | `appstore/` | App Store-content: screenshots nl-NL en en-US (iPhone en iPad), productpagina-beelden, teksten, privacy en review-notities |
 
 CI: `.github/workflows/zakelijk-app.yml` compileert de app bij elke push die `zakelijk/` raakt.
+
+## Pushmeldingen (iOS build 4)
+
+De app vraagt één keer om meldingen, op een rustig moment nadat je zaak is goedgekeurd, en meldt het APNs-token met
+`pasr_device_register` (`p_app: "zakelijk"`, `p_platform: "ios"`, `p_push_provider: "apns"`, `p_push_sandbox`). Het beheer
+kan dan een belangrijk bericht sturen aan iedereen met meldingen aan in Pasr Zakelijk (APNs-topic
+`app.lrvdlinden.pasrzakelijk`). Een tik op een melding met `url` opent die link: een uitnodigingslink op de juiste plek in
+de app, andere https-links in Safari in de app. Capability Push Notifications staat in `Config/PasrZakelijk.entitlements`
+(`aps-environment`); bij automatisch ondertekenen zet Xcode Push Notifications ook aan bij de App ID.
 
 ## Apple ID invullen (link "Beoordeel Pasr Zakelijk")
 

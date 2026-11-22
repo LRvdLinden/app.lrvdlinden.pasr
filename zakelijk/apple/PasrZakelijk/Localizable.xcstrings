@@ -529,6 +529,22 @@
         }
       }
     },
+    "Belangrijke berichten van Pasr Zakelijk als pushmelding. Een tik op een melding met een link opent die link in de app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Important messages from Pasr Zakelijk as push notifications. Tapping a notification with a link opens that link in the app."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belangrijke berichten van Pasr Zakelijk als pushmelding. Een tik op een melding met een link opent die link in de app."
+          }
+        }
+      }
+    },
     "Beloning (bijv. 1 gratis koffie)": {
       "localizations": {
         "en": {
@@ -2733,6 +2749,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Meld je zaak aan"
+          }
+        }
+      }
+    },
+    "Meldingen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingen"
           }
         }
       }
