@@ -30,6 +30,15 @@
 //   business_detail  {id, limit?, days?}            -> {business, staff, log, stats}
 //   business_settings {id, cooldown_minutes?, max_per_scan?} -> {business}
 //   business_staff_revoke {id}                      -> {ok}                   (medewerker intrekken)
+//   (zakelijk 1.1: het beheer maakt zelf zaken en kaarten; alles in de log van de zaak met actor "beheer")
+//   business_create  {business:{name, city?, address?, website?, email?, note?, listed?, cooldown_minutes?, max_per_scan?}, send?}
+//                    -> {business, owner: account|invite|none, invite, mailed}  (meteen goedgekeurd; 409 owner_taken)
+//   business_update  {id, business:{…zelfde, weglaten = laten staan}, send?} -> {business, owner, invite, mailed}
+//   business_owner_invite {id, email?, send?}       -> {business, owner, invite, mailed} (nieuwe link; 409 has_owner)
+//   business_card_save {business_id, card:{id?, name, reward, stamps_total, color, text_color?, logo?, published?}} -> {card}
+//   business_card_publish {id, published}           -> {card}                 (409 not_approved)
+//   business_card_delete {id}                       -> {ok, members}
+//   business_brand   {business_id?, url?}           -> {name, logo, color, text_color, source_url, domain} (zelfde als business-brand)
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
@@ -38,7 +47,12 @@ import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
 import { chunks, cleanAudience, cleanNews, newsPayload } from "./news.ts";
-import { cleanBusinessDetail, cleanBusinessSettings, cleanBusinessStatus } from "./business.ts";
+import { cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, dbError } from "./business.ts";
+import { okLink, ownerMail } from "./owner_mail.ts";
+// huisstijl: dezelfde code als de functie business-brand (SSRF-beveiligd ophalen, logo en kleur)
+import { cleanUrl } from "../business-brand/brand.ts";
+import { brand } from "../business-brand/fetch.ts";
+import nodemailer from "npm:nodemailer@6.9.16";
 
 const env = (k: string) => (Deno.env.get(k) ?? "").trim();
 const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
@@ -242,6 +256,33 @@ async function pushNewStore(id: string, name: string, requesters: string[]): Pro
   return results.filter((x) => x.r.ok).length;
 }
 
+// ---- zakelijk 1.1: eigenaarsuitnodiging mailen (SMTP-secrets van group-invite; zonder SMTP: alleen de link) ----
+async function mailOwnerInvite(to: unknown, business: { name?: string; city?: string | null }, invite: { link?: string; expires_at?: string | null } | null) {
+  const host = env("PASR_SMTP_HOST"), user = env("PASR_SMTP_USER"), pass = Deno.env.get("PASR_SMTP_PASSWORD") ?? "", from = env("PASR_SMTP_FROM");
+  if (!host || !user || !pass || !from || typeof to !== "string" || !invite || !okLink(invite.link)) return false;
+  try {
+    const port = Number(env("PASR_SMTP_PORT") || 465);
+    const t = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+    const m = ownerMail(String(business.name ?? "Je zaak"), business.city ?? null, invite.link as string, invite.expires_at ?? null);
+    await t.sendMail({ from: `Pasr <${from}>`, to, subject: m.subject, html: m.html, text: m.text });
+    return true;
+  } catch (e) {
+    console.error("admin", "owner_mail", e instanceof Error ? e.name : "?");
+    return false;
+  }
+}
+
+/** Antwoord van pasr_admin_business_save / _owner_invite, met mailed als er een uitnodiging is gemaakt en mailen mag. */
+async function withMail(data: Record<string, unknown>, send: boolean) {
+  const invite = data.invite as { email?: string; link?: string; expires_at?: string } | null;
+  const business = (data.business ?? {}) as { name?: string; city?: string };
+  const mailed = send && data.owner === "invite" && invite ? await mailOwnerInvite(invite.email, business, invite) : false;
+  return { ...data, mailed, mail_ready: !!(env("PASR_SMTP_HOST") && env("PASR_SMTP_USER") && env("PASR_SMTP_FROM")) };
+}
+
+// huisstijl ophalen zonder zaak (nieuw formulier): hoogstens 60 per uur per beheer-instantie
+let brandHits: number[] = [];
+
 Deno.serve(async (req) => {
   const cors = corsFor(req);
   const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
@@ -258,7 +299,7 @@ Deno.serve(async (req) => {
     if (text.length > 700_000) return json({ error: "too_large" }, 413);
     const b = JSON.parse(text || "{}");
     if (!b || typeof b !== "object" || Array.isArray(b)) return json({ error: "bad_json" }, 400);
-    if (text.length > 8192 && b.action !== "store_save") return json({ error: "too_large" }, 413);
+    if (text.length > 8192 && b.action !== "store_save" && b.action !== "business_card_save") return json({ error: "too_large" }, 413);
     body = b;
   } catch { return json({ error: "bad_json" }, 400); }
   const action = typeof body.action === "string" ? body.action : "";
@@ -593,6 +634,78 @@ Deno.serve(async (req) => {
         if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
         await audit("business_staff_revoke", ipHash, String(body.id));
         return json({ ok: true });
+      }
+      case "business_create":
+      case "business_update": {
+        const v = cleanBusinessInput(body, action === "business_create");
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { data, error } = await db.rpc("pasr_admin_business_save", { p_business: v.value });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        const d = data as Record<string, unknown>;
+        await audit(action, ipHash, `${(d.business as { id?: string })?.id ?? v.value.id ?? "?"} owner=${d.owner}`);
+        // nieuw: standaard mailen; bewerken: alleen als er een nieuwe uitnodiging is en send niet false is
+        return json(await withMail(d, body.send !== false && (action === "business_create" || d.owner === "invite")));
+      }
+      case "business_owner_invite": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+        if (email.length > 200 || (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) return json({ error: "bad_email" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_owner_invite", { p_business: body.id, p_email: email || null });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        const d = data as Record<string, unknown>;
+        await audit("business_owner_invite", ipHash, `${body.id} owner=${d.owner}`);
+        return json(await withMail(d, body.send !== false));
+      }
+      case "business_card_save": {
+        const v = cleanCardInput(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { data, error } = await db.rpc("pasr_admin_card_save", { p_business: v.business, p_card: v.card });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        await audit("business_card_save", ipHash, `${v.business} ${(data as { id?: string })?.id ?? ""}`);
+        return json({ card: data });
+      }
+      case "business_card_publish": {
+        if (!isUuid(body.id) || typeof body.published !== "boolean") return json({ error: "bad_request" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_card_publish", { p_card: body.id, p_published: body.published });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        await audit("business_card_publish", ipHash, `${body.id} ${body.published}`);
+        return json({ card: data });
+      }
+      case "business_card_delete": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_card_delete", { p_card: body.id });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        await audit("business_card_delete", ipHash, String(body.id));
+        return json(data);
+      }
+      case "business_brand": {
+        // Zelfde als de functie business-brand, maar met beheerrechten: elke zaak, of alleen een url (nieuw formulier).
+        let website: string | null = null, bid: string | null = null;
+        if (body.business_id !== undefined && body.business_id !== null && body.business_id !== "") {
+          if (!isUuid(body.business_id)) return json({ error: "bad_id" }, 400);
+          const { data: biz, error: be } = await db.from("pasr_businesses").select("id, website").eq("id", body.business_id).maybeSingle();
+          if (be) throw new Error(be.message);
+          if (!biz) return json({ error: "not_found" }, 404);
+          bid = biz.id; website = biz.website;
+        }
+        const raw = typeof body.url === "string" && body.url.trim() ? body.url : website;
+        if (!raw) return json({ error: "no_website" }, 400);
+        const site = cleanUrl(raw);
+        if (!site) return json({ error: "bad_url" }, 400);
+        if (bid) {
+          const { data: wait, error: re } = await db.rpc("pasr_business_brand_hit", { p_business: bid, p_per_hour: 60 });
+          if (re) throw new Error(re.message);
+          if (Number(wait) > 0) return json({ error: "rate_limited", retry_after: Number(wait) }, 429, { "Retry-After": String(wait) });
+        } else {
+          const now = Date.now();
+          brandHits = brandHits.filter((t) => t > now - 3600_000);
+          if (brandHits.length >= 60) return json({ error: "rate_limited", retry_after: 600 }, 429, { "Retry-After": "600" });
+          brandHits.push(now);
+        }
+        const r = await brand(site);
+        if (!r || (!r.logo && !r.color && !r.name)) return json({ error: "unreachable" }, 422);
+        await audit("business_brand", ipHash, `${bid ?? "-"} ${r.domain}`);
+        return json(r);
       }
       default:
         return json({ error: "unknown_action" }, 400);

@@ -35,3 +35,55 @@ Deno.test("instellingen: vindbaar in Pasr, adres en locatie", () => {
   const n = cleanBusinessSettings({ id: ID, address: null, lat: null, lng: null });
   ok(n.ok && n.settings.address === null && n.settings.lat === null, "wissen");
 });
+
+import { cleanBusinessInput, cleanCardInput, dbError } from "./business.ts";
+
+Deno.test("zaak aanmaken door het beheer", () => {
+  const r = cleanBusinessInput({ business: { name: "  Koffie   A ", city: "Deventer", email: " A@X.nl ", website: "koffie-a.nl/", listed: false,
+    cooldown_minutes: "15", max_per_scan: 5, address: "Brink 1" } }, true);
+  ok(r.ok && r.value.name === "Koffie A" && r.value.email === "a@x.nl" && r.value.website === "https://koffie-a.nl", JSON.stringify(r));
+  ok(r.ok && r.value.cooldown_minutes === 15 && r.value.listed === false && !("id" in r.value), "instellingen");
+  ok(!cleanBusinessInput({ business: { name: "X" } }, true).ok, "naam te kort");
+  ok(!cleanBusinessInput({ business: {} }, true).ok, "naam verplicht");
+  ok(!cleanBusinessInput({ business: { name: "Goed", email: "geen-mail" } }, true).ok, "e-mail");
+  ok(!cleanBusinessInput({ business: { name: "Goed", website: "javascript:alert(1)" } }, true).ok, "website");
+  ok(!cleanBusinessInput({ business: { name: "Goed", website: "http://localhost" } }, true).ok, "geen hostnaam");
+  ok(!cleanBusinessInput({ business: { name: "Goed", max_per_scan: 31 } }, true).ok, "max per scan");
+  ok(!cleanBusinessInput({ business: { name: "Goed", cooldown_minutes: 2000 } }, true).ok, "afkoeltijd");
+  ok(!cleanBusinessInput({ business: "Goed" }, true).ok, "geen object");
+  const e = cleanBusinessInput({ business: { name: "Goed", email: "" } }, true);
+  ok(e.ok && e.value.email === "", "zonder eigenaar");
+});
+
+Deno.test("zaak bewerken door het beheer", () => {
+  ok(!cleanBusinessInput({ business: { name: "Goed" } }, false).ok, "id verplicht");
+  const r = cleanBusinessInput({ id: ID, business: { website: null, address: "" } }, false);
+  ok(r.ok && r.value.website === null && r.value.address === null && !("name" in r.value), "wissen en laten staan");
+  ok(!cleanBusinessInput({ id: ID, business: {} }, false).ok, "niets te bewaren");
+});
+
+Deno.test("stempelkaart van het beheer", () => {
+  const r = cleanCardInput({ business_id: ID, card: { name: " Koffiekaart ", reward: "1 gratis koffie", stamps_total: 8, color: "#12a77e",
+    text_color: "#ffffff", logo: "data:image/png;base64,iVBORw0KGgoAAAA=", published: true } });
+  ok(r.ok && r.card.color === "#12A77E" && r.card.text_color === "#FFFFFF" && r.card.logo === "iVBORw0KGgoAAAA=" && r.card.published === true, JSON.stringify(r));
+  ok(r.ok && !("id" in r.card), "nieuw zonder id");
+  ok(!cleanCardInput({ business_id: ID, card: { name: "K", reward: "r", stamps_total: 1 } }).ok, "minstens 2 stempels");
+  ok(!cleanCardInput({ business_id: ID, card: { name: "K", reward: "r", stamps_total: 31 } }).ok, "hoogstens 30 stempels");
+  ok(!cleanCardInput({ business_id: ID, card: { name: "", reward: "r" } }).ok, "naam");
+  ok(!cleanCardInput({ business_id: ID, card: { name: "K", reward: "" } }).ok, "beloning");
+  ok(!cleanCardInput({ business_id: ID, card: { name: "K", reward: "r", color: "rood" } }).ok, "kleur");
+  ok(!cleanCardInput({ business_id: ID, card: { name: "K", reward: "r", logo: "<svg>" } }).ok, "logo");
+  ok(!cleanCardInput({ business_id: ID, card: { name: "K", reward: "r", logo: "iVBORw0KGgo" + "A".repeat(220_000) } }).ok, "logo te groot");
+  ok(!cleanCardInput({ business_id: "x", card: { name: "K", reward: "r" } }).ok, "zaak-id");
+  const keep = cleanCardInput({ business_id: ID, card: { id: ID, name: "K", reward: "r" } });
+  ok(keep.ok && !("logo" in keep.card) && !("text_color" in keep.card) && !("published" in keep.card), "weglaten = laten staan");
+  const clear = cleanCardInput({ business_id: ID, card: { name: "K", reward: "r", logo: null, text_color: "" } });
+  ok(clear.ok && clear.card.logo === null && clear.card.text_color === "", "wissen");
+});
+
+Deno.test("databasefouten", () => {
+  ok(dbError({ message: "owner_taken" })?.status === 409, "eigenaar bezet");
+  ok(dbError({ message: "Max per scan moet tussen 1 en 30 liggen.", hint: "bad_settings" })?.error === "bad_settings", "hint");
+  ok(dbError({ message: "not_found" })?.status === 404, "niet gevonden");
+  ok(dbError({ message: "iets anders" }) === null, "onbekend = serverfout");
+});
