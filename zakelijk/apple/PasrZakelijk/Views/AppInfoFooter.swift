@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Onderaan Instellingen: icoon, "Versie: 1.0.0 (1)" en "© <jaar> Pasr Zakelijk".
+/// Onderaan Instellingen: icoon, "Versie: 1.0.0 (2)" en "© <jaar> Pasr Zakelijk".
 struct AppInfoFooter: View {
     @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 64
 

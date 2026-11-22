@@ -63,7 +63,9 @@ struct ScanView: View {
             if status == .notDetermined { _ = await AVCaptureDevice.requestAccess(for: .video) }
             cameraDenied = [.denied, .restricted].contains(AVCaptureDevice.authorizationStatus(for: .video))
         }
-        .onChange(of: result == nil) { _, closed in ModalTracker.shared.scanning = !closed }
+        // niet rustig (geen beoordelingsvraag) zolang er een klant geholpen wordt: code typen, zoeken of resultaat open
+        .onChange(of: result != nil || busy || typing, initial: true) { _, active in ModalTracker.shared.scanning = active }
+        .onDisappear { ModalTracker.shared.scanning = false }
         .onChange(of: scenePhase) { _, phase in if phase != .active && torch { torch = false; Torch.set(false) } }
         .onDisappear { if torch { torch = false; Torch.set(false) } }
     }

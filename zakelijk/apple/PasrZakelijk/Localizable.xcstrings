@@ -1009,6 +1009,22 @@
         }
       }
     },
+    "Dit jaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This year"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit jaar"
+          }
+        }
+      }
+    },
     "Dit kwartaal": {
       "localizations": {
         "en": {
@@ -1665,6 +1681,38 @@
         }
       }
     },
+    "J": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Y"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "J"
+          }
+        }
+      }
+    },
+    "Jaar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jaar"
+          }
+        }
+      }
+    },
     "Je Pasr-account wordt verwijderd, ook in de app Pasr. Ben je eigenaar, dan verdwijnen je zaak, kaarten en leden ook. Dit kan niet ongedaan worden gemaakt.": {
       "localizations": {
         "en": {
@@ -1901,6 +1949,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Je zaak is nog niet goedgekeurd. Stempels zetten kan pas daarna."
+          }
+        }
+      }
+    },
+    "K": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Q"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K"
           }
         }
       }
@@ -2349,6 +2413,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Logo weghalen"
+          }
+        }
+      }
+    },
+    "M": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "M"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "M"
           }
         }
       }
@@ -3021,22 +3101,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Online (klanten kunnen sparen)"
-          }
-        }
-      }
-    },
-    "Op deze dag": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On this day"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Op deze dag"
           }
         }
       }
@@ -3953,18 +4017,66 @@
         }
       }
     },
-    "Vorige periode: %lld": {
+    "Vorig jaar": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Previous period: %lld"
+            "value": "Last year"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vorige periode: %lld"
+            "value": "Vorig jaar"
+          }
+        }
+      }
+    },
+    "Vorig kwartaal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last quarter"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorig kwartaal"
+          }
+        }
+      }
+    },
+    "Vorige maand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last month"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorige maand"
+          }
+        }
+      }
+    },
+    "Vorige week": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last week"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorige week"
           }
         }
       }
@@ -3997,6 +4109,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vul een naam in."
+          }
+        }
+      }
+    },
+    "W": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W"
           }
         }
       }
@@ -4369,6 +4497,22 @@
         }
       }
     },
+    "beloningen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rewards"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "beloningen"
+          }
+        }
+      }
+    },
     "eigenaar": {
       "localizations": {
         "en": {
@@ -4401,6 +4545,22 @@
         }
       }
     },
+    "leden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "members"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "leden"
+          }
+        }
+      }
+    },
     "lrvdlinden.app": {
       "localizations": {
         "en": {
@@ -4413,6 +4573,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "lrvdlinden.app"
+          }
+        }
+      }
+    },
+    "stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stempels"
           }
         }
       }

@@ -17,6 +17,11 @@ enum Theme {
     static let line = Color(light: 0xE1DFF2, dark: 0x262A37)
     static let muted = Color(light: 0x5F5D78, dark: 0x9A98B3)
 
+    /// Grafiekkaart in de stijl van Homey Insights: kaart, pillen en raster (licht/donker).
+    static let insightsCard = Color(light: 0xFFFFFF, dark: 0x1C1D26)
+    static let insightsPill = Color(light: 0xF1F2F6, dark: 0x2A2B36)
+    static let insightsGrid = Color(light: 0xE3E5EC, dark: 0x3A3C4A)
+
     static let gradient = LinearGradient(colors: [iris, coral], startPoint: .topLeading, endPoint: .bottomTrailing)
 
     /// Kleuren voor stempelkaarten (zelfde als het dashboard op pasr.nl).

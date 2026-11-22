@@ -19,7 +19,7 @@ struct PasrZakelijkApp: App {
                     if let url = activity.webpageURL { store.handle(url: url) }
                 }
                 .reviewPrompt(isCalm: account.isSignedIn && store.current?.isApproved == true
-                              && store.pendingInvite == nil && modals.openCount == 0 && !modals.scanning)
+                              && store.pendingInvite == nil && modals.isCalm)
         }
     }
 }
@@ -31,6 +31,9 @@ final class ModalTracker {
     static let shared = ModalTracker()
     var openCount = 0
     var scanning = false
+    /// Dialogen en bezig-momenten (bevestigen, code typen, zoeken) die geen sheet zijn.
+    var busyCount = 0
+    var isCalm: Bool { openCount == 0 && !scanning && busyCount == 0 }
 }
 
 private struct TrackModal: ViewModifier {
@@ -41,7 +44,27 @@ private struct TrackModal: ViewModifier {
     }
 }
 
+/// Zolang `active` waar is, telt het scherm als "niet rustig" (bijv. een bevestigingsvraag of typen).
+private struct BusyWhile: ViewModifier {
+    let active: Bool
+    @State private var counted = false
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: active, initial: true) { _, now in set(now) }
+            .onDisappear { set(false) }
+    }
+
+    private func set(_ on: Bool) {
+        guard on != counted else { return }
+        counted = on
+        ModalTracker.shared.busyCount = max(0, ModalTracker.shared.busyCount + (on ? 1 : -1))
+    }
+}
+
 extension View {
     /// Op de inhoud van elke sheet: telt mee als "niet rustig".
     func trackModal() -> some View { modifier(TrackModal()) }
+    /// Voor dialogen en bezig-momenten die geen sheet zijn.
+    func busyWhile(_ active: Bool) -> some View { modifier(BusyWhile(active: active)) }
 }

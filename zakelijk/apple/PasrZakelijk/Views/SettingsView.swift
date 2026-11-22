@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Instellingen: zaak (eigenaar), scannen (afkoeltijd, max per scan), vindbaar in Pasr, weergave, account, links,
+/// Instellingen: zaak (eigenaar), scannen (afkoeltijd, max per scan), vindbaar in Pasr, account, weergave, links,
 /// Ontdekken en de app-info.
 struct SettingsView: View {
     let business: Business
@@ -40,12 +40,12 @@ struct SettingsView: View {
                         }
                     }
                 }
+                accountSection
                 Section("Weergave") {
                     Picker("Weergave", selection: $appearance) {
                         ForEach(AppearanceSetting.allCases) { Text($0.label).tag($0) }
                     }
                 }
-                accountSection
                 Section {
                     Link(destination: URL(string: "https://pasr.nl/privacy/#stempelkaarten-van-ondernemers")!) {
                         Label("Privacyverklaring", systemImage: "hand.raised")
@@ -88,6 +88,7 @@ struct SettingsView: View {
             } message: {
                 Text("Je Pasr-account wordt verwijderd, ook in de app Pasr. Ben je eigenaar, dan verdwijnen je zaak, kaarten en leden ook. Dit kan niet ongedaan worden gemaakt.")
             }
+            .busyWhile(confirmDelete || confirmSignOut)
             .confirmationDialog("Uitloggen?", isPresented: $confirmSignOut, titleVisibility: .visible) {
                 Button("Uitloggen", role: .destructive) {
                     Task { await Account.shared.signOut(); store.reset() }

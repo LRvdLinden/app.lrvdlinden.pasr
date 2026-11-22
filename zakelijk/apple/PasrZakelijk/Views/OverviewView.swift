@@ -29,6 +29,14 @@ struct OverviewView: View {
             case .joins: Theme.iris
             }
         }
+        /// Eenheid achter de waarde en bovenaan de Y-as.
+        var unit: String {
+            switch self {
+            case .stamps: String(localized: "stempels")
+            case .rewards: String(localized: "beloningen")
+            case .joins: String(localized: "leden")
+            }
+        }
         func value(_ d: DayStat) -> Int {
             switch self {
             case .stamps: d.stamps
@@ -46,9 +54,15 @@ struct OverviewView: View {
     @State private var loading = false
     @State private var error: String?
     @State private var selected: MetricPoint?
+    /// Vergelijkkiezer: false = deze periode, true = de vorige.
+    @State private var showPrevious = false
 
-    private var points: [MetricPoint] { stats.map { MetricPoint(date: $0.day, value: Double(metric.value($0))) } }
-    private var total: Int { stats.reduce(0) { $0 + metric.value($1) } }
+    /// De server geeft hoogstens 366 dagen terug: bij een jaar is er geen vorige periode.
+    private var hasPrevious: Bool { days * 2 <= 366 }
+    private var shown: [DayStat] { showPrevious && hasPrevious ? previous : stats }
+
+    private var points: [MetricPoint] { shown.map { MetricPoint(date: $0.day, value: Double(metric.value($0))) } }
+    private var total: Int { shown.reduce(0) { $0 + metric.value($1) } }
     private var previousTotal: Int { previous.reduce(0) { $0 + metric.value($1) } }
 
     var body: some View {
@@ -104,6 +118,8 @@ struct OverviewView: View {
             .toolbar { BusinessPicker() }
             .refreshable { await load() }
             .task(id: days) { await load() }
+            .onChange(of: showPrevious) { _, _ in selected = nil }
+            .onChange(of: metric) { _, _ in selected = nil }
         }
     }
 
@@ -122,6 +138,8 @@ struct OverviewView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Grafiekkaart zoals Homey Insights: titel, meetwaarde-pil, kop (periode + waarde), grafiek, periodekiezer
+    /// (W · M · K · J) en vergelijkkiezer (deze/vorige periode).
     private var chartCard: some View {
         VStack(spacing: 14) {
             Text(verbatim: business.name).font(.headline)
@@ -138,51 +156,71 @@ struct OverviewView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(metric.color)
                 .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(Theme.card2, in: Capsule())
+                .background(Theme.insightsPill, in: Capsule())
             }
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(periodTitle).font(.title2.weight(.bold))
                     if let s = selected {
                         Text(s.date, format: .dateTime.weekday(.wide).day().month(.wide)).font(.caption).foregroundStyle(.secondary)
-                    } else if let first = stats.first?.day, let last = stats.last?.day {
+                    } else if let first = shown.first?.day, let last = shown.last?.day {
                         Text(verbatim: "\(first.formatted(.dateTime.day().month(.abbreviated))) – \(last.formatted(.dateTime.day().month(.abbreviated)))")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
-                Text(verbatim: "\(selected.map { Int($0.value) } ?? total)")
-                    .font(.system(size: 30, weight: .heavy).monospacedDigit())
-                    .foregroundStyle(metric.color)
-                    .contentTransition(.numericText())
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(verbatim: "\(selected.map { Int($0.value) } ?? total)")
+                        .font(.system(size: 30, weight: .heavy).monospacedDigit())
+                        .foregroundStyle(metric.color)
+                        .contentTransition(.numericText())
+                    Text(verbatim: metric.unit)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(metric.color.opacity(0.6))
+                }
+                .accessibilityElement(children: .combine)
             }
             ZStack {
-                InsightsChart(points: points, unit: String(localized: "aantal"), color: metric.color, selected: $selected)
+                InsightsChart(points: points, unit: metric.unit, color: metric.color,
+                              xFormat: days >= 365 ? .dateTime.month(.narrow) : .dateTime.day().month(.narrow),
+                              selected: $selected)
                 if loading && stats.isEmpty { ProgressView() }
                 if !loading && points.allSatisfy({ $0.value == 0 }) {
                     Text("Nog geen gegevens in deze periode").font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            PillSegments(items: [(7, "Week"), (30, "Maand"), (90, "Kwartaal")], selection: $days)
-            if previousTotal > 0 || total > 0 {
-                Text(compareLine).font(.footnote).foregroundStyle(.secondary)
+            PillSegments(items: [(7, "W"), (30, "M"), (90, "K"), (365, "J")], selection: $days,
+                         spoken: [7: "Week", 30: "Maand", 90: "Kwartaal", 365: "Jaar"])
+            if hasPrevious {
+                PillSegments(items: [(false, currentLabel), (true, previousLabel)], selection: $showPrevious)
+            } else {
+                PillSegments(items: [(false, currentLabel)], selection: $showPrevious)
             }
         }
         .padding(18)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Theme.insightsCard, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
-    private var periodTitle: LocalizedStringKey {
-        if selected != nil { return "Op deze dag" }
+    private var currentLabel: LocalizedStringKey {
         switch days {
-        case 7: return "Deze week"
-        case 30: return "Deze maand"
-        default: return "Dit kwartaal"
+        case 7: "Deze week"
+        case 30: "Deze maand"
+        case 90: "Dit kwartaal"
+        default: "Dit jaar"
         }
     }
 
-    private var compareLine: String {
-        String(format: String(localized: "Vorige periode: %lld"), previousTotal)
+    private var previousLabel: LocalizedStringKey {
+        switch days {
+        case 7: "Vorige week"
+        case 30: "Vorige maand"
+        case 90: "Vorig kwartaal"
+        default: "Vorig jaar"
+        }
+    }
+
+    private var periodTitle: LocalizedStringKey {
+        showPrevious && hasPrevious ? previousLabel : currentLabel
     }
 
     private func load() async {
@@ -190,11 +228,13 @@ struct OverviewView: View {
         defer { loading = false }
         do {
             // twee periodes ophalen: deze en de vorige (om te vergelijken)
-            let both = try await BusinessAPI.stats(business: business.id, days: days * 2)
-            let filled = Self.fill(both.days, days: days * 2)
+            let span = hasPrevious ? days * 2 : min(days, 366)
+            let both = try await BusinessAPI.stats(business: business.id, days: span)
+            let filled = Self.fill(both.days, days: span)
             withAnimation {
-                previous = Array(filled.prefix(days))
+                previous = hasPrevious ? Array(filled.prefix(days)) : []
                 stats = Array(filled.suffix(days))
+                if !hasPrevious { showPrevious = false }
                 members = both.members
                 selected = nil
             }

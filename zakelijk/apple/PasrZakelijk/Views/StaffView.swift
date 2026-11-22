@@ -62,6 +62,7 @@ struct StaffView: View {
             .sheet(isPresented: $inviting, onDismiss: { Task { await load() } }) {
                 InviteStaffView(business: business).trackModal()
             }
+            .busyWhile(revoking != nil)
             .confirmationDialog("Medewerker intrekken?", isPresented: Binding(get: { revoking != nil }, set: { if !$0 { revoking = nil } }),
                                 titleVisibility: .visible, presenting: revoking) { member in
                 Button("Intrekken", role: .destructive) { Task { await revoke(member) } }
