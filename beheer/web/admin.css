@@ -334,6 +334,10 @@ html, body { overflow-x: clip; max-width: 100%; }
 .biz-card { display: flex; gap: 8px; align-items: center; border-radius: 12px; padding: 6px 10px 6px 6px; color: #fff; font-size: 13px; }
 .biz-card.light { color: #17162A; }
 .biz-card img, .biz-card .mono { width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,.9); object-fit: contain; display: grid; place-items: center; color: #17162A; font-weight: 700; }
+.news-preview .push-url { color: var(--mint); font-size: 13px; margin-top: 4px; word-break: break-all; }
+#nPlatform { display: flex; width: max-content; margin-top: 4px; }
+.banner.warn { background: rgba(245, 183, 49, .1); border-color: rgba(245, 183, 49, .35); color: #f5b731; margin: 0; }
+.hist .link { display: block; font-size: 13px; word-break: break-all; margin-top: 2px; }
 @media (max-width: 860px) { .news-layout { grid-template-columns: 1fr; } }
 
 /* Ondernemers: details per zaak (zakelijk 1.0) */

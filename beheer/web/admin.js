@@ -60,6 +60,8 @@
       case "bad_audience": return "Kies een doelgroep.";
       case "bad_store": return "Kies een winkel (het winkel-id, bijv. ah).";
       case "duplicate": return "Dit bericht is in de laatste 10 minuten al verstuurd.";
+      case "bad_platform": return "Kies Alles, Apple of Android.";
+      case "bad_app": return "Kies Pasr, Pasr Zakelijk of beide (alleen bij Iedereen met meldingen aan).";
       case "apns_not_configured": return "Pushmeldingen zijn nog niet ingericht (APNS_KEY_P8 / APNS_KEY_ID).";
       case "bad_status": return "Onbekende status.";
       case "group_limit": return "Dit account zit al in 2 gedeelde Pasrs.";
@@ -1080,15 +1082,30 @@
     catch (err) { $("seMsg").textContent = err.message; }
   });
 
-  // ---- Berichten: gerichte push aan gebruikers met de opt-in "Nieuws over mijn kaarten" ----
-  const AUD = { all: "Iedereen met opt-in", store: "Heeft kaart", new: "Nieuwe gebruikers (7 dagen)", inactive: "Inactief (30 dagen)" };
-  let newsData = null, countTimer;
+  // ---- Berichten: push aan gebruikers met de opt-in "Nieuws over mijn kaarten", of aan iedereen met meldingen aan ----
+  const AUD = { all: "Iedereen met opt-in", store: "Heeft kaart", new: "Nieuwe gebruikers (7 dagen)", inactive: "Inactief (30 dagen)",
+    everyone: "Iedereen met meldingen aan" };
+  const PLAT = { all: "Alles", ios: "Apple", android: "Android" };
+  const APPN = { pasr: "Pasr", zakelijk: "Pasr Zakelijk", both: "Pasr en Pasr Zakelijk" };
+  let newsData = null, countTimer, nPlatform = "all";
+  // link: alleen https, hoogstens 500 tekens (de server controleert het ook)
+  function newsUrl() {
+    const v = $("nUrl").value.trim();
+    if (!v) return { ok: true, url: null };
+    try {
+      const u = new URL(v);
+      if (u.protocol !== "https:" || v.length > 500 || u.username || u.password || !u.hostname.includes(".")) return { ok: false };
+      return { ok: true, url: u.toString() };
+    } catch { return { ok: false }; }
+  }
   async function loadNews() {
     $("newsErr").classList.add("hidden");
     try {
       await loadBuiltin();
       newsData = await api("news_overview");
-      $("newsInfo").textContent = `${num(newsData.all)} ${newsData.all === 1 ? "apparaat" : "apparaten"} met de opt-in, ${num(newsData.new)} nieuw deze week, ${num(newsData.inactive)} inactief.` +
+      const ev = newsData.everyone;
+      const evText = ev ? ` Meldingen aan: Pasr ${num(ev.pasr?.ios)} Apple / ${num(ev.pasr?.android)} Android, Pasr Zakelijk ${num(ev.zakelijk?.ios)} Apple / ${num(ev.zakelijk?.android)} Android.` : "";
+      $("newsInfo").textContent = `${num(newsData.all)} ${newsData.all === 1 ? "apparaat" : "apparaten"} met de opt-in, ${num(newsData.new)} nieuw deze week, ${num(newsData.inactive)} inactief.` + evText +
         (newsData.push_ready ? "" : " Pushmeldingen zijn nog niet ingericht.")
         + (newsData.push_ready && newsData.fcm_ready === false ? " Android-push (FCM) is nog niet ingericht." : "");
       $("nStores").replaceChildren(...(newsData.stores || []).map((x) => { const o = document.createElement("option"); o.value = x.id; o.label = `${storeName(x.id)} (${num(x.count)})`; return o; }));
@@ -1098,8 +1115,15 @@
       for (const c of newsData.history || []) {
         const row = el("div", "hist");
         const left = el("div");
-        left.append(el("b", null, c.title || "Pasr"), el("p", null, c.body),
-          el("span", "muted sm", `${AUD[c.audience] || c.audience}${c.store_id ? " " + storeName(c.store_id) : ""} · ${new Date(c.created_at).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`));
+        const who = `${AUD[c.audience] || c.audience}${c.store_id ? " " + storeName(c.store_id) : ""}`
+          + (c.audience === "everyone" ? ` · ${APPN[c.app] || c.app}` : "") + (c.platform && c.platform !== "all" ? ` · ${PLAT[c.platform]}` : "");
+        left.append(el("b", null, c.title || (c.app === "zakelijk" ? "Pasr Zakelijk" : "Pasr")), el("p", null, c.body));
+        if (c.url) {
+          const a = el("a", "link", c.url);
+          a.href = c.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+          left.append(a);
+        }
+        left.append(el("span", "muted sm", `${who} · ${new Date(c.created_at).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`));
         const n = el("div", "n");
         n.append(el("b", null, num(c.sent)), el("div", "muted sm", `van ${num(c.recipients)}${c.failed ? `, ${num(c.failed)} mislukt` : ""}`));
         row.append(left, n);
@@ -1112,49 +1136,78 @@
     }
   }
   function newsPreview() {
-    $("pTitle").textContent = $("nTitle").value.trim() || "Pasr";
+    const app = $("nAudience").value === "everyone" ? $("nApp").value : "pasr";
+    $("pTitle").textContent = $("nTitle").value.trim() || (app === "zakelijk" ? "Pasr Zakelijk" : "Pasr");
     $("pBody").textContent = $("nBody").value.trim() || "Je bericht verschijnt hier.";
     $("nLeft").textContent = `${240 - $("nBody").value.length} tekens over`;
+    const l = newsUrl();
+    $("pUrl").textContent = l.url || "";
+    $("pUrl").classList.toggle("hidden", !l.url);
+    $("nUrlHint").textContent = l.ok ? "Alleen https. Een tik op de melding opent deze link." : "Geen geldige https-link.";
+    $("nUrlHint").className = l.ok ? "muted sm" : "err sm";
+    $("pNote").textContent = l.url ? "Een tik op de melding opent deze link (in de app; links van pasr.nl openen de juiste plek in Pasr)."
+      : "Een tik opent de app; bij de doelgroep \u201Cheeft een kaart van\u201D opent de kaart van die winkel. Er gaan geen kaartnummers of namen mee.";
   }
   function audienceParams() {
-    const audience = $("nAudience").value, p = { audience };
+    const audience = $("nAudience").value, p = { audience, platform: nPlatform };
     if (audience === "store") p.store = resolveStore($("nStore").value);
+    if (audience === "everyone") p.app = $("nApp").value;
     return p;
   }
-  const countText = (c) => `${num(c.count)}` + (c.ios !== undefined ? ` (iOS ${num(c.ios)} · Android ${num(c.android || 0)})` : "");
+  const countText = (c) => num(c.count);
+  const splitText = (c) => c.ios !== undefined ? `Apple ${num(c.ios)} · Android ${num(c.android || 0)}` : "";
   function updateCount() {
     clearTimeout(countTimer);
     const p = audienceParams();
     $("nStoreRow").classList.toggle("hidden", p.audience !== "store");
-    if (p.audience === "store" && !p.store) { $("nCount").textContent = "–"; return; }
-    // ontvangers per platform: iOS (APNs) en Android (FCM)
+    $("nAppRow").classList.toggle("hidden", p.audience !== "everyone");
+    $("nWarn").classList.toggle("hidden", p.audience !== "everyone");
+    newsPreview();
+    if (p.audience === "store" && !p.store) { $("nCount").textContent = "–"; $("nSplit").textContent = ""; return; }
+    // ontvangers per platform: Apple (APNs) en Android (FCM)
     countTimer = setTimeout(async () => {
-      try { $("nCount").textContent = countText(await api("news_count", p)); } catch { $("nCount").textContent = "–"; }
+      try { const c = await api("news_count", p); $("nCount").textContent = countText(c); $("nSplit").textContent = splitText(c); }
+      catch { $("nCount").textContent = "–"; $("nSplit").textContent = ""; }
     }, 250);
   }
-  ["nTitle", "nBody"].forEach((id) => $(id).addEventListener("input", newsPreview));
+  ["nTitle", "nBody", "nUrl"].forEach((id) => $(id).addEventListener("input", newsPreview));
   $("nAudience").addEventListener("change", updateCount);
+  $("nApp").addEventListener("change", updateCount);
   $("nStore").addEventListener("input", updateCount);
+  document.querySelectorAll("#nPlatform button").forEach((b) => b.addEventListener("click", () => {
+    nPlatform = b.dataset.v;
+    document.querySelectorAll("#nPlatform button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    updateCount();
+  }));
+  let newsSending = false;
   $("newsForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (newsSending) return;
     const msg = $("nMsg"); msg.className = "err"; msg.textContent = "";
     const body = $("nBody").value.trim();
     if (!body) { msg.textContent = "Schrijf een bericht."; return; }
+    const link = newsUrl();
+    if (!link.ok) { msg.textContent = "De link moet een geldige https-link zijn (hoogstens 500 tekens)."; return; }
     const p = audienceParams();
     let n, c;
     try { c = await api("news_count", p); n = c.count; } catch (err) { msg.textContent = err.message; return; }
     if (!n) { msg.textContent = "Er zijn geen ontvangers in deze doelgroep."; return; }
-    const who = p.audience === "store" ? `iedereen met een kaart van ${storeName(p.store)}` : AUD[p.audience].toLowerCase();
-    if (!(await ask("Bericht versturen?", `Naar ${num(n)} ${n === 1 ? "apparaat" : "apparaten"} (${who}): ${num(c.ios ?? n)} iOS en ${num(c.android ?? 0)} Android. Dit kan niet worden teruggedraaid.`, "Versturen"))) return;
-    $("nSend").disabled = true;
+    const who = p.audience === "store" ? `iedereen met een kaart van ${storeName(p.store)}`
+      : p.audience === "everyone" ? `iedereen met meldingen aan in ${APPN[p.app]}` : AUD[p.audience].toLowerCase();
+    const warn = p.audience === "everyone" ? " Alleen voor belangrijke berichten, geen reclame." : "";
+    if (!(await ask("Bericht versturen?", `Naar ${num(n)} ${n === 1 ? "apparaat" : "apparaten"} (${who}): ${num(c.ios ?? n)} Apple en ${num(c.android ?? 0)} Android.`
+      + (link.url ? ` Met link ${link.url}.` : "") + warn + " Dit kan niet worden teruggedraaid.", "Versturen"))) return;
+    newsSending = true; $("nSend").disabled = true;
     try {
-      const r = await api("news_send", { title: $("nTitle").value.trim() || null, body, ...p });
+      const r = await api("news_send", { title: $("nTitle").value.trim() || null, body, url: link.url, ...p });
       msg.className = "err ok";
       msg.textContent = `Verstuurd naar ${num(r.sent)} van ${num(r.recipients)} apparaten${r.failed ? ` (${num(r.failed)} mislukt)` : ""}.`
-        + (r.android ? ` iOS ${num(r.ios.sent)} van ${num(r.ios.recipients)}, Android ${num(r.android.sent)} van ${num(r.android.recipients)}.` : "");
-      $("nBody").value = ""; $("nTitle").value = ""; newsPreview(); loadNews();
-    } catch (err) { msg.textContent = err.message; }
-    finally { $("nSend").disabled = false; }
+        + (r.android ? ` Apple ${num(r.ios.sent)} van ${num(r.ios.recipients)}, Android ${num(r.android.sent)} van ${num(r.android.recipients)}.` : "");
+      $("nBody").value = ""; $("nTitle").value = ""; $("nUrl").value = ""; newsPreview(); loadNews();
+    } catch (err) {
+      msg.textContent = err.message;
+    }
+    finally { newsSending = false; $("nSend").disabled = false; }
   });
 
   // ---- Ondernemers (Pasr voor ondernemers) ----

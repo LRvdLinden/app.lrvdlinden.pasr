@@ -234,35 +234,48 @@
       </div>
     </section>
 
-    <!-- Berichten: gerichte pushmeldingen aan gebruikers met de opt-in "Nieuws over mijn kaarten" -->
+    <!-- Berichten: pushmeldingen aan gebruikers (opt-in "Nieuws over mijn kaarten", of iedereen met meldingen aan) -->
     <section id="view-news" class="view hidden" role="tabpanel" aria-labelledby="tab-news">
       <div class="head">
-        <div><h1>Bericht sturen</h1><p class="muted" id="newsInfo">Alleen aan wie in de app &ldquo;Nieuws over mijn kaarten&rdquo; aanzette.</p></div>
+        <div><h1>Bericht sturen</h1><p class="muted" id="newsInfo">Aan wie in de app &ldquo;Nieuws over mijn kaarten&rdquo; aanzette, of aan iedereen met meldingen aan.</p></div>
       </div>
       <div id="newsErr" class="banner hidden" role="alert"></div>
       <div class="news-layout">
         <form id="newsForm" class="card se-grid" novalidate autocomplete="off">
           <label class="se-wide">Titel (optioneel)<input id="nTitle" type="text" maxlength="60" placeholder="Pasr"></label>
           <label class="se-wide">Bericht<textarea id="nBody" rows="4" maxlength="240" placeholder="Bijvoorbeeld: Bij HEMA tel je nu ook je stempels in Pasr."></textarea><span class="muted sm" id="nLeft">240 tekens over</span></label>
+          <label class="se-wide">Link (optioneel)<input id="nUrl" type="url" maxlength="500" inputmode="url" placeholder="https://pasr.nl/…" spellcheck="false"><span class="muted sm" id="nUrlHint">Alleen https. Een tik op de melding opent deze link.</span></label>
           <label>Doelgroep<select id="nAudience">
             <option value="all">Iedereen met opt-in</option>
             <option value="store">Heeft een kaart van een winkel</option>
             <option value="new">Nieuwe gebruikers (7 dagen)</option>
-            <option value="inactive">Inactief (30 dagen)</option></select></label>
+            <option value="inactive">Inactief (30 dagen)</option>
+            <option value="everyone">Iedereen met meldingen aan</option></select></label>
           <label id="nStoreRow" class="hidden">Winkel<input id="nStore" list="nStores" placeholder="bijv. ah of hema" spellcheck="false"></label>
+          <label id="nAppRow" class="hidden">App<select id="nApp">
+            <option value="pasr">Pasr</option>
+            <option value="zakelijk">Pasr Zakelijk</option>
+            <option value="both">Beide</option></select></label>
+          <div class="se-wide"><span class="muted sm">Platform</span>
+            <div class="seg" id="nPlatform" role="group" aria-label="Platform">
+              <button type="button" aria-pressed="true" data-v="all">Alles</button>
+              <button type="button" aria-pressed="false" data-v="ios">Apple</button>
+              <button type="button" aria-pressed="false" data-v="android">Android</button>
+            </div></div>
           <datalist id="nStores"></datalist>
-          <div class="se-wide news-count"><span class="muted">Ontvangers</span> <b id="nCount">–</b></div>
+          <p id="nWarn" class="banner warn se-wide hidden" role="note">Alleen voor belangrijke berichten, geen reclame. Deze melding gaat ook naar mensen zonder opt-in voor nieuws (Apple-richtlijn 4.5.4).</p>
+          <div class="se-wide news-count"><span class="muted">Ontvangers</span> <b id="nCount">–</b> <span class="muted sm" id="nSplit"></span></div>
           <div class="row-btns se-wide"><button id="nSend" class="btn" type="submit">Versturen</button></div>
           <div id="nMsg" class="err se-wide" role="status"></div>
         </form>
         <aside class="card news-preview" aria-label="Voorbeeld">
           <h2>Voorbeeld</h2>
-          <div class="push"><img src="icon.png" alt="" width="38" height="38"><div><div class="push-h"><b id="pTitle">Pasr</b><span class="muted sm">nu</span></div><p id="pBody">Je bericht verschijnt hier.</p></div></div>
-          <p class="muted sm">Een tik opent Pasr; bij de doelgroep &ldquo;heeft een kaart van&rdquo; opent de kaart van die winkel. Er gaan geen kaartnummers of namen mee.</p>
+          <div class="push"><img src="icon.png" alt="" width="38" height="38"><div><div class="push-h"><b id="pTitle">Pasr</b><span class="muted sm">nu</span></div><p id="pBody">Je bericht verschijnt hier.</p><p id="pUrl" class="push-url hidden"></p></div></div>
+          <p class="muted sm" id="pNote">Een tik opent Pasr; bij de doelgroep &ldquo;heeft een kaart van&rdquo; opent de kaart van die winkel. Er gaan geen kaartnummers of namen mee.</p>
         </aside>
       </div>
       <article class="card">
-        <header class="card-h"><h2>Geschiedenis</h2><span class="muted sm">laatste 100</span></header>
+        <header class="card-h"><h2>Geschiedenis</h2><span class="muted sm">laatste 20</span></header>
         <div id="newsHistory" class="acc-list"></div>
       </article>
     </section>
