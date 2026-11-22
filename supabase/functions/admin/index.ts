@@ -22,6 +22,14 @@
 //   store_publish    {id, request_ids?, push?}      -> {ok, sent, closed}  (aanvragen dicht als "toegevoegd")
 //   store_unpublish  {id}                           -> {ok}
 //   store_reject     {request_ids}                  -> {ok, closed}
+//   news_overview    {}                             -> {all, new, inactive, stores:[{id,count}], history:[…], push_ready}
+//   news_count       {audience, store?}             -> {count}
+//   news_send        {title?, body, audience, store?} -> {id, recipients, sent, failed}
+//   businesses       {}                             -> {businesses:[…zaak, cards, staff_count, last_event_at]}
+//   business_status  {id, status}                   -> {business}            (blocked = kaarten offline)
+//   business_detail  {id, limit?, days?}            -> {business, staff, log, stats}
+//   business_settings {id, cooldown_minutes?, max_per_scan?} -> {business}
+//   business_staff_revoke {id}                      -> {ok}                   (medewerker intrekken)
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
@@ -29,6 +37,8 @@ import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs,
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
+import { chunks, cleanAudience, cleanNews, newsPayload } from "./news.ts";
+import { cleanBusinessDetail, cleanBusinessSettings, cleanBusinessStatus } from "./business.ts";
 
 const env = (k: string) => (Deno.env.get(k) ?? "").trim();
 const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
@@ -506,6 +516,83 @@ Deno.serve(async (req) => {
         if (se) return json({ error: /group_limit/.test(se.message) ? "group_limit" : "seed_failed", created }, 500);
         await audit("review_account", ipHash, created ? "created" : "reset");
         return json({ ok: true, created, email, ...(seed as Record<string, unknown>) });
+      }
+      case "news_overview": {
+        const { data, error } = await db.rpc("pasr_admin_news_overview");
+        if (error) throw new Error(error.message);
+        const { data: history, error: he } = await db.from("pasr_news_campaigns")
+          .select("id, title, body, audience, store_id, recipients, sent, failed, created_at").order("created_at", { ascending: false }).limit(20);
+        if (he) throw new Error(he.message);
+        return json({ ...(data as Record<string, unknown>), history: history ?? [], push_ready: apnsConfigured() });
+      }
+      case "news_count": {
+        const a = cleanAudience(body);
+        if (!a.ok) return json({ error: a.error }, 400);
+        const { data, error } = await db.rpc("pasr_admin_news_targets", { p_audience: a.audience, p_store: a.store });
+        if (error) throw new Error(error.message);
+        return json({ count: (data ?? []).length });
+      }
+      case "news_send": {
+        const v = cleanNews(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        if (!apnsConfigured()) return json({ error: "apns_not_configured" }, 503);
+        const n = v.value;
+        const { data: targets, error } = await db.rpc("pasr_admin_news_targets", { p_audience: n.audience, p_store: n.store });
+        if (error) throw new Error(error.message);
+        const list = (targets ?? []) as { device_id: string; token: string; sandbox: boolean }[];
+        const { data: camp, error: ce } = await db.from("pasr_news_campaigns")
+          .insert({ title: n.title, body: n.body, audience: n.audience, store_id: n.store, recipients: list.length }).select("id").single();
+        if (ce) throw new Error(ce.message);
+        const payload = newsPayload(n, camp.id);
+        let sent = 0, failed = 0;
+        const invalid: string[] = [];
+        for (const part of chunks(list, 100)) {
+          const res = await Promise.all(part.map(async (d) => ({ d, r: await userSend(d, payload) })));
+          for (const x of res) {
+            if (x.r.ok) sent++;
+            else { failed++; if (x.r.invalid) invalid.push(x.d.device_id); }
+          }
+        }
+        if (invalid.length) await db.from("pasr_news_devices").delete().in("device_id", invalid);
+        await db.from("pasr_news_campaigns").update({ sent, failed }).eq("id", camp.id);
+        await audit("news_send", ipHash, `${n.audience}${n.store ? ":" + n.store : ""} ${sent}/${list.length}`);
+        return json({ id: camp.id, recipients: list.length, sent, failed });
+      }
+      case "businesses": {
+        const { data, error } = await db.rpc("pasr_admin_businesses");
+        if (error) throw new Error(error.message);
+        return json({ businesses: data ?? [] });
+      }
+      case "business_status": {
+        const v = cleanBusinessStatus(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { data, error } = await db.rpc("pasr_admin_business_status", { p_business: v.id, p_status: v.status });
+        if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
+        await audit("business_status", ipHash, `${v.id} ${v.status}`);
+        return json({ business: data });
+      }
+      case "business_detail": {
+        const v = cleanBusinessDetail(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { data, error } = await db.rpc("pasr_admin_business_detail", { p_business: v.id, p_limit: v.limit, p_days: v.days });
+        if (error) throw new Error(error.message);
+        if (!data) return json({ error: "not_found" }, 404);
+        return json(data);
+      }
+      case "business_settings": {
+        const v = cleanBusinessSettings(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const { data, error } = await db.rpc("pasr_admin_business_settings", { p_business: v.id, p_settings: v.settings });
+        if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "bad_settings" }, /not_found/.test(error.message) ? 404 : 400);
+        await audit("business_settings", ipHash, `${v.id} ${JSON.stringify(v.settings)}`);
+        return json({ business: data });
+      }
+      case "business_staff_revoke": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { error } = await db.rpc("pasr_admin_business_staff_revoke", { p_staff: body.id });
+        if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
+        await audit("business_staff_revoke", ipHash, String(body.id));
+        return json({ ok: true });
       }
       default:
         return json({ error: "unknown_action" }, 400);

@@ -2047,14 +2047,19 @@ revoke all on public.pasr_store_birthday_seeded from anon, authenticated;
 
 -- ---- instellingen per zaak ----
 alter table public.pasr_businesses add column if not exists cooldown_minutes int not null default 5;
-alter table public.pasr_businesses add column if not exists max_per_scan int not null default 3;
+-- max per scan: de ondernemer kiest per scan 1 tot max_per_scan stempels (aantal-kiezer, standaard 1)
+alter table public.pasr_businesses add column if not exists max_per_scan int not null default 10;
+alter table public.pasr_businesses alter column max_per_scan set default 10;
 do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'pasr_businesses_cooldown_check') then
     alter table public.pasr_businesses add constraint pasr_businesses_cooldown_check check (cooldown_minutes between 0 and 1440);
   end if;
-  if not exists (select 1 from pg_constraint where conname = 'pasr_businesses_max_per_scan_check') then
-    alter table public.pasr_businesses add constraint pasr_businesses_max_per_scan_check check (max_per_scan between 1 and 10);
+  if exists (select 1 from pg_constraint where conname = 'pasr_businesses_max_per_scan_check') then
+    alter table public.pasr_businesses drop constraint pasr_businesses_max_per_scan_check;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'pasr_businesses_max_per_scan_v2') then
+    alter table public.pasr_businesses add constraint pasr_businesses_max_per_scan_v2 check (max_per_scan between 1 and 30);
   end if;
 end $$;
 
@@ -2391,7 +2396,7 @@ begin
     raise exception 'Ongeldige instellingen.' using errcode = '22023', hint = 'bad_settings';
   end;
   if cd not between 0 and 1440 then raise exception 'Afkoeltijd moet tussen 0 en 1440 minuten liggen.' using errcode = '22023', hint = 'bad_settings'; end if;
-  if mx not between 1 and 10 then raise exception 'Max per scan moet tussen 1 en 10 liggen.' using errcode = '22023', hint = 'bad_settings'; end if;
+  if mx not between 1 and 30 then raise exception 'Max per scan moet tussen 1 en 30 liggen.' using errcode = '22023', hint = 'bad_settings'; end if;
   update public.pasr_businesses set cooldown_minutes = cd, max_per_scan = mx, updated_at = now() where id = b.id returning * into b;
   return b;
 end $$;
@@ -2548,7 +2553,7 @@ begin
     raise exception 'Nog niet genoeg stempels voor de beloning (% van %).', (r.m).stamps_count, (r.c).stamps_total
       using errcode = '22023', hint = 'not_enough';
   end if;
-  -- de volle kaart gaat eraf; stempels boven het maximum blijven staan
+  -- de volle kaart gaat eraf; stempels boven het maximum vervallen niet maar blijven staan voor de volgende ronde
   update public.pasr_business_members set stamps_count = stamps_count - (r.c).stamps_total, rewards_redeemed = rewards_redeemed + 1,
     updated_at = now()
   where id = (r.m).id returning * into m;
