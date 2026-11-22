@@ -709,15 +709,24 @@
       try {
         var r = await rpc("pasr_business_staff_accept", { p_code: code }, true);
         try { sessionStorage.removeItem(KEY); } catch (e) { /* */ }
+        if (r.business.role === "owner") {
+          // eigenaarsuitnodiging van Pasr (zaak klaargezet door het beheer): door naar het dashboard
+          dash.me = null;
+          return box("<h1>" + esc(r.business.name) + " is van jou</h1><p>Je bent nu eigenaar. In je dashboard beheer je je stempelkaarten, medewerkers en instellingen; met de scanner geef je stempels.</p>" +
+            '<p style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="zk-btn" href="/zakelijk/dashboard/">Naar je dashboard</a><a class="zk-btn ghost" href="' + appLink + '">Open in Pasr Zakelijk</a></p>');
+        }
         box("<h1>Welkom bij " + esc(r.business.name) + "</h1><p>Je kunt nu stempels geven en belonen. Open de scanner op deze telefoon, of gebruik de app Pasr Zakelijk.</p>" +
           '<p style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="zk-btn" href="/zakelijk/scan/">' + ICON.scan + 'Open de scanner</a><a class="zk-btn ghost" href="' + appLink + '">Open in Pasr Zakelijk</a></p>');
       } catch (e) { box("<h1>Dat lukte niet</h1><p>" + esc(nice(e)) + "</p>"); }
     }
     dash.afterLogin = accept;
+    var owner = info.role === "owner";
     function intro() {
-      box("<h1>Uitnodiging van " + esc(info.business) + "</h1><p>" + (info.name ? esc(info.name) + ", je" : "Je") + " bent uitgenodigd om stempels te geven bij " + esc(info.business) + (info.city ? " in " + esc(info.city) : "") + ". Je logt in met je eigen Pasr-account.</p>" +
+      box((owner
+        ? "<h1>" + esc(info.business) + " staat voor je klaar</h1><p>Pasr heeft " + esc(info.business) + (info.city ? " in " + esc(info.city) : "") + " voor je klaargezet. Log in met je Pasr-account (of maak er gratis een) en je wordt eigenaar: je beheert de stempelkaarten, medewerkers en instellingen.</p>"
+        : "<h1>Uitnodiging van " + esc(info.business) + "</h1><p>" + (info.name ? esc(info.name) + ", je" : "Je") + " bent uitgenodigd om stempels te geven bij " + esc(info.business) + (info.city ? " in " + esc(info.city) : "") + ". Je logt in met je eigen Pasr-account.</p>") +
         '<p style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="zk-btn" href="' + appLink + '">Open in Pasr Zakelijk</a>' +
-        '<button class="zk-btn ghost" type="button" id="invWeb">' + (session ? "Accepteren in de browser" : "Inloggen en accepteren") + "</button></p>" +
+        '<button class="zk-btn ghost" type="button" id="invWeb">' + (owner ? (session ? "Zaak overnemen" : "Inloggen en zaak overnemen") : (session ? "Accepteren in de browser" : "Inloggen en accepteren")) + "</button></p>" +
         '<p style="font-size:14px">De app Pasr Zakelijk komt binnenkort in de App Store. Tot die tijd werkt de scanner in je browser.</p>');
       $("#invWeb").addEventListener("click", async function () {
         if (session && (await token())) return accept();
