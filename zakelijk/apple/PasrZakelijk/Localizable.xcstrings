@@ -609,6 +609,22 @@
         }
       }
     },
+    "Beoordeel Pasr Zakelijk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate Pasr Zakelijk"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beoordeel Pasr Zakelijk"
+          }
+        }
+      }
+    },
     "Bevestig eerst je e-mailadres. Kijk in je inbox (en bij ongewenste mail).": {
       "localizations": {
         "en": {

@@ -62,6 +62,12 @@ struct SettingsView: View {
                     Button { whatsNew = true } label: {
                         SettingsLabel("Wat is nieuw", symbol: "sparkles", color: Theme.coral)
                     }
+                    // pas zichtbaar als AppStoreID.zakelijk is ingevuld (opent de App Store om een beoordeling te schrijven)
+                    if let review = AppStoreID.reviewURL {
+                        Link(destination: review) {
+                            SettingsLabel("Beoordeel Pasr Zakelijk", symbol: "star.bubble.fill", color: .orange, external: true)
+                        }
+                    }
                     Link(destination: URL(string: "https://pasr.nl/zakelijk/")!) {
                         SettingsLabel("Pasr Zakelijk op pasr.nl", symbol: "safari.fill", color: Theme.mint, external: true)
                     }
