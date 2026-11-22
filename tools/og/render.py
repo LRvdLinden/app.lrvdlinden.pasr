@@ -1,4 +1,4 @@
-"""Renders the share images: python3 tools/og/render.py [og og-share kaarten cadeaubon klantenkaart] (needs: pip install playwright && playwright install chromium)."""
+"""Renders the share images: python3 tools/og/render.py [og og-share kaarten cadeaubon klantenkaart zakelijk] (needs: pip install playwright && playwright install chromium)."""
 import asyncio
 import sys
 from pathlib import Path
@@ -14,7 +14,8 @@ async def main():
         for name, out in [("og", OUT / "og.png"), ("og-share", OUT / "og-share.png"),
                           ("kaarten", OUT.parent / "og" / "kaarten.png"),
                           ("cadeaubon", OUT.parent / "og" / "cadeaubon.png"),          # /cadeaubon/ (gemaakt door make_gids.py)
-                          ("klantenkaart", OUT.parent / "og" / "klantenkaart.png")]:   # /klantenkaart/   # /kaarten/ (tools/og/kaarten.html)
+                          ("klantenkaart", OUT.parent / "og" / "klantenkaart.png"),
+                          ("zakelijk", OUT.parent / "og" / "zakelijk.png")]:   # /zakelijk/   # /klantenkaart/   # /kaarten/ (tools/og/kaarten.html)
             if len(sys.argv) > 1 and name not in sys.argv[1:]:
                 continue
             await page.goto((HERE / f"{name}.html").as_uri())
