@@ -123,13 +123,16 @@ object Sync {
         put("hasCover", c.cover != null)
         c.cover?.let { if (it.length < 160_000) put("cover", it) }
         put("history", JSONArray().apply {
-            c.history.filter { it.kind != "shown" }.take(60).forEach { e ->
+            // gebruiksmomenten met een ingevuld bedrag gaan mee (Laatst gebruikt); oudere versies slaan "shown" over
+            c.history.filter { it.kind != "shown" || it.amount != null }.take(60).forEach { e ->
                 put(JSONObject().apply {
                     put("id", e.id); put("date", isoOf(e.date)); put("kind", e.kind)
                     e.amount?.let { put("amount", it) }; e.balance?.let { put("balance", it) }; e.place?.let { put("place", it) }
+                    e.city?.let { put("city", it) }; e.region?.let { put("region", it) }; e.spentID?.let { put("spentID", it) }
                 })
             }
         })
+        put("uses", true)
         if (c.places.isNotEmpty()) put("places", JSONArray().apply {
             c.places.forEach { put(JSONObject().put("name", it.name).put("lat", it.latitude).put("lon", it.longitude)) }
         })
@@ -187,12 +190,14 @@ object Sync {
                 val at = parseIso(e.str("date")) ?: return@mapNotNull null
                 CardEvent(id = e.str("id") ?: newId(), date = at, kind = e.str("kind") ?: return@mapNotNull null,
                     amount = (e.opt("amount") as? Number)?.toDouble(), balance = (e.opt("balance") as? Number)?.toDouble(),
-                    place = e.str("place"))
+                    place = e.str("place"), city = e.str("city"), region = e.str("region"), spentID = e.str("spentID")?.uppercase())
             } ?: emptyList()
             val oldest = remote.minOfOrNull { it.date }
             val ids = remote.map { it.id }.toSet()
+            // een oudere versie (zonder "uses") stuurt geen gebruiksmomenten: dan blijven de ingevulde bedragen van hier staan
+            val remoteHasUses = f.optBoolean("uses", false)
             c = c.copy(history = Card.trimHistory(remote + card.history.filter {
-                it.id !in ids && (it.kind == "shown" || (oldest != null && it.date < oldest))
+                it.id !in ids && ((it.kind == "shown" && (it.amount == null || !remoteHasUses)) || (oldest != null && it.date < oldest))
             }))
         }
         c = c.copy(places = f.optJSONArray("places")?.objects()?.mapNotNull { p ->

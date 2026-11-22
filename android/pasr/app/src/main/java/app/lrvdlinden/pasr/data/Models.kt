@@ -66,6 +66,11 @@ data class CardEvent(
     val amount: Double? = null,
     val balance: Double? = null,
     val place: String? = null,
+    /** Plaats en provincie bij het tonen (sinds "Laatst gebruikt"; op Android alleen van de iPhone via sync). */
+    val city: String? = null,
+    val region: String? = null,
+    /** Bij een getoonde cadeaukaart met een ingevuld bedrag: de afboeking ("spent") die erbij hoort. */
+    val spentID: String? = null,
 )
 
 /** Extra gegevens per soort (zelfde velden als CardDetails op iOS). Datums in milliseconden. */
@@ -156,6 +161,55 @@ data class Card(
         val now = nowMs()
         val events = if (last != null && now - last.date < 600_000) list else listOf(CardEvent(kind = "shown", place = place)) + list
         return copy(useCount = useCount + 1, lastUsed = now, history = trimHistory(events))
+    }
+
+    /** Gebruiksmomenten ("Laatst gebruikt"): wanneer je de kaart liet zien, nieuwste eerst. */
+    val uses: List<CardEvent> get() = history.filter { it.kind == "shown" }
+
+    /**
+     * Wat je uitgaf bij een gebruiksmoment invullen, wijzigen of weghalen (null of 0). Bij een cadeaukaart gaat het tegoed
+     * mee: een eerdere afboeking voor dit moment wordt teruggedraaid en het nieuwe bedrag afgeboekt (zelfde als iOS).
+     */
+    fun withAmount(amount: Double?, useId: String): Card {
+        var use = history.firstOrNull { it.id == useId && it.kind == "shown" } ?: return this
+        val value = amount?.let { Math.round(it * 100) / 100.0 }?.takeIf { it > 0 }
+        var list = history
+        var b = balance
+        if (kind == CardKind.VOUCHER) {
+            use.spentID?.let { sid ->
+                list.firstOrNull { it.id == sid }?.amount?.let { a -> b = Math.round(((b ?: 0.0) + a) * 100) / 100.0 }
+                list = list.filter { it.id != sid }
+            }
+            use = use.copy(spentID = null)
+            if (value != null) {
+                b = Math.round(((b ?: 0.0) - value).coerceAtLeast(0.0) * 100) / 100.0
+                val spent = CardEvent(kind = "spent", amount = value, balance = b, place = use.place)
+                use = use.copy(spentID = spent.id)
+                list = listOf(spent) + list
+            }
+        }
+        use = use.copy(amount = value)
+        list = list.map { if (it.id == useId) use else it }
+        return copy(balance = b, history = trimHistory(list), updatedAt = nowMs())
+    }
+
+    /** Een regel weghalen; bij een uitgave of opwaardering gaat het tegoed terug, een gekoppelde afboeking gaat mee. */
+    fun removingEvent(event: CardEvent): Card {
+        var list = history
+        var b = balance
+        when (event.kind) {
+            "spent" -> {
+                event.amount?.let { b = (b ?: 0.0) + it }
+                list = list.map { if (it.spentID == event.id) it.copy(amount = null, spentID = null) else it }
+            }
+            "topup" -> event.amount?.let { b = ((b ?: 0.0) - it).coerceAtLeast(0.0) }
+            "shown" -> event.spentID?.let { sid ->
+                list.firstOrNull { it.id == sid }?.amount?.let { b = (b ?: 0.0) + it }
+                list = list.filter { it.id != sid }
+            }
+        }
+        b = b?.let { Math.round(it * 100) / 100.0 }
+        return copy(balance = b, history = list.filter { it.id != event.id }, updatedAt = nowMs())
     }
 
     fun spent(amount: Double): Card {

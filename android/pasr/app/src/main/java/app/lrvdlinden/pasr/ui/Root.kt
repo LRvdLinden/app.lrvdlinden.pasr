@@ -45,6 +45,8 @@ import kotlinx.coroutines.launch
 sealed interface Screen {
     data object Wallet : Screen
     data class Detail(val id: String) : Screen
+    /** "Laatst gebruikt", alles van één kaart. */
+    data class Uses(val id: String) : Screen
     data object Add : Screen
     data class Editor(val id: String? = null, val template: StoreTemplate? = null, val kind: CardKind = CardKind.LOYALTY,
                       val draft: Card? = null) : Screen
@@ -179,6 +181,7 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
         when (s) {
             Screen.Wallet -> WalletScreen()
             is Screen.Detail -> CardDetailScreen(s.id)
+            is Screen.Uses -> RecentUsesScreen(s.id)
             Screen.Add -> AddCardScreen()
             is Screen.Editor -> CardEditorScreen(s)
             is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code)

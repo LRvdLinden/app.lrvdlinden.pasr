@@ -59,6 +59,12 @@ import app.lrvdlinden.pasr.ui.SectionHeader
 import app.lrvdlinden.pasr.ui.StampGrid
 import app.lrvdlinden.pasr.ui.StoreTile
 import app.lrvdlinden.pasr.ui.hexColor
+import app.lrvdlinden.pasr.data.CardEvent
+import app.lrvdlinden.pasr.ui.RecentUsesSection
+import app.lrvdlinden.pasr.ui.UseFormat
+import app.lrvdlinden.pasr.ui.UseRow
+import app.lrvdlinden.pasr.ui.UsesPanel
+import androidx.compose.material3.HorizontalDivider
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -215,6 +221,63 @@ class PreviewTest {
             Gap(16.dp)
             Text("Versie 1.0.0", Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.onSurfaceVariant)
             Box(Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).background(hexColor("#2ED3A6")).padding(6.dp)) { Text(CardKind.STAMPS.title) }
+        }
+    }
+
+    // Laatst gebruikt: PLUS-kaart met drie keer (een met bedrag, een zonder, een oudere)
+    private val plus by lazy {
+        val now = System.currentTimeMillis()
+        val h = 3_600_000L
+        Card(storeName = "PLUS", number = "6064365152405021013", formatRaw = "qr", colorHex = "#FFFFFF", logo = logo("plus.nl"),
+            history = listOf(
+                CardEvent(date = now - 2 * h, kind = "shown", place = "PLUS Apeldoorn", city = "Apeldoorn", region = "Gelderland", amount = 6.48),
+                CardEvent(date = now - 4 * 24 * h, kind = "shown", place = "PLUS Anklaar", city = "Apeldoorn", region = "Gelderland"),
+                CardEvent(date = now - 13 * 24 * h, kind = "shown", place = "PLUS Twello", city = "Twello", region = "Gelderland", amount = 31.20),
+                CardEvent(date = now - 18 * 24 * h, kind = "shown", place = "PLUS Apeldoorn", city = "Apeldoorn", region = "Gelderland", amount = 32.85),
+                CardEvent(date = now - 35 * 24 * h, kind = "shown", place = "PLUS Apeldoorn", city = "Apeldoorn", region = "Gelderland", amount = 14.10),
+            ))
+    }
+
+    @Composable
+    private fun LaatstDetail() {
+        val c = plus
+        Title(c.storeName, icon = false)
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color.White).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            BarcodeImage(c.number, BarcodeFormat.QR, Modifier.width(150.dp))
+            Gap(6.dp)
+            Text("6064 3651 5240 5021 013", color = Color(0xFF111216), fontFamily = FontFamily.Monospace, fontSize = 14.sp)
+        }
+        RecentUsesSection(c, onAll = {}, onAmount = {})
+    }
+
+    @Test fun laatstGebruikt() = paparazzi.snapshot { Frame(dark = true) { LaatstDetail() } }
+
+    @Test fun laatstGebruiktLicht() = paparazzi.snapshot { Frame { LaatstDetail() } }
+
+    @Test fun laatstAlles() = paparazzi.snapshot {
+        val c = plus
+        Frame(dark = true) {
+            Text("Laatst gebruikt", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 18.dp, bottom = 12.dp))
+            val month = c.uses.filter { UseFormat.isThisMonth(it.date) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(UseFormat.monthName() to "${month.size}× gebruikt",
+                    "Ingevuld" to app.lrvdlinden.pasr.ui.euro(month.mapNotNull { it.amount }.sum())).forEach { (l, v) ->
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        Text(l, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(v, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+            }
+            c.uses.groupBy { UseFormat.group(it.date) }.forEach { (title, events) ->
+                Text(title.uppercase(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, top = 18.dp, bottom = 6.dp))
+                UsesPanel {
+                    events.forEachIndexed { i, e ->
+                        UseRow(c, e, withTime = true) {}
+                        if (i < events.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                }
+            }
         }
     }
 }

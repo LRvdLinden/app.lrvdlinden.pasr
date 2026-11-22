@@ -101,6 +101,7 @@ fun CardDetailScreen(id: String) {
     var gwBusy by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var amountDialog by remember { mutableStateOf<String?>(null) }
+    var useAmount by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(id) {
         CardStore.upsert(card.shown(), touch = false)
@@ -188,6 +189,9 @@ fun CardDetailScreen(id: String) {
                 }
             }
 
+            // Laatst gebruikt (zoals de transacties in Apple Wallet): de laatste 3 keer, met wat je uitgaf
+            RecentUsesSection(card, onAll = { nav.push(Screen.Uses(card.id)) }, onAmount = { useAmount = it.id })
+
             if (card.kind == CardKind.VOUCHER) {
                 SectionHeader("Tegoed")
                 Group {
@@ -272,6 +276,8 @@ fun CardDetailScreen(id: String) {
         },
         dismissButton = { TextButton({ confirmDelete = false }) { Text("Annuleren") } },
     )
+
+    useAmount?.let { useId -> UseAmountDialog(card, useId) { useAmount = null } }
 
     amountDialog?.let { mode ->
         var text by remember { mutableStateOf("") }
