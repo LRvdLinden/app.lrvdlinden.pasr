@@ -2676,6 +2676,31 @@ begin
     limit least(greatest(coalesce(p_limit, 50), 1), 200)) x), '[]'::jsonb);
 end $$;
 
+-- ---- huisstijl van de website (functie business-brand): rem per zaak ----
+create table if not exists public.pasr_business_brand_hits (
+  business_id uuid not null references public.pasr_businesses (id) on delete cascade,
+  at timestamptz not null default now()
+);
+create index if not exists pasr_business_brand_hits_biz on public.pasr_business_brand_hits (business_id, at);
+alter table public.pasr_business_brand_hits enable row level security;
+revoke all on public.pasr_business_brand_hits from anon, authenticated;
+
+-- Telt een keer ophalen; geeft 0 (mag) of het aantal seconden tot het weer mag. Ruimt oude tellingen van de zaak op.
+create or replace function public.pasr_business_brand_hit(p_business uuid, p_per_hour int default 20) returns int
+language plpgsql security definer set search_path = public as $$
+declare n int; oldest timestamptz;
+begin
+  delete from public.pasr_business_brand_hits where business_id = p_business and at < now() - interval '1 hour';
+  select count(*), min(at) into n, oldest from public.pasr_business_brand_hits where business_id = p_business;
+  if n >= greatest(coalesce(p_per_hour, 20), 1) then
+    return greatest(1, ceil(extract(epoch from (oldest + interval '1 hour' - now())))::int);
+  end if;
+  insert into public.pasr_business_brand_hits (business_id) values (p_business);
+  return 0;
+end $$;
+revoke all on function public.pasr_business_brand_hit(uuid, int) from public, anon, authenticated;
+grant execute on function public.pasr_business_brand_hit(uuid, int) to service_role;
+
 -- ---- beheer (functie admin, service role) ----
 create or replace function public.pasr_admin_businesses() returns jsonb
 language sql stable security definer set search_path = public as $$

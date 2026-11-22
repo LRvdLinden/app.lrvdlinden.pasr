@@ -145,6 +145,11 @@ jobs:
             ~/.deno/bin/deno test --no-check supabase/functions/admin/ || { echo "::error::Tests of the admin function failed"; exit 1; }
           fi
           supabase functions deploy admin --yes --project-ref "$REF" --no-verify-jwt --use-api
+          # Pasr Zakelijk: huisstijl van de website van een zaak (eigen JWT-controle in de functie, SSRF-beveiligd)
+          if [ "$deno_ok" = 1 ]; then
+            ~/.deno/bin/deno test --no-check -A supabase/functions/business-brand/ || { echo "::error::Tests of the business-brand function failed"; exit 1; }
+          fi
+          supabase functions deploy business-brand --yes --project-ref "$REF" --no-verify-jwt --use-api
           # Where the database reaches the function (push notifications via pg_net)
           python3 -c 'import json,os;print(json.dumps({"query":"update public.pasr_admin_config set admin_url = '"'"'https://%s.supabase.co/functions/v1/admin'"'"' where id = 1" % os.environ["REF"]}))' > /tmp/u.json
           curl -sf -o /dev/null -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
