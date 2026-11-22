@@ -15,6 +15,7 @@ struct WhatsNewView: View {
                     item("person.2", "Medewerkers", "Nodig je team uit met een link. Medewerkers zien alleen de scanner.")
                     item("chart.xyaxis.line", "Overzicht en logboek", "Stempels, beloningen en nieuwe leden per dag, en wie wat deed.")
                     item("printer", "Flyer", "Deel de QR-code of maak een A4-flyer voor op de toonbank.")
+                    item("faceid", "Vergrendelen met Face ID", "Zet in Instellingen de vergrendeling aan; bij openen vraagt de app om Face ID, Touch ID of je toegangscode.")
                     item("mappin.and.ellipse", "Vindbaar in Pasr", "Klanten vinden je stempelkaart in de lijst in Pasr, ook in de buurt.")
                 } header: {
                     Text(verbatim: "1.0.0")

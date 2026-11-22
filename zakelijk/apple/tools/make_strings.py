@@ -15,7 +15,7 @@ APP = HERE.parent / "PasrZakelijk"
 EN = json.loads((HERE / "strings_en.json").read_text())
 
 CALLS = r"(?:Text|Button|Label|Section|TextField|SecureField|Toggle|Picker|Stepper|LabeledContent|ColorPicker|Link|navigationTitle|" \
-        r"ContentUnavailableView|alert|confirmationDialog|accessibilityLabel|accessibilityHint|prompt: Text|subject: Text|PhotosPicker)"
+        r"ContentUnavailableView|alert|confirmationDialog|accessibilityLabel|accessibilityHint|prompt: Text|subject: Text|PhotosPicker|SettingsLabel)"
 LIT = r'"((?:[^"\\]|\\.)*)"'
 
 
@@ -48,7 +48,7 @@ def keys():
             continue
         if re.fullmatch(r"[a-z0-9]+(\.[a-z0-9]+)+", k):
             continue  # SF Symbol
-        if k in {"checkmark", "circle", "envelope", "hourglass", "paintpalette"}:
+        if k in {"checkmark", "circle", "envelope", "hourglass", "paintpalette", "faceid", "touchid", "opticid"}:
             continue
         out.add(k.replace('\\"', '"'))
     return out
@@ -71,6 +71,9 @@ def main():
         "NSCameraUsageDescription": (
             "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.",
             "Pasr Zakelijk uses the camera to scan the QR code on your customer's stamp card."),
+        "NSFaceIDUsageDescription": (
+            "Pasr Zakelijk gebruikt Face ID om de app te vergrendelen, zodat alleen jij stempels kunt zetten.",
+            "Pasr Zakelijk uses Face ID to lock the app, so only you can add stamps."),
     }
     istr = {k: {"extractionState": "manual", "localizations": {
         "nl": {"stringUnit": {"state": "translated", "value": nl}},

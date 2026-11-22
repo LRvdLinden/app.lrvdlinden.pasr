@@ -58,7 +58,9 @@ struct ScanView: View {
                     .trackModal()
             }
         }
-        .task {
+        // pas om de camera vragen als splash en slot weg zijn
+        .task(id: ModalTracker.shared.locked) {
+            guard !ModalTracker.shared.locked else { return }
             let status = AVCaptureDevice.authorizationStatus(for: .video)
             if status == .notDetermined { _ = await AVCaptureDevice.requestAccess(for: .video) }
             cameraDenied = [.denied, .restricted].contains(AVCaptureDevice.authorizationStatus(for: .video))
@@ -73,7 +75,7 @@ struct ScanView: View {
     @ViewBuilder private var camera: some View {
         if QRScanner.isAvailable && !cameraDenied {
             ZStack {
-                QRScanner(paused: result != nil || busy || typing) { code in
+                QRScanner(paused: result != nil || busy || typing || ModalTracker.shared.locked) { code in
                     Task { await look(code) }
                 }
                 RoundedRectangle(cornerRadius: 26, style: .continuous)

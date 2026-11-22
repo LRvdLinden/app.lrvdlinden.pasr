@@ -513,6 +513,22 @@
         }
       }
     },
+    "Automatisch volgt de instelling van je iPhone of iPad.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic follows the setting of your iPhone or iPad."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch volgt de instelling van je iPhone of iPad."
+          }
+        }
+      }
+    },
     "Beloning (bijv. 1 gratis koffie)": {
       "localizations": {
         "en": {
@@ -609,6 +625,22 @@
         }
       }
     },
+    "Bevestig om de vergrendeling te wijzigen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm to change the lock."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bevestig om de vergrendeling te wijzigen."
+          }
+        }
+      }
+    },
     "Bewerken": {
       "localizations": {
         "en": {
@@ -621,6 +653,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bewerken"
+          }
+        }
+      }
+    },
+    "Bij openen en na terugkeer naar de app vraagt Pasr Zakelijk om Face ID, Touch ID of je toegangscode. Handig als de iPad of iPhone aan de kassa ligt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you open or return to the app, Pasr Zakelijk asks for Face ID, Touch ID or your passcode. Handy when the iPad or iPhone sits at the counter."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bij openen en na terugkeer naar de app vraagt Pasr Zakelijk om Face ID, Touch ID of je toegangscode. Handig als de iPad of iPhone aan de kassa ligt."
           }
         }
       }
@@ -1297,6 +1345,22 @@
         }
       }
     },
+    "Face ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID"
+          }
+        }
+      }
+    },
     "Flyer": {
       "localizations": {
         "en": {
@@ -1501,6 +1565,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Huisstijl van je website"
+          }
+        }
+      }
+    },
+    "Hulp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hulp"
+          }
+        }
+      }
+    },
+    "Hulp en contact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help and contact"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hulp en contact"
           }
         }
       }
@@ -3105,6 +3201,38 @@
         }
       }
     },
+    "Ontgrendel Pasr Zakelijk om stempels te zetten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock Pasr Zakelijk to add stamps."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ontgrendel Pasr Zakelijk om stempels te zetten."
+          }
+        }
+      }
+    },
+    "Ontgrendel met %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock with %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ontgrendel met %@"
+          }
+        }
+      }
+    },
     "Open Instellingen": {
       "localizations": {
         "en": {
@@ -3233,6 +3361,22 @@
         }
       }
     },
+    "Optic ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optic ID"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optic ID"
+          }
+        }
+      }
+    },
     "Overgenomen van %@": {
       "localizations": {
         "en": {
@@ -3277,6 +3421,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Overzicht en logboek"
+          }
+        }
+      }
+    },
+    "Pasr Zakelijk is vergrendeld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr Zakelijk is locked"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr Zakelijk is vergrendeld"
           }
         }
       }
@@ -3373,6 +3533,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Print de flyer en zet hem op de toonbank."
+          }
+        }
+      }
+    },
+    "Privacy en beveiliging": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy and security"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy en beveiliging"
           }
         }
       }
@@ -3745,6 +3921,22 @@
         }
       }
     },
+    "Touch ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID"
+          }
+        }
+      }
+    },
     "Uitgenodigd": {
       "localizations": {
         "en": {
@@ -3917,6 +4109,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vergist? Maak de laatste stempel of inwisseling binnen 2 minuten ongedaan."
+          }
+        }
+      }
+    },
+    "Vergrendelen met %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock with %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergrendelen met %@"
+          }
+        }
+      }
+    },
+    "Vergrendelen met Face ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock with Face ID"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergrendelen met Face ID"
           }
         }
       }
@@ -4401,6 +4625,22 @@
         }
       }
     },
+    "Zet in Instellingen de vergrendeling aan; bij openen vraagt de app om Face ID, Touch ID of je toegangscode.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the lock in Settings; when you open the app it asks for Face ID, Touch ID or your passcode."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet in Instellingen de vergrendeling aan; bij openen vraagt de app om Face ID, Touch ID of je toegangscode."
+          }
+        }
+      }
+    },
     "Zie per dag wat er gebeurt en wie wat deed.": {
       "localizations": {
         "en": {
@@ -4589,6 +4829,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "stempels"
+          }
+        }
+      }
+    },
+    "toegangscode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "passcode"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "toegangscode"
           }
         }
       }

@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// Instellingen: zaak (eigenaar), scannen (afkoeltijd, max per scan), vindbaar in Pasr, account, weergave, links,
+/// Instellingen: zaak (eigenaar), scannen (afkoeltijd, max per scan), vindbaar in Pasr, account, vergrendeling, weergave, hulp,
 /// Ontdekken en de app-info.
 struct SettingsView: View {
     let business: Business
     @Environment(BusinessStore.self) private var store
     @AppStorage(AppearanceSetting.key) private var appearance: AppearanceSetting = .system
+    @AppStorage(Biometrics.appLockKey) private var appLock = false
     @State private var cooldown = 5
     @State private var maxPerScan = 10
     @State private var listed = true
@@ -41,21 +42,28 @@ struct SettingsView: View {
                     }
                 }
                 accountSection
-                Section("Weergave") {
-                    Picker("Weergave", selection: $appearance) {
-                        ForEach(AppearanceSetting.allCases) { Text($0.label).tag($0) }
-                    }
-                }
+                securitySection
                 Section {
-                    Link(destination: URL(string: "https://pasr.nl/privacy/#stempelkaarten-van-ondernemers")!) {
-                        Label("Privacyverklaring", systemImage: "hand.raised")
+                    Picker(selection: $appearance) {
+                        ForEach(AppearanceSetting.allCases) { Text($0.label).tag($0) }
+                    } label: {
+                        SettingsLabel("Weergave", symbol: "circle.lefthalf.filled", color: .gray)
                     }
+                } footer: {
+                    Text("Automatisch volgt de instelling van je iPhone of iPad.")
+                }
+                Section("Hulp") {
                     Link(destination: URL(string: "https://pasr.nl/support/")!) {
-                        Label("Support", systemImage: "questionmark.circle")
+                        SettingsLabel("Hulp en contact", symbol: "questionmark.circle.fill", color: Theme.iris, external: true)
                     }
-                    Button { whatsNew = true } label: { Label("Wat is nieuw", systemImage: "sparkles") }
+                    Link(destination: URL(string: "https://pasr.nl/privacy/#stempelkaarten-van-ondernemers")!) {
+                        SettingsLabel("Privacyverklaring", symbol: "hand.raised.fill", color: Theme.iris, external: true)
+                    }
+                    Button { whatsNew = true } label: {
+                        SettingsLabel("Wat is nieuw", symbol: "sparkles", color: Theme.coral)
+                    }
                     Link(destination: URL(string: "https://pasr.nl/zakelijk/")!) {
-                        Label("Pasr Zakelijk op pasr.nl", systemImage: "safari")
+                        SettingsLabel("Pasr Zakelijk op pasr.nl", symbol: "safari.fill", color: Theme.mint, external: true)
                     }
                 }
                 Section {
@@ -159,6 +167,27 @@ struct SettingsView: View {
         }
     }
 
+    /// Vergrendelen met Face ID (zelfde als Pasr): aan- of uitzetten vraagt eerst om Face ID of de toegangscode.
+    private var securitySection: some View {
+        Section {
+            Toggle(isOn: Binding(get: { appLock }, set: { newValue in
+                Task {
+                    if await Biometrics.authenticate(reason: String(localized: "Bevestig om de vergrendeling te wijzigen.")) {
+                        appLock = newValue
+                    }
+                }
+            })) {
+                SettingsLabel(String(format: String(localized: "Vergrendelen met %@"), Biometrics.methodName),
+                              symbol: Biometrics.symbolName, color: Theme.mint)
+            }
+            .disabled(!Biometrics.isAvailable)
+        } header: {
+            Text("Privacy en beveiliging")
+        } footer: {
+            Text("Bij openen en na terugkeer naar de app vraagt Pasr Zakelijk om Face ID, Touch ID of je toegangscode. Handig als de iPad of iPhone aan de kassa ligt.")
+        }
+    }
+
     static func cooldownLabel(_ minutes: Int) -> String {
         switch minutes {
         case 0: String(localized: "Geen")
@@ -206,6 +235,48 @@ struct SettingsView: View {
                 : String(localized: "Opgeslagen")
         } catch {
             message = error.localizedDescription
+        }
+    }
+}
+
+/// Regel in Instellingen met een gekleurd icoon (zelfde stijl als Pasr).
+struct SettingsLabel: View {
+    let title: Text
+    let symbol: String
+    let color: Color
+    var external = false
+
+    init(_ title: LocalizedStringKey, symbol: String, color: Color, external: Bool = false) {
+        self.init(text: Text(title), symbol: symbol, color: color, external: external)
+    }
+
+    /// Voor een tekst die al vertaald is (bijv. met de naam van Face ID erin).
+    @_disfavoredOverload
+    init(_ title: String, symbol: String, color: Color, external: Bool = false) {
+        self.init(text: Text(verbatim: title), symbol: symbol, color: color, external: external)
+    }
+
+    private init(text: Text, symbol: String, color: Color, external: Bool) {
+        self.title = text
+        self.symbol = symbol
+        self.color = color
+        self.external = external
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 29, height: 29)
+                .background(color.gradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .accessibilityHidden(true)
+            title.foregroundStyle(.primary)
+            if external {
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
         }
     }
 }

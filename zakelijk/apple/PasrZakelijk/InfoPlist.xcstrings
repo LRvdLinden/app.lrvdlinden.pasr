@@ -51,6 +51,23 @@
           }
         }
       }
+    },
+    "NSFaceIDUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr Zakelijk uses Face ID to lock the app, so only you can add stamps."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasr Zakelijk gebruikt Face ID om de app te vergrendelen, zodat alleen jij stempels kunt zetten."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

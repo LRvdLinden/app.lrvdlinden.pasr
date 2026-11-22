@@ -25,7 +25,7 @@ struct RootView: View {
         .task(id: account.session?.userID) {
             if account.isSignedIn { await store.load() } else { store.reset() }
         }
-        .sheet(isPresented: Binding(get: { store.pendingInvite != nil && account.isSignedIn },
+        .sheet(isPresented: Binding(get: { store.pendingInvite != nil && account.isSignedIn && !ModalTracker.shared.locked },
                                     set: { if !$0 { store.pendingInvite = nil } })) {
             if let code = store.pendingInvite {
                 InviteAcceptView(code: code).trackModal()
