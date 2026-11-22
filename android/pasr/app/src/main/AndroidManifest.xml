@@ -95,6 +95,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Tekstherkenning voor bonnetjes: het model van Google Play-services alvast op het toestel zetten -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+
         <!-- ML Kit barcode-scanning (gebundeld model): geen download via Google Play nodig -->
     </application>
 </manifest>

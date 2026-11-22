@@ -146,13 +146,15 @@ fun UsePromptBar(p: UsePromptData, card: Card?, onYes: () -> Unit, onNo: () -> U
             Row(Modifier.padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (card != null) { UseLogoTile(card); Spacer(Modifier.width(12.dp)) }
                 Column(Modifier.weight(1f)) {
-                    Text("Gebruikt bij ${p.title}?", fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text("Gebruikt bij ${p.title}?", fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
                     Text("Alleen Ja telt mee in Laatst gebruikt", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
-                OutlinedButton(onNo) { Text("Nee") }
+                val pad = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp)
+                OutlinedButton(onNo, contentPadding = pad) { Text("Nee") }
                 Spacer(Modifier.width(6.dp))
-                Button(onYes, colors = ButtonDefaults.buttonColors(containerColor = Brand.iris, contentColor = Color.White)) { Text("Ja") }
+                Button(onYes, contentPadding = pad, colors = ButtonDefaults.buttonColors(containerColor = Brand.iris, contentColor = Color.White)) { Text("Ja") }
             }
             LinearProgressIndicator(progress = { progress }, Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(bottom = 6.dp).height(3.dp)
                 .clip(RoundedCornerShape(2.dp)), color = Brand.iris.copy(alpha = 0.6f), trackColor = Color.Transparent)
