@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import CoreImage.CIFilterBuiltins
+import SafariServices
 
 /// Kaarten van de zaak (eigenaar): maken, bewerken, publiceren, delen en flyer.
 struct CardsView: View {
@@ -8,6 +9,7 @@ struct CardsView: View {
     @Environment(BusinessStore.self) private var store
     @State private var editing: BusinessCard?
     @State private var sharing: BusinessCard?
+    @State private var promoting: BusinessCard?
 
     var body: some View {
         NavigationStack {
@@ -47,6 +49,7 @@ struct CardsView: View {
                             Spacer()
                             if card.published {
                                 Button("QR, link en flyer", systemImage: "qrcode") { sharing = card }
+                                Button("Promotiemateriaal", systemImage: "photo.on.rectangle") { promoting = card }
                             }
                         }
                         .buttonStyle(.borderless)
@@ -71,6 +74,9 @@ struct CardsView: View {
             }
             .sheet(item: $sharing) { card in
                 CardShareView(business: business, card: card).trackModal()
+            }
+            .sheet(item: $promoting) { card in
+                PromoBrowser(card: card).ignoresSafeArea()
             }
         }
     }
@@ -290,6 +296,7 @@ struct CardShareView: View {
     let card: BusinessCard
     @Environment(\.dismiss) private var dismiss
     @State private var flyer: URL?
+    @State private var showPromotionalMaterials = false
 
     var body: some View {
         NavigationStack {
@@ -326,6 +333,10 @@ struct CardShareView: View {
                     } else {
                         ProgressView()
                     }
+                    Button { showPromotionalMaterials = true } label: {
+                        Label("Promotiemateriaal (Licht en Donker)", systemImage: "photo.on.rectangle")
+                    }
+                    .buttonStyle(BigButtonStyle(color: Theme.mint, foreground: .black))
                     Text("Print de flyer en zet hem op de toonbank.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -338,6 +349,9 @@ struct CardShareView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
             .task { flyer = Flyer.makePDF(business: business, card: card) }
+            .sheet(isPresented: $showPromotionalMaterials) {
+                PromoBrowser(card: card).ignoresSafeArea()
+            }
         }
     }
 }
@@ -416,4 +430,20 @@ private struct FlyerPage: View {
         .background(Color.white)
         .environment(\.colorScheme, .light)
     }
+}
+
+    
+/// Dezelfde live kaartgebonden generator als pasr.nl/zakelijk/dashboard.
+/// SFSafariViewController ondersteunt voorvertoningen en het opslaan van PNG/ZIP.
+private struct PromoBrowser: UIViewControllerRepresentable {
+    let card: BusinessCard
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let url = URL(string: "https://pasr.nl/zakelijk/flyer/#" + card.id)!
+        let browser = SFSafariViewController(url: url)
+        browser.preferredControlTintColor = UIColor(red: 0.42, green: 0.36, blue: 1, alpha: 1)
+        return browser
+    }
+
+    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }

@@ -125,6 +125,12 @@ FEATURES = [
     ("lock", "#6A5CFF", "Privacy voor je klanten",
      "Klanten sparen met een anonieme klantcode. Pasr vraagt geen naam, e-mailadres of telefoonnummer; jij ziet alleen "
      "de laatste tekens van de code en de stempels.", 2, "privacy"),
+    ("stamp", "#6A5CFF", "Branded socialmediabanners voor elke kaart",
+     "Maak per eigen stempelkaart Instagram-posts, Stories, WhatsApp-statussen en websitebanners. "
+     "Met je echte bedrijfslogo, kaartkleur, Pasr-stempels en QR-code, als PNG of complete ZIP.", 4, "designer"),
+    ("palette", "#12A77E", "Promotiemateriaal in Licht en Donker",
+     "Bekijk direct je persoonlijke banner en kies een lichte of donkere achtergrond. "
+     "Ook een printbare A4-flyer kun je downloaden, in het dashboard en de zakelijke apps.", 2, "flyer"),
 ]
 
 
@@ -405,7 +411,8 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
 # App-pagina's: (map, titel, beschrijving, og-titel, data-page, main, scripts, app-id, actief)
 SCRIPTS = '''  <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>
-{jsqr}  <script src="/assets/zakelijk.js"></script>'''
+{jsqr}  <script src="/assets/promo.js"></script>
+  <script src="/assets/zakelijk.js"></script>'''
 JSQR = '  <script src="/assets/vendor/jsqr.min.js"></script>\n'
 APP_PAGES = [
     ("dashboard", "Dashboard | Pasr voor ondernemers", "Beheer de stempelkaarten van je zaak.", "Dashboard", "zk-dashboard",
@@ -414,7 +421,7 @@ APP_PAGES = [
      '<main class="wrap zk-scan" id="zk-scan" aria-live="polite"><p class="zk-empty">Laden…</p></main>', True, APP_ID, ""),
     ("kaart", "Stempelkaart | Pasr", "Spaar stempels bij deze zaak met Pasr of in je browser.", "Stempelkaart", "zk-join",
      '<main class="wrap zk-join" id="zk-join" aria-live="polite"><p class="zk-empty">Laden…</p></main>', False, PASR_APP_ID, ""),
-    ("flyer", "Flyer | Pasr voor ondernemers", "Printbare flyer met de QR-code van je stempelkaart.", "Flyer", "zk-flyer",
+    ("flyer", "Promotiemateriaal | Pasr Zakelijk", "Socialmediabanners, Stories en flyers voor je stempelkaart in Licht en Donker.", "Promotiemateriaal", "zk-flyer",
      '<main class="wrap" id="zk-flyer"><p class="zk-empty">Laden…</p></main>', False, APP_ID, ""),
     ("uitnodiging", "Uitnodiging | Pasr Zakelijk", "Je bent uitgenodigd om stempels te geven met Pasr Zakelijk.", "Uitnodiging", "zk-invite",
      '<main class="wrap zk-dash" id="zk-app" aria-live="polite"><p class="zk-empty">Laden…</p></main>', False, APP_ID, ""),
@@ -622,6 +629,7 @@ def page():
   <script src="/assets/site.js" defer></script>
   <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>
+  <script src="/assets/promo.js"></script>
   <script src="/assets/zakelijk.js"></script>
 </body>
 </html>

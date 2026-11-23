@@ -539,6 +539,7 @@
           '<p class="zd-sub">' + esc(c.stamps_total) + " stempels voor " + esc(c.reward) + "</p>" +
           '<div class="zk-stats"><span class="zk-stat"><b>' + (c.members || 0) + '</b><small>leden</small></span><span class="zk-stat"><b>' + (c.stamps || 0) + '</b><small>stempels</small></span><span class="zk-stat"><b>' + (c.rewards || 0) + "</b><small>beloningen</small></span></div>" +
           '<div class="zk-actions"><button class="zk-btn sm" type="button" data-act="edit">' + ICON.edit + "Bewerken</button>" +
+          '<button class="zk-btn ghost sm" type="button" data-act="promo">' + ICON.download + 'Promotiemateriaal</button>' +
           (c.published ? '<button class="zk-btn ghost sm" type="button" data-act="share">' + ICON.qr + 'QR-code en link</button><a class="zk-btn ghost sm" href="/zakelijk/flyer/#' + esc(c.id) + '" target="_blank" rel="noopener">' + ICON.print + 'Flyer<span class="sr-only"> (opent in een nieuw venster)</span></a>'
             : approved ? '<button class="zk-btn ghost sm" type="button" data-act="publish">' + ICON.upload + "Online zetten</button>" : "") +
           '<button class="zk-btn ghost sm" type="button" data-act="members">' + ICON.users + "Leden</button></div></div></article>";
@@ -551,6 +552,7 @@
         var id = btn.closest(".zk-card").dataset.id, card = cards.filter(function (c) { return c.id === id; })[0];
         if (btn.dataset.act === "edit") { dash.edit = card; dash.sub = "edit"; render(); }
         if (btn.dataset.act === "share") shareModal(card, btn);
+        if (btn.dataset.act === "promo") promoModal(card, btn);
         if (btn.dataset.act === "members") { dash.edit = card; dash.tab = "overzicht"; history.pushState(null, "", "#overzicht"); dash.sub = "members"; render(); }
         if (btn.dataset.act === "publish") {
           btn.disabled = true;
@@ -580,14 +582,22 @@
     var first = box.querySelector("button, a[href], input"); (first || box).focus();
     return { el: box, close: close };
   }
-  function shareModal(card, opener) {
+  function promoModal(card, opener) {
+    var md = modal("Promotiemateriaal " + card.name,
+      '<div id="zkPromoMount"></div><p class="zd-modal-foot"><button class="zk-btn ghost" type="button" id="promoClose">Sluiten</button></p>',
+      opener);
+    if (window.PasrPromo) window.PasrPromo.mount($("#zkPromoMount", md.el), card);
+    else $("#zkPromoMount", md.el).textContent = "Promotiemateriaal is tijdelijk niet beschikbaar.";
+    $("#promoClose", md.el).addEventListener("click", md.close);
+  }
+    function shareModal(card, opener) {
     var url = joinUrl(card.id);
     var md = modal("QR-code en link van " + card.name,
       '<h2>Laat klanten aansluiten</h2><p>Hang de QR-code bij de kassa of deel de link. Met Pasr opent de kaart in de app; zonder app werkt hij in de browser.</p>' +
       '<div class="zk-qr"><div class="qr" role="img" aria-label="QR-code naar ' + esc(url) + '">' + qrSvg(url) + '</div><div><div class="zk-link">' + esc(url) + '</div><div class="zk-actions" style="margin-top:10px">' +
       '<button class="zk-btn sm" type="button" id="mCopy">' + ICON.link + 'Kopieer link</button>' + (navigator.share ? '<button class="zk-btn ghost sm" type="button" id="mShare">Delen</button>' : "") +
       '<button class="zk-btn ghost sm" type="button" id="mPng">' + ICON.download + 'QR als afbeelding</button>' +
-      '<a class="zk-btn ghost sm" href="/zakelijk/flyer/#' + esc(card.id) + '" target="_blank" rel="noopener">' + ICON.print + "Flyer printen</a></div></div></div>" +
+      '<a class="zk-btn ghost sm" href="/zakelijk/flyer/#' + esc(card.id) + '" target="_blank" rel="noopener">' + ICON.download + "Promotiemateriaal</a></div></div></div>" +
       '<p class="zd-modal-foot"><button class="zk-btn ghost" type="button" id="mClose">Sluiten</button></p>', opener);
     $("#mClose", md.el).addEventListener("click", md.close);
     $("#mCopy", md.el).addEventListener("click", function () { copy(url); });
@@ -1157,12 +1167,15 @@
     try { card = await rpc("pasr_business_card_public", { p_card: id }); } catch (e) { /* hieronder */ }
     if (!card) { root.innerHTML = '<div class="flyer"><h1>Kaart niet gevonden</h1><p>Zet de kaart eerst online in je dashboard.</p></div>'; return; }
     document.title = "Flyer " + card.name + " | Pasr";
-    root.innerHTML = '<p class="no-print"><button class="zk-btn" onclick="window.print()" type="button">' + ICON.print + "Printen of bewaren als PDF</button></p>" +
-      '<div class="flyer"><span class="zk-kicker">Digitale stempelkaart</span><h1>Spaar bij ' + esc(card.business) + "</h1>" +
-      '<p style="font-size:20px;margin:0">' + card.stamps_total + " stempels = <b>" + esc(card.reward) + "</b></p>" + stampCard(card, Math.ceil(card.stamps_total / 2)) +
-      '<div class="qr">' + qrSvg(joinUrl(card.id)) + "</div><p style=\"margin:0;font-weight:700\">Scan met je camera</p>" +
-      "<ol><li>Scan de QR-code met de camera van je telefoon.</li><li>Bewaar de kaart in de gratis app Pasr, of gebruik hem in je browser.</li><li>Laat bij elke aankoop je kaart scannen voor een stempel.</li></ol>" +
-      '<div class="foot"><img src="/assets/icon.png" alt="">pasr.nl</div></div>';
+    root.innerHTML = '<div class="pz-promo-intro"><h1>Promotiemateriaal</h1><p>Download professionele Pasr-banners van jouw echte stempelkaart in Licht en Donker.</p></div><div id="zkPromoPublic"></div>' +
+      '<section class="pz-old-flyer"><h2>Flyer afdrukken</h2><p class="no-print"><button class="zk-btn" onclick="window.print()" type="button">' + ICON.print + 'Printen of bewaren als PDF</button></p>' +
+      '<div class="flyer"><span class="zk-kicker">Digitale stempelkaart</span><h1>Spaar bij ' + esc(card.business) + '</h1>' +
+      '<p style="font-size:20px;margin:0">' + card.stamps_total + ' stempels = <b>' + esc(card.reward) + '</b></p>' + stampCard(card, Math.ceil(card.stamps_total / 2)) +
+      '<div class="qr">' + qrSvg(joinUrl(card.id)) + '</div><p style="margin:0;font-weight:700">Scan met je camera</p>' +
+      '<ol><li>Scan de QR-code met de camera van je telefoon.</li><li>Bewaar de kaart in de gratis app Pasr, of gebruik hem in je browser.</li><li>Laat bij elke aankoop je kaart scannen voor een stempel.</li></ol>' +
+      '<div class="foot"><img src="/assets/icon.png" alt="">pasr.nl</div></div></section>';
+    if (window.PasrPromo) window.PasrPromo.mount($("#zkPromoPublic"), card, {print:true});
+  
   }
 
   // ---------------------------------------------------------------- kop: na inloggen wordt Inloggen "Dashboard"

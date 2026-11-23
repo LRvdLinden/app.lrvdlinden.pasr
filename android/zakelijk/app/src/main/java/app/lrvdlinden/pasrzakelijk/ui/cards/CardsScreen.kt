@@ -1,10 +1,12 @@
 package app.lrvdlinden.pasrzakelijk.ui.cards
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -108,6 +110,7 @@ import java.io.File
 fun CardsScreen(business: Business) {
     var editing by remember { mutableStateOf<BusinessCard?>(null) }
     var sharing by remember { mutableStateOf<BusinessCard?>(null) }
+    val context = LocalContext.current
     ScreenScaffold(L("Kaarten"), actions = {
         IconButton(onClick = { editing = BusinessCard() }, enabled = business.cards.size < 5) {
             Icon(Icons.Filled.Add, L("Nieuwe kaart"), tint = if (business.cards.size < 5) Pz.accent else Pz.muted)
@@ -150,6 +153,12 @@ fun CardsScreen(business: Business) {
                                     Icon(Icons.Filled.QrCode, null, tint = Pz.accent, modifier = Modifier.size(18.dp))
                                     Text("  " + L("QR, link en flyer"), color = Pz.accent, fontWeight = FontWeight.SemiBold)
                                 }
+                            }
+                        }
+                        if (card.published) {
+                            TextButton(onClick = { openPromo(context, card) }, modifier = Modifier.padding(horizontal = 10.dp)) {
+                                Icon(Icons.Filled.Share, null, tint = Pz.accent, modifier = Modifier.size(18.dp))
+                                Text("  Promotiemateriaal", color = Pz.accent, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -385,8 +394,20 @@ fun CardShareSheet(business: Business, card: BusinessCard, onDismiss: () -> Unit
             } else {
                 CircularProgressIndicator(color = Pz.accent)
             }
+            BigButton("Promotiemateriaal (Licht en Donker)", {
+                openPromo(context, card)
+            }, icon = Icons.Filled.Share, color = Pz.mint, foreground = Color.Black)
             Text(L("Print de flyer en zet hem op de toonbank."), color = Pz.muted, fontSize = 13.sp)
         }
     }
 }
 
+
+    
+/** Laat de ondernemer in de app dezelfde live kaartgebonden templates bekijken.
+ * Android Custom Tabs geeft een vertrouwde download- en deelervaring voor PNG/ZIP. */
+private fun openPromo(context: android.content.Context, card: BusinessCard) {
+    val url = Uri.parse("https://pasr.nl/zakelijk/flyer/#" + card.id)
+    runCatching { CustomTabsIntent.Builder().build().launchUrl(context, url) }
+        .onFailure { context.startActivity(Intent(Intent.ACTION_VIEW, url)) }
+}

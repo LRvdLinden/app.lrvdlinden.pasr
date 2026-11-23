@@ -656,3 +656,28 @@
 .sc.ink .sc-stamp.on, .sc.ink .sc-stamp.zk-new { color: #17162A; }
 .sc .sc-stamp.on::before, .sc .sc-stamp.zk-new::before { content: ""; display: block; width: 100%; height: 100%; background: currentColor; -webkit-mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; }
 .sc .sc-stamp.on svg, .sc .sc-stamp.zk-new svg { display: none; }
+
+/* Promotiemateriaal: kaartgebonden previews, sociale formaten en Licht/Donker. */
+.pz-promo { max-width: 990px; margin: 20px auto; text-align: left; }
+.pz-promo-heading h2 { font-family: var(--display); font-size: clamp(22px,3vw,32px); margin: 0; }
+.pz-promo-heading p { color: var(--ink-2); margin: 4px 0 18px; }
+.pz-promo-controls { display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin: 12px 0 20px; }
+.pz-promo-controls>label { display:flex; flex-direction:column; gap:5px; font-weight:700; flex:1 1 220px; }
+.pz-promo-controls select { background:var(--paper-2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:11px;font:600 15px var(--body);width:100%; }
+.pz-promo-controls fieldset { border:1px solid var(--line); border-radius:12px; display:flex; gap:18px; align-items:center; padding:7px 16px 10px; }
+.pz-promo-controls fieldset label { cursor:pointer; display:flex;gap:6px;align-items:center; }
+.pz-promo-controls legend { font-weight:700; font-size:13px; }
+.pz-promo-preview { padding:16px; display:grid;justify-items:center; background:var(--paper);border-radius:18px;border:1px solid var(--line); min-height:220px; }
+.pz-promo-preview canvas { width:auto; height:auto; max-width:100%; max-height:620px; border-radius:8px; box-shadow:0 15px 36px -18px rgba(23,22,42,.35); }
+.pz-promo-actions { display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 7px; }
+.pz-promo-note { color:var(--ink-2);font-size:13px; }
+.pz-promo-intro { max-width:990px; margin:26px auto 0; }
+.pz-promo-intro h1 { font:800 clamp(30px,5vw,48px) var(--display);margin:0; }
+.pz-promo-intro p { color:var(--ink-2); }
+.pz-old-flyer { margin:40px auto;text-align:center; }
+.pz-old-flyer>h2 { font-family:var(--display); }
+.zk-modal .pz-promo { max-height:80vh; overflow-y:auto; padding:8px; }
+@media print {
+  .pz-promo, .pz-promo-intro, .pz-old-flyer>h2 { display:none !important; }
+  .pz-old-flyer {margin:0!important;}
+}

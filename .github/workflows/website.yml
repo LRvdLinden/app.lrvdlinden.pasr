@@ -31,6 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate promo JavaScript and page generator
+        run: |
+          node --check website/assets/promo.js
+          node --check website/assets/zakelijk.js
+          python3 -m py_compile tools/make_zakelijk.py
       - name: Account settings for the website
         env:
           A_URL: ${{ secrets.PASR_SUPABASE_URL }}

@@ -2,7 +2,7 @@
 
 De iOS-app voor ondernemers (iPhone en iPad, iOS 17+, Nederlands en Engels): stempels zetten met de scanner,
 stempelkaarten maken, QR-code en flyer, overzicht en logboek, medewerkers, vergrendelen met Face ID.
-Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.2 (build 100). Beheer van ondernemers blijft in PasrBeheer, LRbeheer en beheer.pasr.nl.
+Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.2 (build 7). Beheer van ondernemers blijft in PasrBeheer, LRbeheer en beheer.pasr.nl.
 
 | Map | Inhoud |
 |---|---|
@@ -59,3 +59,14 @@ max per scan, vergrendelen met vingerafdruk of gezicht, Meer apps-kaart). Nederl
 - Push: Firebase Cloud Messaging. `google-services.json` schrijft de workflow uit de secret `FIREBASE_GOOGLE_SERVICES_JSON`
   (nooit in de repo); het token gaat als `p_push_token` mee in `pasr_device_register`. De server verstuurt (ANDROID-PASR).
 - Nieuwste APK en schermafbeeldingen: branch `android-builds`, mappen `zakelijk/` en `zakelijk-previews/`.
+
+## Promotiemateriaal (build 7)
+
+Elke gepubliceerde kaart heeft onder **Promotiemateriaal** toegang tot de
+kaartgebonden previewgenerator op pasr.nl/zakelijk/flyer/#<kaart-id>. Daar staan
+Instagram/Facebook vierkant en 4:5, Story/WhatsApp, websitebanner en A4,
+ieder in Licht en Donker. Afzonderlijke PNG's of een ZIP met alle varianten
+zijn beschikbaar. De echte kaartgegevens, officiële Pasr-stempel en persoonlijke
+QR-link blijven behouden. In de iOS-app opent dit in een Safari-sheet;
+op Android in Custom Tabs. Conceptkaarten zijn via het web-dashboard zonder QR
+te bekijken. De bestaande A4-flyer blijft printbaar.
