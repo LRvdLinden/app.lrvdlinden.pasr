@@ -83,7 +83,7 @@ def stamp_card(on, total=DEMO["total"], new=(), cls=""):
     for i in range(total):
         is_on, is_new, last = i < on, i in new, i == total - 1
         k = "sc-stamp" + (" on" if is_on else "") + (" zk-new" if is_new else "") + (" gift" if last and not is_on and not is_new else "")
-        inner = TICK if (is_on or is_new) else (GIFT if last else "")
+        inner = GIFT if last and not (is_on or is_new) else ""  # Pasr-zegel via CSS
         stamps += f'<span class="{k}" style="--i:{i}">{inner}</span>'
     cols = 5 if total <= 10 else 6
     return (f'<div class="sc {cls}" style="--c:{c};background:{bg};--cols:{cols}">'

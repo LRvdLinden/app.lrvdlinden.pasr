@@ -13,7 +13,7 @@ name: Android Pasr Zakelijk
 
 on:
   push:
-    branches: [gedeelde-pasr]
+    branches: [gedeelde-pasr, main]
     paths: ["android/zakelijk/**", ".github/workflows/android-zakelijk.yml"]
   workflow_dispatch:
 

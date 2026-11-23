@@ -51,7 +51,10 @@
     .dark .face .sc-stamp { border-color: rgba(23,22,42,.35); }
     .face .sc-stamp.on { border: 0; background: #fff; color: #17162A; }
     .dark .face .sc-stamp.on { background: #17162A; color: #fff; }
-    .face .sc-stamp.on svg { width: 60%; height: 60%; }
+    .face .sc-stamp.on svg { display: none; }
+    .face .sc-stamp.on::before { content: ""; display: block; width: 100%; height: 100%; background: currentColor; -webkit-mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; }
+    .face .sc-stamp.on { background: transparent; color: #fff; }
+    .dark .face .sc-stamp.on { background: transparent; color: #17162A; }
     .details { display: grid; gap: 8px; text-align: left; background: var(--paper-2); border: 1px solid var(--line); border-radius: 18px; padding: 14px 18px; margin: 0 auto 24px; width: min(100%, 420px); }
     .details div { display: flex; justify-content: space-between; gap: 14px; font-size: 16px; }
     .details span { color: var(--ink-2); }
@@ -178,8 +181,8 @@
     }
     function drawStamps(total, count) {
       var shown = count >= total ? total : count % total, html = '';
-      var tick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>';
-      for (var i = 0; i < total; i++) html += '<span class="sc-stamp' + (i < shown ? ' on' : '') + '">' + (i < shown ? tick : '') + '</span>';
+      // Gevulde vakjes krijgen de Pasr-zegel via CSS; geen generiek vinkje.
+      for (var i = 0; i < total; i++) html += '<span class="sc-stamp' + (i < shown ? ' on' : '') + '">' + '' + '</span>';
       var box = document.getElementById('stamps');
       if (!box) { box = document.createElement('div'); box.id = 'stamps'; box.className = 'sc-stamps'; var f = document.getElementById('front'); f.insertBefore(box, document.getElementById('extra')); }
       box.style.setProperty('--cols', total <= 5 ? total : total <= 10 ? 5 : total <= 12 ? 6 : total <= 21 ? 7 : 8);

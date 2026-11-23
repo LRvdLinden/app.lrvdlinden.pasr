@@ -21,7 +21,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
-        versionName = System.getenv("VERSION_NAME") ?: "1.0.0"
+        versionName = System.getenv("VERSION_NAME") ?: "1.0.4"
         // Alleen telefoon-processors (ARM): de tekstherkenning en barcodescanner hebben per processor eigen native code;
         // x86 (emulators, enkele Chromebooks) zou de APK ruim twee keer zo groot maken
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }

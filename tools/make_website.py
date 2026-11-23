@@ -385,7 +385,7 @@ def feature_visual(kind):
         return ('<div class="fv fv-sort" aria-hidden="true"><span class="seg"><i></i><span>A tot Z</span><span>Meest gebruikt</span><span>In de buurt</span></span>'
                 f'<ul>{items}</ul></div>')
     if kind == "stamps":
-        tick = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        tick = ""  # De officiële Pasr-stempel wordt via CSS-masker getekend.
         dots = "".join(f'<i class="st{" on" if k < 8 else ""}" style="--i:{k}">{tick if k < 8 else ""}</i>' for k in range(10))
         return ('<div class="fv fv-stamps" aria-hidden="true"><span class="sc2"><span class="hd"><b>K</b>Koffiekaart</span>'
                 f'<span class="grid">{dots}</span><span class="rw">1 gratis koffie<em>nog 2</em></span></span>'
@@ -869,3 +869,8 @@ if __name__ == "__main__":
     # pasr.nl/zakelijk/kaart/<id>/: deelpagina met eigen OG-afbeelding per gepubliceerde stempelkaart
     import make_kaart_pages
     make_kaart_pages.build()
+    # Ook de algemene deelpreview van Pasr Zakelijk gebruikt exact dezelfde zegel.
+    demo_og = dict(id="pasr-zakelijk", business="Koffiebar De Hoek", name="Koffiekaart",
+                   city="Apeldoorn", color="#7B4B2A", text=None, total=10,
+                   reward="1 gratis koffie", logo=None)
+    (ROOT / "og" / "zakelijk.png").write_bytes(make_kaart_pages.render_og(demo_og))

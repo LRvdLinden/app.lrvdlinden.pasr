@@ -83,7 +83,7 @@
     var stamps = "";
     for (var i = 0; i < total; i++) {
       var on = i < shown, last = i === total - 1;
-      stamps += '<span class="sc-stamp' + (on ? " on" : "") + (last && !on ? " gift" : "") + '" style="--i:' + i + '">' + (on ? ICON.stamp : last ? ICON.gift : "") + "</span>";
+      stamps += '<span class="sc-stamp' + (on ? " on" : "") + (last && !on ? " gift" : "") + '" style="--i:' + i + '">' + (on ? "" : last ? ICON.gift : "") + "</span>";
     }
     var bg = "linear-gradient(135deg, " + mixHex(color, 255, 0.16) + ", " + color + " 55%, " + mixHex(color, 0, 0.22) + ")";
     var left = count == null ? total + " stempels" : (n >= total ? "Beloning klaar" : (total - shown) + " te gaan");

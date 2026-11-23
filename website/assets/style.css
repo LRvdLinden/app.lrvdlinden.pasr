@@ -1051,3 +1051,8 @@ html, body { overflow-x: clip; max-width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .ft-toggle, .ft-toggle svg { transition: none; } }
 .js .ft.in .ft-more .ft-y { animation-delay: calc(var(--r, 0) * 25ms + 80ms); }
+
+/* Pasr-stempel op de demo 'Alles wat je aan de kassa nodig hebt'. */
+.fv-stamps .st.on { border: 0; background: transparent; color: #fff; }
+.fv-stamps .st.on::before { content: ""; display: block; width: 100%; height: 100%; background: currentColor; -webkit-mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; }
+.fv-stamps .st.on svg { display: none; }

@@ -39,7 +39,7 @@ BASE = "https://pasr.nl"
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 HIDDEN = re.compile(r"apple\s*review", re.I)
-RENDER_VERSION = "1"          # ophogen als het ontwerp van de OG-afbeelding verandert: dan worden ze allemaal opnieuw gemaakt
+RENDER_VERSION = "2-pasr-zegel"          # ophogen als het ontwerp van de OG-afbeelding verandert: dan worden ze allemaal opnieuw gemaakt
 INK = (23, 22, 42)
 APP_STORE = "https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123"
 
@@ -299,6 +299,35 @@ def rgb(hex_colour):
     return tuple(int(hex_colour[i:i + 2], 16) for i in (1, 3, 5))
 
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=32)
+def pasr_stamp_mask(size):
+    """Rasterize the exact traced Pasr seal from website/assets/pasr-stamp.svg.
+
+    The SVG is also used by the website, iOS and Android. XOR preserves its
+    nested holes, so letters and the check show the card's own brand colour.
+    """
+    from PIL import Image, ImageChops, ImageDraw
+    source = (SITE / "assets" / "pasr-stamp.svg").read_text(encoding="utf-8")
+    match = re.search(r'<path[^>]* d="([^"]+)"', source)
+    if not match:
+        raise RuntimeError("Officiële Pasr-stempel ontbreekt")
+    aa, w, h = 4, 131, 135
+    large = max(4, size * aa)
+    mask = Image.new("1", (large, large), 0)
+    for contour in re.findall(r"M([^Z]+)Z", match.group(1)):
+        points = [(int(x) / w * large, int(y) / h * large)
+                  for x, y in re.findall(r"([0-9]+),([0-9]+)", contour)]
+        if len(points) < 3:
+            continue
+        layer = Image.new("1", (large, large), 0)
+        ImageDraw.Draw(layer).polygon(points, fill=1)
+        mask = ImageChops.logical_xor(mask, layer)
+    return mask.convert("L").resize((size, size), Image.Resampling.LANCZOS)
+
+
 def render_og(c):
     """1200x630 PNG (bytes): de stempelkaart groot links, rechts klein het Pasr-logo met 'Spaar digitaal met Pasr'."""
     from PIL import Image, ImageDraw, ImageFilter
@@ -400,14 +429,8 @@ def render_og(c):
         y0 = gy + row * (size + gap)
         box = (x0, y0, x0 + size, y0 + size)
         if i < filled:
-            d.ellipse((x0, y0 + 3 * S, x0 + size, y0 + size + 3 * S), fill=tuple(round(b * .75) for b in base))
-            d.ellipse(box, fill=on_fill)
-            k, ox, oy = size * .6 / 24, x0 + size * .2, y0 + size * .2
-            pts = [(ox + 5 * k, oy + 12.5 * k), (ox + 10 * k, oy + 17 * k), (ox + 19 * k, oy + 7 * k)]
-            lw = max(3, round(3 * k))
-            d.line(pts, fill=on_mark, width=lw, joint="curve")
-            for qx, qy in (pts[0], pts[-1]):
-                d.ellipse((qx - lw / 2, qy - lw / 2, qx + lw / 2, qy + lw / 2), fill=on_mark)
+            # Brandkleur komt vanzelf tevoorschijn door de uitsparingen in de zegel.
+            img.paste(on_fill, (x0, y0), pasr_stamp_mask(size))
         elif i == total - 1:
             d.ellipse(box, outline=line, width=bw)
             k = size * .55 / 24

@@ -2,7 +2,7 @@
 
 De iOS-app voor ondernemers (iPhone en iPad, iOS 17+, Nederlands en Engels): stempels zetten met de scanner,
 stempelkaarten maken, QR-code en flyer, overzicht en logboek, medewerkers, vergrendelen met Face ID.
-Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.0 (build 5). Beheer van ondernemers blijft in PasrBeheer, LRbeheer en beheer.pasr.nl.
+Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.2 (build 100). Beheer van ondernemers blijft in PasrBeheer, LRbeheer en beheer.pasr.nl.
 
 | Map | Inhoud |
 |---|---|

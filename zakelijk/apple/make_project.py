@@ -9,8 +9,8 @@ import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-BUILD = "5"
-VERSION = "1.0.0"
+BUILD = "100"
+VERSION = "1.0.2"
 
 
 def oid(name):
