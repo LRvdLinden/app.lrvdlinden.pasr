@@ -40,7 +40,7 @@ struct BusinessCard: Identifiable, Hashable {
     }
 
     /// Link en QR-code waarmee klanten zich aanmelden.
-    var joinURL: URL { URL(string: "https://pasr.nl/zakelijk/kaart/#\(id)")! }
+    var joinURL: URL { URL(string: "https://pasr.nl/zakelijk/kaart/\(id.lowercased())/")! }   // eigen pagina met OG-afbeelding
 }
 
 /// Een zaak waar je eigenaar of medewerker van bent.
