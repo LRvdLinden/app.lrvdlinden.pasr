@@ -100,7 +100,7 @@ jobs:
         run: |
           set -uo pipefail
           GEN="website/kaarten website/cadeaubon website/klantenkaart website/overstappen website/index.html website/sitemap.xml website/assets/kaarten website/assets/covers"
-          python3 -m pip install --quiet --disable-pip-version-check Pillow || true
+          python3 -m pip install --quiet --disable-pip-version-check Pillow python-barcode || true
           python3 tools/fetch_live_catalog.py
           [ -f .cache/live-catalog.json ] || echo "::warning::Geen live catalogus: de pagina's komen uit de repo."
           if python3 tools/make_website.py && python3 tools/make_sitemap.py; then
