@@ -27,7 +27,7 @@ data class BusinessCard(
     val rewards: Int = 0,
 ) {
     /** Link en QR-code waarmee klanten zich aanmelden. */
-    val joinURL: String get() = "https://pasr.nl/zakelijk/kaart/#$id"
+    val joinURL: String get() = "https://pasr.nl/zakelijk/kaart/${id.lowercase()}/"   // eigen pagina met OG-afbeelding
 
     companion object {
         fun from(j: J): BusinessCard? {
