@@ -12,6 +12,14 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <script src="/assets/consent.js?v=77ae25ae" defer></script>
   <link rel="stylesheet" href="/assets/style.css?v=932bd56f">
+  <script>
+    // Deellink van een stempelkaart zonder eigen pagina (net gepubliceerd, staat er binnen het uur): de kaart via de
+    // algemene pagina tonen, zodat de link altijd werkt.
+    (function () {
+      var m = location.pathname.match(/^\/zakelijk\/kaart\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
+      if (m) location.replace("/zakelijk/kaart/?hier=1" + location.search.replace(/^\?/, "&") + "#" + m[1].toLowerCase());
+    })();
+  </script>
 </head>
 <body>
   <header class="wrap nav">

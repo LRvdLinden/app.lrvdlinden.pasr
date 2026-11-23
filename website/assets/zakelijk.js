@@ -55,7 +55,9 @@
     var q = qrcode(0, "M"); q.addData(text); q.make();
     return q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   }
-  function joinUrl(id) { return "https://pasr.nl/zakelijk/kaart/#" + id; }
+  // Deellink van een stempelkaart: eigen pagina per kaart (titel, beschrijving en OG-afbeelding voor WhatsApp, iMessage, …).
+  // De oude vorm /zakelijk/kaart/#<id> blijft werken: die pagina stuurt door naar /zakelijk/kaart/<id>/.
+  function joinUrl(id) { return "https://pasr.nl/zakelijk/kaart/" + String(id).toLowerCase() + "/"; }
   function nlDate(iso) { return iso ? new Date(iso).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" }) : "—"; }
   function setMsg(el, text, good) { if (el) { el.textContent = text || ""; el.className = "zk-msg " + (text ? (good ? "good" : "bad") : ""); } }
   function toast(text) {
@@ -895,9 +897,19 @@
     });
   };
 
-  // ---------------------------------------------------------------- join-pagina: pasr.nl/zakelijk/kaart/#<id>
+  // ---------------------------------------------------------------- join-pagina: pasr.nl/zakelijk/kaart/<id>/ (en de oude #<id>)
   async function joinPage() {
-    var id = location.hash.slice(1), root = $("#zk-join");
+    var root = $("#zk-join");
+    var fromPath = location.pathname.match(/^\/zakelijk\/kaart\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
+    var id = fromPath ? fromPath[1].toLowerCase() : location.hash.slice(1).toLowerCase();
+    // Oude link (#<id>): door naar de eigen pagina van de kaart, als die er is. Geen pagina (net gepubliceerd, of de
+    // demo-kaart voor App Review): hier blijven, dan werkt hij gewoon zoals altijd.
+    if (!fromPath && /^[0-9a-f-]{36}$/.test(id) && !/[?&]hier=1/.test(location.search)) {
+      try {
+        var head = await fetch("/zakelijk/kaart/" + id + "/", { method: "HEAD", cache: "no-store" });
+        if (head.ok) { location.replace("/zakelijk/kaart/" + id + "/"); return; }
+      } catch (e) { /* offline: gewoon hier */ }
+    }
     var store = "pasr.zakelijk.member." + id;
     function fail(title, text) { root.innerHTML = "<h1>" + esc(title) + "</h1><p>" + esc(text) + '</p><a class="btn btn-ghost" href="/zakelijk/">Over Pasr voor ondernemers</a>'; }
     if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("Deze link werkt niet", "De link is niet compleet. Scan de QR-code bij de zaak opnieuw.");
