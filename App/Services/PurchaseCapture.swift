@@ -253,7 +253,35 @@ struct PurchaseAutomationView: View {
                 }
                 .padding(.vertical, 6)
             }
-            Section("Zo stel je het in") {
+            Section {
+                HStack(alignment: .top, spacing: 12) {
+                    Text("1").font(.subheadline.weight(.heavy)).foregroundStyle(.white)
+                        .frame(width: 26, height: 26).background(Brand.iris, in: Circle()).accessibilityHidden(true)
+                    Text("Tik op Opdracht installeren en kies Voeg opdracht toe.").font(.subheadline)
+                }
+                Button {
+                    if let url = URL(string: "https://www.icloud.com/shortcuts/16339ab56119415aaf3e1a862666fab5") { openURL(url) }
+                } label: {
+                    Label("Opdracht installeren", systemImage: "square.and.arrow.down.fill")
+                        .font(.body.weight(.semibold))
+                }
+                HStack(alignment: .top, spacing: 12) {
+                    Text("2").font(.subheadline.weight(.heavy)).foregroundStyle(.white)
+                        .frame(width: 26, height: 26).background(Brand.iris, in: Circle()).accessibilityHidden(true)
+                    Text("Open Opdrachten › Automatisering › + › Transactie. Kies je betaalkaarten en Voer onmiddellijk uit, tik op Volgende en kies de opdracht Aankoop vastleggen.").font(.subheadline)
+                }
+                Button {
+                    if let url = URL(string: "shortcuts://") { openURL(url) }
+                } label: {
+                    Label("Open Opdrachten", systemImage: "arrow.up.forward.app.fill")
+                        .font(.body.weight(.semibold))
+                }
+            } header: {
+                Text("Snel instellen")
+            } footer: {
+                Text("Een automatisering kan Apple niet via een link delen. De opdracht wel: die staat dan meteen goed, je kiest hem alleen nog bij de automatisering Transactie.")
+            }
+            Section("Of zelf instellen") {
                 ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
                     HStack(alignment: .top, spacing: 12) {
                         Text("\(i + 1)")
