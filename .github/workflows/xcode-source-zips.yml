@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/xcode-source-zips.yml"
+      - "zakelijk/apple/make_project.py"
+      - "zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj"
   workflow_dispatch:
 
 permissions:
