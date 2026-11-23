@@ -4,7 +4,8 @@ name: Website
 # that changes the site, or by hand (Actions › Website › Run workflow).
 # Elke deploy bouwt /kaarten/, /cadeaubon/, /klantenkaart/, de homepage en de sitemap opnieuw op uit de beheer-database
 # (tools/fetch_live_catalog.py). Elk uur draait de workflow ook vanzelf (schedule), zodat wijzigingen in het beheer
-# (winkels, logo's, kaartontwerpen, gidsen, saldo-pagina's, stempelkaarten) binnen het uur op pasr.nl staan; dan wordt
+# (winkels, logo's, kaartontwerpen, gidsen, saldo-pagina's, stempelkaarten en hun deelpagina's /zakelijk/kaart/<id>/ met
+# OG-afbeelding) binnen het uur op pasr.nl staan; dan wordt
 # alleen geüpload wat echt anders is (website/assets/deploy-manifest.json op de server).
 # Repository secrets: FTP_SERVER, FTP_USER, FTP_PASSWORD; optional FTP_PORT (21 = FTPS, 22 = SFTP) and FTP_DIR.
 # Safety: if the target folder already holds a website that is not Pasr, nothing is uploaded.
@@ -82,11 +83,20 @@ jobs:
           fetch pasr android-pasr- android-pasr.yml Pasr-Android website/download
           # Pasr Zakelijk staat op pasr.nl/zakelijk/download/ (niet in /download/)
           fetch pasr-zakelijk android-zakelijk- android-zakelijk.yml PasrZakelijk-Android website/zakelijk/download
-      - name: "Kaarten, cadeaubons, gidsen en sitemap uit de beheer-database"
+      - name: "OG-afbeeldingen van stempelkaarten uit de vorige run (alleen gewijzigde kaarten opnieuw maken)"
+        uses: actions/cache@v4
+        with:
+          path: .cache/og-zakelijk
+          key: og-zakelijk-${{ github.run_id }}
+          restore-keys: og-zakelijk-
+      - name: "Kaarten, cadeaubons, gidsen, deelpagina's van stempelkaarten en sitemap uit de beheer-database"
         continue-on-error: true   # lukt het niet, dan gaat de site uit de repo online
         env:
           PASR_SUPABASE_URL: ${{ secrets.PASR_SUPABASE_URL }}
           PASR_SUPABASE_KEY: ${{ secrets.PASR_SUPABASE_KEY }}
+          # alleen om pasr_business_share_cards op te vragen (ook niet-vindbare kaarten krijgen een deelpagina met OG)
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
           set -uo pipefail
           GEN="website/kaarten website/cadeaubon website/klantenkaart website/overstappen website/index.html website/sitemap.xml website/assets/kaarten website/assets/covers"
@@ -212,6 +222,12 @@ jobs:
           open("/tmp/changed.txt", "w").write("\n".join(changed))
           # Pagina's en plaatjes van kaarten die niet meer in de database staan: ook van de server af (alleen gegenereerde mappen).
           gen = ("kaarten/", "cadeaubon/", "klantenkaart/", "assets/kaarten/", "assets/covers/")
+          # deelpagina's en OG-afbeeldingen van stempelkaarten: alleen weghalen als de volledige lijst is opgehaald
+          try:
+              if json.load(open(".cache/kaart-pages.json")).get("mode") == "full":
+                  gen += ("zakelijk/kaart/", "og/zakelijk/")
+          except (OSError, ValueError):
+              pass
           gone = [f for f in (old or {}) if f not in files and f.startswith(gen) and ".." not in f and '"' not in f]
           open("/tmp/removed.txt", "w").write("\n".join(gone))
           with open(os.environ["GITHUB_OUTPUT"], "a") as o:
@@ -231,6 +247,9 @@ jobs:
           if [ -s /tmp/removed.txt ]; then
             cmds=$(sed "s#.*#rm -f \"$TARGET/&\"#" /tmp/removed.txt | paste -sd';' -)
             run "set cmd:fail-exit false; $cmds" >/dev/null 2>&1 || true
+            # lege mappen van verdwenen stempelkaarten
+            dirs=$(grep -oE '^zakelijk/kaart/[0-9a-f-]{36}/' /tmp/removed.txt | sort -u | sed "s#.*#rmdir \"$TARGET/&\"#" | paste -sd';' - || true)
+            [ -n "$dirs" ] && run "set cmd:fail-exit false; $dirs" >/dev/null 2>&1 || true
             note "Weggehaald van de server: $(grep -c . /tmp/removed.txt) bestand(en) van kaarten die niet meer in het beheer staan."
           fi
           # het manifest als laatste: pas als alles erop staat

@@ -5,3 +5,7 @@ DerivedData/
 build/
 __pycache__/
 .cache/
+
+# Deelpagina's en OG-afbeeldingen per stempelkaart: elke build opnieuw uit de database (tools/make_kaart_pages.py)
+website/zakelijk/kaart/*/
+website/og/zakelijk/

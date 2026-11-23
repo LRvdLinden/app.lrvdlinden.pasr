@@ -866,3 +866,6 @@ if __name__ == "__main__":
     import make_zakelijk
     for w in make_zakelijk.build():
         print("Wrote", w)
+    # pasr.nl/zakelijk/kaart/<id>/: deelpagina met eigen OG-afbeelding per gepubliceerde stempelkaart
+    import make_kaart_pages
+    make_kaart_pages.build()
