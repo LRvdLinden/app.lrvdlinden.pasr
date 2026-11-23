@@ -159,7 +159,7 @@ object Business {
 
     // ---- links ----
 
-    /** https://pasr.nl/zakelijk/kaart/#<uuid> (ook www. en ?id=) en pasr://zakelijk/kaart#<uuid> of pasr://zakelijk#<uuid>. */
+    /** https://pasr.nl/zakelijk/kaart/<uuid>/, de oude vorm …/zakelijk/kaart/#<uuid> (ook www. en ?id=) en pasr://zakelijk/kaart#<uuid> of pasr://zakelijk#<uuid>. */
     fun cardId(uri: Uri): String? {
         val host = uri.host?.lowercase().orEmpty()
         val web = (host == "pasr.nl" || host == "www.pasr.nl") && (uri.path ?: "").startsWith("/zakelijk/kaart")
@@ -174,5 +174,6 @@ object Business {
         return raw.trim().uppercase().takeIf { codeRegex.matches(it) }
     }
 
-    fun joinLink(cardId: String) = "https://pasr.nl/zakelijk/kaart/#${cardId.lowercase()}"
+    /** Eigen pagina van de kaart (met de kaart als OG-afbeelding bij delen). */
+    fun joinLink(cardId: String) = "https://pasr.nl/zakelijk/kaart/${cardId.lowercase()}/"
 }
