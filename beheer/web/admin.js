@@ -1590,7 +1590,7 @@
     $("ceShare").classList.toggle("hidden", !c);
     testMembers();
     if (c) {
-      const url = "https://pasr.nl/zakelijk/kaart/#" + c.id;
+      const url = "https://pasr.nl/zakelijk/kaart/" + String(c.id).toLowerCase() + "/";   // eigen pagina met OG-afbeelding
       $("ceLink").textContent = url;
       const big = qrData(url, 8);
       $("ceQr").src = qrData(url, 4); $("ceQrDl").href = big || "#";

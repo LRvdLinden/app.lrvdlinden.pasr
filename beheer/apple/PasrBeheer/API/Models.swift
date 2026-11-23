@@ -351,7 +351,7 @@ struct BusinessCard: Decodable, Identifiable, Hashable {
     var business: String? = nil
     var test_members: [TestMember]? = nil
 
-    var joinLink: String { "https://pasr.nl/zakelijk/kaart/#\(id)" }
+    var joinLink: String { "https://pasr.nl/zakelijk/kaart/\(id.lowercased())/" }   // eigen pagina met OG-afbeelding
     var flyerLink: String { "https://pasr.nl/zakelijk/flyer/#\(id)" }
 }
 
