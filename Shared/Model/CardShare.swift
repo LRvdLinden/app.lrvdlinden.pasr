@@ -96,12 +96,13 @@ enum CardShare {
     }
 }
 
-/// Join-link van een zakelijke stempelkaart (Pasr voor ondernemers): https://pasr.nl/zakelijk/kaart/#<business_card_id>.
-/// Opent Pasr als die er is (universal link), anders de webpagina van de kaart met de App Store-link.
+/// Join-link van een zakelijke stempelkaart (Pasr voor ondernemers): https://pasr.nl/zakelijk/kaart/<business_card_id>/.
+/// Opent Pasr als die er is (universal link), anders de eigen webpagina van de kaart (met de kaart als OG-afbeelding bij
+/// delen) en de App Store-link. De oude vorm …/zakelijk/kaart/#<id> blijft werken.
 enum BusinessLink {
     static let webBase = "https://pasr.nl/zakelijk/kaart/"
 
-    static func url(for businessCardID: String) -> URL? { URL(string: webBase + "#" + businessCardID.lowercased()) }
+    static func url(for businessCardID: String) -> URL? { URL(string: webBase + businessCardID.lowercased() + "/") }
 
     /// Lidcode uit de browser: ?code=PZ… in de link ("Bewaar in Pasr" op pasr.nl, sinds build 43). De app neemt die
     /// over met pasr_business_claim, zodat de stempels uit de browser meegaan.
@@ -112,7 +113,8 @@ enum BusinessLink {
         return code.range(of: "^PZ([A-HJ-NP-Z2-9]{10}|[A-HJ-NP-Z2-9]{14})$", options: .regularExpression) != nil ? code : nil
     }
 
-    /// Leest https://pasr.nl/zakelijk/kaart/#<uuid> (ook www. en ?id=) en pasr://zakelijk/kaart#<uuid>.
+    /// Leest https://pasr.nl/zakelijk/kaart/<uuid>/ en de oude vorm https://pasr.nl/zakelijk/kaart/#<uuid> (ook www. en ?id=)
+    /// en pasr://zakelijk/kaart#<uuid>.
     static func cardID(from url: URL) -> String? {
         let host = url.host()?.lowercased() ?? ""
         let isWeb = (host == "pasr.nl" || host == "www.pasr.nl") && url.path().hasPrefix("/zakelijk/kaart")

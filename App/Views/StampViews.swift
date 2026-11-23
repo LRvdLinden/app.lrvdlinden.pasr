@@ -56,7 +56,7 @@ struct StampControls: View {
     }
 }
 
-/// Een join-link of QR-code van een zaak (pasr.nl/zakelijk/kaart/#…): de kaart bekijken en toevoegen.
+/// Een join-link of QR-code van een zaak (pasr.nl/zakelijk/kaart/<id>/ of de oude …/#<id>): de kaart bekijken en toevoegen.
 struct JoinBusinessSheet: View {
     let cardID: String
     /// Na toevoegen of "Toon kaart" (bijv. om Kaart toevoegen ook te sluiten).

@@ -184,7 +184,7 @@ extension RootView {
             openCardID = id
             return
         }
-        // zakelijke stempelkaart: pasr.nl/zakelijk/kaart/#<id> of pasr://zakelijk/kaart#<id>
+        // zakelijke stempelkaart: pasr.nl/zakelijk/kaart/<id>/ (oud: …/kaart/#<id>) of pasr://zakelijk/kaart#<id>
         if let businessID = BusinessLink.cardID(from: url) {
             let code = BusinessLink.memberCode(from: url)
             present { incomingBusiness = IncomingBusinessCard(cardID: businessID, memberCode: code) }
