@@ -3910,3 +3910,23 @@ $$;
 revoke all on function public.pasr_admin_push_everyone(text, text), public.pasr_admin_push_everyone_counts()
   from public, anon, authenticated;
 grant execute on function public.pasr_admin_push_everyone(text, text), public.pasr_admin_push_everyone_counts() to service_role;
+
+-- ============================================================================================================
+-- Deelpagina per stempelkaart (pasr.nl/zakelijk/kaart/<id>/ met eigen titel, beschrijving en OG-afbeelding).
+-- De Website-workflow bouwt elk uur een pagina voor elke gepubliceerde kaart van een goedgekeurde zaak, ook als de zaak
+-- niet vindbaar is (listed = false: die pagina krijgt noindex en staat niet in de sitemap). Daarom NIET voor anon: anders
+-- kan iedereen met de publieke sleutel de niet-vindbare zaken opsommen. De workflow vraagt hem op via de Management API
+-- (SUPABASE_ACCESS_TOKEN); zonder die sleutel valt hij terug op pasr_business_directory (alleen vindbare kaarten).
+-- Alleen velden die ook op de kaart en de joinpagina staan (pasr_business_card_public), plus website, listed en
+-- updated_at (zodat de OG-afbeelding alleen opnieuw wordt gemaakt als er iets veranderd is). Geen e-mail, geen eigenaar.
+create or replace function public.pasr_business_share_cards() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('card_id', c.id, 'card_name', c.name, 'business_name', b.name, 'city', b.city,
+      'website', b.website, 'logo', c.logo, 'color', c.color, 'text_color', c.text_color, 'stamps_total', c.stamps_total,
+      'reward', c.reward, 'listed', b.listed, 'updated_at', greatest(c.updated_at, b.updated_at))
+    order by lower(b.name), lower(c.name), c.id), '[]'::jsonb)
+  from public.pasr_business_cards c join public.pasr_businesses b on b.id = c.business_id
+  where c.published and b.status = 'approved';
+$$;
+revoke all on function public.pasr_business_share_cards() from public, anon, authenticated;
+grant execute on function public.pasr_business_share_cards() to service_role;
