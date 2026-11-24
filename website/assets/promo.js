@@ -125,7 +125,32 @@
     rr(ctx,x+286,y+15,194,50,22,"#07966F");
     text(ctx,"ZAKELIJK",x+383,y+49,"800 27px Figtree,sans-serif","#FFFFFF","center");
   }
+  // Coupons en losse actiecodes krijgen eigen materiaal, nooit een fictieve stempelkaart.
+  async function renderDiscount(product,formatId,theme) {
+    var format=formats.find(function(f){return f.id===formatId;})||formats[0];
+    var canvas=document.createElement("canvas");canvas.width=format.w;canvas.height=format.h;
+    var ctx=canvas.getContext("2d",{alpha:false}),h=format.h/(format.w/1080);ctx.scale(format.w/1080,format.w/1080);
+    var dark=theme==="dark",fg=dark?"#FFFFFF":"#17162A",accent=color(product.color,"#6A5CFF");
+    background(ctx,1080,h,dark);
+    var mark=await load(iconURL);drawLockup(ctx,mark,65,70,dark);
+    var section=product.kind==="coupon"?"DIGITALE KORTINGSCOUPON":"ACTIECODE";
+    text(ctx,section,76,h*0.27,"800 36px Figtree,sans-serif",dark?"#B9AAFF":"#4A3CE0");
+    var headings=wrap(ctx,product.title||product.name||"Korting",930,"800 78px 'Bricolage Grotesque',Figtree,sans-serif",3);
+    headings.forEach(function(line,i){text(ctx,line,76,h*0.34+i*88,"800 78px 'Bricolage Grotesque',Figtree,sans-serif",fg);});
+    var y=Math.min(h*0.60,h*0.34+headings.length*88+75);
+    rr(ctx,68,y,945,Math.min(310,h*.23),30,dark?"#302657":"#ECE9FF");
+    var discount=product.discount_type==="percent"?String(product.discount_value)+"%":new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR"}).format(product.discount_value||0);
+    text(ctx,discount,105,y+125,"900 112px 'Bricolage Grotesque',Figtree,sans-serif",accent);
+    text(ctx,"KORTING",107,y+191,"800 39px Figtree,sans-serif",dark?"#FFFFFF":"#17162A");
+    if(product.kind==="code"&&product.code)text(ctx,String(product.code),105,y+250,"800 36px monospace",fg);
+    else text(ctx,"Bewaar je persoonlijke bon in Pasr",105,y+250,"600 29px Figtree,sans-serif",fg);
+    text(ctx,product.business||"",76,h-120,"700 32px Figtree,sans-serif",fg);
+    var validity=product.ends_at?"Geldig t/m "+String(product.ends_at).slice(0,10):"Vraag naar de actievoorwaarden";
+    text(ctx,validity,76,h-66,"600 24px Figtree,sans-serif",dark?"#C9C6E9":"#4B4966");
+    return canvas;
+  }
   async function render(card,formatId,theme) {
+    if (card.kind==="coupon"||card.kind==="code") return renderDiscount(card,formatId,theme);
     var format=formats.find(function(f){return f.id===formatId;})||formats[0];
     var canvas=document.createElement("canvas");canvas.width=format.w;canvas.height=format.h;
     var ctx=canvas.getContext("2d",{alpha:false});var scale=format.w/1080,h=format.h/scale;
@@ -175,8 +200,9 @@
   }
   function save(canvas,name){
     return new Promise(function(resolve){
-      canvas.toBlob(function(blob){
+      canvas.toBlob(async function(blob){
         if(!blob)return resolve(null);
+        if(await nativeSave(blob,name))return resolve(blob);
         var url=URL.createObjectURL(blob),a=document.createElement("a");
         a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
         setTimeout(function(){URL.revokeObjectURL(url);},5000);resolve(blob);
@@ -184,7 +210,7 @@
     });
   }
   function fileName(card,format,theme){
-    var safe=String(card.name||"stempelkaart").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"");
+    var safe=String(card.title||card.name||"actie").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"");
     return "Pasr-"+safe+"-"+format+"-"+(theme==="dark"?"Donker":"Licht")+".png";
   }
   // ZIP-store zonder externe CDN of tracking (CRC32 + centrale directory).
@@ -210,7 +236,22 @@
     u32(end,12,csize);u32(end,16,offset);
     return new Blob(parts.concat(central,[end.buffer]),{type:"application/zip"});
   }
-  function blobSave(blob,name){
+  async function nativeSave(blob,name) {
+    // Alleen in de eigen apps. JS-bridge wordt uitsluitend op pasr.nl geladen.
+    var ios=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.pasrExport;
+    var android=window.PasrAndroidExport;
+    if(!ios&&!android)return false;
+    var data=await new Promise(function(resolve,reject){
+      var reader=new FileReader();reader.onload=function(){resolve(String(reader.result).split(",")[1]);};
+      reader.onerror=reject;reader.readAsDataURL(blob);
+    });
+    var mime=blob.type||"application/octet-stream";
+    if(ios)ios.postMessage({name:name,mime:mime,base64:data});
+    else android.save(name,mime,data);
+    return true;
+  }
+  async function blobSave(blob,name){
+    if(await nativeSave(blob,name))return;
     var url=URL.createObjectURL(blob),a=document.createElement("a");
     a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
     setTimeout(function(){URL.revokeObjectURL(url);},5000);
@@ -218,8 +259,8 @@
   function mount(root,card,options) {
     options=options||{};
     var chosen=formats[0],theme="light",latest=null,revision=0;
-    root.innerHTML='<section class="pz-promo"><div class="pz-promo-heading"><h2>Promotiemateriaal · '+escapeHTML(card.name)+
-      '</h2><p>Een banner van precies deze stempelkaart, met je eigen logo, kleur, beloning en QR-code.</p></div>'+
+    root.innerHTML='<section class="pz-promo"><div class="pz-promo-heading"><h2>Promotiemateriaal · '+escapeHTML(card.title||card.name)+
+      '</h2><p>Gebruik de echte gegevens van deze '+(card.kind==='coupon'?'coupon':card.kind==='code'?'actiecode':'stempelkaart')+'. Ontwerpen in Licht en Donker.</p></div>'+
       '<div class="pz-promo-controls"><label>Formaat <select data-pz-format></select></label>'+
       '<fieldset><legend>Uitvoering</legend><label><input name="pz-theme" type="radio" value="light" checked> Licht</label>'+
       '<label><input name="pz-theme" type="radio" value="dark"> Donker</label></fieldset></div>'+
