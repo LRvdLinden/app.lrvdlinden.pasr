@@ -101,6 +101,7 @@ import app.lrvdlinden.pasr.data.CardStore
 import app.lrvdlinden.pasr.data.Receipt
 import app.lrvdlinden.pasr.data.ReceiptParser
 import app.lrvdlinden.pasr.data.ReceiptStore
+import app.lrvdlinden.pasr.data.ReceiptUseLinker
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
@@ -312,22 +313,28 @@ fun ReceiptReviewScreen(cardId: String?, useId: String?, receiptId: String? = nu
             Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Gap(16.dp)
         BrandButton("Bewaar", Modifier.fillMaxWidth().height(52.dp), enabled = store.isNotBlank() && (totalText.isBlank() || total != null)) {
+            // OCR kent soms wel Action, maar de kaartkiezer staat nog op Geen kaart.
+            // Alleen automatisch kiezen als er exact één overeenkomende winkelkaart is.
+            val matches = cards.filter {
+                it.deletedAt == null &&
+                    app.lrvdlinden.pasr.data.Catalog.fold(it.storeName) ==
+                    app.lrvdlinden.pasr.data.Catalog.fold(store.trim())
+            }
             val linked = cards.firstOrNull { it.id == (existing?.cardID ?: chosenCard) }
-            val matchedUse = useId ?: linked?.history?.firstOrNull { event ->
-                event.receiptID == null && event.amount != null && total != null &&
-                    kotlin.math.abs(event.amount - total) <= 0.02 &&
-                    kotlin.math.abs(event.date - date) <= 86_400_000L
-            }?.id
-            val r = (existing ?: Receipt(cardID = chosenCard, useID = matchedUse)).copy(
-                cardID = existing?.cardID ?: chosenCard, useID = existing?.useID ?: matchedUse,
+                ?: matches.singleOrNull()
+            val r = (existing ?: Receipt(cardID = chosenCard)).copy(
+                cardID = linked?.id ?: existing?.cardID ?: chosenCard, useID = existing?.useID,
                 storeName = store.trim(), date = date, total = total,
                 currencyCode = linked?.currencyCode, title = title.trim(),
                 warrantyUntil = if (hasWarranty) warranty else null,
             )
-            ReceiptStore.save(r, if (existing == null) pages else null)
-            if (existing == null && linked != null && matchedUse != null) {
-                CardStore.upsert(linked.updatingUse(matchedUse) { it.copy(receiptID = r.id) })
-            }
+            val (saved, updatedCard) = if (linked != null)
+                ReceiptUseLinker.attach(r, linked, useId ?: existing?.useID)
+            else r to null
+            // Maak ook zonder voorafgaande scan of betaalmelding een gebruiksmoment.
+            // Bewaar eerst de bon en koppel daarna de kaart. Geen cadeaukaartsaldo afboeken.
+            ReceiptStore.save(saved, if (existing == null) pages else null)
+            if (updatedCard != null && updatedCard != linked) CardStore.upsert(updatedCard)
             ReceiptDraft.pages = emptyList()
             nav.pop()
         }
@@ -495,7 +502,15 @@ fun ReceiptDetailScreen(id: String) {
         confirmButton = {
             TextButton({
                 r.cardID?.let { cid -> CardStore.get(cid)?.let { c ->
-                    r.useID?.let { uid -> CardStore.upsert(c.updatingUse(uid) { e -> if (e.receiptID == r.id) e.copy(receiptID = null) else e }) }
+                    r.useID?.let { uid ->
+                        val use = c.uses.firstOrNull { it.id == uid && it.receiptID == r.id }
+                        if (use?.source == "receipt") {
+                            // Een uitsluitend vanuit deze bon aangemaakt moment verdwijnt mee.
+                            CardStore.upsert(c.copy(history = c.history.filter { it.id != uid }))
+                        } else if (use != null) {
+                            CardStore.upsert(c.updatingUse(uid) { it.copy(receiptID = null) })
+                        }
+                    }
                 } }
                 ReceiptStore.delete(r.id)
                 confirmDelete = false

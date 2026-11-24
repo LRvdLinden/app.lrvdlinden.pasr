@@ -44,6 +44,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +63,7 @@ import app.lrvdlinden.pasr.data.Business
 import app.lrvdlinden.pasr.data.CardKind
 import app.lrvdlinden.pasr.data.CardOrder
 import app.lrvdlinden.pasr.data.CardStore
+import app.lrvdlinden.pasr.data.ReceiptUseLinker
 import app.lrvdlinden.pasr.data.Catalog
 import app.lrvdlinden.pasr.data.Prefs
 import app.lrvdlinden.pasr.data.Sync
@@ -97,6 +99,11 @@ fun WalletScreen() {
     val favorites = if (filter == Filter.ALL && q.isEmpty()) cards.filter { it.isFavorite } else emptyList()
     // de zoekbalk vindt ook bonnetjes (winkel, bedrag of datum)
     val receipts by app.lrvdlinden.pasr.data.ReceiptStore.receipts.collectAsState()
+    // Herstel bestaande kassabonnen uit oudere builds zonder dubbele transactie.
+    LaunchedEffect(receipts.map { it.id + ":" + (it.useID ?: "") }.joinToString(),
+        all.filter { it.deletedAt == null }.map { it.id }.sorted().joinToString()) {
+        ReceiptUseLinker.reconcile()
+    }
     val foundReceipts = if (query.isBlank()) emptyList() else receipts.filter { it.matches(query) }
 
     Scaffold(
