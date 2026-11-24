@@ -4712,7 +4712,7 @@ begin
  v_active:=coalesce((p_promo->>'active')::boolean,false);
  if v_code !~ '^[A-Z0-9][A-Z0-9-]{3,23}$' or v_code ~ '^PC[A-HJ-NP-Z2-9]{22}$'
    or char_length(v_title) not between 3 and 80 or v_type not in ('amount','percent')
-   or v_value<=0 or v_value>case when v_type='percent' then 100 else 100000 end
+   or v_value<=0 or v_value>(case when v_type='percent' then 100 else 100000 end)
    or v_min<0 or v_limit not between 1 and 100000 or v_end is null
    or v_end<=v_start or v_end>v_start+interval '366 days' then
    raise exception 'Controleer code (4–24 tekens), titel, bedrag, geldigheid en maximaal gebruik.' using errcode='22023';
