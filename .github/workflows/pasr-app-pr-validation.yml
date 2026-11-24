@@ -34,7 +34,7 @@ jobs:
           ap = Path("android/pasr/app/build.gradle.kts").read_text()
           az = Path("android/zakelijk/app/build.gradle.kts").read_text()
           assert p.count('CURRENT_PROJECT_VERSION = "54";') == 6
-          assert p.count('MARKETING_VERSION = "1.0.4";') == 6
+          assert p.count('MARKETING_VERSION = "1.0.4";') == 5
           assert z.count('CURRENT_PROJECT_VERSION = "9";') == 2
           assert z.count('MARKETING_VERSION = "1.0.3";') == 2
           assert 'BUILD = "9"' in g and 'VERSION = "1.0.3"' in g
