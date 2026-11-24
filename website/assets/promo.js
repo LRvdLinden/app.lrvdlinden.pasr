@@ -246,8 +246,17 @@
       reader.onerror=reject;reader.readAsDataURL(blob);
     });
     var mime=blob.type||"application/octet-stream";
-    if(ios)ios.postMessage({name:name,mime:mime,base64:data});
-    else android.save(name,mime,data);
+    if(ios){
+      var raw=atob(data);
+      ios.postMessage({operation:"begin",name:name,mime:mime,length:raw.length});
+      for(var i=0;i<raw.length;i+=48000){
+        var part=raw.slice(i,i+48000),bytes=new Uint8Array(part.length);
+        for(var k=0;k<part.length;k++)bytes[k]=part.charCodeAt(k);
+        var binary="";for(var j=0;j<bytes.length;j++)binary+=String.fromCharCode(bytes[j]);
+        ios.postMessage({operation:"chunk",data:btoa(binary)});
+      }
+      ios.postMessage({operation:"end"});
+    } else android.save(name,mime,data);
     return true;
   }
   async function blobSave(blob,name){
