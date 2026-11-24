@@ -14,6 +14,8 @@ struct LoyaltyProgramView: View {
     @State private var campaignOn = false
     @State private var campaignMultiplier = 2
     @State private var campaignWeekday = 2
+    @State private var campaignStart = Date()
+    @State private var campaignEnd = Calendar.current.date(byAdding: .day, value: 30, to: .now) ?? .now
     @State private var vipOn = false
     @State private var silver = 10
     @State private var gold = 25
@@ -61,7 +63,10 @@ struct LoyaltyProgramView: View {
                     Toggle("Tijdelijke stempelactie", isOn: $campaignOn)
                     if campaignOn {
                         Stepper("\(campaignMultiplier) keer stempels", value: $campaignMultiplier, in: 1...3)
+                        DatePicker("Start actie", selection: $campaignStart, displayedComponents: .date)
+                        DatePicker("Einde actie", selection: $campaignEnd, in: campaignStart..., displayedComponents: .date)
                         Picker("Actiedag", selection: $campaignWeekday) {
+                            Text("Elke dag").tag(-1)
                             ForEach(0..<7, id: \.self) { day in
                                 Text(["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"][day]).tag(day)
                             }
@@ -139,6 +144,11 @@ struct LoyaltyProgramView: View {
             campaignOn = campaign?.bool("enabled") ?? false
             campaignMultiplier = campaign?.int("multiplier") ?? 2
             campaignWeekday = campaign?.int("weekday") ?? 2
+            let dateFormat = DateFormatter()
+            dateFormat.locale = Locale(identifier: "en_US_POSIX")
+            dateFormat.dateFormat = "yyyy-MM-dd"
+            if let raw = campaign?.string("start"), let date = dateFormat.date(from: raw) { campaignStart = date }
+            if let raw = campaign?.string("end"), let date = dateFormat.date(from: raw) { campaignEnd = date }
             let vip = settings?.object("vip")
             vipOn = vip?.bool("enabled") ?? false
             silver = vip?.int("silver") ?? 10
@@ -175,11 +185,17 @@ struct LoyaltyProgramView: View {
             message = "Maximaal acht verschillende mijlpalen per kaart."; return
         }
         guard gold > silver else { message = "Goud moet boven Zilver liggen."; return }
+        guard campaignEnd >= campaignStart else { message = "Actie eindigt vóór de startdatum."; return }
+        let dateFormat = DateFormatter()
+        dateFormat.locale = Locale(identifier: "en_US_POSIX")
+        dateFormat.dateFormat = "yyyy-MM-dd"
         let settings: [String: Any] = [
             "rewards": rewards,
             "retention": ["enabled": retentionOn, "days": retentionDays],
             "referral": ["enabled": referralOn, "bonus": referralBonus],
-            "campaign": ["enabled": campaignOn, "multiplier": campaignMultiplier, "weekday": campaignWeekday],
+            "campaign": ["enabled": campaignOn, "multiplier": campaignMultiplier, "weekday": campaignWeekday,
+                         "start": dateFormat.string(from: campaignStart),
+                         "end": dateFormat.string(from: campaignEnd)],
             "vip": ["enabled": vipOn, "silver": silver, "gold": gold],
             "locations": ["enabled": locationsOn, "names": locationNames.split(whereSeparator: \.isNewline).map(String.init)],
             "marketing": ["enabled": marketingOn, "name": String(marketingName.prefix(80))],
