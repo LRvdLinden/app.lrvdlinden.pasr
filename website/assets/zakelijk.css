@@ -141,7 +141,7 @@
 .zk-amount { display: grid; gap: 6px; justify-items: center; font-weight: 600; }
 .zk-amount small { font-weight: 400; color: #6B6880; }
 .zk-stepper input { width: 4.5em; text-align: center; font: 700 22px var(--body); border: 1px solid #DAD7EE; border-radius: 10px; padding: 6px; }
-@media (prefers-color-scheme: dark) { .zk-amount small { color: #A9A6C0; } }
+
 .zk-brand .small { font-size: 14px; margin: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .zk-brand:empty { display: none; }
 
@@ -733,3 +733,37 @@
 .pz2-planned small{font-size:13px;color:var(--ink-2)}
 .pz2-planned p{margin:0;font-size:14px}
 .pz2-planned .zk-btn{align-self:flex-start}
+
+/* Surfaces and controls share the same palette in all theme modes. */
+.zk-kicker { background:var(--kicker-bg); color:var(--kicker-ink); }
+.zk-btn { background:var(--action-bg); color:var(--action-ink); }
+.zk-btn.dark { background:var(--ink); color:var(--paper); }
+.zk-btn.ghost { background:transparent; color:var(--ink); }
+.zk-btn.ghost:hover { background:var(--paper); }
+.zk-btn.mint { background:#087554; color:#fff; }
+.zk-btn.coral, .zk-btn.danger-solid { background:#B2321D; color:#fff; }
+.zk-btn.danger { color:var(--danger); border-color:var(--danger); }
+.zk-btn.danger:hover { background:color-mix(in srgb,var(--danger) 12%,var(--paper-2)); }
+.nav-btn { color:var(--paper)!important; }
+.zk-amount small { color:var(--ink-2); }
+.zk-msg.bad, .pz2-notice[data-ok=false] { color:var(--danger); }
+.zk-msg.good, .pz2-notice[data-ok=true] { color:var(--success); }
+.zk-tabs .zk-btn.ghost[aria-pressed="true"], .zb-tabs i.on { background:var(--action-bg); color:var(--action-ink); }
+.zk-note, .zb-bar em, .zd-insights, .zd-combo ul { background:var(--paper-2); }
+.zb-bar { background:var(--soft); }
+.zd-tabs [role=tab][aria-selected=true] { background:var(--ink); color:var(--paper); }
+.zd-state.pending { background:color-mix(in srgb,#F2B705 10%,var(--paper-2)); border-color:var(--line); }
+.zd-state.blocked { background:color-mix(in srgb,var(--danger) 10%,var(--paper-2)); border-color:var(--line); }
+.zi-metric, .zi-seg { background:var(--soft); }
+.zi-metric button, .zi-seg button { color:var(--ink-2); }
+.zi-metric button[aria-pressed=true], .zi-seg button[aria-pressed=true] { background:var(--paper-2); color:var(--ink); }
+/* These illustrated sheets and QR patterns have fixed light backgrounds. */
+.zv-field, .zv-slider, .zv-url, .zv-step b, .zv-staff li, .zv-search, .zv-code, .zv-a4 { color:#17162A; }
+.zv-find li, .zv-field small, .zv-slider small { color:#4B4966; }
+.zv-seg i.on { color:#17162A; }
+.zv-qr i { background:#17162A; }
+.flyer p { color:#4B4966; }
+.zv-field b { color:#17162A; }
+.zv-find .t b, .zv-a4 b, .zv-push .nt b { color:#17162A; }
+.zv-a4 em, .zv-code i, .zv-push .nt { color:#4B4966; }
+.zv-find li i { background:#6A5CFF; }

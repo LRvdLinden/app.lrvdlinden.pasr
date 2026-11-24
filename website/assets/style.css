@@ -1057,16 +1057,44 @@ html, body { overflow-x: clip; max-width: 100%; }
 .fv-stamps .st.on::before { content: ""; display: block; width: 100%; height: 100%; background: currentColor; -webkit-mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; }
 .fv-stamps .st.on svg { display: none; }
 
-/* Pasr public website: system light/dark theme. Card artwork keeps its own colours. */
-@media (prefers-color-scheme: dark){
-:root:not([data-theme="light"]){color-scheme:dark;--paper:#111020;--paper-2:#1C1A30;--ink:#F2F1FF;--ink-2:#B9B6D6;--line:#373350;--iris:#8C81FF;--iris-deep:#A79FFF}
-:root:not([data-theme="light"]) .btn-primary{background:#A79FFF;color:#17162A;border-color:#A79FFF}
-:root:not([data-theme="light"]) .why,:root:not([data-theme="light"]) .feature.dark{background:#25213D;color:#F2F1FF;border-color:#373350}
-:root:not([data-theme="light"]) .phone{color:#17162A}
-:root:not([data-theme="light"]) .phone .pass:not(.ink-dark){color:#fff}
-:root:not([data-theme="light"]) .zk-kicker{background:#30294f;color:#C1B9FF}
-:root:not([data-theme="light"]) .ds-primary,:root:not([data-theme="light"]) .ch-global-search button,:root:not([data-theme="light"]) .ch-sections a[aria-current="page"]{background:#A79FFF;color:#17162A!important}
+/* Shared light/dark palette, including explicit overrides of the system preference. */
+:root {
+  color-scheme: light;
+  --surface: var(--paper-2);
+  --raised: var(--paper-2);
+  --muted: var(--ink-2);
+  --action-bg: #6A5CFF;
+  --action-ink: #FFFFFF;
+  --inverse-bg: #17162A;
+  --inverse-ink: #FFFFFF;
+  --success: #087554;
+  --danger: #B2321D;
+  --soft: #F1F0FA;
+  --kicker-bg: #E9E6FF;
+  --kicker-ink: #4A3CE0;
+  --hero-bg: radial-gradient(ellipse at 92% 5%,color-mix(in srgb,var(--iris),transparent 65%),transparent 52%),radial-gradient(ellipse at 85% 95%,color-mix(in srgb,var(--mint),transparent 77%),transparent 55%),var(--paper-2);
+  --hero-stamps-bg: linear-gradient(125deg,#e0f3ea,#c9eadb);
+  --hero-coupons-bg: linear-gradient(125deg,#ffeadc,#ffdfd1);
 }
-:root[data-theme="dark"]{color-scheme:dark;--paper:#111020;--paper-2:#1C1A30;--ink:#F2F1FF;--ink-2:#B9B6D6;--line:#373350;--iris:#8C81FF;--iris-deep:#A79FFF}
-:root[data-theme="light"]{color-scheme:light}
 footer .wrap nav{display:flex;flex-wrap:wrap;gap:9px 18px}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {color-scheme:dark;--paper:#111020;--paper-2:#1C1A30;--ink:#F2F1FF;--ink-2:#B9B6D6;--line:#45405E;--iris:#A79FFF;--iris-deep:#B8B1FF;--action-bg:#A79FFF;--action-ink:#17162A;--inverse-bg:#25213D;--success:#64DFB9;--danger:#FFA797;--soft:#27253B;--kicker-bg:#30294F;--kicker-ink:#C1B9FF;--hero-bg:linear-gradient(135deg,#25213d,#312b4c);--hero-stamps-bg:linear-gradient(135deg,#172e2c,#25423c);--hero-coupons-bg:linear-gradient(135deg,#382331,#4a3037)}
+}
+:root[data-theme="dark"] {color-scheme:dark;--paper:#111020;--paper-2:#1C1A30;--ink:#F2F1FF;--ink-2:#B9B6D6;--line:#45405E;--iris:#A79FFF;--iris-deep:#B8B1FF;--action-bg:#A79FFF;--action-ink:#17162A;--inverse-bg:#25213D;--success:#64DFB9;--danger:#FFA797;--soft:#27253B;--kicker-bg:#30294F;--kicker-ink:#C1B9FF;--hero-bg:linear-gradient(135deg,#25213d,#312b4c);--hero-stamps-bg:linear-gradient(135deg,#172e2c,#25423c);--hero-coupons-bg:linear-gradient(135deg,#382331,#4a3037)}
+
+.btn-primary { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.why, .feature.dark { background:var(--inverse-bg); color:var(--inverse-ink); border-color:var(--inverse-bg); }
+.auth button { background:var(--action-bg); color:var(--action-ink); }
+.auth .msg.bad { color:var(--danger); }
+.auth .msg.good { color:var(--success); }
+.phone { color:#17162A; }
+.phone .pass:not(.ink-dark) { color:#fff; }
+.fv-clock { color:#4A3CE0; }
+.fv-slim .ask { color:#4B4966; }
+input::placeholder, textarea::placeholder { color:var(--ink-2); opacity:1; }
+
+.steps li::before, #pasr-consent .y { background:var(--action-bg); color:var(--action-ink); }
+.anchor.copied::after { color:var(--paper); }
+.mini-pass.ink-dark { color:#17162A; }
+.fv-types .t1 .code { color:#4A3CE0; }
