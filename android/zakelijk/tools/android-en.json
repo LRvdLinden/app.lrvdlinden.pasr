@@ -14,7 +14,8 @@
     "W",
     "M",
     "K",
-    "J"
+    "J",
+    "Acties"
   ],
   "_uitleg": "Engelse teksten die alleen in de Android-app staan (de rest komt uit Localizable.xcstrings van de iOS-app).",
   "%lld dagen": "%lld days",
@@ -46,5 +47,6 @@
   "Nieuwe versie %@ downloaden": "Download new version %@",
   "Klantenbinding · laatste 30/90 dagen": "Customer loyalty · last 30/90 days",
   "Alleen geverifieerde servergegevens; dit is geen omzetmeting.": "Verified server data only; this is not revenue data.",
-  "Nieuw aanmaken": "Create new"
+  "Nieuw aanmaken": "Create new",
+  "Acties": "Actions"
 }
