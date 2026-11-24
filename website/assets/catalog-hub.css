@@ -52,3 +52,13 @@
  .ch-coupon-page .pz2-publiccard { min-width:0 }
 }
 @media(prefers-reduced-motion:reduce){.ch-sections a,.ch-featureline a{transition:none}}
+
+/* Kortingsbonnen zijn ook een rechtstreeks filter in de centrale catalogus.
+   De bestaande hoofdzoekbalk filtert de bonnen, zonder tweede invoerveld. */
+.ch-embedded-coupons .pz2-hero { display:none }
+.ch-embedded-coupons .pz2-controls #pz2Search { display:none }
+.ch-embedded-coupons .pz2-controls { justify-content:flex-end; position:static; padding:0 0 14px }
+.ch-embedded-coupons .pz2-grid { grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)) }
+.cards-page .kf-kind { max-width:100%; overflow-x:auto; scrollbar-width:thin }
+.cards-page .kf-kind label { padding-inline:14px }
+@media(max-width:680px){.cards-page .kf-kind { width:100%; }.cards-page .kf-kind label { padding:9px 10px; font-size:12px; }}

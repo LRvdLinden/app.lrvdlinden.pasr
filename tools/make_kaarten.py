@@ -337,6 +337,7 @@ def build(write=True):
             <input type="radio" name="kind" id="kf-loyalty" value="loyalty" checked><label for="kf-loyalty">Klantenkaarten</label>
             <input type="radio" name="kind" id="kf-voucher" value="voucher"><label for="kf-voucher">Cadeaukaarten<span class="kf-long"> en vouchers</span></label>
             <input type="radio" name="kind" id="kf-stamp" value="stamp"><label for="kf-stamp">Stempelkaarten</label>
+            <input type="radio" name="kind" id="kf-coupon" value="coupon"><label for="kf-coupon">Kortingsbonnen</label>
           </fieldset>
           <div class="kf-cat">
             <label for="kf-cat">Categorie</label>
@@ -372,6 +373,10 @@ def build(write=True):
           <p>Heb je een zaak? Met <a href="/zakelijk/">Pasr Zakelijk</a> maak je gratis een digitale stempelkaart die je klanten in Pasr bewaren.</p>
         </div>
       </div>
+      <div class="kg-block ch-coupon-page ch-embedded-coupons" data-kind="coupon">
+        <h2 class="kg-title">Kortingsbonnen van ondernemers</h2>
+        <div id="pz2Public"></div>
+      </div>
       <p class="kg-empty" id="kg-empty" hidden>Geen kaart gevonden. Je kunt hem in Pasr toch toevoegen met <b>Andere winkel</b>, of hem aanvragen.</p>
     </section>
 
@@ -401,6 +406,9 @@ def build(write=True):
     </div>
   </footer>
   <script type="application/json" id="kaarten-config">{json.dumps(config, ensure_ascii=False)}</script>
+  <script src="/assets/account-config.js" defer></script>
+  <script src="/assets/vendor/qrcode.js" defer></script>
+  <script src="/assets/loyalty2.js" defer></script>
   <script src="/assets/kaarten.js" defer></script>
 </body>
 </html>

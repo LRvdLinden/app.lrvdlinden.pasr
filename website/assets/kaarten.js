@@ -27,6 +27,9 @@
     stamp: ['stempelkaart', 'stempelkaarten', 'Er is ook een stempelkaart', 'Toon stempelkaarten']
   };
   var kind = 'loyalty';
+  var couponBlock = blocks.coupon;
+  if (couponBlock && window.PasrLoyalty2) window.PasrLoyalty2.publicPage(document.getElementById('pz2Public'));
+
   var allOptions = Array.prototype.map.call(cat.options, function (o) { return o.value; }).filter(Boolean);
   var cats = cfg.cats || {};
   cats.stamp = [];
@@ -51,7 +54,7 @@
 
   // Alleen de categorieën die bij de gekozen soort horen; bij één categorie (of stempelkaarten) geen keuze tonen.
   function syncCategories() {
-    var list = (cats[kind] || allOptions).slice();
+    var list = kind === 'coupon' ? [] : (cats[kind] || allOptions).slice();
     var keep = cat.value;
     while (cat.options.length > 1) cat.remove(1);
     list.forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; cat.appendChild(o); });
@@ -68,7 +71,7 @@
   function apply() {
     var needle = fold(q.value).trim();
     var needle2 = compact(needle);
-    var c = kind === 'stamp' ? '' : cat.value;
+    var c = kind === 'stamp' || kind === 'coupon' ? '' : cat.value;
     var shown = 0, hits = {};
     KINDS.forEach(function (k) {
       var on = k === kind;
@@ -84,6 +87,21 @@
         }
       });
     });
+    if (couponBlock) {
+      couponBlock.classList.toggle('off', kind !== 'coupon');
+      if (kind === 'coupon') {
+        var embeddedSearch = document.getElementById('pz2Search');
+        if (embeddedSearch && embeddedSearch.value !== q.value) {
+          embeddedSearch.value = q.value;
+          embeddedSearch.dispatchEvent(new Event('input', { bubbles:true }));
+        }
+        status.textContent = 'Tijdelijke kortingsbonnen van Pasr-ondernemers';
+        other.hidden = true;
+        empty.hidden = true;
+        if (stampEmpty) stampEmpty.hidden = true;
+        return;
+      }
+    }
     var total = count(kind);
     var words = LABEL[kind];
     if (needle || c) {
@@ -127,11 +145,13 @@
     var soort = params.get('soort') || '';
     if (/^cadeau|^voucher/.test(soort)) kind = 'voucher';
     if (/^stempel/.test(soort)) kind = 'stamp';
+    if (/^korting|^coupon|^bonnen/.test(soort)) kind = 'coupon';
     if (params.get('q')) q.value = params.get('q');
   } catch (e) { /* oude browser: niets */ }
   try {
     if (location.hash === '#cadeaukaarten') kind = 'voucher';
     if (location.hash === '#stempelkaarten') kind = 'stamp';
+    if (location.hash === '#kortingsbonnen') kind = 'coupon';
   } catch (e) { /* niets */ }
 
   var timer;
