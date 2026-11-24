@@ -153,100 +153,54 @@
    reload();
  }
  function publicPage(root){
-   var cfg=window.PASR_ACCOUNT||{},ready=!!(cfg.url&&cfg.key);
-   root.innerHTML='<div class="pz2-hero"><span class="zk-kicker">Pasr · Klantenkaarten</span><h1>Kortingsbonnen</h1><p>Ontdek tijdelijke aanbiedingen van ondernemers in Pasr. Bewaar een bon in je account en laat je code bij de ondernemer scannen.</p></div>'+
-    '<div class="pz2-controls"><input id="pz2Search" aria-label="Zoeken" placeholder="Zoek winkel of aanbieding"></div><div id="pz2PublicList" class="pz2-grid"><p>Acties laden…</p></div>';
-   if(!ready){$("#pz2PublicList",root).textContent="Aanbiedingen zijn tijdelijk niet beschikbaar.";return;}
-   var rows=[];
-   async function rpcPublic(fn,payload,access){
-     var response=await fetch(cfg.url.replace(/\/$/,"")+"/rest/v1/rpc/"+fn,{method:"POST",headers:{"Content-Type":"application/json","apikey":cfg.key,"Authorization":"Bearer "+(access||cfg.key)},body:JSON.stringify(payload||{})});
-     var data=await response.json();if(!response.ok)throw new Error(data.message||"Verbinding mislukt.");return data;
-   }
+   var cfg=window.PASR_ACCOUNT||{}, ready=!!(cfg.url&&cfg.key);
+   root.innerHTML='<div class="pz2-hero"><span class="zk-kicker">Pasr · Klantenkaarten</span>'+
+     '<h1>Exclusieve Pasr-acties</h1><p>Bekijk kortingscoupons en actiecodes van lokale ondernemers. Bewaren, een QR-code tonen en verzilveren kan uitsluitend in de Pasr: Klantenkaarten-app.</p></div>'+
+     '<div class="pz2-controls"><input id="pz2Search" aria-label="Zoek acties" placeholder="Zoek winkel of aanbieding"></div>'+
+     '<div class="pz2-grid" id="pz2PublicList"><p>Acties laden…</p></div>';
+   var box=$("#pz2PublicList",root),search=$("#pz2Search",root), rows=[];
+   var ios="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123";
    function show(){
-     var hero=document.getElementById("ch-live-coupon");
-     if(hero&&rows.length){var c=rows[0];hero.classList.add("has-offer");hero.replaceChildren();var name=el("small"),amount=el("strong","ch-discount"),title=el("strong");name.textContent=c.business||"";amount.textContent=money(c.discount_type,c.discount_value)+" korting";title.textContent=c.title||"";hero.append(name,amount,title);}
-     var q=$("#pz2Search",root).value.toLowerCase();
-     $("#pz2PublicList",root).innerHTML=rows.filter(function(c){return (c.business+" "+c.title).toLowerCase().includes(q);})
-     .map(function(c){return '<article class="pz2-publiccard"><div class="pz2-violet"><small>'+escape(c.business)+'</small>'+
-       '<strong>'+money(c.discount_type,c.discount_value)+' korting</strong></div><div class="pz2-publicbody"><h2>'+escape(c.title)+'</h2><p>'+escape(c.description)+'</p>'+
-       '<small>Vanaf € '+escape(c.min_spend)+' · geldig tot '+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+'</small>'+
-       '<button class="zk-btn" type="button" data-coupon="'+escape(c.id)+'">Bewaar kortingsbon</button></div></article>';}).join("")||
-       '<p>Er zijn momenteel geen beschikbare kortingsbonnen.</p>';
-     root.querySelectorAll("[data-coupon]").forEach(function(button){button.addEventListener("click",function(){claim(button.dataset.coupon);});});
+     var q=search.value.toLowerCase();
+     box.innerHTML=rows.filter(function(x){return (x.business+" "+x.title).toLowerCase().includes(q);})
+       .map(function(c){
+         var isCode=c.kind==="code",discount=money(c.discount_type,c.discount_value);
+         var raw=c.logo||"",logo=/^[A-Za-z0-9+/=]+$/.test(raw)&&raw.length<220000?
+           '<img alt="Bedrijfslogo" style="width:44px;height:44px;object-fit:contain;background:#fff;border-radius:9px" src="data:image/'+(raw.indexOf("/9j/")===0?"jpeg":"png")+';base64,'+raw+'">':
+           '<span aria-hidden="true" style="font-size:25px">🏬</span>';
+         var base=/^#[0-9a-f]{6}$/i.test(c.color||"")?c.color:"#6A5CFF";
+         return '<article class="pz2-publiccard"><div class="pz2-violet" style="background:'+base+';border-radius:20px;padding:22px;color:#fff">'+
+           '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">'+
+           logo+'<strong style="margin-left:auto;font-size:22px">pasr.</strong></div>'+
+           '<small>'+escape(c.business)+'</small><strong style="font-size:30px">'+escape(discount)+' KORTING</strong>'+
+           '<p>'+escape(c.title)+'</p><span>🔒 '+(isCode?"Actiecode":"Kortingscoupon")+' uitsluitend in Pasr</span></div>'+
+           '<div class="pz2-publicbody"><p>Deze aanbieding is alleen te gebruiken in de Pasr: Klantenkaarten-app.</p>'+
+           '<small>Geldig t/m '+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+'</small>'+
+           '<p><a class="zk-btn" href="'+ios+'" rel="noopener">Open in Pasr</a></p></div></article>';
+       }).join("")||'<p>Er zijn momenteel geen beschikbare aanbiedingen.</p>';
    }
-   // Bij webgebruik een normale Pasr-accountlogin; native apps gebruiken hun bestaande sessie.
-   var couponSessionKey="pasr.coupons.session";
-   var pendingCoupon=null;
-   function couponSession(){try{
-     var s=JSON.parse(sessionStorage.getItem(couponSessionKey)||"null");
-     if(s&&s.token&&s.until>Date.now()+60000)return s;
-   }catch(e){}return null;}
-   function loginForCoupon(id){
-     pendingCoupon=id;
-     var modal=el("div","pz2-dialog");
-     modal.innerHTML='<form class="pz2-panel pz2-form" aria-label="Log in bij Pasr" id="pz2Login">'+
-       '<h2>Log in bij Pasr</h2><p>Om een persoonlijke kortingsbon te bewaren, heb je een gratis Pasr-account nodig.</p>'+
-       '<label class="pz2-field">E-mailadres<input type="email" name="email" required autocomplete="email"></label>'+
-       '<label class="pz2-field">Wachtwoord<input type="password" name="password" required autocomplete="current-password"></label>'+
-       '<p role="status" class="pz2-notice"></p><button class="zk-btn" type="submit">Inloggen en bewaren</button>'+
-       '<button class="zk-btn ghost" type="button" data-close>Annuleren</button><a href="/account/">Nog geen account?</a></form>';
-     document.body.appendChild(modal);
-     modal.querySelector("[data-close]").addEventListener("click",function(){modal.remove();});
-     $("#pz2Login",modal).addEventListener("submit",async function(e){
-       e.preventDefault();var form=this,button=form.querySelector('button[type=submit]');button.disabled=true;
-       try{
-         var res=await fetch(cfg.url.replace(/\/$/,"")+"/auth/v1/token?grant_type=password",{
-           method:"POST",headers:{"Content-Type":"application/json","apikey":cfg.key},
-           body:JSON.stringify({email:form.elements.email.value.trim(),password:form.elements.password.value})
-         });
-         var data=await res.json();if(!res.ok||!data.access_token)throw Error("Inloggen mislukt. Controleer je e-mailadres en wachtwoord.");
-         sessionStorage.setItem(couponSessionKey,JSON.stringify({token:data.access_token,until:Date.now()+(data.expires_in||3600)*1000}));
-         modal.remove();if(id)claim(id);else myCoupons();
-       }catch(e){notice(modal,e.message||"Inloggen mislukt.",false);button.disabled=false;}
+   search.addEventListener("input",show);
+   if(!ready){box.textContent="Aanbiedingen zijn tijdelijk niet beschikbaar.";return;}
+   async function publicRPC(fn){
+     var response=await fetch(cfg.url.replace(/\/$/,"")+"/rest/v1/rpc/"+fn,{
+       method:"POST",headers:{"Content-Type":"application/json","apikey":cfg.key,
+         "Authorization":"Bearer "+cfg.key},body:"{}"});
+     var data=await response.json();
+     if(!response.ok)throw new Error(data.message||"Aanbiedingen laden mislukt");
+     return Array.isArray(data)?data:[];
+   }
+   Promise.allSettled([publicRPC("pasr_business_coupon_list"),publicRPC("pasr_business_promo_public")])
+     .then(function(results){
+       rows=[];
+       if(results[0].status==="fulfilled")rows=rows.concat(results[0].value.map(function(x){x.kind="coupon";return x;}));
+       if(results[1].status==="fulfilled")rows=rows.concat(results[1].value.map(function(x){x.kind="code";return x;}));
+       if(results.every(function(r){return r.status==="rejected";})){
+         box.textContent="Aanbiedingen konden niet worden geladen.";return;
+       }
+       show();
      });
-   }
-   function showClaim(c,customerTitle){
-     var modal=el("div","pz2-dialog");
-     modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Jouw kortingsbon" class="pz2-panel"><h2>Jouw kortingsbon</h2>'+
-       '<p>'+escape(customerTitle||"Toon deze unieke code aan de ondernemer.")+'</p>'+
-       '<div class="pz2-qr" id="pz2ClaimQR"></div>'+
-       '<p class="pz2-code">'+escape(c.code)+'</p><button class="zk-btn" type="button">Sluiten</button></div>';
-     document.body.appendChild(modal);
-     if(typeof qrcode==="function"){var qr=qrcode(0,"M");qr.addData(c.code);qr.make();
-       $("#pz2ClaimQR",modal).innerHTML=qr.createSvgTag({cellSize:5,margin:2,scalable:true});}
-     modal.querySelector("button").addEventListener("click",function(){modal.remove();});
-   }
-   async function claim(id){
-     var sess=couponSession();if(!sess){loginForCoupon(id);return;}
-     try{var c=await rpcPublic("pasr_business_coupon_claim",{p_coupon:id},sess.token);
-       showClaim(c,"Toon de unieke QR-code bij de kassa. Alleen de ondernemer kan de bon verzilveren.");
-     }catch(e){alert(e.message||"Bewaren mislukt.");}
-   }
-   async function myCoupons(){
-     var sess=couponSession();if(!sess){loginForCoupon(null);return;}
-     try{
-       var list=await rpcPublic("pasr_business_coupon_mine",{},sess.token);
-       var modal=el("div","pz2-dialog");
-       modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Mijn kortingsbonnen" class="pz2-panel"><h2>Mijn kortingsbonnen</h2>'+
-         '<div id="pz2Mine"></div><button class="zk-btn ghost" type="button" data-close>Sluiten</button></div>';
-       document.body.appendChild(modal);
-       $("#pz2Mine",modal).innerHTML=list.length?list.map(function(c,i){return '<button type="button" class="zk-btn ghost" data-idx="'+i+'">'+
-         escape(c.business)+" · "+escape(c.title)+(c.redeemed?" (Gebruikt)":"")+'</button>';}).join(""):'<p>Je hebt nog geen kortingsbonnen bewaard.</p>';
-       modal.querySelectorAll("[data-idx]").forEach(function(b){b.addEventListener("click",function(){
-         var c=list[Number(b.dataset.idx)];if(c.redeemed)return;modal.remove();showClaim(c,c.title);
-       });});
-       modal.querySelector("[data-close]").addEventListener("click",function(){modal.remove();});
-     }catch(e){alert(e.message||"Kon bonnen niet ophalen.");}
-   }
-   var mineButton=document.createElement("button");mineButton.className="zk-btn ghost";
-   mineButton.textContent="Mijn kortingsbonnen";mineButton.type="button";
-   $(".pz2-controls",root).appendChild(mineButton);mineButton.addEventListener("click",myCoupons);
-   $("#pz2Search",root).value=new URLSearchParams(location.search).get("q")||"";
-   $("#pz2Search",root).addEventListener("input",show);
-   rpcPublic("pasr_business_coupon_list",{}).then(function(r){rows=Array.isArray(r)?r:[];show();})
-     .catch(function(){$("#pz2PublicList",root).textContent="De aanbiedingen konden niet worden opgehaald.";});
  }
- async function insightsView(root,b,rpc){
+ function insightsView(root,b,rpc){
    root.innerHTML='<div class="zd-ptitle"><div><h2>Bedrijfsinzichten</h2><p class="zd-sub">Geaggregeerde gegevens van jouw stempelkaarten en kortingsbonnen. Er worden geen klantnamen of contactgegevens getoond.</p></div></div>'+
      '<div id="pz2Stats" class="pz2-statgrid" aria-live="polite"><p>Inzichten laden…</p></div>'+
      '<section class="pz2-panel"><h3>Hoe lees je deze cijfers?</h3>'+
