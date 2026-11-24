@@ -147,6 +147,8 @@
      var data=await response.json();if(!response.ok)throw new Error(data.message||"Verbinding mislukt.");return data;
    }
    function show(){
+     var hero=document.getElementById("ch-live-coupon");
+     if(hero&&rows.length){var c=rows[0];hero.classList.add("has-offer");hero.replaceChildren();var name=el("small"),amount=el("strong","ch-discount"),title=el("strong");name.textContent=c.business||"";amount.textContent=money(c.discount_type,c.discount_value)+" korting";title.textContent=c.title||"";hero.append(name,amount,title);}
      var q=$("#pz2Search",root).value.toLowerCase();
      $("#pz2PublicList",root).innerHTML=rows.filter(function(c){return (c.business+" "+c.title).toLowerCase().includes(q);})
      .map(function(c){return '<article class="pz2-publiccard"><div class="pz2-violet"><small>'+escape(c.business)+'</small>'+
@@ -223,6 +225,7 @@
    var mineButton=document.createElement("button");mineButton.className="zk-btn ghost";
    mineButton.textContent="Mijn kortingsbonnen";mineButton.type="button";
    $(".pz2-controls",root).appendChild(mineButton);mineButton.addEventListener("click",myCoupons);
+   $("#pz2Search",root).value=new URLSearchParams(location.search).get("q")||"";
    $("#pz2Search",root).addEventListener("input",show);
    rpcPublic("pasr_business_coupon_list",{}).then(function(r){rows=Array.isArray(r)?r:[];show();})
      .catch(function(){$("#pz2PublicList",root).textContent="De aanbiedingen konden niet worden opgehaald.";});
