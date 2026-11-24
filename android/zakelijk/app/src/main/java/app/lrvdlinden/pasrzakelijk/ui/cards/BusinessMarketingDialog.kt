@@ -96,7 +96,7 @@ fun BusinessMarketingDialog(business: Business, onClose: () -> Unit) {
                     scope.launch {
                         try {
                             val payload = JSONObject().put("business_id", business.id)
-                                .put("card_id", cardID.ifEmpty { JSONObject.NULL })
+                                .put("card_id", if (cardID.isEmpty()) JSONObject.NULL else cardID)
                                 .put("title", title.trim()).put("details", details)
                                 .put("starts_on", start).put("ends_on", end)
                                 .put("channel", channel).put("status", status)
