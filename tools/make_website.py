@@ -770,6 +770,7 @@ def move_page(slug, m):
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/catalog-hub.css">
   <script>document.documentElement.classList.add('js')</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
     {{"@type":"HowTo","name":{json.dumps(m["title"])},"totalTime":"PT2M","step":[{howto}]}},
@@ -778,12 +779,12 @@ def move_page(slug, m):
   ]}}</script>
 </head>
 <body>
-  {site_nav("home")}
+  {site_nav("overstappen")}
   <main class="move">
-    <div class="wrap move-hero">
+    <div class="wrap move-hero ch-service-hero ch-move-hero"><div>
       <p class="pill">Overstappen van {m["name"]}</p>
       <h1>{m["title"]}</h1>
-      <p class="lead">{m["intro"]}</p>
+      <p class="lead">{m["intro"]}</p><a class="btn btn-primary" href="#zo-werkt-het">Zo stap je over</a></div><div class="ch-service-art ch-move-art" aria-hidden="true">{mini_pass("jumbo.com", "Jumbo")}{mini_pass("ah.nl", "Albert Heijn")}<img src="/assets/icon.png" alt="" width="56" height="56"></div>
     </div>
     <section class="wrap" id="zo-werkt-het" aria-label="Zo werkt het">
 {import_demo()}
