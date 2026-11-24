@@ -573,7 +573,7 @@
   VIEWS.kaarten = function (panel, b) {
     if (dash.sub === "edit") return editView(panel, b);
     var cards = b.cards || [], approved = b.status === "approved";
-    var add = cards.length < 5 ? '<button class="zk-btn" id="zkNew" type="button">' + ICON.plus + "Nieuwe kaart</button>" : "";
+    var add = '<button class="zk-btn" id="zkNew" type="button">' + ICON.plus + "Nieuw aanmaken</button>";
     var html = panelTitle("Kaarten", plural(cards.length, "kaart", "kaarten") + " van de 5" + (approved ? "" : " · online zetten kan na goedkeuring"), cards.length ? add : "");
     if (!cards.length) {
       html += '<div class="zk-panel zd-first"><div class="zd-first-card">' + stampCard({ name: "Koffiekaart", business: b.name, city: b.city, color: "#6A5CFF", stamps_total: 10, reward: "1 gratis koffie" }, 4) + "</div><div><h3>Je eerste stempelkaart</h3><p>Kies een naam, je logo en kleur, hoeveel stempels er op een kaart gaan en wat je klant daarvoor krijgt." +
@@ -592,7 +592,19 @@
       }).join("") + "</div>";
     }
     panel.innerHTML = html;
-    var nb = $("#zkNew"); if (nb) nb.addEventListener("click", function () { dash.edit = null; dash.sub = "edit"; render(); });
+    var nb = $("#zkNew"); if (nb) nb.addEventListener("click", function () {
+      var md = modal("Wat wil je aanmaken?",
+        '<h2>Wat wil je aanmaken?</h2><p>Kies een product voor ' + esc(b.name) + '.</p>' +
+        '<div class="zd-modal-foot" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-start">' +
+        '<button class="zk-btn" id="zkCreateCard" type="button"' + (cards.length >= 5 ? ' disabled' : '') + '>Stempelkaart</button>' +
+        '<button class="zk-btn" id="zkCreateCoupon" type="button">Kortingscoupon of code</button>' +
+        '<button class="zk-btn" id="zkCreateAction" type="button"' + (!cards.length ? ' disabled' : '') + '>Actie of beloning</button>' +
+        '<button class="zk-btn ghost" id="zkCreateClose" type="button">Annuleren</button></div>', nb);
+      $("#zkCreateCard", md.el).addEventListener("click", function () { md.close(); dash.edit = null; dash.sub = "edit"; render(); });
+      $("#zkCreateCoupon", md.el).addEventListener("click", function () { md.close(); go("kortingsbonnen"); });
+      $("#zkCreateAction", md.el).addEventListener("click", function () { md.close(); go("acties"); });
+      $("#zkCreateClose", md.el).addEventListener("click", md.close);
+    });
     panel.querySelectorAll(".zk-card button[data-act]").forEach(function (btn) {
       btn.addEventListener("click", async function () {
         var id = btn.closest(".zk-card").dataset.id, card = cards.filter(function (c) { return c.id === id; })[0];
