@@ -89,6 +89,8 @@ dependencies {
     // Barcodes tekenen
     implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Android achtergrond-geofences met gerichte GPS-check bij binnenkomst (opt-in).
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     // Push (FCM)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-messaging")
