@@ -175,7 +175,8 @@ struct WalletView: View {
         .onDisappear { ScreenBrightness.restore() }
         .task(id: "\(catalog.version)|" + WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
         // bonnetjes in Spotlight (alleen de index op dit toestel)
-        .task(id: receipts.map { "\($0.id)\($0.updatedAt.timeIntervalSince1970)" }.joined()) {
+        .task(id: receipts.map { "\($0.id)\($0.updatedAt.timeIntervalSince1970)" }.joined() +
+              "|" + cards.map { $0.id.uuidString }.sorted().joined()) {
             // Herstel ook al opgeslagen bonnetjes uit oudere builds (bijv. Action),
             // zonder dubbele gebruiksmomenten of wijzigingen aan cadeaukaarttegoed.
             ReceiptUseLinker.reconcile(receipts, cards: cards, context: context)
