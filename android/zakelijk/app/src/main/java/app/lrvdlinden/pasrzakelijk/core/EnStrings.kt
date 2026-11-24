@@ -4,7 +4,7 @@ package app.lrvdlinden.pasrzakelijk.core
 // Niet met de hand wijzigen.
 
 internal object EnStrings {
-    val map: Map<String, String> = HashMap<String, String>(624).apply {
+    val map: Map<String, String> = HashMap<String, String>(628).apply {
         part0(this)
         part1(this)
         part2(this)
@@ -42,6 +42,7 @@ internal object EnStrings {
         m["Afkoeltijd"] = "Cooldown"
         m["Afkoeltijd: zo lang moet een klant wachten voor de volgende stempel. Bij scannen kies je zelf het aantal stempels, tot het maximum."] = "Cooldown: how long a customer has to wait for the next stamp. When scanning you choose the number of stamps yourself, up to the maximum."
         m["Alleen de laatste actie bij deze klant kan ongedaan worden gemaakt."] = "Only the latest action for this customer can be undone."
+        m["Alleen geverifieerde servergegevens; dit is geen omzetmeting."] = "Verified server data only; this is not revenue data."
         m["Als er een account is met dit adres, krijg je een mail met een link om een nieuw wachtwoord te kiezen."] = "If there is an account with this address, you'll receive an email with a link to choose a new password."
         m["Ander logo kiezen"] = "Choose another logo"
         m["Annuleer"] = "Cancel"
@@ -91,10 +92,10 @@ internal object EnStrings {
         m["E-mailadres"] = "Email address"
         m["E-mailadres (optioneel)"] = "Email address (optional)"
         m["E-mailadres of wachtwoord klopt niet."] = "Email address or password is incorrect."
-        m["Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat."] = "A code starts with PZ. Type it exactly as shown below the QR code."
     }
 
     private fun part1(m: HashMap<String, String>) {
+        m["Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat."] = "A code starts with PZ. Type it exactly as shown below the QR code."
         m["Een concept zie je alleen zelf. Zet de kaart online om de QR-code en flyer te gebruiken."] = "Only you can see a draft. Put the card online to use the QR code and flyer."
         m["Een klant krijgt niet twee keer kort na elkaar een stempel. Je kiest zelf hoe lang."] = "A customer can't get two stamps in quick succession. You choose how long."
         m["Een vierkant logo werkt het best. Pasr verkleint het tot 256 pixels."] = "A square logo works best. Pasr scales it down to 256 pixels."
@@ -165,6 +166,7 @@ internal object EnStrings {
         m["Klanten met deze kaart kunnen dan niet meer sparen."] = "Customers with this card will no longer be able to collect stamps."
         m["Klanten scannen deze code met hun camera en sparen in Pasr of in de browser."] = "Customers scan this code with their camera and collect stamps in Pasr or in the browser."
         m["Klanten vinden je stempelkaart in de lijst in Pasr, ook in de buurt."] = "Customers find your stamp card in the list in Pasr, including nearby."
+        m["Klantenbinding · laatste 30/90 dagen"] = "Customer loyalty · last 30/90 days"
         m["Kleur"] = "Colour"
         m["Kwartaal"] = "Quarter"
         m["Laatste stempel %@ geleden"] = "Last stamp %@ ago"
@@ -173,11 +175,11 @@ internal object EnStrings {
         m["Leden per kaart"] = "Members per card"
         m["Licht"] = "Light"
         m["Lid sinds %@"] = "Member since %@"
-        m["Link delen"] = "Share link"
-        m["Log in met je Pasr-account. Ben je medewerker? Gebruik het account waarmee je de uitnodiging accepteert."] = "Sign in with your Pasr account. Staff member? Use the account you accept the invitation with."
     }
 
     private fun part2(m: HashMap<String, String>) {
+        m["Link delen"] = "Share link"
+        m["Log in met je Pasr-account. Ben je medewerker? Gebruik het account waarmee je de uitnodiging accepteert."] = "Sign in with your Pasr account. Staff member? Use the account you accept the invitation with."
         m["Logboek"] = "Log"
         m["Logo"] = "Logo"
         m["Logo en kleuren komen van de website van je zaak. Je kunt alles hieronder aanpassen."] = "Logo and colours come from your business website. You can change everything below."
@@ -256,11 +258,11 @@ internal object EnStrings {
         m["Privacyverklaring"] = "Privacy policy"
         m["QR, link en flyer"] = "QR, link and flyer"
         m["QR-code van de kaart"] = "QR code of the card"
-        m["QR-code van de uitnodiging"] = "QR code of the invitation"
-        m["Richt de camera op de QR-code van je klant"] = "Point the camera at your customer's QR code"
     }
 
     private fun part3(m: HashMap<String, String>) {
+        m["QR-code van de uitnodiging"] = "QR code of the invitation"
+        m["Richt de camera op de QR-code van je klant"] = "Point the camera at your customer's QR code"
         m["Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen."] = "Scan your customer's QR code, choose the number of stamps and tap Add stamps."
         m["Scan de kaart van je klant en zet een stempel. Alleen jij en je medewerkers kunnen stempels zetten."] = "Scan your customer's card and add a stamp. Only you and your staff can add stamps."
         m["Scan met je camera"] = "Scan with your camera"
