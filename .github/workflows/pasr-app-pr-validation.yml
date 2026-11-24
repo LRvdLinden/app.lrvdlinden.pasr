@@ -75,11 +75,11 @@ jobs:
           assert p.count('MARKETING_VERSION = "1.0.4";') == 6
           assert z.count('CURRENT_PROJECT_VERSION = "14";') == 2
           assert z.count('MARKETING_VERSION = "1.0.3";') == 2
-          assert 'BUILD = "13"' in g and 'VERSION = "1.0.3"' in g
+          assert 'BUILD = "14"' in g and 'VERSION = "1.0.3"' in g
           assert 'VERSION_NAME") ?: "1.0.4"' in ap
           assert 'versionName = "1.0.3"' in az
           assert 'CODE=128' in Path(".github/workflows/android-pasr.yml").read_text()
-          assert 'export VERSION_CODE=125' in Path(".github/workflows/android-zakelijk.yml").read_text()
+          assert 'export VERSION_CODE=126' in Path(".github/workflows/android-zakelijk.yml").read_text()
           print("App versions validated.")
           PY
       - name: Check generated Xcode project is in sync
