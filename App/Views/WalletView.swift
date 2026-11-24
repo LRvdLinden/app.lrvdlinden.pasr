@@ -41,6 +41,15 @@ struct WalletView: View {
 
     private let peek: CGFloat = 62
 
+    /// Buiten de complexe SwiftUI view-builder houden om compiler-timeouts te voorkomen.
+    private var receiptRepairFingerprint: String {
+        let receiptKeys = receipts.map { receipt in
+            receipt.id.uuidString + ":" + String(receipt.updatedAt.timeIntervalSince1970)
+        }
+        let cardKeys = cards.map { card in card.id.uuidString }.sorted()
+        return receiptKeys.joined(separator: "|") + "#" + cardKeys.joined(separator: "|")
+    }
+
     enum Sheet: Identifiable {
         case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?), info(Card)
         /// Bonnetjes: alle bonnen (eventueel met een zoekterm), of één bon.
@@ -175,8 +184,7 @@ struct WalletView: View {
         .onDisappear { ScreenBrightness.restore() }
         .task(id: "\(catalog.version)|" + WidgetSync.fingerprint(of: cards)) { WidgetSync.update(with: cards) }
         // bonnetjes in Spotlight (alleen de index op dit toestel)
-        .task(id: receipts.map { "\($0.id)\($0.updatedAt.timeIntervalSince1970)" }.joined() +
-              "|" + cards.map { $0.id.uuidString }.sorted().joined()) {
+        .task(id: receiptRepairFingerprint) {
             // Herstel ook al opgeslagen bonnetjes uit oudere builds (bijv. Action),
             // zonder dubbele gebruiksmomenten of wijzigingen aan cadeaukaarttegoed.
             ReceiptUseLinker.reconcile(receipts, cards: cards, context: context)
