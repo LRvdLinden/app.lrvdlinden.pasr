@@ -16,6 +16,9 @@ struct CardsView: View {
     @State private var marketing = false
     @State private var locations = false
     @State private var community = false
+    @State private var offers: [[String: Any]] = []
+    @State private var codes: [[String: Any]] = []
+    @State private var offerError: String?
     @State private var showingCreateChoices = false
     @State private var showingActionCardChoices = false
 
@@ -66,10 +69,53 @@ struct CardsView: View {
                     }
                 }
             }
+                Section("Kortingscoupons") {
+                    if offers.isEmpty {
+                        Text("Nog geen kortingscoupons").foregroundStyle(.secondary)
+                    }
+                    ForEach(offers.indices, id: \.self) { i in
+                        let offer = offers[i]
+                        let published = offer["public"] as? Bool ?? false
+                        let validTo = (offer["ends_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) }
+                        let active = published && (validTo.map { $0 > .now } ?? false)
+                        Button { coupons = true } label: {
+                            Label {
+                                HStack {
+                                    Text(offer["title"] as? String ?? "Kortingscoupon")
+                                    Spacer()
+                                    Text(active ? "Actief" : "Concept / verlopen")
+                                        .font(.caption).foregroundStyle(active ? Theme.mint : .secondary)
+                                }
+                            } icon: { Image(systemName: "ticket") }
+                        }
+                    }
+                    Button("Kortingscoupon aanmaken", systemImage: "plus") { coupons = true }
+                }
+                Section("Actiecodes") {
+                    if codes.isEmpty {
+                        Text("Nog geen actiecodes").foregroundStyle(.secondary)
+                    }
+                    ForEach(codes.indices, id: \.self) { i in
+                        let promo = codes[i]
+                        let active = promo["active"] as? Bool ?? false
+                        Button { promoCodes = true } label: {
+                            Label {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(promo["title"] as? String ?? "Actiecode")
+                                    Text("\(promo["code"] as? String ?? "") · \(active ? "Actief" : "Niet actief")")
+                                        .font(.caption.monospaced()).foregroundStyle(.secondary)
+                                }
+                            } icon: { Image(systemName: "number") }
+                        }
+                    }
+                    Button("Actiecode aanmaken", systemImage: "plus") { promoCodes = true }
+                }
+                if let offerError { Section { Text(offerError).font(.footnote).foregroundStyle(Theme.coral) } }
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
-            .navigationTitle("Kaarten")
-            .refreshable { await store.load() }
+            .navigationTitle("Acties")
+            .refreshable { await store.load(); await loadOffers() }
+            .task(id: business.id) { await loadOffers() }
             .toolbar {
                 BusinessPicker()
                 ToolbarItem(placement: .primaryAction) {
@@ -137,6 +183,17 @@ struct CardsView: View {
                 BusinessCommunityView(business: business).trackModal()
             }
         }
+    }
+
+    @MainActor private func loadOffers() async {
+        do {
+            let result = try await Account.shared.rpc("pasr_business_coupon_list", ["p_business": business.id])
+            offers = result as? [[String: Any]] ?? []
+        } catch { offerError = "Kortingscoupons laden: \(error.localizedDescription)" }
+        do {
+            let result = try await Account.shared.rpc("pasr_business_promo_list", ["p_business": business.id])
+            codes = result as? [[String: Any]] ?? []
+        } catch { offerError = "Actiecodes laden: \(error.localizedDescription)" }
     }
 
     private func stat(_ icon: String, _ value: Int) -> some View {
