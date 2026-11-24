@@ -11,7 +11,7 @@ $$;
 create table public.pasr_businesses (
  id uuid primary key default gen_random_uuid(),
  owner uuid not null references auth.users(id),
- name text not null, status text not null default 'approved',
+ name text not null, city text not null default '', status text not null default 'approved',
  listed boolean not null default true,
  max_per_scan int not null default 1,
  cooldown_minutes int not null default 0
@@ -21,6 +21,7 @@ create table public.pasr_business_cards (
  business_id uuid not null references public.pasr_businesses(id),
  name text not null,
  logo text, color text not null default '#6A5CFF',
+ created_at timestamptz not null default now(),
  published boolean not null default true,
  stamps_total int not null default 10
 );
