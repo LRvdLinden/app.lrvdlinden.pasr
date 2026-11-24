@@ -13,7 +13,7 @@ on:
   push:
     branches: [main]
     paths: ["website/**", ".github/workflows/website.yml", "tools/make_*.py", "tools/store_catalog.py",
-            "tools/fetch_live_catalog.py", "supabase/catalog/**"]
+            "tools/fetch_live_catalog.py", "tools/catalog_hub.py", "tools/verify_website.py", "tools/version_assets.py", "supabase/catalog/**"]
   schedule:
     - cron: "17 * * * *"   # elk uur: bijwerken uit het beheer (uploadt alleen als er iets veranderd is)
   workflow_dispatch:
@@ -35,7 +35,9 @@ jobs:
         run: |
           node --check website/assets/promo.js
           node --check website/assets/zakelijk.js
-          python3 -m py_compile tools/make_zakelijk.py
+          node --check website/assets/loyalty2.js
+          node --check website/assets/discovery.js
+          python3 -m py_compile tools/make_website.py tools/make_kaarten.py tools/make_gids.py tools/make_zakelijk.py tools/catalog_hub.py
       - name: Account settings for the website
         env:
           A_URL: ${{ secrets.PASR_SUPABASE_URL }}
@@ -95,7 +97,6 @@ jobs:
           key: og-zakelijk-${{ github.run_id }}
           restore-keys: og-zakelijk-
       - name: "Kaarten, cadeaubons, gidsen, deelpagina's van stempelkaarten en sitemap uit de beheer-database"
-        continue-on-error: true   # lukt het niet, dan gaat de site uit de repo online
         env:
           PASR_SUPABASE_URL: ${{ secrets.PASR_SUPABASE_URL }}
           PASR_SUPABASE_KEY: ${{ secrets.PASR_SUPABASE_KEY }}
@@ -103,18 +104,14 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
-          set -uo pipefail
-          GEN="website/kaarten website/cadeaubon website/klantenkaart website/overstappen website/index.html website/sitemap.xml website/assets/kaarten website/assets/covers"
+          set -euo pipefail
           python3 -m pip install --quiet --disable-pip-version-check Pillow python-barcode || true
-          python3 tools/fetch_live_catalog.py
+          python3 tools/fetch_live_catalog.py || echo "::warning::Live catalogus ophalen mislukt; lokale catalogus wordt gebruikt."
           [ -f .cache/live-catalog.json ] || echo "::warning::Geen live catalogus: de pagina's komen uit de repo."
-          if python3 tools/make_website.py && python3 tools/make_sitemap.py; then
-            python3 tools/store_catalog.py | head -1 | tee -a "$GITHUB_STEP_SUMMARY"
-          else
-            echo "::warning::Opbouwen uit de database mislukt; de gegenereerde pagina's uit de repo worden gebruikt."
-            git checkout -- $GEN 2>/dev/null || true
-            git clean -fdq -- $GEN 2>/dev/null || true
-          fi
+          python3 tools/make_website.py
+          python3 tools/make_sitemap.py
+          python3 tools/verify_website.py
+          echo "Website build and public navigation verified." >> "$GITHUB_STEP_SUMMARY"
       - name: Versie achter css en js (geen oude bestanden uit de cache)
         run: python3 tools/version_assets.py
       - name: Install lftp
@@ -244,10 +241,10 @@ jobs:
             note "Elk-uur-controle: niets veranderd in het beheer, niets geüpload."
             exit 0
           fi
-          if [ -s /tmp/manifest.remote ] && [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
-            run "mirror -R --verbose --parallel=4 --exclude-glob .DS_Store /tmp/stage/ \"$TARGET\""
+          if [ -s /tmp/manifest.remote ]; then
+            run "mirror -R --verbose --parallel=4 --transfer-all --exclude-glob .DS_Store --exclude-glob .htaccess --exclude-glob deploy-manifest.json /tmp/stage/ \"$TARGET\""
           else
-            run "mirror -R --verbose --parallel=4 --only-newer --exclude-glob .DS_Store --exclude-glob .htaccess --exclude-glob deploy-manifest.json website/ \"$TARGET\""
+            run "mirror -R --verbose --parallel=4 --transfer-all --exclude-glob .DS_Store --exclude-glob .htaccess --exclude-glob deploy-manifest.json website/ \"$TARGET\""
           fi
           if [ -s /tmp/removed.txt ]; then
             cmds=$(sed "s#.*#rm -f \"$TARGET/&\"#" /tmp/removed.txt | paste -sd';' -)
