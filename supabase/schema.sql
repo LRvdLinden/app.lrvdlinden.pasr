@@ -4081,7 +4081,7 @@ begin
     raise exception 'Kaart hoort niet bij je zaak.' using errcode='42501';
   end if;
   if char_length(t) not between 3 and 80 or char_length(desc_text)>300 or
-     typ not in ('amount','percent') or v<=0 or v>case when typ='percent' then 100 else 100000 end or
+     typ not in ('amount','percent') or v<=0 or v > (case when typ='percent' then 100 else 100000 end) or
      m<0 or maxn not between 1 and 100000 or en is null or en<=st or en>st+interval '366 days' then
      raise exception 'Controleer bedrag, tekst en datums.' using errcode='22023';
   end if;
