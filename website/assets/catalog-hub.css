@@ -185,3 +185,25 @@
 :root[data-theme="dark"] .ch-hero.ch-hero{background:linear-gradient(135deg,#25213d,#312b4c);color:var(--ink)}:root[data-theme="dark"] .ch-hero.ch-hero h1{color:var(--ink)}:root[data-theme="dark"] .ch-hero.ch-hero .ch-hero-copy>p{color:var(--ink-2)}
 @media(max-width:760px){.ch-real-art{min-height:200px;transform:none;margin:0}.ch-real-face{width:min(65%,230px)}.ch-balance-demo{bottom:3%;left:12%}}
 @media(max-width:440px){.ch-hero .ch-real-art{display:grid;min-height:180px}.ch-real-face{width:min(63%,200px)}.ch-balance-demo strong{font-size:18px}.ch-balance-demo{padding:8px 12px}}
+
+/* Native disclosure menu: works without JS, in both colour schemes. */
+.ch-site-nav{position:relative;gap:18px;align-items:center;z-index:30}
+.ch-site-nav .ch-menu{display:none}
+.ch-site-nav .ch-desktop-nav{flex:1;width:auto}
+.ch-site-nav .ch-desktop-nav ul{justify-content:flex-end;align-items:center;gap:9px 17px}
+.ch-site-nav .ch-desktop-nav ul a{font-size:14px}
+.ch-menu summary{display:flex;gap:8px;align-items:center;cursor:pointer;list-style:none;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);padding:10px 13px;border-radius:13px;font:700 14px var(--body)}
+.ch-menu summary::-webkit-details-marker{display:none}
+.ch-menu summary .ch-close,.ch-menu[open] summary .ch-hamburger{display:none}
+.ch-menu[open] summary .ch-close{display:block}
+@media(max-width:1050px){
+.ch-site-nav{flex-wrap:nowrap;justify-content:space-between}
+.ch-site-nav .ch-desktop-nav{display:none}
+.ch-site-nav .ch-menu{display:block;margin-left:auto}
+.ch-site-nav .ch-menu nav{position:absolute;top:100%;right:0;left:0;width:auto;max-height:calc(100dvh - 95px);overflow:auto;padding:12px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 40px #15132c26}
+.ch-site-nav .ch-menu ul{display:flex;flex-direction:column;align-items:stretch;gap:3px}
+.ch-site-nav .ch-menu ul li,.ch-site-nav .ch-menu ul li.hide-sm{display:block}
+.ch-site-nav .ch-menu ul a{display:block;padding:12px 15px;font-size:16px;border-radius:10px}
+.ch-site-nav .ch-menu ul a:hover,.ch-site-nav .ch-menu ul a[aria-current="page"]{background:var(--paper)}
+.ch-site-nav .ch-menu .ch-business-link{margin-top:6px}
+}
