@@ -79,6 +79,7 @@ import androidx.fragment.app.FragmentActivity
 import app.lrvdlinden.pasr.Incoming
 import app.lrvdlinden.pasr.data.Business
 import app.lrvdlinden.pasr.data.Api
+import app.lrvdlinden.pasr.data.Account
 import org.json.JSONObject
 import app.lrvdlinden.pasr.data.CardKind
 import app.lrvdlinden.pasr.data.CardPlace
@@ -104,6 +105,9 @@ fun CardDetailScreen(id: String) {
     var revealed by remember(id) { mutableStateOf(!card.isLocked) }
     var gwAvailable by remember { mutableStateOf(false) }
     var vipStatus by remember(id) { mutableStateOf<String?>(null) }
+    var retentionAvailable by remember(id) { mutableStateOf(false) }
+    var retentionEnabled by remember(id) { mutableStateOf(false) }
+    var retentionDays by remember(id) { mutableStateOf(30) }
     var gwBusy by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var amountDialog by remember { mutableStateOf<String?>(null) }
@@ -141,6 +145,13 @@ fun CardDetailScreen(id: String) {
         if (card.isBusinessStamps) {
             Business.refresh(card)?.let { GoogleWallet.updateIfSaved(it) }
             val code = card.details.memberCode
+            if (!code.isNullOrBlank() && Account.isSignedIn) runCatching {
+                val state = Api.rpc("pasr_business_retention_status",
+                    JSONObject().put("p_code", code)) as? JSONObject
+                retentionAvailable = state?.optBoolean("available") == true
+                retentionEnabled = state?.optBoolean("enabled") == true
+                retentionDays = state?.optInt("days", 30) ?: 30
+            }
             if (!code.isNullOrBlank()) runCatching {
                 val data = Api.publicRpc("pasr_business_vip_status", JSONObject().put("p_code", code)) as? JSONObject
                 vipStatus = if (data?.optBoolean("enabled") == true) {
@@ -239,6 +250,24 @@ fun CardDetailScreen(id: String) {
                                 }
                             } catch (e: Exception) {
                                 snack.showSnackbar(e.message ?: "Vriendenactie is niet beschikbaar.")
+                            }
+                        }
+                    }
+                    if (card.isBusinessStamps && Account.isSignedIn && (retentionAvailable || retentionEnabled)) {
+                        RowItem(Icons.Outlined.Refresh,
+                            "Terugkomherinneringen",
+                            (if (retentionEnabled) "Aan" else "Uit") + " · na $retentionDays dagen") {
+                            scope.launch {
+                                try {
+                                    val member = card.details.memberCode ?: return@launch
+                                    val enabled = !retentionEnabled
+                                    Api.rpc("pasr_business_retention_consent", JSONObject()
+                                        .put("p_code", member).put("p_enabled", enabled))
+                                    retentionEnabled = enabled
+                                    snack.showSnackbar(if (enabled) "Herinneringen ingeschakeld" else "Herinneringen uitgeschakeld")
+                                } catch (e: Exception) {
+                                    snack.showSnackbar(e.message ?: "Kon je keuze niet opslaan.")
+                                }
                             }
                         }
                     }
