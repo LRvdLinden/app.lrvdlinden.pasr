@@ -160,10 +160,11 @@
   var BIZ_KEY = "pasr.zakelijk.biz";
   var TABS = [
     { id: "overzicht", label: "Overzicht", icon: "chart", owner: true },
-    { id: "kaarten", label: "Kaarten", icon: "card", owner: true },
-    { id: "acties", label: "Acties en beloningen", short: "Acties", icon: "gift", owner: true },
+    { id: "kaarten", label: "Acties", icon: "card", owner: true },
+    { id: "acties", label: "Beloningen", icon: "gift", owner: true },
     { id: "kortingsbonnen", label: "Kortingsbonnen", short: "Bonnen", icon: "card", owner: true },
     { id: "actiecodes", label: "Actiecodes", short: "Codes", icon: "gift", owner: true },
+    { id: "promotiemateriaal", label: "Promotiemateriaal", short: "Promotie", icon: "download", owner: true },
     { id: "inzichten", label: "Bedrijfsinzichten", short: "Inzichten", icon: "chart", owner: true },
     { id: "marketing", label: "Marketingkalender", short: "Planning", icon: "chart", owner: true },
     { id: "vestigingen", label: "Vestigingen", short: "Filialen", icon: "gear", owner: true },
@@ -422,7 +423,7 @@
   VIEWS.overzicht = async function (panel, b) {
     if (dash.sub === "members") return membersView(panel, b);
     if (dash.sub === "log") return logView(panel, b, 300);
-    panel.innerHTML = panelTitle("Overzicht", "Hoe je stempelkaarten het doen.") +
+    panel.innerHTML = panelTitle("Overzicht", "Resultaten van stempelkaarten, coupons, actiecodes en klantenbinding.") +
       '<div class="zd-kpis" id="ovKpi">' + ["Stempels", "Beloningen", "Nieuwe leden", "Leden"].map(function (t, i) { return '<div class="zd-kpi k' + i + '"><small>' + t + "</small><b>–</b></div>"; }).join("") + "</div>" +
       '<div class="zd-insights" id="ovChart"><p class="zk-empty">Laden…</p></div>' +
       '<div class="zd-two"><div class="zk-panel" id="ovCards"></div><div class="zk-panel" id="ovLog"><h3>Logboek</h3><p class="zk-empty">Laden…</p></div></div>' +
@@ -579,7 +580,7 @@
     if (dash.sub === "edit") return editView(panel, b);
     var cards = b.cards || [], approved = b.status === "approved";
     var add = '<button class="zk-btn" id="zkNew" type="button">' + ICON.plus + "Nieuw aanmaken</button>";
-    var html = panelTitle("Kaarten", plural(cards.length, "kaart", "kaarten") + " van de 5" + (approved ? "" : " · online zetten kan na goedkeuring"), cards.length ? add : "");
+    var html = panelTitle("Acties", plural(cards.length, "stempelkaart", "stempelkaarten") + " van de 5" + (approved ? "" : " · online zetten kan na goedkeuring"), cards.length ? add : "");
     if (!cards.length) {
       html += '<div class="zk-panel zd-first"><div class="zd-first-card">' + stampCard({ name: "Koffiekaart", business: b.name, city: b.city, color: "#6A5CFF", stamps_total: 10, reward: "1 gratis koffie" }, 4) + "</div><div><h3>Je eerste stempelkaart</h3><p>Kies een naam, je logo en kleur, hoeveel stempels er op een kaart gaan en wat je klant daarvoor krijgt." +
         (b.website ? " We halen je logo en kleur alvast van " + esc(b.website.replace(/^https?:\/\//, "").replace(/\/.*$/, "")) + "." : "") + "</p>" + add + "</div></div>";
@@ -596,7 +597,31 @@
           '<button class="zk-btn ghost sm" type="button" data-act="members">' + ICON.users + "Leden</button></div></div></article>";
       }).join("") + "</div>";
     }
+    html += '<section class="pz2-panel" style="margin-top:22px"><h3>Kortingscoupons en actiecodes</h3>' +
+      '<div class="zd-kpis" id="zkAllOffers">Kortingen laden…</div>' +
+      '<div class="zk-actions"><button class="zk-btn ghost" id="zkViewCoupons">Kortingscoupons beheren</button>' +
+      '<button class="zk-btn ghost" id="zkViewCodes">Actiecodes beheren</button>' +
+      '<button class="zk-btn ghost" id="zkViewPromo">Promotiemateriaal maken</button></div></section>';
     panel.innerHTML = html;
+    $("#zkViewCoupons").addEventListener("click", function(){go("kortingsbonnen");});
+    $("#zkViewCodes").addEventListener("click", function(){go("actiecodes");});
+    $("#zkViewPromo").addEventListener("click", function(){go("promotiemateriaal");});
+    Promise.allSettled([
+      rpc("pasr_business_coupon_list",{p_business:b.id},true),
+      rpc("pasr_business_promo_list",{p_business:b.id},true)
+    ]).then(function(all){
+      var box=$("#zkAllOffers");if(!box)return;
+      var coupons=all[0].status==="fulfilled"?all[0].value:null;
+      var codes=all[1].status==="fulfilled"?all[1].value:null;
+      var now=Date.now();
+      function active(x){return x&&x.public&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now;}
+      function activeCode(x){return x&&x.active&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now&&Number(x.used_count||0)<Number(x.max_uses||0);}
+      box.innerHTML='<div class="zd-kpi"><small>Stempelkaarten online</small><b>'+cards.filter(function(x){return x.published;}).length+'</b></div>'+
+        '<div class="zd-kpi"><small>Actieve kortingscoupons</small><b>'+(coupons?coupons.filter(active).length:"–")+'</b></div>'+
+        '<div class="zd-kpi"><small>Actieve actiecodes</small><b>'+(codes?codes.filter(activeCode).length:"–")+'</b></div>'+
+        (coupons?coupons.map(function(c){return '<div class="zk-panel"><b>'+esc(c.title)+'</b> · Coupon · '+(active(c)?"Actief":"Concept/verlopen")+'</div>';}).join(""):'<p>Coupons konden niet worden geladen.</p>')+
+        (codes?codes.map(function(c){return '<div class="zk-panel"><b>'+esc(c.title)+'</b> · Code '+esc(c.code)+' · '+(activeCode(c)?"Actief":"Niet actief")+'</div>';}).join(""):'<p>Actiecodes konden niet worden geladen.</p>');
+    });
     var nb = $("#zkNew"); if (nb) nb.addEventListener("click", function () {
       var md = modal("Wat wil je aanmaken?",
         '<h2>Wat wil je aanmaken?</h2><p>Kies een product voor ' + esc(b.name) + '.</p>' +
