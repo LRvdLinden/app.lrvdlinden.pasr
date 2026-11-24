@@ -166,6 +166,7 @@
     { id: "inzichten", label: "Bedrijfsinzichten", short: "Inzichten", icon: "chart", owner: true },
     { id: "marketing", label: "Marketingkalender", short: "Planning", icon: "chart", owner: true },
     { id: "vestigingen", label: "Vestigingen", short: "Filialen", icon: "gear", owner: true },
+    { id: "samenwerkingen", label: "Samenwerkingen", short: "Samen", icon: "users", owner: true },
     { id: "scannen", label: "Scannen", icon: "scan" },
     { id: "medewerkers", label: "Medewerkers", short: "Team", icon: "users", owner: true },
     { id: "instellingen", label: "Instellingen", icon: "gear", owner: true },
@@ -392,6 +393,10 @@
   VIEWS.inzichten = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.insights(panel, b, rpc);
     else panel.textContent = "Inzichten zijn tijdelijk niet beschikbaar.";
+  };
+  VIEWS.samenwerkingen = function (panel, b) {
+    if (window.PasrLoyalty2) window.PasrLoyalty2.community(panel, b, rpc);
+    else panel.textContent = "Het samenwerkingsscherm kon niet worden geladen. Ververs de pagina.";
   };
   VIEWS.kortingsbonnen = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.coupons(panel, b, rpc);
