@@ -301,7 +301,7 @@ enum ReceiptUseLinker {
             return
         }
         let candidates = card.uses.filter {
-            $0.receiptID == nil && abs($0.date.timeIntervalSince(receipt.date)) <= 86_400
+            $0.receiptID == nil && Calendar.current.isDate($0.date, inSameDayAs: receipt.date)
         }
         let amountMatches = candidates.filter { event in
             guard let total = receipt.total, total > 0 else { return false }
