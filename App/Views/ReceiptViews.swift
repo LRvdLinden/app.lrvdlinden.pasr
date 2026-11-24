@@ -272,24 +272,90 @@ struct ReceiptReviewForm: View {
 
     private func save() {
         let linked = card ?? cards.first(where: { $0.id == cardID })
-        let matchingEvent = useID ?? linked?.history.first(where: { event in
-            guard event.receiptID == nil, let spent = event.amount, let total else { return false }
-            return abs(event.date.timeIntervalSince(date)) <= 86_400 &&
-                abs(spent - total) <= 0.02
-        })?.id
-        let r = Receipt(cardID: linked?.id, useID: matchingEvent, storeName: store.trimmingCharacters(in: .whitespaces), date: date)
+        let r = Receipt(cardID: linked?.id, useID: nil, storeName: store.trimmingCharacters(in: .whitespaces), date: date)
         r.total = total
         r.currencyCode = linked?.currencyCode
         r.title = title.trimmingCharacters(in: .whitespaces)
         r.warrantyUntil = hasWarranty ? Calendar.current.startOfDay(for: warranty) : nil
         r.pages = pages.compactMap { $0.jpegData(compressionQuality: 0.85).flatMap { ImageResizer.jpeg($0, maxSide: 2000, quality: 0.78) } }
         context.insert(r)
-        if let linked, let matchingEvent {
-            linked.updateUse(matchingEvent) { $0.receiptID = r.id }
+        if let linked {
+            ReceiptUseLinker.attach(r, to: linked, preferredUse: useID)
         }
         try? context.save()
         Task { await ReceiptReminders.schedule(r) }
         onSaved(total)
+    }
+}
+
+/// Eén kassabon is een aantoonbare winkeltransactie, ook wanneer de klant de kaart niet scande.
+/// Koppel eerst aan een passend, nog bonloos gebruiksmoment. Maak anders een nieuw moment.
+/// Voor cadeaukaarten wordt NOOIT automatisch tegoed afgeboekt door een kassabon.
+@MainActor
+enum ReceiptUseLinker {
+    static func attach(_ receipt: Receipt, to card: Card, preferredUse: UUID? = nil) {
+        guard receipt.cardID == card.id else { return }
+        // Ook herhaald openen/herstellen blijft idempotent.
+        if let linked = card.uses.first(where: { $0.receiptID == receipt.id }) {
+            receipt.useID = linked.id
+            return
+        }
+        let candidates = card.uses.filter {
+            $0.receiptID == nil && abs($0.date.timeIntervalSince(receipt.date)) <= 86_400
+        }
+        let amountMatches = candidates.filter { event in
+            guard let total = receipt.total, total > 0 else { return false }
+            return [event.amount, event.pendingAmount].compactMap { $0 }
+                .contains { abs($0 - total) <= 0.02 }
+        }
+        // Bij meerdere mogelijkheden kies het dichtstbijzijnde moment. Zonder bedrag
+        // alleen automatisch koppelen als er precies één mogelijke scan op de dag is.
+        let unknownAmount = candidates.filter { $0.amount == nil && $0.pendingAmount == nil }
+        let matched = preferredUse.flatMap { id in
+            candidates.first(where: { $0.id == id })
+        } ?? amountMatches.min(by: {
+            abs($0.date.timeIntervalSince(receipt.date)) < abs($1.date.timeIntervalSince(receipt.date))
+        }) ?? (unknownAmount.count == 1 ? unknownAmount.first : nil)
+        let eventID: UUID
+        if let matched {
+            eventID = matched.id
+        } else {
+            var event = CardEvent(kind: .shown)
+            event.date = receipt.date
+            event.source = "receipt"
+            var history = card.history
+            history.insert(event, at: 0)
+            card.history = history
+            // Geschiedenis bewaart standaard 90 dagen: voor zeer oude bonnetjes
+            // is er geen bewaard gebruiksmoment meer om aan te koppelen.
+            guard card.uses.contains(where: { $0.id == event.id }) else { return }
+            eventID = event.id
+        }
+        receipt.useID = eventID
+        card.updateUse(eventID) { event in
+            event.receiptID = receipt.id
+            if event.amount == nil, let total = receipt.total, total > 0 {
+                // Bedrag tonen onder Laatst gebruikt. Dit is geen bewijs dat de
+                // klant met de cadeaukaart heeft afgerekend: saldo niet aanpassen.
+                event.amount = total
+                event.pendingAmount = nil
+            }
+        }
+    }
+
+    static func reconcile(_ receipts: [Receipt], cards: [Card], context: ModelContext) {
+        var changed = false
+        for receipt in receipts {
+            guard let cardID = receipt.cardID,
+                  let card = cards.first(where: { $0.id == cardID && $0.deletedAt == nil }) else { continue }
+            let correctlyLinked = receipt.useID.flatMap { id in
+                card.uses.first(where: { $0.id == id && $0.receiptID == receipt.id })
+            } != nil
+            if correctlyLinked { continue }
+            attach(receipt, to: card)
+            if receipt.useID != nil { changed = true }
+        }
+        if changed { try? context.save() }
     }
 }
 
