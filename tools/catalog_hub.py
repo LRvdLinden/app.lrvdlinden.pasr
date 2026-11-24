@@ -34,12 +34,44 @@ def section_nav(active="kaarten"):
     return ('<nav class="wrap ch-sections" aria-label="Soorten kaarten en voordelen">'
             + ''.join(links) + '</nav>')
 
+
+def real_card_art(active):
+    """Public catalog artwork only; never use a consumer's card number or balance."""
+    import store_catalog as sc
+    from make_gids import card_face
+    from make_kaarten import stamp_tile
+    if active == "kortingsbonnen":
+        # The public coupon renderer supplies the actual currently published offer.
+        return '<div class="ch-live-coupon" id="ch-live-coupon" aria-live="polite"><img src="/assets/icon.png" alt="" width="48" height="48"><strong>Actuele acties</strong><small>Ontdek aanbiedingen van deelnemende ondernemers</small></div>'
+    if active == "stempelkaarten":
+        stamps = sc.stamp_cards()[:2]
+        if not stamps:
+            return '<div class="ch-empty-art"><img src="/assets/pasr-stamp.svg" alt="" width="72" height="72"><strong>Spaar lokaal met Pasr</strong><small>Bekijk de gepubliceerde stempelkaarten hieronder.</small></div>'
+        return ''.join(f'<div class="ch-real-face ch-real-{i+1}"><ul class="ch-stamp-art">{stamp_tile(b)}</ul></div>' for i,b in enumerate(stamps))
+    kind = "voucher" if active in ("cadeaubon", "saldo-checken") else "loyalty"
+    cards = [c for c in sc.all_cards() if c["kind"] == kind and (active != "saldo-checken" or c.get("balance"))]
+    wanted = ("hema", "bol") if kind == "voucher" else ("jumbo", "albert heijn")
+    picked = []
+    for brand in wanted:
+        candidates = [c for c in cards if brand in c["name"].casefold() or brand in (c.get("domain") or "").casefold()]
+        if candidates:
+            picked.append(candidates[0])
+    for c in cards:
+        if len(picked) >= 2:
+            break
+        if c not in picked:
+            picked.append(c)
+    art = ''.join(f'<div class="ch-real-face ch-real-{i+1}">{card_face(c, big=True)}</div>' for i,c in enumerate(picked))
+    if kind == "voucher" and picked:
+        art += '<div class="ch-balance-demo"><small>Voorbeeld van tegoed</small><strong>€ 50,00</strong></div>'
+    return art or '<div class="ch-empty-art"><strong>Ontdek je kaarten</strong></div>'
+
 def hero(active="kaarten", count=None):
     """Gedeelde hero met een directe cataloguszoekactie en herkenbare kaartcategorieën."""
     title = {
         "kaarten": "Al je kaarten &amp; voordelen op één plek",
         "klantenkaart": "Vind jouw klantenkaart",
-        "cadeaubon": "Ontdek cadeaukaarten en check je saldo",
+        "cadeaubon": "Alles over jouw cadeaukaart.",
         "kortingsbonnen": "Ontdek tijdelijke kortingsbonnen",
         "stempelkaarten": "Spaar bij jouw favoriete ondernemers",
         "saldo-checken": "Hoeveel staat er op jouw cadeaukaart?",
@@ -47,14 +79,14 @@ def hero(active="kaarten", count=None):
     subtitle = {
         "kaarten": "Zoek in de kaartencatalogus van Pasr en ontdek actuele acties van ondernemers.",
         "klantenkaart": "Zoek een winkel en ontdek hoe je spaart en welke voordelen er zijn.",
-        "cadeaubon": "Bekijk kaartinformatie, geldigheid en de officiële saldo-checker van de uitgever.",
+        "cadeaubon": "Controleer je saldo, ontdek waar je jouw kaart kunt besteden en voorkom dat je tegoed verloopt.",
         "kortingsbonnen": "Bewaar een persoonlijke kortingsbon en laat de unieke code bij de ondernemer scannen.",
         "stempelkaarten": "Ontdek digitale stempelkaarten, lokale winkels en de beloningen die je kunt sparen.",
         "saldo-checken": "Vind de officiële saldo checker van je cadeaukaart. Je voert je kaartnummer uitsluitend bij de uitgever in.",
     }.get(active, "")
     search_path = {"saldo-checken": "/saldo-checken/", "stempelkaarten": "/stempelkaarten/", "cadeaubon": "/cadeaubon/", "klantenkaart": "/klantenkaart/"}.get(active, "/kaarten/")
     search_kind = '<input type="hidden" name="soort" value="kortingsbonnen">' if active == "kortingsbonnen" else ""
-    return f'''<section class="wrap ch-hero" aria-label="Kaarten en voordelen">
+    return f'''<div class="wrap ch-crumb"><a href="/">Home</a> / <span>{escape(next((title for key, _, title, _ in SECTIONS if key == active), "Kaarten"))}</span></div><section class="wrap ch-hero ch-hero-{active}" aria-label="Kaarten en voordelen">
       <div class="ch-hero-copy">
         <span class="ch-eyebrow">Pasr · Kaarten &amp; Voordelen</span>
         <h1>{title}</h1><p>{subtitle}</p>
@@ -71,11 +103,7 @@ def hero(active="kaarten", count=None):
           <a href="/kortingsbonnen/">Kortingsbonnen</a>
         </div>
       </div>
-      <div class="ch-hero-art" aria-hidden="true">
-        <div class="ch-card ch-card-one"><span>pasr</span><strong>KLANTENKAART</strong><i></i><i></i><i></i></div>
-        <div class="ch-card ch-card-two"><span>pasr</span><strong>CADEAUKAART</strong><b>€ 50</b></div>
-        <div class="ch-card ch-card-three"><span>pasr</span><strong>KORTINGSBON</strong><b>%</b></div>
-      </div>
+      <div class="ch-hero-art ch-real-art" aria-label="Voorbeelden uit de Pasr-catalogus">{real_card_art(active)}</div>
     </section>'''
 
 
