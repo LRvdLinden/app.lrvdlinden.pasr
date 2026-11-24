@@ -111,6 +111,7 @@ jobs:
           python3 tools/fetch_live_catalog.py || echo "::warning::Live catalogus ophalen mislukt; lokale catalogus wordt gebruikt."
           [ -f .cache/live-catalog.json ] || echo "::warning::Geen live catalogus: de pagina's komen uit de repo."
           python3 tools/make_website.py
+          python3 tools/verify_zakelijk_dashboard.py
           python3 tools/make_sitemap.py
           python3 tools/verify_website.py
           echo "Website build and public navigation verified." >> "$GITHUB_STEP_SUMMARY"
