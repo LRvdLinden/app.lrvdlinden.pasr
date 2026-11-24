@@ -441,9 +441,16 @@ APP_PAGES = [
 
 
 def app_page(folder, title, desc, og_title, data_page, main, jsqr, app_id, active):
-    return (head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title)
+    # Dashboard-specific assets must be included by the generator too;
+    # this page is regenerated every website deploy and on hourly catalog refreshes.
+    dashboard_css = '  <link rel="stylesheet" href="/assets/zakelijk-dashboard-v2.css">\n' if folder == "dashboard" else ""
+    dashboard_js = '  <script src="/assets/zakelijk-dashboard-v2.js" defer></script>\n' if folder == "dashboard" else ""
+    page_head = head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title)
+    if dashboard_css:
+        page_head = page_head.replace("</head>", dashboard_css + "</head>")
+    return (page_head
             + f'\n<body data-page="{data_page}">\n{header(active)}\n  {main}\n{FOOTER}\n'
-            + SCRIPTS.format(jsqr=JSQR if jsqr else "") + "\n</body>\n</html>\n")
+            + SCRIPTS.format(jsqr=JSQR if jsqr else "") + "\n" + dashboard_js + "</body>\n</html>\n")
 
 
 # ---------------------------------------------------------------------------------------------------- landingspagina
