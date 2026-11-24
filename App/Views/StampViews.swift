@@ -12,6 +12,7 @@ struct StampControls: View {
     @State private var referralError: String?
     @State private var vipTier: String?
     @State private var vipVisits = 0
+    @State private var vipBenefit: String?
     @State private var nextTierAt: Int?
     @State private var retentionAvailable = false
     @State private var retentionSubscribed = false
@@ -44,6 +45,10 @@ struct StampControls: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                     .accessibilityElement(children: .combine)
+                }
+                if let vipBenefit, !vipBenefit.isEmpty {
+                    Text("Jouw VIP-voordeel: \(vipBenefit)").font(.footnote)
+                        .foregroundStyle(Brand.iris)
                 }
                 if let referralURL {
                     ShareLink(item: referralURL) {
@@ -137,9 +142,10 @@ struct StampControls: View {
         guard let code = details.memberCode else { return }
         guard let response = try? await AccountService.shared.publicRPC("pasr_business_vip_status",body:["p_code":code]),
               let data = response as? [String:Any], data["enabled"] as? Bool == true else {
-            vipTier = nil; return
+            vipTier = nil; vipBenefit = nil; return
         }
         vipTier = data["tier"] as? String
+        vipBenefit = data["benefit"] as? String
         vipVisits = (data["visits"] as? NSNumber)?.intValue ?? 0
         nextTierAt = (data["next_at"] as? NSNumber)?.intValue
     }
