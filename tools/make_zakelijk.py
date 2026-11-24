@@ -347,7 +347,8 @@ def header(active=""):
     cur = ' aria-current="page"' if active == "dashboard" else ""
     return f'''  <header class="wrap nav zk-nav">
     <a class="brand" href="/zakelijk/" aria-label="Pasr Zakelijk"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span><em class="zk-tag">Zakelijk</em></a>
-    <nav aria-label="Hoofdmenu">
+    <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg><span>Menu</span></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/support/">Support</a></li></ul></nav></details>
+    <nav class="zk-desktop-actions" aria-label="Hoofdmenu">
       <ul>
         {li}
         <li><a class="nav-btn ghost" href="/zakelijk/dashboard/" data-zk-login{cur}>Inloggen</a></li>
@@ -413,6 +414,7 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/zakelijk.css">
+  <link rel="stylesheet" href="/assets/catalog-hub.css">
 {extra}</head>'''
 
 
@@ -553,13 +555,14 @@ def page():
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/zakelijk.css">
+  <link rel="stylesheet" href="/assets/catalog-hub.css">
   <script>document.documentElement.classList.add('js')</script>
 </head>
 <body data-page="zk-home">
 {header()}
 
   <main class="zk-home">
-    <div class="wrap hero zk-hero2" id="top">
+    <div class="wrap hero zk-hero2 ch-zakelijk-hero" id="top">
       <div>
         <span class="zk-kicker enter" style="--d:0">Pasr Zakelijk · gratis voor ondernemers</span>
         <h1 class="enter" style="--d:0"><span>Je stempelkaart.</span> <span>Digitaal, in een minuut.</span></h1>
@@ -653,7 +656,7 @@ def patch_download():
     html = f.read_text(encoding="utf-8")
     new = re.sub(r'  <header class="wrap nav[^"]*">.*?</header>', header(), html, count=1, flags=re.S)
     if 'zakelijk.css' not in new:
-        new = re.sub(r'(<link rel="stylesheet" href="/assets/style\.css[^"]*">)', r'\1\n  <link rel="stylesheet" href="/assets/zakelijk.css">', new, count=1)
+        new = re.sub(r'(<link rel="stylesheet" href="/assets/style\.css[^"]*">)', r'\1\n  <link rel="stylesheet" href="/assets/zakelijk.css">\n  <link rel="stylesheet" href="/assets/catalog-hub.css">', new, count=1)
     if "/assets/account-config.js" not in new:   # knop Inloggen wordt Dashboard als je al bent ingelogd
         new = new.replace("</body>", '  <script src="/assets/account-config.js"></script>\n  <script src="/assets/zakelijk.js"></script>\n</body>', 1)
     if new != html:
