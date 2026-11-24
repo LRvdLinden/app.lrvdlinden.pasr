@@ -51,6 +51,7 @@ struct OverviewView: View {
     @State private var stats: [DayStat] = []
     @State private var previous: [DayStat] = []
     @State private var members: Int?
+    @State private var loyalty: [String: Any] = [:]
     @State private var loading = false
     @State private var error: String?
     @State private var selected: MetricPoint?
@@ -81,6 +82,17 @@ struct OverviewView: View {
                     }
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
+                }
+                if !loyalty.isEmpty {
+                    Section("Klantenbinding · laatste 30/90 dagen") {
+                        insight("Nieuwe klanten (30 dagen)", "members_30d")
+                        insight("Terugkerende klanten (90 dagen)", "returning_customers_90d")
+                        insight("Tussentijdse beloningen", "milestone_rewards")
+                        insight("Kortingsbonnen bewaard", "claimed_coupons")
+                        insight("Kortingsbonnen verzilverd", "redeemed_coupons")
+                        Text("Cijfers komen van geverifieerde servergebeurtenissen; dit zijn geen omzetbedragen.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
                 if let error {
                     Section { Text(error).foregroundStyle(Theme.coral) }
@@ -120,6 +132,15 @@ struct OverviewView: View {
             .task(id: days) { await load() }
             .onChange(of: showPrevious) { _, _ in selected = nil }
             .onChange(of: metric) { _, _ in selected = nil }
+        }
+    }
+
+    private func insight(_ title: String, _ key: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(verbatim: "\((loyalty[key] as? NSNumber)?.intValue ?? 0)")
+                .monospacedDigit().foregroundStyle(.secondary)
         }
     }
 
@@ -239,6 +260,11 @@ struct OverviewView: View {
                 selected = nil
             }
             error = nil
+            if let response = try? await Account.shared.rpc("pasr_business_loyalty_insights",
+                ["p_business": business.id]),
+                let values = response as? [String: Any] {
+                loyalty = values
+            }
         } catch {
             self.error = error.localizedDescription
         }
