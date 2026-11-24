@@ -29,6 +29,7 @@ import app.lrvdlinden.pasrzakelijk.data.BusinessCard
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDate
 
 /** Kaartgebonden instellingen met de echte Pasr Zakelijk-accountsession. */
 @Composable
@@ -51,6 +52,8 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
     var referralBonus by remember { mutableStateOf("1") }
     var campaignMultiplier by remember { mutableStateOf("2") }
     var campaignWeekday by remember { mutableStateOf("2") }
+    var campaignStart by remember { mutableStateOf(LocalDate.now().toString()) }
+    var campaignEnd by remember { mutableStateOf(LocalDate.now().plusDays(30).toString()) }
     var vipSilver by remember { mutableStateOf("10") }
     var vipGold by remember { mutableStateOf("25") }
     var communityName by remember { mutableStateOf("") }
@@ -70,6 +73,10 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
             referralBonus = (s.optJSONObject("referral")?.optInt("bonus", 1) ?: 1).toString()
             campaignMultiplier = (s.optJSONObject("campaign")?.optInt("multiplier", 2) ?: 2).toString()
             campaignWeekday = (s.optJSONObject("campaign")?.optInt("weekday", 2) ?: 2).toString()
+            campaignStart = s.optJSONObject("campaign")?.optString("start")
+                ?.takeIf { it.isNotBlank() } ?: LocalDate.now().toString()
+            campaignEnd = s.optJSONObject("campaign")?.optString("end")
+                ?.takeIf { it.isNotBlank() } ?: LocalDate.now().plusDays(30).toString()
             vipSilver = (s.optJSONObject("vip")?.optInt("silver", 10) ?: 10).toString()
             vipGold = (s.optJSONObject("vip")?.optInt("gold", 25) ?: 25).toString()
             communityName = s.optJSONObject("community")?.optString("name").orEmpty()
@@ -113,7 +120,9 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                 option("Tijdelijke stempelacties", campaign) { campaign = it }
                 if (campaign) {
                     OutlinedTextField(campaignMultiplier, { campaignMultiplier = it }, label = { Text("Stempelvermenigvuldiger (1–3)") }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(campaignWeekday, { campaignWeekday = it }, label = { Text("Weekdag (0 zondag t/m 6 zaterdag)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(campaignWeekday, { campaignWeekday = it }, label = { Text("Weekdag (-1 alle dagen, 0 zondag t/m 6 zaterdag)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(campaignStart, { campaignStart = it }, label = { Text("Startdatum (JJJJ-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(campaignEnd, { campaignEnd = it }, label = { Text("Einddatum (JJJJ-MM-DD)") }, modifier = Modifier.fillMaxWidth())
                 }
                 option("VIP-niveaus", vip) { vip = it }
                 if (vip) {
@@ -146,10 +155,13 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                 val bonus = referralBonus.toIntOrNull()
                 val multiplier = campaignMultiplier.toIntOrNull()
                 val weekday = campaignWeekday.toIntOrNull()
+                val from = runCatching { LocalDate.parse(campaignStart) }.getOrNull()
+                val until = runCatching { LocalDate.parse(campaignEnd) }.getOrNull()
                 val silver = vipSilver.toIntOrNull()
                 val gold = vipGold.toIntOrNull()
                 if (days == null || days !in 7..365 || bonus == null || bonus !in 1..3 ||
-                    multiplier == null || multiplier !in 1..3 || weekday == null || weekday !in 0..6 ||
+                    multiplier == null || multiplier !in 1..3 || weekday == null || weekday !in -1..6 ||
+                    from == null || until == null || until.isBefore(from) || until.isAfter(from.plusDays(366)) ||
                     silver == null || silver !in 1..1000 || gold == null || gold !in (silver+1)..2000) {
                     message = "Controleer alle dagen, bonussen, actiedagen en VIP-grenzen."; return@Button
                 }
@@ -167,7 +179,8 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                             .put("rewards", sortedRewards)
                             .put("retention", JSONObject().put("enabled", retention).put("days", days))
                             .put("referral", JSONObject().put("enabled", referral).put("bonus", bonus))
-                            .put("campaign", JSONObject().put("enabled", campaign).put("multiplier", multiplier).put("weekday", weekday))
+                            .put("campaign", JSONObject().put("enabled", campaign).put("multiplier", multiplier)
+                                .put("weekday", weekday).put("start", campaignStart).put("end", campaignEnd))
                             .put("vip", JSONObject().put("enabled", vip).put("silver", silver).put("gold", gold))
                             .put("locations", JSONObject().put("enabled", locations)
                                 .put("names", JSONArray(locationsText.lines().map { it.trim() }.filter { it.isNotEmpty() })))
