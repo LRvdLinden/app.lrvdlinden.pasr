@@ -51,6 +51,14 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/q.json)
           head -c 600 /tmp/r.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Schema failed (HTTP $code)"; exit 1; }
+      - name: Loyalty 2 terugkomoverzicht (alleen eigenaar, geen marketingverzending)
+        if: steps.check.outputs.skip != '1'
+        run: |
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/loyalty2_retention.sql").read()}))' > /tmp/retention.json
+          code=$(curl -s -o /tmp/retention-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/retention.json)
+          head -c 600 /tmp/retention-result.txt; echo
+          [ "$code" -lt 300 ] || { echo "::error::Retention migration failed (HTTP $code)"; exit 1; }
       - name: Winkelcatalogus (eenmalige vulling; bestaande winkels in het beheer blijven zoals ze zijn)
         if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/stores.json') != ''
         run: python3 supabase/catalog/seed.py
