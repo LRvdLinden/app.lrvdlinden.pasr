@@ -155,6 +155,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Check generated English strings for Zakelijk
+        if: matrix.app == 'zakelijk'
+        run: |
+          (cd android/zakelijk && python3 tools/make_strings.py)
+          git diff --exit-code -- android/zakelijk/app/src/main/java/app/lrvdlinden/pasrzakelijk/core/EnStrings.kt
       - name: Compile debug APK (no signing secrets)
         working-directory: android/${{ matrix.app }}
         run: |
