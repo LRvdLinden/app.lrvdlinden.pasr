@@ -4,7 +4,7 @@ package app.lrvdlinden.pasrzakelijk.core
 // Niet met de hand wijzigen.
 
 internal object EnStrings {
-    val map: Map<String, String> = HashMap<String, String>(628).apply {
+    val map: Map<String, String> = HashMap<String, String>(630).apply {
         part0(this)
         part1(this)
         part2(this)
@@ -210,6 +210,7 @@ internal object EnStrings {
         m["Net al gescand. Wacht een paar seconden."] = "Just scanned. Wait a few seconds."
         m["Net al gestempeld. Weer mogelijk %@."] = "Just stamped. Possible again %@."
         m["Niet nu"] = "Not now"
+        m["Nieuw aanmaken"] = "Create new"
         m["Nieuw lid"] = "New member"
         m["Nieuwe kaart"] = "New card"
         m["Nieuwe leden"] = "New members"
@@ -257,10 +258,10 @@ internal object EnStrings {
         m["Privacy en beveiliging"] = "Privacy and security"
         m["Privacyverklaring"] = "Privacy policy"
         m["QR, link en flyer"] = "QR, link and flyer"
-        m["QR-code van de kaart"] = "QR code of the card"
     }
 
     private fun part3(m: HashMap<String, String>) {
+        m["QR-code van de kaart"] = "QR code of the card"
         m["QR-code van de uitnodiging"] = "QR code of the invitation"
         m["Richt de camera op de QR-code van je klant"] = "Point the camera at your customer's QR code"
         m["Scan de QR-code van je klant, kies het aantal stempels en tik op Stempels toevoegen."] = "Scan your customer's QR code, choose the number of stamps and tap Add stamps."
