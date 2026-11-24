@@ -502,7 +502,15 @@ fun ReceiptDetailScreen(id: String) {
         confirmButton = {
             TextButton({
                 r.cardID?.let { cid -> CardStore.get(cid)?.let { c ->
-                    r.useID?.let { uid -> CardStore.upsert(c.updatingUse(uid) { e -> if (e.receiptID == r.id) e.copy(receiptID = null) else e }) }
+                    r.useID?.let { uid ->
+                        val use = c.uses.firstOrNull { it.id == uid && it.receiptID == r.id }
+                        if (use?.source == "receipt") {
+                            // Een uitsluitend vanuit deze bon aangemaakt moment verdwijnt mee.
+                            CardStore.upsert(c.copy(history = c.history.filter { it.id != uid }))
+                        } else if (use != null) {
+                            CardStore.upsert(c.updatingUse(uid) { it.copy(receiptID = null) })
+                        }
+                    }
                 } }
                 ReceiptStore.delete(r.id)
                 confirmDelete = false
