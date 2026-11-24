@@ -144,6 +144,68 @@ object ReceiptStore {
     }
 }
 
+/** Zelfde gedrag als ReceiptUseLinker op iOS: een bon krijgt een gebruiksmoment.
+ * Eerst datum+bedrag matchen; ontbreekt dat moment, maak het aan op de datum van de bon.
+ * Bij cadeaukaarten registreert dit enkel de winkelbetaling, nooit een saldoafboeking. */
+object ReceiptUseLinker {
+    fun attach(receipt: Receipt, card: Card, preferredUse: String? = null): Pair<Receipt, Card> {
+        if (receipt.cardID != card.id) return receipt to card
+        card.uses.firstOrNull { it.receiptID == receipt.id }?.let {
+            return receipt.copy(useID = it.id) to card
+        }
+        val available = card.uses.filter {
+            it.receiptID == null && abs(it.date - receipt.date) <= 86_400_000L
+        }
+        val exact = available.filter { event ->
+            receipt.total?.takeIf { it > 0 }?.let { value ->
+                listOfNotNull(event.amount, event.pendingAmount).any { abs(it - value) <= 0.02 }
+            } ?: false
+        }.minByOrNull { abs(it.date - receipt.date) }
+        val unknown = available.filter { it.amount == null && it.pendingAmount == null }
+        val event = preferredUse?.let { id -> available.firstOrNull { it.id == id } }
+            ?: exact ?: unknown.singleOrNull()
+        val eventId: String
+        val updatedCard: Card
+        if (event != null) {
+            eventId = event.id
+            updatedCard = card
+        } else {
+            val created = CardEvent(date = receipt.date, kind = "shown", source = "receipt")
+            // Gebruik niet Card.used(): die voegt transacties binnen 15 minuten samen,
+            // ook wanneer het om verschillende kassabonnen gaat.
+            eventId = created.id
+            updatedCard = card.copy(history = (listOf(created) + card.history)
+                .filter { it.date >= nowMs() - 90L * 86_400_000 }
+                .sortedByDescending { it.date }.take(150), updatedAt = nowMs())
+            if (updatedCard.uses.none { it.id == eventId }) return receipt to card
+        }
+        val linked = updatedCard.updatingUse(eventId) { old ->
+            old.copy(
+                receiptID = receipt.id,
+                amount = old.amount ?: receipt.total?.takeIf { it > 0 },
+                pendingAmount = if (old.amount == null && receipt.total != null) null else old.pendingAmount
+            )
+        }
+        return receipt.copy(useID = eventId) to linked
+    }
+
+    /** Eenmalig herstel van bonnen uit oude builds. Herhaald uitvoeren geeft geen extra regels. */
+    fun reconcile() {
+        ReceiptStore.receipts.value.forEach { receipt ->
+            val id = receipt.cardID ?: return@forEach
+            val card = CardStore.get(id) ?: return@forEach
+            if (card.deletedAt != null) return@forEach
+            val good = card.uses.any { it.id == receipt.useID && it.receiptID == receipt.id }
+            if (good) return@forEach
+            val (fixedReceipt, fixedCard) = attach(receipt, card)
+            if (fixedReceipt.useID != null) {
+                if (fixedCard != card) CardStore.upsert(fixedCard)
+                if (fixedReceipt != receipt) ReceiptStore.save(fixedReceipt)
+            }
+        }
+    }
+}
+
 /** Totaal en datum uit de tekst van een kassabon (zelfde regels als ReceiptReader op iOS). */
 object ReceiptParser {
     data class Result(val total: Double?, val date: Long?, val lines: List<String> = emptyList())
