@@ -103,6 +103,7 @@ fun CardDetailScreen(id: String) {
     if (card == null) { LaunchedEffect(Unit) { nav.pop() }; return }
     var revealed by remember(id) { mutableStateOf(!card.isLocked) }
     var gwAvailable by remember { mutableStateOf(false) }
+    var vipStatus by remember(id) { mutableStateOf<String?>(null) }
     var gwBusy by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var amountDialog by remember { mutableStateOf<String?>(null) }
@@ -137,7 +138,18 @@ fun CardDetailScreen(id: String) {
         UsePrompts.cardOpened()
         CardStore.upsert(card.opened(), touch = false)
         gwAvailable = GoogleWallet.isAvailable()
-        if (card.isBusinessStamps) Business.refresh(card)?.let { GoogleWallet.updateIfSaved(it) }
+        if (card.isBusinessStamps) {
+            Business.refresh(card)?.let { GoogleWallet.updateIfSaved(it) }
+            val code = card.details.memberCode
+            if (!code.isNullOrBlank()) runCatching {
+                val data = Api.publicRpc("pasr_business_vip_status", JSONObject().put("p_code", code)) as? JSONObject
+                vipStatus = if (data?.optBoolean("enabled") == true) {
+                    val tier = data.optString("tier")
+                    val count = data.optInt("visits")
+                    "VIP " + tier + " · " + count + " bezoeken"
+                } else null
+            }
+        }
     }
     // volle helderheid zolang de code in beeld is (scanners bij de kassa)
     DisposableEffect(Unit) {
@@ -206,6 +218,7 @@ fun CardDetailScreen(id: String) {
                         Text("${card.details.stampsCountValue} van ${card.details.stampsTotalValue}: ${card.details.stampsProgressText}",
                             fontWeight = FontWeight.SemiBold)
                         card.details.reward?.let { Text("Beloning: $it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        vipStatus?.let { Text(it, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) }
                         Gap(6.dp)
                         Text("Laat de QR-code scannen bij de kassa. Alleen de zaak zet stempels.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

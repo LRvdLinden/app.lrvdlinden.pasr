@@ -10,6 +10,9 @@ struct StampControls: View {
     @State private var refreshing = false
     @State private var referralURL: URL?
     @State private var referralError: String?
+    @State private var vipTier: String?
+    @State private var vipVisits = 0
+    @State private var nextTierAt: Int?
 
     private var details: CardDetails { card.details }
 
@@ -28,6 +31,15 @@ struct StampControls: View {
                     .pasrGlassButton()
                     .disabled(refreshing)
                     .accessibilityLabel(Text("Stand verversen"))
+                }
+                if let vipTier {
+                    HStack(spacing: 8) {
+                        Image(systemName: "crown.fill").foregroundStyle(Brand.iris)
+                        Text("VIP \(vipTier) · \(vipVisits) bezoeken").font(.footnote.weight(.semibold))
+                        if let nextTierAt { Text("· volgende niveau bij \(nextTierAt)").font(.caption).foregroundStyle(.secondary) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .accessibilityElement(children: .combine)
                 }
                 if let referralURL {
                     ShareLink(item: referralURL) {
@@ -82,10 +94,22 @@ struct StampControls: View {
         }
     }
 
+    private func refreshVIP() async {
+        guard let code = details.memberCode else { return }
+        guard let response = try? await AccountService.shared.publicRPC("pasr_business_vip_status",body:["p_code":code]),
+              let data = response as? [String:Any], data["enabled"] as? Bool == true else {
+            vipTier = nil; return
+        }
+        vipTier = data["tier"] as? String
+        vipVisits = (data["visits"] as? NSNumber)?.intValue ?? 0
+        nextTierAt = (data["next_at"] as? NSNumber)?.intValue
+    }
+
     private func refresh() async {
         refreshing = true
         defer { refreshing = false }
         if await BusinessCards.refresh(card) { try? context.save() }
+        await refreshVIP()
     }
 }
 
