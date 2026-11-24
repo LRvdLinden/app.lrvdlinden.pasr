@@ -424,6 +424,7 @@ SCRIPTS = '''  <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>
 {jsqr}  <script src="/assets/promo.js"></script>
   <script src="/assets/loyalty2.js?v=zakelijk-tabfix-1"></script>
+  <script src="/assets/promo-codes-business.js"></script>
   <script src="/assets/zakelijk.js?v=zakelijk-tabfix-1"></script>'''
 JSQR = '  <script src="/assets/vendor/jsqr.min.js"></script>\n'
 APP_PAGES = [
