@@ -138,8 +138,15 @@
      }catch(err){notice(root,err.message||"Opslaan mislukt.",false);}finally{button.disabled=false;}
    });
    $("#pz2Redeem",root).addEventListener("click",async function(){var msg=$("#pz2RedeemMessage",root);
-     if(!window.confirm("Controleer bij de kassa of je de korting daadwerkelijk wilt geven. Deze bon wordt definitief als gebruikt gemarkeerd."))return;
-     try{var x=await rpc("pasr_business_coupon_redeem",{p_code:$("#pz2RedeemCode",root).value},true);
+     var code=$("#pz2RedeemCode",root).value.trim().toUpperCase();
+     if(!code){msg.textContent="Vul eerst de kortingsboncode in.";return;}
+     try{
+       var check=await rpc("pasr_business_coupon_check",{p_code:code},true);
+       if(!check||check.valid===false||check.ok===false){
+         msg.textContent=(check&&check.reason)||"De bon is ongeldig.";return;
+       }
+       if(!window.confirm("Kortingsbon "+(check.title||code)+" definitief verzilveren?"))return;
+       var x=await rpc("pasr_business_coupon_redeem",{p_code:code},true);
        msg.textContent="Geldig: "+x.title+" · korting "+money(x.discount_type,x.discount_value)+". Bon verzilverd.";reload();
      }catch(e){msg.textContent=e.message||"Niet geldig.";}
    });
@@ -351,5 +358,68 @@
   });
   refresh();
  }
- window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,locations:locationsView,publicPage:publicPage};
+
+ async function communityView(root,b,rpc){
+   root.innerHTML='<div class="zd-ptitle"><div><h2>Samenwerkingen</h2><p class="zd-sub">Gezamenlijke beloningen voor bezoeken bij verschillende winkels. Elke ondernemer kiest zelf om deel te nemen; er worden geen klantgegevens tussen winkels gedeeld.</p></div></div>'+
+     '<div class="pz2-grid"><section class="pz2-panel"><h3>Nieuwe gezamenlijke actie</h3><form class="pz2-form" id="pz2CommunityCreate">'+
+     field("Actienaam","name","")+field("Beloning","reward","")+
+     '<div class="pz2-fields">'+field("Verschillende winkels nodig (2–20)","required","3","number")+
+     field("Looptijd in dagen (1–366)","days","60","number")+'</div>'+
+     '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Samenwerking starten</button></form></section>'+
+     '<section class="pz2-panel"><h3>Beschikbare samenwerkingen</h3><div id="pz2CommunityList" role="status">Laden…</div></section></div>';
+   var form=$("#pz2CommunityCreate",root),list=$("#pz2CommunityList",root);
+   async function refresh(){
+     try{
+       var rows=await rpc("pasr_business_community_list",{p_business:b.id},true);
+       if(!Array.isArray(rows))throw new Error("Ongeldig antwoord");
+       list.innerHTML=rows.length?rows.map(function(c){
+         return '<article class="pz2-planned"><strong>'+escape(c.name)+'</strong>'+
+           '<small>Initiatief: '+escape(c.lead_business)+' · '+escape(c.participants)+' deelnemers · geldig tot '+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+'</small>'+
+           '<p>'+escape(c.reward)+' na bezoeken bij '+escape(c.required)+' verschillende winkels</p>'+
+           (c.joined?'<label class="pz2-field">Lidcode bij de kassa<input data-member="'+escape(c.id)+'" placeholder="PZ…" maxlength="40" autocomplete="off"></label>'+
+             '<button class="zk-btn sm" type="button" data-claim="'+escape(c.id)+'">Beloning controleren en uitgeven</button>':
+             '<button class="zk-btn ghost sm" type="button" data-join="'+escape(c.id)+'">Met mijn onderneming deelnemen</button>')+
+           '</article>';
+       }).join(""):'<p>Er zijn nog geen gezamenlijke acties.</p>';
+       list.querySelectorAll("[data-join]").forEach(function(btn){
+         btn.addEventListener("click",async function(){
+           if(!confirm("Met jouw onderneming deelnemen?"))return;
+           btn.disabled=true;
+           try{await rpc("pasr_business_community_join",{p_business:b.id,p_campaign:btn.dataset.join},true);refresh();}
+           catch(e){alert(e.message||"Deelnemen mislukt.");btn.disabled=false;}
+         });
+       });
+       list.querySelectorAll("[data-claim]").forEach(function(btn){
+         btn.addEventListener("click",async function(){
+           var id=btn.dataset.claim,entry=list.querySelector('[data-member="'+id+'"]');
+           var code=(entry&&entry.value||"").trim().toUpperCase();
+           if(!/^PZ[A-Z0-9]{5,38}$/.test(code)){alert("Vul een geldige PZ-lidcode in.");return;}
+           if(!confirm("De server controleert de bezoeken. Beloning nu eenmalig uitgeven?"))return;
+           btn.disabled=true;
+           try{
+             var result=await rpc("pasr_business_community_claim",
+               {p_campaign:id,p_business:b.id,p_member_code:code},true);
+             alert("Beloning uitgegeven: "+(result.reward||"gezamenlijke beloning"));refresh();
+           }catch(e){alert(e.message||"Deze beloning kan niet worden uitgegeven.");btn.disabled=false;}
+         });
+       });
+     }catch(e){list.textContent="Samenwerkingen konden niet worden geladen: "+(e.message||"onbekend");}
+   }
+   form.addEventListener("submit",async function(e){
+     e.preventDefault();var f=new FormData(form),name=String(f.get("name")||"").trim(),
+       reward=String(f.get("reward")||"").trim(),required=Number(f.get("required")),days=Number(f.get("days"));
+     if(name.length<3||name.length>80||reward.length<3||reward.length>120||
+        !Number.isInteger(required)||required<2||required>20||
+        !Number.isInteger(days)||days<1||days>366){
+       notice(form,"Controleer naam, beloning, aantal winkels en looptijd.",false);return;
+     }
+     var btn=form.querySelector("button[type=submit]");btn.disabled=true;
+     try{
+       await rpc("pasr_business_community_create",{p_business:b.id,p_name:name,p_reward:reward,p_required:required,p_days:days},true);
+       form.reset();notice(form,"Samenwerking gestart. Andere ondernemingen kunnen nu deelnemen.",true);refresh();
+     }catch(e){notice(form,e.message||"Opslaan mislukt.",false);}finally{btn.disabled=false;}
+   });
+   refresh();
+ }
+ window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,locations:locationsView,community:communityView,publicPage:publicPage};
 })();
