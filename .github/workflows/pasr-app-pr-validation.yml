@@ -9,6 +9,8 @@ on:
       - "Widgets/**"
       - "Pasr.xcodeproj/**"
       - "zakelijk/apple/**"
+      - "supabase/**"
+      - ".github/workflows/backend.yml"
       - "android/pasr/**"
       - "android/zakelijk/**"
       - ".github/workflows/android-*.yml"
@@ -48,6 +50,56 @@ jobs:
         run: |
           python3 zakelijk/apple/make_project.py
           git diff --exit-code -- zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj zakelijk/apple/PasrZakelijk.xcodeproj/xcshareddata/xcschemes/PasrZakelijk.xcscheme
+
+  backend-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse every new PostgreSQL migration
+        run: |
+          python3 -m venv /tmp/pasr-sql
+          /tmp/pasr-sql/bin/pip install -q 'pglast>=7,<10'
+          /tmp/pasr-sql/bin/python - <<'PY'
+          from pathlib import Path
+          from pglast import parse_sql
+          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql'):
+              path=Path('supabase')/name
+              if path.exists():
+                  parse_sql(path.read_text())
+                  print('SQL parsed:',name)
+          PY
+      - name: Parse modified Swift source
+        run: |
+          if command -v swiftc >/dev/null 2>&1; then
+            for f in zakelijk/apple/PasrZakelijk/Views/BusinessMarketingView.swift \
+                     zakelijk/apple/PasrZakelijk/Views/BusinessLocationsView.swift \
+                     zakelijk/apple/PasrZakelijk/Views/BusinessCommunityView.swift \
+                     zakelijk/apple/PasrZakelijk/Views/LoyaltyProgramView.swift \
+                     zakelijk/apple/PasrZakelijk/Views/OverviewView.swift \
+                     App/Views/PasrBenefitsView.swift App/Views/StampViews.swift; do
+              swiftc -frontend -parse "$f"
+            done
+          else
+            echo "::warning::Swift compiler not preinstalled on Linux runner"
+          fi
+
+  ios-compile:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: Pasr.xcodeproj
+            scheme: Pasr
+          - project: zakelijk/apple/PasrZakelijk.xcodeproj
+            scheme: PasrZakelijk
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile iOS Simulator without signing
+        run: |
+          xcodebuild -project "${{ matrix.project }}" -scheme "${{ matrix.scheme }}" \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug CODE_SIGNING_ALLOWED=NO build
 
   android:
     runs-on: ubuntu-latest
