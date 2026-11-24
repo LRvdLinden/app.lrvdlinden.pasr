@@ -55,6 +55,44 @@ jobs:
           python3 zakelijk/apple/make_project.py
           git diff --exit-code -- zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj zakelijk/apple/PasrZakelijk.xcodeproj/xcshareddata/xcschemes/PasrZakelijk.xcscheme
 
+  backend-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: pasr_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: pasr_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test campaign, retention and community transactions on isolated Postgres
+        env:
+          PGPASSWORD: pasr_test_password
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+          fi
+          for file in \
+            supabase/tests/loyalty_fixture.sql \
+            supabase/loyalty-campaign.sql \
+            supabase/loyalty-retention.sql \
+            supabase/loyalty-community.sql \
+            supabase/loyalty-vip.sql \
+            supabase/tests/loyalty_smoke.sql; do
+            echo "::group::SQL $file"
+            psql -h localhost -U postgres -d pasr_test -v ON_ERROR_STOP=1 -f "$file"
+            echo "::endgroup::"
+          done
+
   backend-syntax:
     runs-on: ubuntu-latest
     steps:
