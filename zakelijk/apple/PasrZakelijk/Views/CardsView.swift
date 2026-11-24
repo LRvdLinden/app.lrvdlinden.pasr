@@ -12,6 +12,9 @@ struct CardsView: View {
     @State private var promoting: BusinessCard?
     @State private var program: BusinessCard?
     @State private var coupons = false
+    @State private var marketing = false
+    @State private var locations = false
+    @State private var community = false
 
     var body: some View {
         NavigationStack {
@@ -67,6 +70,9 @@ struct CardsView: View {
             .toolbar {
                 BusinessPicker()
                 ToolbarItem(placement: .primaryAction) {
+                    Button("Samenwerkingen", systemImage: "person.3") { community = true }
+                    Button("Vestigingen", systemImage: "mappin.and.ellipse") { locations = true }
+                    Button("Marketingkalender", systemImage: "calendar") { marketing = true }
                     Button("Kortingsbonnen", systemImage: "ticket") { coupons = true }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -89,6 +95,15 @@ struct CardsView: View {
             }
             .sheet(isPresented: $coupons) {
                 BusinessCouponsView(business: business).trackModal()
+            }
+            .sheet(isPresented: $marketing) {
+                BusinessMarketingView(business: business).trackModal()
+            }
+            .sheet(isPresented: $locations) {
+                BusinessLocationsView(business: business).trackModal()
+            }
+            .sheet(isPresented: $community) {
+                BusinessCommunityView(business: business).trackModal()
             }
         }
     }

@@ -13,9 +13,14 @@ struct LoyaltyProgramView: View {
     @State private var referralBonus = 1
     @State private var campaignOn = false
     @State private var campaignMultiplier = 2
+    @State private var campaignWeekday = 2
+    @State private var campaignStart = Date()
+    @State private var campaignEnd = Calendar.current.date(byAdding: .day, value: 30, to: .now) ?? .now
     @State private var vipOn = false
     @State private var silver = 10
     @State private var gold = 25
+    @State private var vipSilverBenefit = ""
+    @State private var vipGoldBenefit = ""
     @State private var locationsOn = false
     @State private var locationNames = ""
     @State private var marketingOn = false
@@ -58,13 +63,25 @@ struct LoyaltyProgramView: View {
                 } header: { Label("Vrienden uitnodigen", systemImage: "person.2") }
                 Section {
                     Toggle("Tijdelijke stempelactie", isOn: $campaignOn)
-                    if campaignOn { Stepper("\(campaignMultiplier) keer stempels", value: $campaignMultiplier, in: 1...3) }
+                    if campaignOn {
+                        Stepper("\(campaignMultiplier) keer stempels", value: $campaignMultiplier, in: 1...3)
+                        DatePicker("Start actie", selection: $campaignStart, displayedComponents: .date)
+                        DatePicker("Einde actie", selection: $campaignEnd, in: campaignStart..., displayedComponents: .date)
+                        Picker("Actiedag", selection: $campaignWeekday) {
+                            Text("Elke dag").tag(-1)
+                            ForEach(0..<7, id: \.self) { day in
+                                Text(["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"][day]).tag(day)
+                            }
+                        }
+                    }
                 } header: { Label("Acties", systemImage: "bolt") }
                 Section {
                     Toggle("VIP-niveaus", isOn: $vipOn)
                     if vipOn {
                         Stepper("Zilver vanaf \(silver) bezoeken", value: $silver, in: 1...1000)
                         Stepper("Goud vanaf \(gold) bezoeken", value: $gold, in: (silver+1)...2000)
+                        TextField("Voordeel Zilver (optioneel)", text: $vipSilverBenefit)
+                        TextField("Voordeel Goud (optioneel)", text: $vipGoldBenefit)
                     }
                 } header: { Label("VIP", systemImage: "crown") }
                 Section {
@@ -130,10 +147,18 @@ struct LoyaltyProgramView: View {
             let campaign = settings?.object("campaign")
             campaignOn = campaign?.bool("enabled") ?? false
             campaignMultiplier = campaign?.int("multiplier") ?? 2
+            campaignWeekday = campaign?.int("weekday") ?? 2
+            let dateFormat = DateFormatter()
+            dateFormat.locale = Locale(identifier: "en_US_POSIX")
+            dateFormat.dateFormat = "yyyy-MM-dd"
+            if let raw = campaign?.string("start"), let date = dateFormat.date(from: raw) { campaignStart = date }
+            if let raw = campaign?.string("end"), let date = dateFormat.date(from: raw) { campaignEnd = date }
             let vip = settings?.object("vip")
             vipOn = vip?.bool("enabled") ?? false
             silver = vip?.int("silver") ?? 10
             gold = vip?.int("gold") ?? 25
+            vipSilverBenefit = vip?.string("silver_benefit") ?? ""
+            vipGoldBenefit = vip?.string("gold_benefit") ?? ""
             let locations = settings?.object("locations")
             locationsOn = locations?.bool("enabled") ?? false
             locationNames = (locations?.raw["names"] as? [String] ?? []).joined(separator: "\n")
@@ -162,20 +187,31 @@ struct LoyaltyProgramView: View {
             }
             rewards.sort { ($0["stamps"] as? Int ?? 0) < ($1["stamps"] as? Int ?? 0) }
         }
+        guard rewards.count <= 8, Set(rewards.compactMap { $0["stamps"] as? Int }).count == rewards.count else {
+            message = "Maximaal acht verschillende mijlpalen per kaart."; return
+        }
         guard gold > silver else { message = "Goud moet boven Zilver liggen."; return }
+        guard vipSilverBenefit.count <= 120 && vipGoldBenefit.count <= 120 else { message = "VIP-voordeel is maximaal 120 tekens."; return }
+        guard campaignEnd >= campaignStart else { message = "Actie eindigt vóór de startdatum."; return }
+        let dateFormat = DateFormatter()
+        dateFormat.locale = Locale(identifier: "en_US_POSIX")
+        dateFormat.dateFormat = "yyyy-MM-dd"
         let settings: [String: Any] = [
             "rewards": rewards,
             "retention": ["enabled": retentionOn, "days": retentionDays],
             "referral": ["enabled": referralOn, "bonus": referralBonus],
-            "campaign": ["enabled": campaignOn, "multiplier": campaignMultiplier, "weekday": 2],
-            "vip": ["enabled": vipOn, "silver": silver, "gold": gold],
+            "campaign": ["enabled": campaignOn, "multiplier": campaignMultiplier, "weekday": campaignWeekday,
+                         "start": dateFormat.string(from: campaignStart),
+                         "end": dateFormat.string(from: campaignEnd)],
+            "vip": ["enabled": vipOn, "silver": silver, "gold": gold,
+                    "silver_benefit": vipSilverBenefit, "gold_benefit": vipGoldBenefit],
             "locations": ["enabled": locationsOn, "names": locationNames.split(whereSeparator: \.isNewline).map(String.init)],
             "marketing": ["enabled": marketingOn, "name": String(marketingName.prefix(80))],
             "community": ["enabled": communityOn, "name": String(communityName.prefix(80))]
         ]
         do {
             _ = try await Account.shared.rpc("pasr_business_program", ["p_card": card.id, "p_settings": settings])
-            message = "Instellingen opgeslagen. Automatische acties worden pas uitgevoerd nadat de campagneverwerking actief is."
+            message = "Kaartinstellingen opgeslagen. Automatische terugkomberichten worden pas verstuurd wanneer klanten hiervoor toestemming hebben gegeven en de verzendservice actief is."
         } catch { message = error.localizedDescription }
     }
 }

@@ -12,7 +12,12 @@ struct StampControls: View {
     @State private var referralError: String?
     @State private var vipTier: String?
     @State private var vipVisits = 0
+    @State private var vipBenefit: String?
     @State private var nextTierAt: Int?
+    @State private var retentionAvailable = false
+    @State private var retentionSubscribed = false
+    @State private var retentionDays = 30
+    @State private var retentionError: String?
 
     private var details: CardDetails { card.details }
 
@@ -41,6 +46,10 @@ struct StampControls: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .accessibilityElement(children: .combine)
                 }
+                if let vipBenefit, !vipBenefit.isEmpty {
+                    Text("Jouw VIP-voordeel: \(vipBenefit)").font(.footnote)
+                        .foregroundStyle(Brand.iris)
+                }
                 if let referralURL {
                     ShareLink(item: referralURL) {
                         Label("Nodig een vriend uit", systemImage: "person.badge.plus")
@@ -54,6 +63,19 @@ struct StampControls: View {
                     }
                     .pasrGlassButton()
                 }
+                if (retentionAvailable || retentionSubscribed) && AccountService.shared.isSignedIn {
+                    Button {
+                        Task { await saveRetention(!retentionSubscribed) }
+                    } label: {
+                        Label("Terugkomherinnering na \(retentionDays) dagen: " +
+                              (retentionSubscribed ? "Aan" : "Uit"),
+                              systemImage: retentionSubscribed ? "bell.badge.fill" : "bell.slash")
+                            .font(.footnote)
+                    }.pasrGlassButton()
+                }
+                if let retentionError {
+                    Text(retentionError).font(.caption).foregroundStyle(Brand.coral)
+                }
                 if let referralError {
                     Text(referralError).font(.caption).foregroundStyle(Brand.coral)
                 }
@@ -62,7 +84,9 @@ struct StampControls: View {
             }
         }
         .frame(width: width)
-        .task(id: card.id) { if details.isBusiness { await refresh() } }
+        .task(id: card.id) {
+            if details.isBusiness { await refresh(); await loadRetention() }
+        }
     }
 
     private var progress: some View {
@@ -94,13 +118,37 @@ struct StampControls: View {
         }
     }
 
+    private func loadRetention() async {
+        guard let code = details.memberCode, AccountService.shared.isSignedIn else { return }
+        guard let result = try? await AccountService.shared.rpc(
+            "pasr_business_retention_status", body: ["p_code": code]),
+            let value = result as? [String: Any] else { return }
+        retentionAvailable = value["available"] as? Bool ?? false
+        retentionDays = (value["days"] as? NSNumber)?.intValue ?? 30
+        // State is initialized from the server before a switch is shown.
+        retentionSubscribed = value["enabled"] as? Bool ?? false
+    }
+
+    private func saveRetention(_ enabled: Bool) async {
+        guard let code = details.memberCode else { return }
+        do {
+            _ = try await AccountService.shared.rpc("pasr_business_retention_consent",
+                body: ["p_code": code, "p_enabled": enabled])
+            retentionSubscribed = enabled
+            retentionError = nil
+        } catch {
+            retentionError = error.localizedDescription
+        }
+    }
+
     private func refreshVIP() async {
         guard let code = details.memberCode else { return }
         guard let response = try? await AccountService.shared.publicRPC("pasr_business_vip_status",body:["p_code":code]),
               let data = response as? [String:Any], data["enabled"] as? Bool == true else {
-            vipTier = nil; return
+            vipTier = nil; vipBenefit = nil; return
         }
         vipTier = data["tier"] as? String
+        vipBenefit = data["benefit"] as? String
         vipVisits = (data["visits"] as? NSNumber)?.intValue ?? 0
         nextTierAt = (data["next_at"] as? NSNumber)?.intValue
     }

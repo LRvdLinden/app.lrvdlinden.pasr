@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.sp
 import app.lrvdlinden.pasrzakelijk.core.L
 import app.lrvdlinden.pasrzakelijk.data.Business
 import app.lrvdlinden.pasrzakelijk.data.BusinessApi
+import app.lrvdlinden.pasrzakelijk.data.Account
+import org.json.JSONObject
 import app.lrvdlinden.pasrzakelijk.data.BusinessCard
 import app.lrvdlinden.pasrzakelijk.data.DayStat
 import app.lrvdlinden.pasrzakelijk.data.LogEvent
@@ -119,6 +121,7 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
     var stats by remember { mutableStateOf(demoStats?.takeLast(30) ?: emptyList()) }
     var previous by remember { mutableStateOf(demoStats?.dropLast(30)?.takeLast(30) ?: emptyList()) }
     var members by remember { mutableStateOf<Int?>(null) }
+    var loyalty by remember { mutableStateOf<JSONObject?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf<MetricPoint?>(null) }
@@ -140,6 +143,10 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
                 stats = filled.takeLast(days)
                 if (!hasPrevious) showPrevious = false
                 members = total
+                loyalty = runCatching {
+                    Account.rpc("pasr_business_loyalty_insights",
+                        JSONObject().put("p_business", business.id)) as? JSONObject
+                }.getOrNull()
                 selected = null
                 error = null
             } catch (e: Exception) {
@@ -220,6 +227,27 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
                     Kpi(L("Stempels"), stats.sumOf { it.stamps }, Pz.mint, Modifier.weight(1f))
                     Kpi(L("Beloningen"), stats.sumOf { it.rewards }, Pz.coral, Modifier.weight(1f))
                     Kpi(L("Leden"), members ?: business.cards.sumOf { it.members }, Pz.iris, Modifier.weight(1f))
+                }
+                loyalty?.let { insights ->
+                    Spacer(Modifier.height(14.dp))
+                    SectionHeader(L("Klantenbinding · laatste 30/90 dagen"))
+                    Group {
+                        listOf(
+                            "Nieuwe klanten (30 dagen)" to "members_30d",
+                            "Terugkerende klanten (90 dagen)" to "returning_customers_90d",
+                            "Tussentijdse beloningen" to "milestone_rewards",
+                            "Kortingsbonnen bewaard" to "claimed_coupons",
+                            "Kortingsbonnen verzilverd" to "redeemed_coupons",
+                        ).forEachIndexed { index, entry ->
+                            if (index > 0) GroupDivider()
+                            Row(Modifier.fillMaxWidth().padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(L(entry.first), Modifier.weight(1f), color = Pz.text)
+                                Text(insights.optInt(entry.second).toString(), color = Pz.muted)
+                            }
+                        }
+                    }
+                    SectionFooter(L("Alleen geverifieerde servergegevens; dit is geen omzetmeting."))
                 }
                 error?.let { Spacer(Modifier.height(12.dp)); ErrorLine(it) }
                 SectionHeader(L("Leden per kaart"))

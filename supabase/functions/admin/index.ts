@@ -309,6 +309,56 @@ async function userSend(d: { device_id: string; token: string; sandbox: boolean 
   return other.ok ? other : r;
 }
 
+/** Persoonlijke terugkomherinneringen: opt-in per stempelkaart, nooit een massamailing.
+ * De database biedt maximaal vijftig geclaimde ontvangers per run aan en markeert
+ * alleen na een geslaagde verzending de laatst bezochte stempelcyclus. */
+async function pushRetention(): Promise<number> {
+  if (!pushConfigured()) return 0;
+  const { data, error } = await db.rpc("pasr_business_retention_due", { p_limit: 50 });
+  if (error) throw new Error(error.message);
+  const due = (Array.isArray(data) ? data : []) as {
+    member_id: string; user_id: string; stamp_at: string; business: string; card: string; days: number
+  }[];
+  let sent = 0;
+  for (const group of chunks(due, 5)) {
+    await Promise.all(group.map(async item => {
+      if (!isUuid(item.member_id) || !isUuid(item.user_id)) return;
+      const business = String(item.business || "de winkel").replace(/[\r\n]/g, " ").slice(0, 60);
+      const payload = {
+        aps: { alert: { title: `Je wordt gemist bij ${business}`,
+          body: "Kom weer langs en spaar verder met je Pasr-stempelkaart." },
+          sound: "default", "thread-id": "stamps" },
+        kind: "retention"
+      };
+      const [ios, android] = await Promise.all([
+        apnsConfigured()
+          ? db.from("pasr_user_push").select("device_id, token, sandbox").eq("user_id", item.user_id)
+          : Promise.resolve({ data: [], error: null }),
+        fcmConfigured()
+          ? db.from("pasr_devices").select("device_id,push_token")
+              .eq("app", "pasr").eq("push_provider", "fcm").eq("user_id", item.user_id)
+              .not("push_token", "is", null)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (ios.error || android.error) return;
+      const apple = (ios.data ?? []) as { device_id: string; token: string; sandbox: boolean }[];
+      const google = (android.data ?? []) as { device_id: string; push_token: string }[];
+      const appleResults = await Promise.all(apple.slice(0, 10).map(d => userSend(d, payload)));
+      const deliveredApple = appleResults.filter(x => x.ok).length;
+      const deliveredAndroid = fcmConfigured()
+        ? (await fcmToDevices(google.slice(0, 10).map(x => ({ device_id:x.device_id, token:x.push_token })), payload, "stamps")).sent
+        : 0;
+      if (deliveredApple + deliveredAndroid > 0) {
+        const ack = await db.rpc("pasr_business_retention_sent", {
+          p_member: item.member_id, p_stamp: item.stamp_at
+        });
+        if (!ack.error && ack.data === true) sent += deliveredApple + deliveredAndroid;
+      }
+    }));
+  }
+  return sent;
+}
+
 // ---- Bericht sturen (news): doelgroep, versturen, ongeldige tokens opruimen ----
 type NewsTarget = { device_id: string; token: string; sandbox: boolean; app: "pasr" | "zakelijk"; src: "device" | "user" | "news" };
 /** Bundle-id van Pasr Zakelijk (APNs-topic). */
@@ -448,6 +498,9 @@ Deno.serve(async (req) => {
     // Seintje van de database: eigen geheim, geen beheer-token.
     if (action === "notify") {
       if (!(await hookOk(req.headers.get("x-pasr-hook")))) return json({ error: "forbidden" }, 403);
+      if (body.kind === "retention") {
+        return json({ sent: await pushRetention() });
+      }
       if (body.kind === "member") {
         const code = typeof body.code === "string" && /^PZ[A-Z0-9]{10,40}$/i.test(body.code) ? body.code.toUpperCase() : null;
         if (!code) return json({ error: "bad_code" }, 400);

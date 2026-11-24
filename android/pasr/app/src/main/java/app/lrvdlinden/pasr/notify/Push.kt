@@ -54,6 +54,10 @@ class PasrMessagingService : FirebaseMessagingService() {
         val title = d["title"] ?: message.notification?.title ?: "Pasr"
         val body = d["body"] ?: message.notification?.body ?: return
         when (d["kind"]) {
+            "retention" -> {
+                Reminders.notify(applicationContext, "retention-" + title,
+                    Reminders.CHANNEL_STAMPS, title, body, null)
+            }
             "stamps" -> {
                 val code = d["code"]?.uppercase()
                 val card = CardStore.visible.firstOrNull { it.details.memberCode?.uppercase() == code }

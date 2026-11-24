@@ -29,6 +29,7 @@ import app.lrvdlinden.pasrzakelijk.data.BusinessCard
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDate
 
 /** Kaartgebonden instellingen met de echte Pasr Zakelijk-accountsession. */
 @Composable
@@ -47,6 +48,17 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
     var marketing by remember { mutableStateOf(false) }
     var community by remember { mutableStateOf(false) }
     var referralHelp by remember { mutableStateOf(false) }
+    var retentionDays by remember { mutableStateOf("30") }
+    var referralBonus by remember { mutableStateOf("1") }
+    var campaignMultiplier by remember { mutableStateOf("2") }
+    var campaignWeekday by remember { mutableStateOf("2") }
+    var campaignStart by remember { mutableStateOf(LocalDate.now().toString()) }
+    var campaignEnd by remember { mutableStateOf(LocalDate.now().plusDays(30).toString()) }
+    var vipSilver by remember { mutableStateOf("10") }
+    var vipGold by remember { mutableStateOf("25") }
+    var vipSilverBenefit by remember { mutableStateOf("") }
+    var vipGoldBenefit by remember { mutableStateOf("") }
+    var communityName by remember { mutableStateOf("") }
     var locationsText by remember { mutableStateOf("") }
     var campaignName by remember { mutableStateOf("") }
 
@@ -59,6 +71,19 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
             rewardsText = (0 until rew.length()).mapNotNull { i ->
                 rew.optJSONObject(i)?.let { j -> j.optInt("stamps").toString() + ": " + j.optString("title") }
             }.joinToString("\n")
+            retentionDays = (s.optJSONObject("retention")?.optInt("days", 30) ?: 30).toString()
+            referralBonus = (s.optJSONObject("referral")?.optInt("bonus", 1) ?: 1).toString()
+            campaignMultiplier = (s.optJSONObject("campaign")?.optInt("multiplier", 2) ?: 2).toString()
+            campaignWeekday = (s.optJSONObject("campaign")?.optInt("weekday", 2) ?: 2).toString()
+            campaignStart = s.optJSONObject("campaign")?.optString("start")
+                ?.takeIf { it.isNotBlank() } ?: LocalDate.now().toString()
+            campaignEnd = s.optJSONObject("campaign")?.optString("end")
+                ?.takeIf { it.isNotBlank() } ?: LocalDate.now().plusDays(30).toString()
+            vipSilver = (s.optJSONObject("vip")?.optInt("silver", 10) ?: 10).toString()
+            vipGold = (s.optJSONObject("vip")?.optInt("gold", 25) ?: 25).toString()
+            vipSilverBenefit = s.optJSONObject("vip")?.optString("silver_benefit").orEmpty()
+            vipGoldBenefit = s.optJSONObject("vip")?.optString("gold_benefit").orEmpty()
+            communityName = s.optJSONObject("community")?.optString("name").orEmpty()
             referral = s.optJSONObject("referral")?.optBoolean("enabled") == true
             retention = s.optJSONObject("retention")?.optBoolean("enabled") == true
             campaign = s.optJSONObject("campaign")?.optBoolean("enabled") == true
@@ -91,11 +116,25 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                         label = { Text("Bijvoorbeeld 3: Gratis koekje") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
                 }
                 option("Terugkomacties", retention) { retention = it }
+                if (retention) OutlinedTextField(retentionDays, { retentionDays = it }, label = { Text("Na hoeveel dagen (7–365)") }, modifier = Modifier.fillMaxWidth())
                 Row { option("Vrienden uitnodigen", referral) { referral = it } }
                 TextButton(onClick = { referralHelp = !referralHelp }) { Text("ⓘ Uitleg vrienden uitnodigen") }
-                if (referralHelp) Text("De ondernemer bepaalt of deze kaart referrals gebruikt. Een bonus mag pas na een geverifieerde eerste aankoop worden uitgegeven, niet bij alleen aanmelden.")
+                if (referralHelp) Text("Je schakelt de vriendenactie per kaart in. Een klant deelt een persoonlijke uitnodigingslink; de nieuwe klant krijgt eerst een geverifieerde stempel aan de kassa. Pas daarna krijgen beiden de ingestelde bonus. Zelfuitnodigingen tellen niet mee.")
+                if (referral) OutlinedTextField(referralBonus, { referralBonus = it }, label = { Text("Extra stempels per persoon (1–3)") }, modifier = Modifier.fillMaxWidth())
                 option("Tijdelijke stempelacties", campaign) { campaign = it }
+                if (campaign) {
+                    OutlinedTextField(campaignMultiplier, { campaignMultiplier = it }, label = { Text("Stempelvermenigvuldiger (1–3)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(campaignWeekday, { campaignWeekday = it }, label = { Text("Weekdag (-1 alle dagen, 0 zondag t/m 6 zaterdag)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(campaignStart, { campaignStart = it }, label = { Text("Startdatum (JJJJ-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(campaignEnd, { campaignEnd = it }, label = { Text("Einddatum (JJJJ-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                }
                 option("VIP-niveaus", vip) { vip = it }
+                if (vip) {
+                    OutlinedTextField(vipSilver, { vipSilver = it }, label = { Text("Zilver vanaf aantal bezoeken") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(vipGold, { vipGold = it }, label = { Text("Goud vanaf aantal bezoeken") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(vipSilverBenefit, { vipSilverBenefit = it }, label = { Text("Voordeel Zilver (optioneel)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(vipGoldBenefit, { vipGoldBenefit = it }, label = { Text("Voordeel Goud (optioneel)") }, modifier = Modifier.fillMaxWidth())
+                }
                 option("Meerdere vestigingen", locations) { locations = it }
                 if (locations) OutlinedTextField(locationsText, { locationsText = it },
                     label = { Text("Vestigingen, één per regel") }, modifier = Modifier.fillMaxWidth())
@@ -103,6 +142,7 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                 if (marketing) OutlinedTextField(campaignName, { campaignName = it },
                     label = { Text("Naam campagne") }, modifier = Modifier.fillMaxWidth())
                 option("Gezamenlijke winkelstraatactie", community) { community = it }
+                if (community) OutlinedTextField(communityName, { communityName = it }, label = { Text("Naam gezamenlijke actie") }, modifier = Modifier.fillMaxWidth())
                 if (message.isNotEmpty()) Text(message)
             }
         },
@@ -117,19 +157,45 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                     }
                     r.put(JSONObject().put("stamps", n).put("title", parts[1].trim()))
                 }
+                val days = retentionDays.toIntOrNull()
+                val bonus = referralBonus.toIntOrNull()
+                val multiplier = campaignMultiplier.toIntOrNull()
+                val weekday = campaignWeekday.toIntOrNull()
+                val from = runCatching { LocalDate.parse(campaignStart) }.getOrNull()
+                val until = runCatching { LocalDate.parse(campaignEnd) }.getOrNull()
+                val silver = vipSilver.toIntOrNull()
+                val gold = vipGold.toIntOrNull()
+                if (days == null || days !in 7..365 || bonus == null || bonus !in 1..3 ||
+                    multiplier == null || multiplier !in 1..3 || weekday == null || weekday !in -1..6 ||
+                    from == null || until == null || until.isBefore(from) || until.isAfter(from.plusDays(366)) ||
+                    silver == null || silver !in 1..1000 || gold == null || gold !in (silver+1)..2000) {
+                    message = "Controleer alle dagen, bonussen, actiedagen en VIP-grenzen."; return@Button
+                }
+                if (vipSilverBenefit.length > 120 || vipGoldBenefit.length > 120) {
+                    message = "VIP-voordelen mogen maximaal 120 tekens hebben."; return@Button
+                }
+                if (r.length() > 8) { message = "Maximaal acht mijlpalen per kaart."; return@Button }
+                val milestones = (0 until r.length()).map { r.getJSONObject(it).optInt("stamps") }
+                if (milestones.distinct().size != milestones.size) {
+                    message = "Elke beloningsmijlpaal moet uniek zijn."; return@Button
+                }
+                val sortedRewards = JSONArray()
+                (0 until r.length()).map { r.getJSONObject(it) }.sortedBy { it.optInt("stamps") }.forEach { sortedRewards.put(it) }
                 saving = true
                 scope.launch {
                     try {
                         val cfg = JSONObject()
-                            .put("rewards", r)
-                            .put("retention", JSONObject().put("enabled", retention).put("days", 30))
-                            .put("referral", JSONObject().put("enabled", referral).put("bonus", 1))
-                            .put("campaign", JSONObject().put("enabled", campaign).put("multiplier", 2).put("weekday", 2))
-                            .put("vip", JSONObject().put("enabled", vip).put("silver", 10).put("gold", 25))
+                            .put("rewards", sortedRewards)
+                            .put("retention", JSONObject().put("enabled", retention).put("days", days))
+                            .put("referral", JSONObject().put("enabled", referral).put("bonus", bonus))
+                            .put("campaign", JSONObject().put("enabled", campaign).put("multiplier", multiplier)
+                                .put("weekday", weekday).put("start", campaignStart).put("end", campaignEnd))
+                            .put("vip", JSONObject().put("enabled", vip).put("silver", silver).put("gold", gold)
+                                .put("silver_benefit", vipSilverBenefit).put("gold_benefit", vipGoldBenefit))
                             .put("locations", JSONObject().put("enabled", locations)
                                 .put("names", JSONArray(locationsText.lines().map { it.trim() }.filter { it.isNotEmpty() })))
                             .put("marketing", JSONObject().put("enabled", marketing).put("name", campaignName))
-                            .put("community", JSONObject().put("enabled", community).put("name", ""))
+                            .put("community", JSONObject().put("enabled", community).put("name", communityName.take(80)))
                         Account.rpc("pasr_business_program", JSONObject().put("p_card", card.id).put("p_settings", cfg))
                         message = "Instellingen opgeslagen."
                     } catch (e: Exception) {
