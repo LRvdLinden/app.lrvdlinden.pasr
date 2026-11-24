@@ -165,7 +165,7 @@ FEATURES = [
     ("devices", "#AF52DE", "Licht, donker en op je Mac", "Kies licht, donker of automatisch. Pasr werkt ook op je Mac en Apple Vision Pro.", 3, "theme"),
     ("stamp", "#7B4B2A", "Stempelkaarten", "Spaar stempels voor een gratis koffie of broodje, zonder papieren kaartje. Zoek de stempelkaart van je zaak in Pasr of scan de QR-code bij de toonbank: de zaak zet de stempels, ze komen er vanzelf bij, ook op je Wallet-pas. Heb je een zaak? <a href=\"/zakelijk/\">Pasr voor ondernemers</a>", 3, "stamps"),
     ("gift", "#6A5CFF", "Mijn voordelen: saldo en vervaldatums", "Een overzicht van het zelf bijgehouden cadeaukaarttegoed en naderende vervaldatums van cadeaukaarten en lidmaatschappen.", 3, "gift"),
-    ("ticket", "#2ED3A6", "Kortingsbonnen van ondernemers", "Ontdek tijdelijke kortingen van deelnemende ondernemers, bewaar een persoonlijke bon en toon de unieke QR-code bij de kassa. <a href="/kortingsbonnen/">Bekijk kortingsbonnen</a>.", 3, "types"),
+    ("ticket", "#2ED3A6", "Kortingsbonnen van ondernemers", "Ontdek tijdelijke kortingen van deelnemende ondernemers, bewaar een persoonlijke bon en toon de unieke QR-code bij de kassa. <a href=\"/kortingsbonnen/\">Bekijk kortingsbonnen</a>.", 3, "types"),
     ("cake", "#FF375F", "Verjaardagsvoordeel", "Veel winkels geven je iets op je verjaardag. Pasr zet het bij de kaart, van de officiële site, en herinnert je eraan in je verjaardagsmaand. Je verjaardag vul je zelf in, als je dat wilt, en blijft op je telefoon.", 3, "birthday"),
 ]
 
