@@ -6,6 +6,8 @@ SECTIONS = (
     ("kaarten", "/kaarten/", "Alle kaarten", "layers"),
     ("klantenkaart", "/klantenkaart/", "Klantenkaarten", "credit-card"),
     ("cadeaubon", "/cadeaubon/", "Cadeaukaarten", "gift"),
+    ("stempelkaarten", "/stempelkaarten/", "Stempelkaarten", "stamp"),
+    ("saldo-checken", "/saldo-checken/", "Saldo checken", "wallet"),
     ("kortingsbonnen", "/kortingsbonnen/", "Kortingsbonnen", "ticket"),
 )
 
@@ -13,10 +15,12 @@ def site_nav(active="kaarten"):
     return f'''<header class="wrap nav ch-site-nav">
   <a class="brand" href="/"><img src="/assets/icon.png" width="36" height="36" alt=""><span>pasr</span></a>
   <nav aria-label="Hoofdmenu"><ul>
-    <li><a href="/#functies">Functies</a></li>
-    <li><a href="/kaarten/"{' aria-current="page"' if active in ("kaarten", "klantenkaart", "cadeaubon", "kortingsbonnen") else ""}>Kaarten &amp; voordelen</a></li>
-    <li class="hide-sm"><a href="/zakelijk/">Voor ondernemers</a></li>
-    <li><a href="/support/">Support</a></li>
+    <li><a href="/kaarten/">Klantenkaarten</a></li>
+    <li><a href="/cadeaubon/">Cadeaukaarten</a></li>
+    <li><a href="/stempelkaarten/">Stempelkaarten</a></li>
+    <li><a href="/kortingsbonnen/">Kortingsbonnen</a></li>
+    <li><a href="/saldo-checken/">Saldo checken</a></li>
+    <li><a href="/zakelijk/">Zakelijk</a></li>
   </ul></nav>
 </header>'''
 
@@ -35,12 +39,16 @@ def hero(active="kaarten", count=None):
         "klantenkaart": "Vind jouw klantenkaart",
         "cadeaubon": "Ontdek cadeaukaarten en check je saldo",
         "kortingsbonnen": "Ontdek tijdelijke kortingsbonnen",
+        "stempelkaarten": "Spaar bij jouw favoriete ondernemers",
+        "saldo-checken": "Hoeveel staat er op jouw cadeaukaart?",
     }.get(active, "Kaarten &amp; voordelen")
     subtitle = {
         "kaarten": "Zoek in de kaartencatalogus van Pasr en ontdek actuele acties van ondernemers.",
         "klantenkaart": "Zoek een winkel en ontdek hoe je spaart en welke voordelen er zijn.",
         "cadeaubon": "Bekijk kaartinformatie, geldigheid en de officiële saldo-checker van de uitgever.",
         "kortingsbonnen": "Bewaar een persoonlijke kortingsbon en laat de unieke code bij de ondernemer scannen.",
+        "stempelkaarten": "Ontdek digitale stempelkaarten, lokale winkels en de beloningen die je kunt sparen.",
+        "saldo-checken": "Vind de officiële saldo checker van je cadeaukaart. Je voert je kaartnummer uitsluitend bij de uitgever in.",
     }.get(active, "")
     return f'''<section class="wrap ch-hero" aria-label="Kaarten en voordelen">
       <div class="ch-hero-copy">
@@ -55,8 +63,8 @@ def hero(active="kaarten", count=None):
         <div class="ch-hero-tags">
           <a href="/kaarten/?soort=klantenkaarten">Klantenkaarten</a>
           <a href="/kaarten/?soort=cadeaukaarten">Cadeaukaarten</a>
-          <a href="/kaarten/?soort=stempelkaarten">Stempelkaarten</a>
-          <a href="/kaarten/?soort=kortingsbonnen">Kortingsbonnen</a>
+          <a href="/stempelkaarten/">Stempelkaarten</a>
+          <a href="/kortingsbonnen/">Kortingsbonnen</a>
         </div>
       </div>
       <div class="ch-hero-art" aria-hidden="true">
