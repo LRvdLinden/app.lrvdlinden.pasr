@@ -112,7 +112,7 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
                                 JSONObject().put("p_code", code.trim().uppercase())) as? JSONObject
                             couponVerified = result?.optBoolean("valid", false) == true
                             message = if (couponVerified) {
-                                "Geldige bon: " + result.optString("title") + ". Controleer de korting aan de kassa."
+                                "Geldige bon: " + result?.optString("title").orEmpty() + ". Controleer de korting aan de kassa."
                             } else "Deze kortingsbon is ongeldig, verlopen of al gebruikt."
                         } catch (e: Exception) { couponVerified = false; message = e.message ?: "Bon niet geldig." }
                         processing = false
