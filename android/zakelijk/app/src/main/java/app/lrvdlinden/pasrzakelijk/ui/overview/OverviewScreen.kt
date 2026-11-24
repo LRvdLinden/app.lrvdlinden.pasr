@@ -122,6 +122,8 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
     var previous by remember { mutableStateOf(demoStats?.dropLast(30)?.takeLast(30) ?: emptyList()) }
     var members by remember { mutableStateOf<Int?>(null) }
     var loyalty by remember { mutableStateOf<JSONObject?>(null) }
+    var coupons by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var promoCodes by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf<MetricPoint?>(null) }
@@ -147,6 +149,16 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
                     Account.rpc("pasr_business_loyalty_insights",
                         JSONObject().put("p_business", business.id)) as? JSONObject
                 }.getOrNull()
+                val couponRows=runCatching {
+                    Account.rpc("pasr_business_coupon_list",JSONObject().put("p_business",business.id))
+                        as? org.json.JSONArray
+                }.getOrNull()
+                if(couponRows!=null)coupons=(0 until couponRows.length()).mapNotNull{couponRows.optJSONObject(it)}
+                val promoRows=runCatching {
+                    Account.rpc("pasr_business_promo_list",JSONObject().put("p_business",business.id))
+                        as? org.json.JSONArray
+                }.getOrNull()
+                if(promoRows!=null)promoCodes=(0 until promoRows.length()).mapNotNull{promoRows.optJSONObject(it)}
                 selected = null
                 error = null
             } catch (e: Exception) {
@@ -228,6 +240,31 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
                     Kpi(L("Beloningen"), stats.sumOf { it.rewards }, Pz.coral, Modifier.weight(1f))
                     Kpi(L("Leden"), members ?: business.cards.sumOf { it.members }, Pz.iris, Modifier.weight(1f))
                 }
+                Spacer(Modifier.height(14.dp))
+                SectionHeader("Zakelijke acties")
+                Group {
+                    val activeCoupons=coupons.count { c ->
+                        c.optBoolean("public") && runCatching {
+                            java.time.Instant.parse(c.optString("ends_at")).isAfter(java.time.Instant.now())
+                        }.getOrDefault(false)
+                    }
+                    val activeCodes=promoCodes.count { c ->
+                        c.optBoolean("active") && c.optInt("used_count")<c.optInt("max_uses")
+                    }
+                    listOf(
+                        "Stempelkaarten online" to business.cards.count{it.published},
+                        "Actieve kortingscoupons" to activeCoupons,
+                        "Actieve actiecodes" to activeCodes,
+                        "Actiecodes gebruikt" to promoCodes.sumOf{it.optInt("used_count")}
+                    ).forEachIndexed { index, entry ->
+                        if(index>0)GroupDivider()
+                        Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+                            Text(entry.first,Modifier.weight(1f),color=Pz.text)
+                            Text(entry.second.toString(),color=Pz.muted)
+                        }
+                    }
+                }
+                SectionFooter("Alle zakelijke functies blijven beschikbaar; aantallen komen uit je eigen producten.")
                 loyalty?.let { insights ->
                     Spacer(Modifier.height(14.dp))
                     SectionHeader(L("Klantenbinding · laatste 30/90 dagen"))
