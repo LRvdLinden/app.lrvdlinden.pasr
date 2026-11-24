@@ -4,7 +4,7 @@ package app.lrvdlinden.pasrzakelijk.core
 // Niet met de hand wijzigen.
 
 internal object EnStrings {
-    val map: Map<String, String> = HashMap<String, String>(630).apply {
+    val map: Map<String, String> = HashMap<String, String>(632).apply {
         part0(this)
         part1(this)
         part2(this)
@@ -38,6 +38,7 @@ internal object EnStrings {
         m["Account maken"] = "Create account"
         m["Account verwijderen"] = "Delete account"
         m["Account verwijderen?"] = "Delete account?"
+        m["Acties"] = "Actions"
         m["Adres (straat, huisnummer, plaats)"] = "Address (street, number, city)"
         m["Afkoeltijd"] = "Cooldown"
         m["Afkoeltijd: zo lang moet een klant wachten voor de volgende stempel. Bij scannen kies je zelf het aantal stempels, tot het maximum."] = "Cooldown: how long a customer has to wait for the next stamp. When scanning you choose the number of stamps yourself, up to the maximum."
@@ -91,10 +92,10 @@ internal object EnStrings {
         m["Donker"] = "Dark"
         m["E-mailadres"] = "Email address"
         m["E-mailadres (optioneel)"] = "Email address (optional)"
-        m["E-mailadres of wachtwoord klopt niet."] = "Email address or password is incorrect."
     }
 
     private fun part1(m: HashMap<String, String>) {
+        m["E-mailadres of wachtwoord klopt niet."] = "Email address or password is incorrect."
         m["Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat."] = "A code starts with PZ. Type it exactly as shown below the QR code."
         m["Een concept zie je alleen zelf. Zet de kaart online om de QR-code en flyer te gebruiken."] = "Only you can see a draft. Put the card online to use the QR code and flyer."
         m["Een klant krijgt niet twee keer kort na elkaar een stempel. Je kiest zelf hoe lang."] = "A customer can't get two stamps in quick succession. You choose how long."
@@ -174,10 +175,10 @@ internal object EnStrings {
         m["Leden"] = "Members"
         m["Leden per kaart"] = "Members per card"
         m["Licht"] = "Light"
-        m["Lid sinds %@"] = "Member since %@"
     }
 
     private fun part2(m: HashMap<String, String>) {
+        m["Lid sinds %@"] = "Member since %@"
         m["Link delen"] = "Share link"
         m["Log in met je Pasr-account. Ben je medewerker? Gebruik het account waarmee je de uitnodiging accepteert."] = "Sign in with your Pasr account. Staff member? Use the account you accept the invitation with."
         m["Logboek"] = "Log"
@@ -257,10 +258,10 @@ internal object EnStrings {
         m["Print de flyer en zet hem op de toonbank."] = "Print the flyer and put it on your counter."
         m["Privacy en beveiliging"] = "Privacy and security"
         m["Privacyverklaring"] = "Privacy policy"
-        m["QR, link en flyer"] = "QR, link and flyer"
     }
 
     private fun part3(m: HashMap<String, String>) {
+        m["QR, link en flyer"] = "QR, link and flyer"
         m["QR-code van de kaart"] = "QR code of the card"
         m["QR-code van de uitnodiging"] = "QR code of the invitation"
         m["Richt de camera op de QR-code van je klant"] = "Point the camera at your customer's QR code"
