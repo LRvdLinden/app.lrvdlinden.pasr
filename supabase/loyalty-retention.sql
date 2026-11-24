@@ -56,11 +56,11 @@ end $$;
 -- Alleen service_role haalt dagelijkse ontvangers op. Een claim wordt maximaal eenmaal per dag geprobeerd.
 -- Na een succesvolle push wordt precies de huidige stempelbeurt gemarkeerd als verzonden.
 create or replace function public.pasr_business_retention_due(p_limit integer default 50)
-returns jsonb language plpgsql security definer set search_path = '' as $$
+returns jsonb language plpgsql security definer set search_path = '' as $
+declare result jsonb;
 begin
  if p_limit not between 1 and 100 then raise exception 'Ongeldige limiet.' using errcode='22023'; end if;
- return coalesce((
-   with eligible as (
+ with eligible as (
      select o.member_id
      from public.pasr_business_retention_consents o
      join public.pasr_business_members m on m.id=o.member_id and m.user_id=o.user_id
@@ -92,8 +92,9 @@ begin
    join public.pasr_business_cards c on c.id=m.business_card_id
    join public.pasr_businesses b on b.id=c.business_id
    join public.pasr_business_programs cfg on cfg.card_id=c.id
- ),'[]'::jsonb);
-end $$;
+ into result;
+ return coalesce(result,'[]'::jsonb);
+end $;
 
 create or replace function public.pasr_business_retention_sent(p_member uuid,p_stamp timestamptz)
 returns boolean language plpgsql security definer set search_path = '' as $$
