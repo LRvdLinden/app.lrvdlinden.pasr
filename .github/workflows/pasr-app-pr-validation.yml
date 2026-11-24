@@ -43,6 +43,13 @@ jobs:
           python3 -m py_compile preview/build_preview.py
           test -f website/test/assets/pasr-preview.css
           test -f website/test/zakelijk/index.html
+          test -f website/assets/pasr-experience.css
+          test -f website/assets/pasr-experience.js
+          grep -q 'data-pasr-experience="live"' website/index.html
+          grep -q 'data-pv-demo="coupon"' website/zakelijk/index.html
+          grep -q 'class="pv-tabs"' website/cadeaubon/index.html
+          ! grep -q 'PASR TESTOMGEVING' website/index.html
+          ! grep -q 'noindex,nofollow' website/zakelijk/index.html
 
   zakelijk-website-integrity:
     runs-on: ubuntu-latest
