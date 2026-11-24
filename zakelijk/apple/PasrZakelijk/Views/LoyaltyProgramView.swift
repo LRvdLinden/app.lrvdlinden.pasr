@@ -13,6 +13,7 @@ struct LoyaltyProgramView: View {
     @State private var referralBonus = 1
     @State private var campaignOn = false
     @State private var campaignMultiplier = 2
+    @State private var campaignWeekday = 2
     @State private var vipOn = false
     @State private var silver = 10
     @State private var gold = 25
@@ -58,7 +59,14 @@ struct LoyaltyProgramView: View {
                 } header: { Label("Vrienden uitnodigen", systemImage: "person.2") }
                 Section {
                     Toggle("Tijdelijke stempelactie", isOn: $campaignOn)
-                    if campaignOn { Stepper("\(campaignMultiplier) keer stempels", value: $campaignMultiplier, in: 1...3) }
+                    if campaignOn {
+                        Stepper("\(campaignMultiplier) keer stempels", value: $campaignMultiplier, in: 1...3)
+                        Picker("Actiedag", selection: $campaignWeekday) {
+                            ForEach(0..<7, id: \.self) { day in
+                                Text(["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"][day]).tag(day)
+                            }
+                        }
+                    }
                 } header: { Label("Acties", systemImage: "bolt") }
                 Section {
                     Toggle("VIP-niveaus", isOn: $vipOn)
@@ -130,6 +138,7 @@ struct LoyaltyProgramView: View {
             let campaign = settings?.object("campaign")
             campaignOn = campaign?.bool("enabled") ?? false
             campaignMultiplier = campaign?.int("multiplier") ?? 2
+            campaignWeekday = campaign?.int("weekday") ?? 2
             let vip = settings?.object("vip")
             vipOn = vip?.bool("enabled") ?? false
             silver = vip?.int("silver") ?? 10
@@ -162,12 +171,15 @@ struct LoyaltyProgramView: View {
             }
             rewards.sort { ($0["stamps"] as? Int ?? 0) < ($1["stamps"] as? Int ?? 0) }
         }
+        guard rewards.count <= 8, Set(rewards.compactMap { $0["stamps"] as? Int }).count == rewards.count else {
+            message = "Maximaal acht verschillende mijlpalen per kaart."; return
+        }
         guard gold > silver else { message = "Goud moet boven Zilver liggen."; return }
         let settings: [String: Any] = [
             "rewards": rewards,
             "retention": ["enabled": retentionOn, "days": retentionDays],
             "referral": ["enabled": referralOn, "bonus": referralBonus],
-            "campaign": ["enabled": campaignOn, "multiplier": campaignMultiplier, "weekday": 2],
+            "campaign": ["enabled": campaignOn, "multiplier": campaignMultiplier, "weekday": campaignWeekday],
             "vip": ["enabled": vipOn, "silver": silver, "gold": gold],
             "locations": ["enabled": locationsOn, "names": locationNames.split(whereSeparator: \.isNewline).map(String.init)],
             "marketing": ["enabled": marketingOn, "name": String(marketingName.prefix(80))],
@@ -175,7 +187,7 @@ struct LoyaltyProgramView: View {
         ]
         do {
             _ = try await Account.shared.rpc("pasr_business_program", ["p_card": card.id, "p_settings": settings])
-            message = "Instellingen opgeslagen. Automatische acties worden pas uitgevoerd nadat de campagneverwerking actief is."
+            message = "Kaartinstellingen opgeslagen. Automatische terugkomberichten worden pas verstuurd wanneer klanten hiervoor toestemming hebben gegeven en de verzendservice actief is."
         } catch { message = error.localizedDescription }
     }
 }
