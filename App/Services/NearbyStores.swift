@@ -136,13 +136,23 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     /// Bij het opstarten (ook als iOS Pasr op de achtergrond start na een verplaatsing): weer meeluisteren.
     func resume() {
         updateBackgroundWatching()
+        // Na een appstart (ook door iOS op de achtergrond) opnieuw de status van
+        // bestaande regio's opvragen: binnen een al actieve regio komt geen entry-event.
+        if Reminders.nearbyEnabled, hasAlways {
+            for region in manager.monitoredRegions where region.identifier.hasPrefix(Self.regionPrefix) {
+                manager.requestState(for: region)
+            }
+        }
         Task { await removeLegacyNotifications() }
     }
 
     /// Zet het aan: vraagt om meldingen en locatie en plant de plekken.
     func enable(cards: [Card]) async -> Bool {
         UserDefaults.standard.set(true, forKey: Reminders.nearbyKey)
-        guard await Reminders.requestPermission() else { return false }
+        guard await Reminders.requestPermission() else {
+            UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
+            return false
+        }
         // Gebieden bewaken kan alleen met "Altijd". iOS vraagt eerst "Bij gebruik" en later zelf om Altijd.
         if manager.authorizationStatus == .notDetermined || manager.authorizationStatus == .authorizedWhenInUse {
             manager.requestAlwaysAuthorization()
@@ -150,7 +160,8 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
         }
         await refresh(cards: cards, force: true)
         updateBackgroundWatching()
-        return hasLocation
+        // Alleen Altijd geeft betrouwbare achtergrond-geofences; Bij gebruik is onvoldoende.
+        return hasAlways
     }
 
     func disable() async {
@@ -315,6 +326,9 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
                 region.notifyOnEntry = true
                 region.notifyOnExit = false
                 manager.startMonitoring(for: region)
+                // Een nieuw bewaakt gebied geeft niet vanzelf 'didEnterRegion' als je
+                // er al binnen staat. Vraag de actuele status expliciet op.
+                manager.requestState(for: region)
             }
         }
         watched = kept
@@ -612,6 +626,11 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         guard region.identifier.hasPrefix("pasr.nearby.") else { return }
+        Task { @MainActor in self.startCheck() }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didDetermineState state: CLRegionState, for region: CLRegion) {
+        guard state == .inside, region.identifier.hasPrefix("pasr.nearby.") else { return }
         Task { @MainActor in self.startCheck() }
     }
 

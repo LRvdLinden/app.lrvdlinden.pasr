@@ -48,6 +48,7 @@ import androidx.compose.material.icons.outlined.LibraryAdd
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.Verified
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -115,14 +116,16 @@ fun CardsScreen(business: Business) {
     var marketing by remember { mutableStateOf(false) }
     var locations by remember { mutableStateOf(false) }
     var community by remember { mutableStateOf(false) }
+    var createChoices by remember { mutableStateOf(false) }
+    var actionCardChoices by remember { mutableStateOf(false) }
     val context = LocalContext.current
     ScreenScaffold(L("Kaarten"), actions = {
         TextButton(onClick = { community = true }) { Text("Samenwerken", color = Pz.accent) }
         TextButton(onClick = { locations = true }) { Text("Vestigingen", color = Pz.accent) }
         TextButton(onClick = { marketing = true }) { Text("Marketing", color = Pz.accent) }
         TextButton(onClick = { coupons = true }) { Text("Kortingsbonnen", color = Pz.accent) }
-        IconButton(onClick = { editing = BusinessCard() }, enabled = business.cards.size < 5) {
-            Icon(Icons.Filled.Add, L("Nieuwe kaart"), tint = if (business.cards.size < 5) Pz.accent else Pz.muted)
+        IconButton(onClick = { createChoices = true }) {
+            Icon(Icons.Filled.Add, L("Nieuw aanmaken"), tint = Pz.accent)
         }
     }) {
         if (business.cards.isEmpty()) {
@@ -130,7 +133,7 @@ fun CardsScreen(business: Business) {
                 Icons.Outlined.LibraryAdd, L("Nog geen stempelkaart"),
                 L("Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning."),
                 Modifier.padding(top = 40.dp),
-            ) { BigButton(L("Nieuwe kaart"), { editing = BusinessCard() }, Modifier.widthIn(max = 260.dp)) }
+            ) { BigButton(L("Nieuw aanmaken"), { createChoices = true }, Modifier.widthIn(max = 260.dp)) }
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
             items(business.cards, key = { it.id }) { card ->
@@ -180,6 +183,40 @@ fun CardsScreen(business: Business) {
                 }
             }
         }
+    }
+    if (createChoices) {
+        AlertDialog(
+            onDismissRequest = { createChoices = false },
+            title = { Text("Wat wil je aanmaken?") },
+            text = {
+                Column {
+                    TextButton(onClick = { createChoices = false; editing = BusinessCard() },
+                        enabled = business.cards.size < 5) { Text("Stempelkaart") }
+                    TextButton(onClick = { createChoices = false; coupons = true }) {
+                        Text("Kortingscoupon of kortingscode")
+                    }
+                    TextButton(onClick = { createChoices = false; actionCardChoices = true },
+                        enabled = business.cards.isNotEmpty()) { Text("Actie of beloning bij stempelkaart") }
+                }
+            },
+            confirmButton = { TextButton(onClick = { createChoices = false }) { Text("Sluiten") } },
+        )
+    }
+    if (actionCardChoices) {
+        AlertDialog(
+            onDismissRequest = { actionCardChoices = false },
+            title = { Text("Kies een stempelkaart") },
+            text = {
+                Column {
+                    business.cards.forEach { card ->
+                        TextButton(onClick = { actionCardChoices = false; program = card }) {
+                            Text(card.name)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { actionCardChoices = false }) { Text("Sluiten") } },
+        )
     }
     editing?.let { CardEditorSheet(business, it) { editing = null } }
     sharing?.let { CardShareSheet(business, it) { sharing = null } }

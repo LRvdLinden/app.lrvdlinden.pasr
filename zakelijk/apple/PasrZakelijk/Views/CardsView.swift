@@ -15,6 +15,8 @@ struct CardsView: View {
     @State private var marketing = false
     @State private var locations = false
     @State private var community = false
+    @State private var showingCreateChoices = false
+    @State private var showingActionCardChoices = false
 
     var body: some View {
         NavigationStack {
@@ -25,7 +27,7 @@ struct CardsView: View {
                     } description: {
                         Text("Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning.")
                     } actions: {
-                        Button("Nieuwe kaart") { editing = BusinessCard() }
+                        Button("Nieuw aanmaken") { showingCreateChoices = true }
                             .buttonStyle(.borderedProminent)
                     }
                     .listRowBackground(Color.clear)
@@ -76,10 +78,33 @@ struct CardsView: View {
                     Button("Kortingsbonnen", systemImage: "ticket") { coupons = true }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button { editing = BusinessCard() } label: { Image(systemName: "plus") }
-                        .accessibilityLabel(Text("Nieuwe kaart"))
-                        .disabled(business.cards.count >= 5)
+                    Button { showingCreateChoices = true } label: { Image(systemName: "plus") }
+                        .accessibilityLabel(Text("Nieuw aanmaken"))
                 }
+            }
+            .confirmationDialog("Wat wil je aanmaken?", isPresented: $showingCreateChoices, titleVisibility: .visible) {
+                Button("Stempelkaart", systemImage: "rectangle.stack.badge.plus") {
+                    editing = BusinessCard()
+                }
+                .disabled(business.cards.count >= 5)
+                Button("Kortingscoupon of kortingscode", systemImage: "ticket") {
+                    coupons = true
+                }
+                Button("Actie of beloning bij stempelkaart", systemImage: "gift") {
+                    showingActionCardChoices = true
+                }
+                .disabled(business.cards.isEmpty)
+                Button("Annuleren", role: .cancel) {}
+            } message: {
+                Text("Kies wat je voor jouw onderneming wilt maken.")
+            }
+            .confirmationDialog("Kies de stempelkaart voor de actie", isPresented: $showingActionCardChoices, titleVisibility: .visible) {
+                ForEach(business.cards) { card in
+                    Button(card.name) { program = card }
+                }
+                Button("Annuleren", role: .cancel) {}
+            } message: {
+                Text("Een actie of beloning wordt altijd ingesteld op een bestaande stempelkaart.")
             }
             .sheet(item: $editing) { card in
                 CardEditorView(business: business, card: card).trackModal()
