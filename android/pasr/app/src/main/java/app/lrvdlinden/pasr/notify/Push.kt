@@ -56,7 +56,7 @@ class PasrMessagingService : FirebaseMessagingService() {
         when (d["kind"]) {
             "retention" -> {
                 Reminders.notify(applicationContext, "retention-" + title,
-                    Reminders.CHANNEL_STAMPS, title, body)
+                    Reminders.CHANNEL_STAMPS, title, body, null)
             }
             "stamps" -> {
                 val code = d["code"]?.uppercase()
