@@ -47,9 +47,9 @@ jobs:
           test -f "$work/Pasr-Klantenkaarten-1.0.4/Pasr.xcodeproj/project.pbxproj"
           test -f "$work/Pasr-Zakelijk-1.0.3/PasrZakelijk.xcodeproj/project.pbxproj"
           (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Klantenkaarten-Xcode-1.0.4.zip" Pasr-Klantenkaarten-1.0.4)
-          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.2.zip" Pasr-Zakelijk-1.0.3)
+          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.3.zip" Pasr-Zakelijk-1.0.3)
           unzip -tq dist/Pasr-Klantenkaarten-Xcode-1.0.4.zip
-          unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.2.zip
+          unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.3.zip
           ls -lh dist/*.zip
 
       - name: Xcode-projecten als downloadbare artifacts
@@ -70,4 +70,4 @@ jobs:
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --target "$GITHUB_SHA" --title "Xcode projecten: Pasr 1.0.4 + Zakelijk 1.0.3" --notes "Twee volledige Xcode-bronprojecten om lokaal met Xcode te archiveren en naar App Store Connect te uploaden. Apple signing en archive gebeuren lokaal." --latest=false
           fi
-          gh release upload "$TAG" dist/Pasr-Klantenkaarten-Xcode-1.0.4.zip dist/Pasr-Zakelijk-Xcode-1.0.2.zip --clobber
+          gh release upload "$TAG" dist/Pasr-Klantenkaarten-Xcode-1.0.4.zip dist/Pasr-Zakelijk-Xcode-1.0.3.zip --clobber
