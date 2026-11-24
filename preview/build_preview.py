@@ -269,6 +269,87 @@ def verify() -> None:
         assert (OUT / "assets" / p).stat().st_size > 200
     print("PASR PREVIEW VALIDATION PASSED: five isolated pages; all original interactive content preserved")
 
+def publish_live() -> list[Path]:
+    """Promote the already-built /test/ designs to their five canonical pages.
+
+    Run ONLY after build() and verify(). The source website is generated afresh
+    on every deployment, so edits survive scheduled catalog refreshes. We
+    preserve every pre-existing section and script from the copy; strip only
+    TEST-specific notices, noindex and test-prefixed navigation.
+    """
+    live_css = SITE / "assets" / "pasr-experience.css"
+    live_js = SITE / "assets" / "pasr-experience.js"
+    shutil.copy2(ASSETS / "pasr-preview.css", live_css)
+    shutil.copy2(ASSETS / "pasr-preview.js", live_js)
+    outputs = []
+    for key, slug, _, target in PAGES:
+        preview = OUT / slug / "index.html" if slug else OUT / "index.html"
+        document = preview.read_text(encoding="utf-8")
+        assert document.count('class="pv-stage"') == 1, str(preview)
+        document = document.replace(
+            '<meta name="robots" content="noindex,nofollow,noarchive">', '')
+        document = document.replace(
+            '/test/assets/pasr-preview.css', '/assets/pasr-experience.css')
+        document = document.replace(
+            '/test/assets/pasr-preview.js', '/assets/pasr-experience.js')
+        document = document.replace(
+            'data-pasr-preview="true"', 'data-pasr-experience="live"')
+        document = re.sub(r'<div class="pv-banner"[^>]*>.*?</div>',
+                          '', document, count=1, flags=re.S)
+        # Convert BOTH original and new nav to their canonical destinations.
+        document = document.replace('href="/test/', 'href="/')
+        document = document.replace('action="/test/', 'action="/')
+        # Remove editorial notes that were helpful only during approval.
+        document = re.sub(r'<p class="pv-note">.*?</p>', '', document,
+                          count=1, flags=re.S)
+        document = re.sub(r'<div class="pv-original">.*?</div>', '', document,
+                          count=1, flags=re.S)
+        if "PASR TESTOMGEVING" in document or 'noindex,nofollow' in document:
+            raise AssertionError(f"Test-only markup reached live {target}")
+        if '/test/assets/pasr-preview' in document:
+            raise AssertionError(f"Test CSS or JS reached live {target}")
+        if 'href="/test/' in document or 'action="/test/' in document:
+            raise AssertionError(f"Test links reached live {target}")
+        if document.count('class="pv-stage"') != 1:
+            raise AssertionError(f"Live experience missing or duplicated in {target}")
+        if '<header' not in document or '</header>' not in document:
+            raise AssertionError(f"Existing header lost in {target}")
+        target.write_text(document, encoding="utf-8")
+        outputs.append(target)
+        print(f"Pasr live experience: {target.relative_to(SITE)} ({len(document)} bytes)")
+    verify_live()
+    return outputs
+
+
+def verify_live() -> None:
+    for key, slug, _, target in PAGES:
+        document = target.read_text(encoding="utf-8")
+        assert 'data-pasr-experience="live"' in document, str(target)
+        assert '/assets/pasr-experience.css' in document, str(target)
+        assert '/assets/pasr-experience.js' in document, str(target)
+        assert 'class="pv-tabs"' in document
+        assert 'noindex,nofollow' not in document
+        assert 'PASR TESTOMGEVING' not in document
+        assert 'href="/test/' not in document
+        assert 'action="/test/' not in document
+        # The original functionality is carried through unmodified.
+        if key == "home":
+            assert 'fv-flip' in document and 'marquee-track' in document
+        elif key == "kaarten":
+            assert 'id="kf-q"' in document
+        elif key == "cadeau":
+            assert 'id="gd-q"' in document
+        elif key == "korting":
+            assert 'id="pz2Public"' in document and 'loyalty2.js' in document
+        elif key == "zakelijk":
+            assert 'data-pv-demo="coupon"' in document
+            assert 'data-pv-demo="vip"' in document
+            assert '/zakelijk/dashboard/' in document
+            assert 'zv-designer' in document
+    print("PASR LIVE PROMOTION VERIFIED: all five pages, original features and animation preserved")
+
+
 if __name__ == "__main__":
     build()
     verify()
+    publish_live()
