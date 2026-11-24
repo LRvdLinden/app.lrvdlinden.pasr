@@ -153,3 +153,35 @@
 .ch-site-nav nav ul a:hover,.ch-site-nav nav ul a[aria-current="page"]{color:var(--ink)}
 .ch-site-nav .ch-business-link{display:inline-flex;align-items:center;white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:9px 14px;background:var(--paper-2);color:var(--ink);font-weight:700}
 @media(max-width:760px){.ch-site-nav{flex-wrap:wrap;gap:12px}.ch-site-nav nav{width:100%}.ch-site-nav nav ul{gap:10px 15px;flex-wrap:wrap}.ch-site-nav nav ul li:nth-child(1),.ch-site-nav nav ul li:nth-child(3){display:list-item}.ch-site-nav nav ul a{font-size:13px}.ch-site-nav .brand img{width:32px;height:32px}.ch-site-nav .brand span{font-size:22px}}
+
+/* Real catalog artwork: distinct editorial hero per category. */
+.ch-crumb{font-size:13px;color:var(--ink-2);padding-top:14px}.ch-crumb a{color:inherit;text-decoration:none}
+.ch-hero.ch-hero-cadeaubon,.ch-hero.ch-hero-saldo-checken{background:linear-gradient(125deg,#e7eff8,#e0ebfa);color:#162c43}
+.ch-hero.ch-hero-stempelkaarten{background:linear-gradient(125deg,#e0f3ea,#c9eadb)}
+.ch-hero.ch-hero-kortingsbonnen{background:linear-gradient(125deg,#ffeadc,#ffdfd1)}
+.ch-hero.ch-hero-kaarten,.ch-hero.ch-hero-klantenkaart{background:linear-gradient(125deg,#f0ebff,#dfd7ff)}
+.ch-hero.ch-hero-cadeaubon h1,.ch-hero.ch-hero-saldo-checken h1{color:#162c43}
+.ch-hero.ch-hero-cadeaubon .ch-hero-copy>p,.ch-hero.ch-hero-saldo-checken .ch-hero-copy>p{color:#38536f}
+.ch-hero{padding:34px clamp(20px,4vw,46px);min-height:250px;margin-top:12px}
+.ch-hero h1{font-size:clamp(29px,4.4vw,49px);max-width:21ch}
+.ch-real-art{min-height:245px;position:relative;isolation:isolate;display:grid;place-items:center}
+.ch-real-face{position:absolute;width:min(72%,285px);aspect-ratio:1.585;top:50%;left:50%;filter:drop-shadow(0 13px 18px #15132c26)}
+.ch-real-1{transform:translate(-64%,-65%) rotate(-12deg);z-index:1}.ch-real-2{transform:translate(-37%,-42%) rotate(9deg);z-index:2}
+.ch-real-face:only-child{transform:translate(-50%,-50%) rotate(-5deg)}
+.ch-real-face .kc-card{width:100%;height:100%;aspect-ratio:1.585;border-radius:15px;position:relative;overflow:hidden;margin:0;display:grid;place-items:center;box-shadow:none}
+.ch-real-face .kc-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+.ch-real-face .kc-logo img{max-width:100%;max-height:88px;object-fit:contain}
+.ch-real-face .kc-logo{max-width:72%;max-height:70%;display:flex;justify-content:center;align-items:center}
+.ch-real-face .kc-word{font-size:clamp(14px,2.3vw,24px);font-weight:800;text-align:center;padding:12px}
+.ch-balance-demo{position:absolute;z-index:3;bottom:9%;left:7%;border-radius:13px;background:var(--paper-2);color:var(--ink);padding:10px 16px;box-shadow:0 7px 20px #17162a18}
+.ch-balance-demo small,.ch-balance-demo strong{display:block;line-height:1.2}.ch-balance-demo small{font-size:11px;color:var(--ink-2)}.ch-balance-demo strong{font-size:23px;margin-top:4px}
+.ch-stamp-art{margin:0;padding:0;list-style:none;height:100%}.ch-stamp-art li{height:100%}.ch-stamp-art .kc-name,.ch-stamp-art .ks-sub{display:none}.ch-stamp-art .ks-card{display:flex;min-height:0}.ch-stamp-art .ks-logo{max-height:35px;max-width:50px}
+.ch-live-coupon,.ch-empty-art{position:relative;width:min(85%,300px);border-radius:20px;background:var(--paper-2);color:var(--ink);padding:24px;display:grid;gap:10px;box-shadow:0 14px 28px #17162a18;transform:rotate(-5deg)}
+.ch-live-coupon strong,.ch-empty-art strong{font-size:23px;line-height:1.15}.ch-live-coupon small,.ch-empty-art small{font-size:13px;color:var(--ink-2)}
+.ch-live-coupon.has-offer{border:2px dashed var(--iris);transform:rotate(-4deg)}
+.ch-live-coupon .ch-discount{font-size:clamp(28px,4vw,47px);font-weight:800;color:var(--iris-deep);line-height:1}
+.ch-coupon-page main>.pz2-hero{display:none}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .ch-hero.ch-hero{background:linear-gradient(135deg,#25213d,#312b4c);color:var(--ink)}:root:not([data-theme="light"]) .ch-hero.ch-hero h1{color:var(--ink)}:root:not([data-theme="light"]) .ch-hero.ch-hero .ch-hero-copy>p{color:var(--ink-2)}:root:not([data-theme="light"]) .ch-hero-stempelkaarten.ch-hero{background:linear-gradient(135deg,#172e2c,#25423c)}:root:not([data-theme="light"]) .ch-hero-kortingsbonnen.ch-hero{background:linear-gradient(135deg,#382331,#4a3037)}}
+:root[data-theme="dark"] .ch-hero.ch-hero{background:linear-gradient(135deg,#25213d,#312b4c);color:var(--ink)}:root[data-theme="dark"] .ch-hero.ch-hero h1{color:var(--ink)}:root[data-theme="dark"] .ch-hero.ch-hero .ch-hero-copy>p{color:var(--ink-2)}
+@media(max-width:760px){.ch-real-art{min-height:200px;transform:none;margin:0}.ch-real-face{width:min(65%,230px)}.ch-balance-demo{bottom:3%;left:12%}}
+@media(max-width:440px){.ch-hero .ch-real-art{display:grid;min-height:180px}.ch-real-face{width:min(63%,200px)}.ch-balance-demo strong{font-size:18px}.ch-balance-demo{padding:8px 12px}}
