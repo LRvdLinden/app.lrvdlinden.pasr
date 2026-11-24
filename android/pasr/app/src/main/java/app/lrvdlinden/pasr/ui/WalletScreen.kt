@@ -100,7 +100,8 @@ fun WalletScreen() {
     // de zoekbalk vindt ook bonnetjes (winkel, bedrag of datum)
     val receipts by app.lrvdlinden.pasr.data.ReceiptStore.receipts.collectAsState()
     // Herstel bestaande kassabonnen uit oudere builds zonder dubbele transactie.
-    LaunchedEffect(receipts.map { it.id + ":" + (it.useID ?: "") }.joinToString()) {
+    LaunchedEffect(receipts.map { it.id + ":" + (it.useID ?: "") }.joinToString(),
+        all.filter { it.deletedAt == null }.map { it.id }.sorted().joinToString()) {
         ReceiptUseLinker.reconcile()
     }
     val foundReceipts = if (query.isBlank()) emptyList() else receipts.filter { it.matches(query) }
