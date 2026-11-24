@@ -21,14 +21,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'BUILD = "7"' zakelijk/apple/make_project.py
+          grep -q 'BUILD = "8"' zakelijk/apple/make_project.py
           grep -q 'VERSION = "1.0.2"' zakelijk/apple/make_project.py
-          grep -q 'CURRENT_PROJECT_VERSION = "7"' zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj
+          grep -q 'CURRENT_PROJECT_VERSION = "8"' zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj
           work="$(mktemp -d)"
-          mkdir -p "$work/Pasr-Zakelijk-1.0.2-build7" dist
-          cp -a zakelijk/apple/. "$work/Pasr-Zakelijk-1.0.2-build7/"
-          cat > "$work/Pasr-Zakelijk-1.0.2-build7/OPEN-IN-XCODE.md" <<'INFO'
-          # Pasr Zakelijk 1.0.2 (build 7)
+          mkdir -p "$work/Pasr-Zakelijk-1.0.2-build8" dist
+          cp -a zakelijk/apple/. "$work/Pasr-Zakelijk-1.0.2-build8/"
+          cat > "$work/Pasr-Zakelijk-1.0.2-build8/OPEN-IN-XCODE.md" <<'INFO'
+          # Pasr Zakelijk 1.0.2 (build 8)
           Open PasrZakelijk.xcodeproj in Xcode.
           Selecteer de PasrZakelijk scheme, configureer je Apple Developer Team
           en Signing & Capabilities. Kies Product > Archive en verzend via
@@ -36,14 +36,14 @@ jobs:
           Inclusief alle Swift-code, iconen, assets, projectinstellingen en
           de nieuwe promotiemateriaalknop per stempelkaart.
           INFO
-          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.2-build7.zip" Pasr-Zakelijk-1.0.2-build7)
-          unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.2-build7.zip
+          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.2-build8.zip" Pasr-Zakelijk-1.0.2-build8)
+          unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.2-build8.zip
           ls -lh dist/*.zip
       - name: Oplevering GitHub artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Pasr-Zakelijk-Xcode-1.0.2-build7
-          path: dist/Pasr-Zakelijk-Xcode-1.0.2-build7.zip
+          name: Pasr-Zakelijk-Xcode-1.0.2-build8
+          path: dist/Pasr-Zakelijk-Xcode-1.0.2-build8.zip
           retention-days: 90
       - name: Oplevering ZIP als GitHub Release
         env:
@@ -51,8 +51,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="xcode-zakelijk-1.0.2-7"
+          TAG="xcode-zakelijk-1.0.2-8"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Zakelijk 1.0.2 (build 7) – Xcode-project" --notes "Volledig Xcode-bronproject met promotiemateriaal per kaart. Open de .xcodeproj in Xcode, Archive en upload zelf naar App Store Connect."
+            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Zakelijk 1.0.2 (build 8) – Xcode-project" --notes "Volledig Xcode-bronproject met promotiemateriaal per kaart. Open de .xcodeproj in Xcode, Archive en upload zelf naar App Store Connect."
           fi
-          gh release upload "$TAG" dist/Pasr-Zakelijk-Xcode-1.0.2-build7.zip --clobber
+          gh release upload "$TAG" dist/Pasr-Zakelijk-Xcode-1.0.2-build8.zip --clobber
