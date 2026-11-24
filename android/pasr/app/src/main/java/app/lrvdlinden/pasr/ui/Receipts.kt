@@ -313,9 +313,17 @@ fun ReceiptReviewScreen(cardId: String?, useId: String?, receiptId: String? = nu
             Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Gap(16.dp)
         BrandButton("Bewaar", Modifier.fillMaxWidth().height(52.dp), enabled = store.isNotBlank() && (totalText.isBlank() || total != null)) {
+            // OCR kent soms wel Action, maar de kaartkiezer staat nog op Geen kaart.
+            // Alleen automatisch kiezen als er exact één overeenkomende winkelkaart is.
+            val matches = cards.filter {
+                it.deletedAt == null &&
+                    app.lrvdlinden.pasr.data.Catalog.fold(it.storeName) ==
+                    app.lrvdlinden.pasr.data.Catalog.fold(store.trim())
+            }
             val linked = cards.firstOrNull { it.id == (existing?.cardID ?: chosenCard) }
+                ?: matches.singleOrNull()
             val r = (existing ?: Receipt(cardID = chosenCard)).copy(
-                cardID = existing?.cardID ?: chosenCard, useID = existing?.useID,
+                cardID = linked?.id ?: existing?.cardID ?: chosenCard, useID = existing?.useID,
                 storeName = store.trim(), date = date, total = total,
                 currencyCode = linked?.currencyCode, title = title.trim(),
                 warrantyUntil = if (hasWarranty) warranty else null,
