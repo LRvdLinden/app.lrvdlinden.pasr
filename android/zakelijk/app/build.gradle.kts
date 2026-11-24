@@ -21,7 +21,7 @@ android {
         applicationId = "app.lrvdlinden.pasrzakelijk"
         minSdk = 26
         targetSdk = 35
-        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
+        versionCode = (System.getenv("VERSION_CODE") ?: "124").toInt()
         versionName = "1.0.3"
     }
 
