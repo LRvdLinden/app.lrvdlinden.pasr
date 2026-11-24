@@ -1,0 +1,48 @@
+name: Pasr catalogus kwaliteitscontrole
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/catalog_hub.py"
+      - "tools/make_kaarten.py"
+      - "tools/make_gids.py"
+      - "tools/make_website.py"
+      - "website/assets/catalog-hub.css"
+      - "website/assets/kaarten.js"
+      - "website/assets/loyalty2.js"
+      - ".github/workflows/catalog-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python-syntax van alle paginageneratoren
+        run: python3 -m py_compile tools/catalog_hub.py tools/make_kaarten.py tools/make_gids.py tools/make_website.py
+      - name: JavaScript-syntax van catalogus en kortingsbonnen
+        run: |
+          node --check website/assets/kaarten.js
+          node --check website/assets/loyalty2.js
+      - name: Gedeelde navigatie, bestaande URL's en light/dark
+        run: |
+          PYTHONPATH=tools python3 - <<'PY'
+          from pathlib import Path
+          from catalog_hub import site_nav, strip
+          for route in ('kaarten','klantenkaart','cadeaubon','kortingsbonnen'):
+              markup=site_nav(route)+strip(route)
+              assert f'href="/{route}/"' in markup, route
+              assert 'aria-current="page"' in markup, route
+              assert 'Kaarten &amp; Voordelen' in markup, route
+          css=Path('website/assets/catalog-hub.css').read_text()
+          assert 'var(--paper)' in css and 'var(--ink)' in css
+          assert ':root[data-theme="dark"]' in Path('website/assets/kaarten.css').read_text()
+          assert '@media (prefers-color-scheme: dark)' in Path('website/assets/kaarten.css').read_text()
+          cards=Path('tools/make_kaarten.py').read_text()
+          assert 'kf-coupon' in cards and 'publicPage' in Path('website/assets/kaarten.js').read_text()
+          print('Pasr catalogusnavigatie, kortingsbonnenfilter en licht/donker: OK')
+          PY
