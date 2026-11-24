@@ -195,12 +195,21 @@ object ReceiptUseLinker {
     /** Eenmalig herstel van bonnen uit oude builds. Herhaald uitvoeren geeft geen extra regels. */
     fun reconcile() {
         ReceiptStore.receipts.value.forEach { receipt ->
-            val id = receipt.cardID ?: return@forEach
-            val card = CardStore.get(id) ?: return@forEach
+            val card = receipt.cardID?.let(CardStore::get) ?: run {
+                if (receipt.total == null) return@forEach
+                // Geen expliciete kaart geselecteerd? Alleen bij één exact gelijknamige
+                // winkel (zoals Action) mag een oud bonnetje worden gerepareerd.
+                val matches = CardStore.visible.filter {
+                    it.deletedAt == null && Catalog.fold(it.storeName) ==
+                        Catalog.fold(receipt.storeName)
+                }
+                matches.singleOrNull()
+            } ?: return@forEach
             if (card.deletedAt != null) return@forEach
+            val selected = if (receipt.cardID == null) receipt.copy(cardID = card.id) else receipt
             val good = card.uses.any { it.id == receipt.useID && it.receiptID == receipt.id }
             if (good) return@forEach
-            val (fixedReceipt, fixedCard) = attach(receipt, card)
+            val (fixedReceipt, fixedCard) = attach(selected, card)
             if (fixedReceipt.useID != null) {
                 if (fixedCard != card) CardStore.upsert(fixedCard)
                 if (fixedReceipt != receipt) ReceiptStore.save(fixedReceipt)
