@@ -104,7 +104,7 @@ struct PasrBenefitsView: View {
                                         .font(.caption).foregroundStyle(.green)
                                 } else if item.visited >= item.required {
                                     Text("Beloning beschikbaar: laat je Pasr-lidcode bij een deelnemende winkel scannen.")
-                                        .font(.caption).foregroundStyle(Brand.mint)
+                                        .font(.caption).foregroundStyle(.green)
                                 }
                             }
                             .padding(16)
