@@ -295,9 +295,9 @@ struct RemindersModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .task { await NearbyStores.shared.refresh(cards: cards) }
+            .task { NearbyStores.shared.resume(); await NearbyStores.shared.refresh(cards: cards) }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { Task { await NearbyStores.shared.refresh(cards: cards) } }
+                if phase == .active { Task { NearbyStores.shared.resume(); await NearbyStores.shared.refresh(cards: cards) } }
             }
             .onChange(of: placesFingerprint) { _, _ in
                 Task { await NearbyStores.shared.sourcesChanged(cards: cards) }
@@ -413,6 +413,9 @@ struct RemindersSettingsSection: View {
                         }
                     }
                     .tint(.primary)
+                    Text("Voor automatische winkelmeldingen, ook met Pasr op de achtergrond, is locatie-toegang Altijd nodig.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
                 NavigationLink {
                     NearbyPlacesView()
