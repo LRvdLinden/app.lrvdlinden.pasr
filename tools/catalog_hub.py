@@ -12,18 +12,26 @@ SECTIONS = (
 )
 
 def site_nav(active="kaarten"):
+    links = [
+        ("home", "/#ontdekken", "Ontdekken"),
+        ("kaarten", "/kaarten/", "Klantenkaarten"),
+        ("cadeaubon", "/cadeaubon/", "Cadeaukaarten"),
+        ("stempelkaarten", "/stempelkaarten/", "Stempelkaarten"),
+        ("kortingsbonnen", "/kortingsbonnen/", "Kortingsbonnen"),
+        ("saldo-checken", "/saldo-checken/", "Saldo checken"),
+        ("functies", "/#functies", "Functies"),
+        ("zakelijk", "/zakelijk/", "Voor ondernemers"),
+    ]
+    items = []
+    for key, href, label in links:
+        current = ' aria-current="page"' if key == active and key != "home" else ""
+        cls = ' class="ch-business-link"' if key == "zakelijk" else ""
+        items.append(f'<li><a href="{href}"{current}{cls}>{label}</a></li>')
     return f'''<header class="wrap nav ch-site-nav">
-  <a class="brand" href="/"><img src="/assets/icon.png" width="36" height="36" alt=""><span>pasr</span></a>
-  <nav aria-label="Hoofdmenu"><ul>
-    <li><a href="/#ontdekken">Ontdekken</a></li>
-    <li><a href="/kaarten/">Klantenkaarten</a></li>
-    <li><a href="/cadeaubon/">Cadeaukaarten</a></li>
-    <li><a href="/stempelkaarten/">Stempelkaarten</a></li>
-    <li><a href="/kortingsbonnen/">Kortingsbonnen</a></li>
-    <li><a href="/saldo-checken/">Saldo checken</a></li>
-    <li><a href="/#functies">Functies</a></li>
-    <li><a class="ch-business-link" href="/zakelijk/">Voor ondernemers</a></li>
-  </ul></nav>
+  <a class="brand" href="/" aria-label="Pasr homepage"><img src="/assets/icon.png" width="36" height="36" alt=""><span>pasr</span></a>
+  <details class="ch-menu"><summary aria-label="Hoofdmenu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg><span>Menu</span></summary>
+  <nav aria-label="Mobiel hoofdmenu"><ul>{''.join(items)}</ul></nav></details>
+  <nav class="ch-desktop-nav" aria-label="Hoofdmenu"><ul>{''.join(items)}</ul></nav>
 </header>'''
 
 def section_nav(active="kaarten"):
