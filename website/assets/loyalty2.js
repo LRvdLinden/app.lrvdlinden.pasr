@@ -230,6 +230,7 @@
  async function insightsView(root,b,rpc){
    root.innerHTML='<div class="zd-ptitle"><div><h2>Bedrijfsinzichten</h2><p class="zd-sub">Geaggregeerde gegevens van jouw stempelkaarten en kortingsbonnen. Er worden geen klantnamen of contactgegevens getoond.</p></div></div>'+
      '<div id="pz2Stats" class="pz2-statgrid" aria-live="polite"><p>Inzichten laden…</p></div>'+
+     '<section class="pz2-panel"><h3>Terugkomacties per stempelkaart</h3><p>Geaggregeerde aantallen, zonder klantgegevens. Er worden geen automatische berichten verzonden.</p><div id="pz2Retention" aria-live="polite">Terugkomoverzicht laden…</div></section>'+
      '<section class="pz2-panel"><h3>Hoe lees je deze cijfers?</h3>'+
      '<p>De cijfers zijn gebaseerd op echte scans en geregistreerde inwisselingen. Een terugkerende klant heeft minimaal twee stempels ontvangen in de afgelopen 90 dagen. Deze cijfers zijn geen omzetmeting.</p>'+
      '<p>Een ondernemer ziet uitsluitend zijn eigen gegevens. Er worden geen volledige klantcodes of persoonlijke gegevens gedeeld.</p></section>';
@@ -248,6 +249,23 @@
        new Intl.NumberFormat("nl-NL").format(Number(item[1]||0))+'</strong><b>'+escape(item[0])+'</b><small>'+
        escape(item[2])+'</small></article>';}).join("");
    }catch(e){$("#pz2Stats",root).textContent="De inzichten konden niet worden geladen: "+(e.message||"onbekend");}
+   try {
+     var retention=await rpc("pasr_business_retention_overview",{p_business:b.id},true);
+     var region=$("#pz2Retention",root);
+     if(!Array.isArray(retention)||!retention.length){region.textContent="Nog geen zakelijke stempelkaarten.";}
+     else {
+       region.innerHTML=retention.map(function(card){
+         return '<article class="pz2-planned"><strong>'+escape(card.card_name)+'</strong>'+
+           '<small>'+ (card.enabled?'Terugkomactie ingeschakeld':'Terugkomactie uitgeschakeld')+
+           ' · grens: '+Number(card.days||30)+' dagen</small>'+
+           '<p>'+Number(card.members||0)+' leden · '+Number(card.active_30d||0)+
+           ' actief (30 dagen) · '+Number(card.inactive||0)+
+           ' langer niet geweest · '+Number(card.never_visited||0)+' nog zonder scan</p></article>';
+       }).join("");
+     }
+   } catch(e) {
+     $("#pz2Retention",root).textContent="Het terugkomoverzicht is nog niet beschikbaar: "+(e.message||"onbekend");
+   }
  }
 
  async function marketingView(root,b,rpc){
