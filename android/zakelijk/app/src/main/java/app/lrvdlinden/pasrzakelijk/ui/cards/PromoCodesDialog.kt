@@ -45,6 +45,8 @@ fun PromoCodesDialog(businessId: String, onClose: () -> Unit) {
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     var rows by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var editing by remember { mutableStateOf<JSONObject?>(null) }
+    var deleting by remember { mutableStateOf<JSONObject?>(null) }
 
     suspend fun reload() {
         try {
@@ -60,7 +62,8 @@ fun PromoCodesDialog(businessId: String, onClose: () -> Unit) {
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max = 580.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Maak een eigen actiecode die klanten aan de kassa noemen. Apart van persoonlijke kortingsbonnen.")
+                Text("Klanten bewaren deze actie uitsluitend in Pasr. Alleen de persoonlijke PA-code uit de klantenapp is verzilverbaar.")
+                if(editing!=null) TextButton(onClick={editing=null;code="";title=""}){Text("Nieuwe actiecode")}
                 OutlinedTextField(code, { code = it.uppercase() }, label = { Text("Code, bv. HERFST20") },
                     modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(title, { title = it }, label = { Text("Naam actie") }, modifier = Modifier.fillMaxWidth())
@@ -96,22 +99,36 @@ fun PromoCodesDialog(businessId: String, onClose: () -> Unit) {
                                     .put("min_spend", minimum).put("starts_at", now.toString())
                                     .put("ends_at", now.plusDays(duration).toString()).put("max_uses", limit)
                                     .put("active", active)
+                                editing?.let { payload.put("id", it.optString("id")) }
                                 Account.rpc("pasr_business_promo_save", JSONObject().put("p_promo", payload))
-                                status = "Actiecode opgeslagen."; code = ""; title = ""
+                                status = "Actiecode opgeslagen."; code = ""; title = ""; editing=null
                                 reload()
                             } catch (e: Exception) { status = e.message ?: "Opslaan mislukt." }
                             busy = false
                         }
                     }
-                }) { Text("Actiecode opslaan") }
+                }) { Text(if(editing==null)"Actiecode aanmaken" else "Wijzigingen opslaan") }
                 Text("Bestaande actiecodes")
                 rows.forEach { row ->
-                    Text(row.optString("code") + " · " + row.optString("title") +
-                        " · " + row.optInt("used_count") + "/" + row.optInt("max_uses") +
-                        if (row.optBoolean("active")) " · Actief" else " · Uit")
+                    BusinessOfferCard("Pasr ondernemer",row,true)
+                    Text("Ondernemerscode: "+row.optString("code")+" · "+
+                        row.optInt("used_count")+"/"+row.optInt("max_uses")+" gebruikt")
+                    Row {
+                        TextButton(onClick={
+                            editing=row;code=row.optString("code");title=row.optString("title")
+                            kind=row.optString("discount_type","percent")
+                            amount=row.optString("discount_value")
+                            minSpend=row.optString("min_spend")
+                            maxUses=row.optString("max_uses")
+                            active=row.optBoolean("active")
+                        },enabled=!row.optBoolean("deleted")) { Text("Bewerken") }
+                        TextButton(onClick={deleting=row},enabled=!row.optBoolean("deleted")) {
+                            Text("Verwijderen")
+                        }
+                    }
                 }
                 OutlinedTextField(verify, { verify = it.uppercase(); verified = false },
-                    label = { Text("Actiecode controleren / gebruiken") }, modifier = Modifier.fillMaxWidth())
+                    label = { Text("Persoonlijke PA-code uit Pasr: Klantenkaarten") }, modifier = Modifier.fillMaxWidth())
                 Button(enabled = !busy && verify.length >= 4, onClick = {
                     busy = true
                     scope.launch {
@@ -134,10 +151,29 @@ fun PromoCodesDialog(businessId: String, onClose: () -> Unit) {
                         busy = false
                     }
                 }) { Text("Eén keer gebruiken") }
-                Text("Registreer gebruik pas nadat je de korting bij de kassa hebt toegepast.")
+                Text("De algemene ondernemerscode kan niet worden verzilverd. Scan de persoonlijke PA-code uit Pasr: Klantenkaarten.")
                 if (status.isNotBlank()) Text(status)
             }
         },
         confirmButton = { TextButton(onClick = onClose) { Text("Sluiten") } },
     )
+    if(deleting!=null) {
+        AlertDialog(
+            onDismissRequest={deleting=null},
+            title={Text("Actiecode verwijderen?")},
+            text={Text("Alle persoonlijke bewijzen worden onbruikbaar, maar eerder gebruik blijft bewaard.")},
+            confirmButton={TextButton(onClick={
+                val item=deleting;deleting=null
+                if(item!=null)scope.launch {
+                    try{
+                        Account.rpc("pasr_business_discount_remove",JSONObject()
+                            .put("p_business",businessId).put("p_id",item.optString("id"))
+                            .put("p_kind","code"))
+                        status="Actiecode verwijderd en onbruikbaar.";reload()
+                    }catch(e:Exception){status=e.message?:"Verwijderen mislukt."}
+                }
+            }){Text("Definitief verwijderen")}},
+            dismissButton={TextButton(onClick={deleting=null}){Text("Annuleren")}}
+        )
+    }
 }
