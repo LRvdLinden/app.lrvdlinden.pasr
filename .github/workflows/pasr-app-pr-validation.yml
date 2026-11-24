@@ -9,6 +9,9 @@ on:
       - "Widgets/**"
       - "Pasr.xcodeproj/**"
       - "zakelijk/apple/**"
+      - "website/**"
+      - "tools/make_zakelijk.py"
+      - "tools/verify_zakelijk_dashboard.py"
       - "supabase/**"
       - ".github/workflows/backend.yml"
       - "android/pasr/**"
@@ -26,6 +29,17 @@ permissions:
   contents: read
 
 jobs:
+  zakelijk-website-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all website tabs and feature controllers
+        run: |
+          python3 tools/verify_zakelijk_dashboard.py
+          node --check website/assets/zakelijk.js
+          node --check website/assets/loyalty2.js
+          python3 -m py_compile tools/make_zakelijk.py
+
   version-and-project:
     runs-on: ubuntu-latest
     steps:
