@@ -1056,3 +1056,17 @@ html, body { overflow-x: clip; max-width: 100%; }
 .fv-stamps .st.on { border: 0; background: transparent; color: #fff; }
 .fv-stamps .st.on::before { content: ""; display: block; width: 100%; height: 100%; background: currentColor; -webkit-mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; mask: url('/assets/pasr-stamp.svg') center / contain no-repeat; }
 .fv-stamps .st.on svg { display: none; }
+
+/* Pasr public website: system light/dark theme. Card artwork keeps its own colours. */
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]){color-scheme:dark;--paper:#111020;--paper-2:#1C1A30;--ink:#F2F1FF;--ink-2:#B9B6D6;--line:#373350;--iris:#8C81FF;--iris-deep:#A79FFF}
+:root:not([data-theme="light"]) .btn-primary{background:#A79FFF;color:#17162A;border-color:#A79FFF}
+:root:not([data-theme="light"]) .why,:root:not([data-theme="light"]) .feature.dark{background:#25213D;color:#F2F1FF;border-color:#373350}
+:root:not([data-theme="light"]) .phone{color:#17162A}
+:root:not([data-theme="light"]) .phone .pass:not(.ink-dark){color:#fff}
+:root:not([data-theme="light"]) .zk-kicker{background:#30294f;color:#C1B9FF}
+:root:not([data-theme="light"]) .ds-primary,:root:not([data-theme="light"]) .ch-global-search button,:root:not([data-theme="light"]) .ch-sections a[aria-current="page"]{background:#A79FFF;color:#17162A!important}
+}
+:root[data-theme="dark"]{color-scheme:dark;--paper:#111020;--paper-2:#1C1A30;--ink:#F2F1FF;--ink-2:#B9B6D6;--line:#373350;--iris:#8C81FF;--iris-deep:#A79FFF}
+:root[data-theme="light"]{color-scheme:light}
+footer .wrap nav{display:flex;flex-wrap:wrap;gap:9px 18px}
