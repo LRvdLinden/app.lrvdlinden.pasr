@@ -25,7 +25,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           work="$(mktemp -d)"
-          mkdir -p "$work/Pasr-Klantenkaarten-1.0.4" "$work/Pasr-Zakelijk-1.0.2"
+          mkdir -p "$work/Pasr-Klantenkaarten-1.0.4" "$work/Pasr-Zakelijk-1.0.3"
           cp -a App Shared Watch Widgets Config Pasr.xcodeproj "$work/Pasr-Klantenkaarten-1.0.4/"
           cat > "$work/Pasr-Klantenkaarten-1.0.4/OPEN-IN-XCODE.md" <<'INFO'
           # Pasr: Klantenkaarten 1.0.4
@@ -35,9 +35,9 @@ jobs:
           Ga naar Product > Archive en daarna Organizer > Distribute App > App Store Connect.
           Het project bevat iPhone/iPad, Watch, Widgets, Swift-broncode en assets.
           INFO
-          cp -a zakelijk/apple/. "$work/Pasr-Zakelijk-1.0.2/"
-          cat > "$work/Pasr-Zakelijk-1.0.2/OPEN-IN-XCODE.md" <<'INFO'
-          # Pasr Zakelijk 1.0.2
+          cp -a zakelijk/apple/. "$work/Pasr-Zakelijk-1.0.3/"
+          cat > "$work/Pasr-Zakelijk-1.0.3/OPEN-IN-XCODE.md" <<'INFO'
+          # Pasr Zakelijk 1.0.3
           Open `PasrZakelijk.xcodeproj` in Xcode op een Mac.
           Selecteer scheme `PasrZakelijk`, kies 'Any iOS Device (arm64)',
           configureer je Apple Developer Team en signing.
@@ -45,9 +45,9 @@ jobs:
           Inclusief Swift-broncode, assets, entitlements en make_project.py.
           INFO
           test -f "$work/Pasr-Klantenkaarten-1.0.4/Pasr.xcodeproj/project.pbxproj"
-          test -f "$work/Pasr-Zakelijk-1.0.2/PasrZakelijk.xcodeproj/project.pbxproj"
+          test -f "$work/Pasr-Zakelijk-1.0.3/PasrZakelijk.xcodeproj/project.pbxproj"
           (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Klantenkaarten-Xcode-1.0.4.zip" Pasr-Klantenkaarten-1.0.4)
-          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.2.zip" Pasr-Zakelijk-1.0.2)
+          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.2.zip" Pasr-Zakelijk-1.0.3)
           unzip -tq dist/Pasr-Klantenkaarten-Xcode-1.0.4.zip
           unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.2.zip
           ls -lh dist/*.zip
@@ -55,7 +55,7 @@ jobs:
       - name: Xcode-projecten als downloadbare artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Pasr-Xcode-Projecten-1.0.4-en-1.0.2
+          name: Pasr-Xcode-Projecten-1.0.4-en-1.0.3
           path: dist/*.zip
           if-no-files-found: error
           retention-days: 90
@@ -66,8 +66,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="xcode-pasr-1.0.4-zakelijk-1.0.2"
+          TAG="xcode-pasr-1.0.4-zakelijk-1.0.3"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target "$GITHUB_SHA" --title "Xcode projecten: Pasr 1.0.4 + Zakelijk 1.0.2" --notes "Twee volledige Xcode-bronprojecten om lokaal met Xcode te archiveren en naar App Store Connect te uploaden. Apple signing en archive gebeuren lokaal." --latest=false
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Xcode projecten: Pasr 1.0.4 + Zakelijk 1.0.3" --notes "Twee volledige Xcode-bronprojecten om lokaal met Xcode te archiveren en naar App Store Connect te uploaden. Apple signing en archive gebeuren lokaal." --latest=false
           fi
           gh release upload "$TAG" dist/Pasr-Klantenkaarten-Xcode-1.0.4.zip dist/Pasr-Zakelijk-Xcode-1.0.2.zip --clobber
