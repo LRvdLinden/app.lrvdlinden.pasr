@@ -15,11 +15,13 @@ def site_nav(active="kaarten"):
     return f'''<header class="wrap nav ch-site-nav">
   <a class="brand" href="/"><img src="/assets/icon.png" width="36" height="36" alt=""><span>pasr</span></a>
   <nav aria-label="Hoofdmenu"><ul>
+    <li><a href="/#ontdekken">Ontdekken</a></li>
     <li><a href="/kaarten/">Klantenkaarten</a></li>
     <li><a href="/cadeaubon/">Cadeaukaarten</a></li>
     <li><a href="/stempelkaarten/">Stempelkaarten</a></li>
     <li><a href="/kortingsbonnen/">Kortingsbonnen</a></li>
     <li><a href="/saldo-checken/">Saldo checken</a></li>
+    <li><a href="/#functies">Functies</a></li>
     <li><a class="ch-business-link" href="/zakelijk/">Voor ondernemers</a></li>
   </ul></nav>
 </header>'''
@@ -50,12 +52,14 @@ def hero(active="kaarten", count=None):
         "stempelkaarten": "Ontdek digitale stempelkaarten, lokale winkels en de beloningen die je kunt sparen.",
         "saldo-checken": "Vind de officiële saldo checker van je cadeaukaart. Je voert je kaartnummer uitsluitend bij de uitgever in.",
     }.get(active, "")
+    search_path = {"saldo-checken": "/saldo-checken/", "stempelkaarten": "/stempelkaarten/", "cadeaubon": "/cadeaubon/", "klantenkaart": "/klantenkaart/"}.get(active, "/kaarten/")
+    search_kind = '<input type="hidden" name="soort" value="kortingsbonnen">' if active == "kortingsbonnen" else ""
     return f'''<section class="wrap ch-hero" aria-label="Kaarten en voordelen">
       <div class="ch-hero-copy">
         <span class="ch-eyebrow">Pasr · Kaarten &amp; Voordelen</span>
         <h1>{title}</h1><p>{subtitle}</p>
-        <form action="/kaarten/" method="get" role="search" class="ch-global-search">
-          <label class="sr-only" for="ch-search">Zoek een winkel, kaart of voordeel</label>
+        <form action="{search_path}" method="get" role="search" class="ch-global-search">
+          {search_kind}<label class="sr-only" for="ch-search">Zoek een winkel, kaart of voordeel</label>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input id="ch-search" type="search" name="q" placeholder="Zoek een winkel, kaart of aanbieding…" autocomplete="off">
           <button type="submit">Zoeken</button>
@@ -82,3 +86,7 @@ def strip(active="kaarten"):
     return f'''<div class="ch-intro wrap"><span class="ch-eyebrow">Pasr · Kaarten &amp; Voordelen</span>
     <p>Ontdek kaarten, bekijk saldo-informatie en vind acties van deelnemende ondernemers.
     Je bewaart je eigen kaarten veilig in Pasr.</p></div>{section_nav(active)}'''
+
+
+def footer_links():
+    return '''<a href="/kaarten/">Klantenkaarten</a><a href="/cadeaubon/">Cadeaukaarten</a><a href="/stempelkaarten/">Stempelkaarten</a><a href="/kortingsbonnen/">Kortingsbonnen</a><a href="/saldo-checken/">Saldo checken</a><a href="/zakelijk/">Voor ondernemers</a><a href="/privacy/">Privacy</a><a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a><a href="/support/">Support</a>'''
