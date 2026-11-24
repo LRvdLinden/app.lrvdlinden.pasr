@@ -271,3 +271,112 @@ revoke all on function public.pasr_business_discount_remove(uuid,uuid,text),
 grant execute on function public.pasr_business_discount_remove(uuid,uuid,text),
  public.pasr_business_promo_claim(uuid), public.pasr_business_promo_mine() to authenticated;
 grant execute on function public.pasr_business_promo_public() to anon,authenticated;
+
+-- Prevent undeleting removed offers through the save RPC; expose removal status only to owner.
+create or replace function public.pasr_business_coupon_save(p_coupon jsonb)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare b public.pasr_businesses; cid uuid; c public.pasr_business_coupons;
+  t text; desc_text text; typ text; v numeric; m numeric; st timestamptz; en timestamptz;
+  maxn int; pub boolean; onep boolean; linked uuid;
+begin
+  if auth.uid() is null then raise exception 'Log eerst in.' using errcode='28000'; end if;
+  if jsonb_typeof(p_coupon)<>'object' or octet_length(p_coupon::text)>4000 then raise exception 'Ongeldige kortingsbon.' using errcode='22023'; end if;
+  select * into b from public.pasr_businesses where id=(p_coupon->>'business_id')::uuid and owner=auth.uid();
+  if b.id is null or b.status<>'approved' then raise exception 'Je zaak is niet goedgekeurd.' using errcode='42501'; end if;
+  cid:=nullif(p_coupon->>'id','')::uuid;
+  t:=trim(coalesce(p_coupon->>'title',''));desc_text:=trim(coalesce(p_coupon->>'description',''));
+  typ:=p_coupon->>'discount_type';
+  v:=(p_coupon->>'discount_value')::numeric;m:=coalesce((p_coupon->>'min_spend')::numeric,0);
+  st:=coalesce((p_coupon->>'starts_at')::timestamptz,now());
+  en:=(p_coupon->>'ends_at')::timestamptz;
+  maxn:=coalesce((p_coupon->>'max_claims')::int,500);
+  onep:=coalesce((p_coupon->>'one_per_customer')::boolean,true);
+  pub:=coalesce((p_coupon->>'public')::boolean,false);
+  linked:=nullif(p_coupon->>'card_id','')::uuid;
+  if linked is not null and not exists(select 1 from public.pasr_business_cards where id=linked and business_id=b.id) then
+    raise exception 'Kaart hoort niet bij je zaak.' using errcode='42501';
+  end if;
+  if char_length(t) not between 3 and 80 or char_length(desc_text)>300 or
+     typ not in ('amount','percent') or v<=0 or v > (case when typ='percent' then 100 else 100000 end) or
+     m<0 or maxn not between 1 and 100000 or en is null or en<=st or en>st+interval '366 days' then
+     raise exception 'Controleer bedrag, tekst en datums.' using errcode='22023';
+  end if;
+  if cid is null then
+    insert into public.pasr_business_coupons(business_id,card_id,title,description,discount_type,discount_value,min_spend,starts_at,ends_at,max_claims,one_per_customer,public)
+    values(b.id,linked,t,desc_text,typ,v,m,st,en,maxn,onep,pub) returning * into c;
+  else
+    update public.pasr_business_coupons set title=t,description=desc_text,card_id=linked,discount_type=typ,
+       discount_value=v,min_spend=m,starts_at=st,ends_at=en,max_claims=maxn,one_per_customer=onep,public=pub
+    where id=cid and business_id=b.id and deleted_at is null returning * into c;
+    if c.id is null then raise exception 'Kortingsbon niet gevonden.' using errcode='P0002'; end if;
+  end if;
+  return jsonb_build_object('id',c.id,'ok',true);
+end $$;
+
+create or replace function public.pasr_business_promo_save(p_promo jsonb)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare biz public.pasr_businesses; existing public.pasr_business_promo_codes;
+ v_id uuid; v_code text; v_title text; v_type text; v_value numeric; v_min numeric;
+ v_start timestamptz; v_end timestamptz; v_limit integer; v_active boolean;
+begin
+ if auth.uid() is null or jsonb_typeof(p_promo)<>'object' or octet_length(p_promo::text)>4000 then
+   raise exception 'Ongeldige actiecode.' using errcode='22023';
+ end if;
+ select * into biz from public.pasr_businesses
+ where id=(p_promo->>'business_id')::uuid and owner=auth.uid();
+ if biz.id is null or biz.status<>'approved' then
+   raise exception 'Alleen de eigenaar van een goedgekeurde zaak kan actiecodes aanmaken.' using errcode='42501';
+ end if;
+ v_id:=nullif(p_promo->>'id','')::uuid;
+ v_code:=upper(trim(coalesce(p_promo->>'code','')));
+ v_title:=trim(coalesce(p_promo->>'title',''));
+ v_type:=p_promo->>'discount_type';
+ v_value:=(p_promo->>'discount_value')::numeric;
+ v_min:=coalesce((p_promo->>'min_spend')::numeric,0);
+ v_start:=coalesce((p_promo->>'starts_at')::timestamptz,now());
+ v_end:=(p_promo->>'ends_at')::timestamptz;
+ v_limit:=coalesce((p_promo->>'max_uses')::int,100);
+ v_active:=coalesce((p_promo->>'active')::boolean,false);
+ if v_code !~ '^[A-Z0-9][A-Z0-9-]{3,23}$' or v_code ~ '^PC[A-HJ-NP-Z2-9]{22}$'
+   or char_length(v_title) not between 3 and 80 or v_type not in ('amount','percent')
+   or v_value<=0 or v_value>(case when v_type='percent' then 100 else 100000 end)
+   or v_min<0 or v_limit not between 1 and 100000 or v_end is null
+   or v_end<=v_start or v_end>v_start+interval '366 days' then
+   raise exception 'Controleer code (4–24 tekens), titel, bedrag, geldigheid en maximaal gebruik.' using errcode='22023';
+ end if;
+ if v_id is null then
+   insert into public.pasr_business_promo_codes(business_id,code,title,discount_type,discount_value,
+       min_spend,starts_at,ends_at,max_uses,active)
+   values(biz.id,v_code,v_title,v_type,v_value,v_min,v_start,v_end,v_limit,v_active)
+   returning * into existing;
+ else
+   update public.pasr_business_promo_codes set code=v_code,title=v_title,discount_type=v_type,
+     discount_value=v_value,min_spend=v_min,starts_at=v_start,ends_at=v_end,max_uses=v_limit,active=v_active
+   where id=v_id and business_id=biz.id and deleted_at is null and used_count<=v_limit
+   returning * into existing;
+   if existing.id is null then raise exception 'Actiecode niet gevonden of limiet is te laag.' using errcode='P0002'; end if;
+ end if;
+ return jsonb_build_object('id',existing.id,'code',existing.code,'ok',true);
+exception when unique_violation then
+ raise exception 'Deze actiecode bestaat al. Kies een andere code.' using errcode='23505';
+end $$;
+
+
+create or replace function public.pasr_business_promo_list(p_business uuid)
+returns jsonb language plpgsql stable security definer set search_path=public as $$
+begin
+ if not exists(select 1 from public.pasr_businesses b where b.id=p_business and b.owner=auth.uid()) then
+   raise exception 'Alleen de eigenaar mag actiecodes beheren.' using errcode='42501';
+ end if;
+ return coalesce((select jsonb_agg(jsonb_build_object(
+   'id',p.id,'code',p.code,'title',p.title,'discount_type',p.discount_type,
+   'discount_value',p.discount_value,'min_spend',p.min_spend,
+   'starts_at',p.starts_at,'ends_at',p.ends_at,'max_uses',p.max_uses,
+   'used_count',p.used_count,'active',p.active,'deleted',p.deleted_at is not null,
+   'logo',(select bc.logo from public.pasr_business_cards bc
+      where bc.business_id=p.business_id and bc.logo is not null order by bc.created_at limit 1),
+   'color',coalesce((select bc.color from public.pasr_business_cards bc
+      where bc.business_id=p.business_id order by bc.created_at limit 1),'#6A5CFF'))
+   order by p.created_at desc) from public.pasr_business_promo_codes p
+   where p.business_id=p_business),'[]'::jsonb);
+end $$;
