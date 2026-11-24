@@ -68,7 +68,6 @@ struct CardsView: View {
                         .font(.subheadline.weight(.semibold))
                     }
                 }
-            }
                 Section("Kortingscoupons") {
                     if offers.isEmpty {
                         Text("Nog geen kortingscoupons").foregroundStyle(.secondary)
@@ -111,6 +110,7 @@ struct CardsView: View {
                     Button("Actiecode aanmaken", systemImage: "plus") { promoCodes = true }
                 }
                 if let offerError { Section { Text(offerError).font(.footnote).foregroundStyle(Theme.coral) } }
+            }
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Acties")
