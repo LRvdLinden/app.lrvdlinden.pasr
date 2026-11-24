@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths: ["website/**", ".github/workflows/website.yml", "tools/make_*.py", "tools/store_catalog.py",
             "tools/fetch_live_catalog.py", "tools/catalog_hub.py", "tools/verify_website.py",
-            "tools/verify_zakelijk_dashboard.py", "tools/version_assets.py", "supabase/catalog/**"]
+            "tools/verify_zakelijk_dashboard.py", "tools/version_assets.py", "supabase/catalog/**", "preview/**"]
   schedule:
     - cron: "17 * * * *"   # elk uur: bijwerken uit het beheer (uploadt alleen als er iets veranderd is)
   workflow_dispatch:
@@ -34,6 +34,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate promo JavaScript and page generator
         run: |
+          node --check preview/pasr-preview.js
+          python3 -m py_compile preview/build_preview.py
           node --check website/assets/promo.js
           node --check website/assets/zakelijk.js
           node --check website/assets/loyalty2.js
@@ -111,6 +113,7 @@ jobs:
           python3 tools/fetch_live_catalog.py || echo "::warning::Live catalogus ophalen mislukt; lokale catalogus wordt gebruikt."
           [ -f .cache/live-catalog.json ] || echo "::warning::Geen live catalogus: de pagina's komen uit de repo."
           python3 tools/make_website.py
+          python3 preview/build_preview.py
           python3 tools/verify_zakelijk_dashboard.py
           python3 tools/make_sitemap.py
           python3 tools/verify_website.py
