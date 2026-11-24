@@ -62,12 +62,20 @@ fun CouponsScreen() {
     suspend fun refresh() {
         busy = true
         try {
-            available = (Api.publicRpc("pasr_business_coupon_list", JSONObject()) as? JSONArray)
+            val publicCoupons = (Api.publicRpc("pasr_business_coupon_list", JSONObject()) as? JSONArray)
                 ?.let { j -> (0 until j.length()).mapNotNull(j::optJSONObject) } ?: emptyList()
-            mine = if (Account.isSignedIn)
-                (Api.rpc("pasr_business_coupon_mine", JSONObject()) as? JSONArray)
+            val publicCodes = (Api.publicRpc("pasr_business_promo_public", JSONObject()) as? JSONArray)
+                ?.let { j -> (0 until j.length()).mapNotNull(j::optJSONObject)?.onEach { it.put("kind", "code") } }
+                ?: emptyList()
+            available = publicCoupons + publicCodes
+            mine = if (Account.isSignedIn) {
+                val coupons = (Api.rpc("pasr_business_coupon_mine", JSONObject()) as? JSONArray)
                     ?.let { j -> (0 until j.length()).mapNotNull(j::optJSONObject) } ?: emptyList()
-                else emptyList()
+                val promos = (Api.rpc("pasr_business_promo_mine", JSONObject()) as? JSONArray)
+                    ?.let { j -> (0 until j.length()).mapNotNull(j::optJSONObject)?.onEach { it.put("kind", "code") } }
+                    ?: emptyList()
+                coupons + promos
+            } else emptyList()
             error = null
         } catch (e: Exception) {
             error = e.message ?: "De kortingsbonnen konden niet worden geladen."
@@ -115,49 +123,40 @@ fun CouponsScreen() {
             if (mine.isNotEmpty()) {
                 item { Text("Mijn kortingsbonnen", style = MaterialTheme.typography.titleLarge) }
                 items(mine, key = { "saved-" + it.optString("id") }) { x ->
-                    Card {
-                        Row(Modifier.fillMaxWidth().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.ConfirmationNumber, null)
-                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                                Text(x.optString("title"), fontWeight = FontWeight.Bold)
-                                Text(x.optString("business"))
-                            }
-                            Button(onClick = { openCode = x.optString("code") },
-                                enabled = !x.optBoolean("redeemed")) {
-                                Text(if (x.optBoolean("redeemed")) "Gebruikt" else "Toon")
-                            }
+                    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        PasrOfferCard(x, saved = true)
+                        if (x.optBoolean("redeemed")) {
+                            Text("PASR · GEBRUIKT · Niet opnieuw te gebruiken")
+                        } else if (x.optBoolean("disabled") || x.isNull("code") || x.optString("code").isBlank()) {
+                            Text("Deze aanbieding is niet meer geldig.")
+                        } else Button(onClick = { openCode = x.optString("code") }) {
+                            Text("Toon persoonlijke QR-code")
                         }
                     }
                 }
             }
             item { Text("Aanbiedingen", style = MaterialTheme.typography.titleLarge) }
             items(available, key = { it.optString("id") }) { c ->
-                Card {
-                    Column(Modifier.fillMaxWidth().padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(c.optString("business"), style = MaterialTheme.typography.titleSmall)
-                        val value = c.optDouble("discount_value")
-                        val amount = if (c.optString("discount_type") == "percent")
-                            value.toInt().toString() + "% korting"
-                            else "€ " + "%.2f".format(java.util.Locale.forLanguageTag("nl-NL"), value) + " korting"
-                        Text(amount, style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        Text(c.optString("title"), fontWeight = FontWeight.Bold)
-                        Text(c.optString("description"))
-                        Button(onClick = {
-                            if (!Account.isSignedIn) {
-                                nav.push(Screen.AccountScreen)
-                            } else scope.launch {
-                                try {
-                                    val v = Api.rpc("pasr_business_coupon_claim",
-                                        JSONObject().put("p_coupon", c.optString("id"))) as? JSONObject
-                                    openCode = v?.optString("code")
-                                    refresh()
-                                } catch (e: Exception) { error = e.message }
-                            }
-                        }) { Text(if (Account.isSignedIn) "Bewaar kortingsbon" else "Log in om te bewaren") }
-                    }
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PasrOfferCard(c, saved = false)
+                    if (c.optString("description").isNotBlank()) Text(c.optString("description"))
+                    Button(onClick = {
+                        if (!Account.isSignedIn) {
+                            nav.push(Screen.AccountScreen)
+                        } else scope.launch {
+                            try {
+                                val promo = c.optString("kind") == "code"
+                                val v = Api.rpc(if (promo) "pasr_business_promo_claim"
+                                    else "pasr_business_coupon_claim",
+                                    JSONObject().put(if (promo) "p_promo" else "p_coupon", c.optString("id")))
+                                    as? JSONObject
+                                openCode = v?.optString("code")?.takeIf { it.isNotBlank() && it != "null" }
+                                refresh()
+                            } catch (e: Exception) { error = e.message }
+                        }
+                    }) { Text(if (!Account.isSignedIn) "Log in om te bewaren"
+                             else if (c.optString("kind") == "code") "Bewaar actiecode in Pasr"
+                             else "Bewaar kortingsbon") }
                 }
             }
             if (!busy && available.isEmpty()) item {
