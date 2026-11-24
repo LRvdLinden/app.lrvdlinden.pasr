@@ -43,6 +43,11 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
     var message by remember { mutableStateOf("") }
     var processing by remember { mutableStateOf(false) }
     var coupons by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var editing by remember { mutableStateOf<JSONObject?>(null) }
+    var deleting by remember { mutableStateOf<JSONObject?>(null) }
+    var days by remember { mutableStateOf("30") }
+    var maxClaims by remember { mutableStateOf("500") }
+    var onePerCustomer by remember { mutableStateOf(true) }
 
     suspend fun load() {
         try {
@@ -58,7 +63,8 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max = 580.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Een nieuwe actie aanmaken")
+                Text(if (editing == null) "Nieuwe kortingscoupon" else "Kortingscoupon bewerken")
+                if (editing != null) TextButton(onClick = { editing = null; title = ""; description = "" }) { Text("Nieuwe coupon") }
                 OutlinedTextField(title, { title = it }, label = { Text("Naam kortingsbon") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(description, { description = it }, label = { Text("Voorwaarden") }, modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -69,6 +75,9 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
                     modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(minSpend, { minSpend = it }, label = { Text("Minimale besteding €") },
                     modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(days, { days = it }, label = { Text("Geldig vanaf nu (dagen)") }, modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(maxClaims, { maxClaims = it }, label = { Text("Maximaal aantal uitgiftes") }, modifier=Modifier.fillMaxWidth())
+                Row { Text("Eén per klant",Modifier.weight(1f)); Checkbox(onePerCustomer,onCheckedChange={onePerCustomer=it}) }
                 Row {
                     Text("Publiceer in Pasr", modifier = Modifier.weight(1f))
                     Checkbox(published, onCheckedChange = { published = it })
@@ -76,7 +85,10 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
                 Button(enabled = !processing && title.length >= 3, onClick = {
                     val amount = value.replace(',', '.').toDoubleOrNull()
                     val minimum = minSpend.replace(',', '.').toDoubleOrNull()
-                    if (amount == null || amount <= 0 || minimum == null || minimum < 0) {
+                    val validity=days.toLongOrNull()
+                    val limit=maxClaims.toIntOrNull()
+                    if (amount == null || amount <= 0 || minimum == null || minimum < 0 ||
+                        validity == null || validity !in 1..366 || limit == null || limit !in 1..100000) {
                         message = "Controleer de bedragen."; return@Button
                     }
                     processing = true
@@ -87,19 +99,31 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
                                 .put("business_id", businessId).put("title", title.trim())
                                 .put("description", description.trim())
                                 .put("discount_type", type).put("discount_value", amount).put("min_spend", minimum)
-                                .put("starts_at", now.toString()).put("ends_at", now.plusDays(30).toString())
-                                .put("max_claims", 500).put("one_per_customer", true).put("public", published)
+                                .put("starts_at", now.toString()).put("ends_at", now.plusDays(validity).toString())
+                                .put("max_claims", limit).put("one_per_customer", onePerCustomer).put("public", published)
+                            editing?.let { payload.put("id", it.optString("id")) }
                             Account.rpc("pasr_business_coupon_save", JSONObject().put("p_coupon", payload))
-                            title = ""; description = ""; message = "Kortingsbon opgeslagen."
+                            title = ""; description = ""; editing = null; message = "Kortingsbon opgeslagen."
                             load()
                         } catch (e: Exception) { message = e.message ?: "Opslaan mislukt." }
                         processing = false
                     }
-                }) { Text("Kortingsbon aanmaken (30 dagen)") }
+                }) { Text(if (editing == null) "Kortingsbon aanmaken" else "Wijzigingen opslaan") }
                 Text("Bestaande kortingsbonnen")
                 coupons.forEach { c ->
-                    Text(c.optString("title") + " · " + c.optInt("claimed") +
-                        " bewaard · " + c.optInt("redeemed") + " ingewisseld")
+                    BusinessOfferCard(c.optString("business"),c,false)
+                    Row {
+                        TextButton(onClick={
+                            editing=c;title=c.optString("title");description=c.optString("description")
+                            type=c.optString("discount_type","amount")
+                            value=c.optString("discount_value");minSpend=c.optString("min_spend")
+                            published=c.optBoolean("public");maxClaims=c.optString("max_claims")
+                            onePerCustomer=c.optBoolean("one_per_customer",true)
+                        },enabled=!c.optBoolean("deleted")) { Text("Bewerken") }
+                        TextButton(onClick={deleting=c},enabled=!c.optBoolean("deleted")) {
+                            Text("Verwijderen")
+                        }
+                    }
                 }
                 Text("Code van klant verzilveren")
                 OutlinedTextField(code, { code = it; couponVerified = false }, label = { Text("PC-code") },
@@ -142,4 +166,25 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
         },
         confirmButton = { TextButton(onClick = onClose) { Text("Sluiten") } }
     )
+    if (deleting != null) {
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text("Coupon verwijderen?") },
+            text = { Text("De coupon wordt onmiddellijk onbruikbaar. Bestaande verzilveringen blijven bewaard.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val item=deleting; deleting=null
+                    if (item != null) scope.launch {
+                        try {
+                            Account.rpc("pasr_business_discount_remove",JSONObject()
+                                .put("p_business",businessId).put("p_id",item.optString("id"))
+                                .put("p_kind","coupon"))
+                            message="Coupon verwijderd, historie behouden.";load()
+                        } catch(e:Exception){message=e.message ?: "Verwijderen mislukt."}
+                    }
+                }) { Text("Definitief verwijderen") }
+            },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Annuleren") } }
+        )
+    }
 }
