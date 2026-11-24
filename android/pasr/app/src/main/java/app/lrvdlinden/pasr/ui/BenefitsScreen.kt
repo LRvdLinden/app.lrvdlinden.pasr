@@ -21,11 +21,19 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.lrvdlinden.pasr.data.CardKind
 import app.lrvdlinden.pasr.data.CardStore
+import app.lrvdlinden.pasr.data.Account
+import app.lrvdlinden.pasr.data.Api
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.NumberFormat
 import java.text.DateFormat
 import java.util.Date
@@ -38,6 +46,15 @@ import java.util.Locale
 fun BenefitsScreen() {
     val nav = LocalNav.current
     val all by CardStore.cards.collectAsState()
+    var community by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        if (Account.isSignedIn) {
+            community = runCatching {
+                val json = Api.rpc("pasr_business_community_progress", JSONObject()) as? JSONArray
+                (0 until (json?.length() ?: 0)).mapNotNull { json?.optJSONObject(it) }
+            }.getOrDefault(emptyList())
+        }
+    }
     val vouchers = all.filter { it.deletedAt == null && it.kind == CardKind.VOUCHER }
     val total = vouchers.filter { it.currencyCode == null || it.currencyCode.equals("EUR", true) }
         .sumOf { it.balance ?: 0.0 }
@@ -76,6 +93,28 @@ fun BenefitsScreen() {
                                 style = MaterialTheme.typography.bodySmall)
                         }
                         Text(card.balance?.let { euro.format(it) } ?: "Saldo onbekend")
+                    }
+                }
+            }
+            if (community.isNotEmpty()) {
+                item { Text("Gezamenlijke winkelstraatacties", style = MaterialTheme.typography.titleLarge) }
+                items(community, key = { "community-" + it.optString("id") }) { campaign ->
+                    val visited = campaign.optInt("visited")
+                    val needed = campaign.optInt("required").coerceAtLeast(1)
+                    Card {
+                        Column(Modifier.fillMaxWidth().padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(campaign.optString("name"), fontWeight = FontWeight.Bold)
+                            Text("Bezocht: $visited van $needed verschillende winkels")
+                            androidx.compose.material3.LinearProgressIndicator(
+                                progress = { (visited.toFloat() / needed).coerceIn(0f, 1f) },
+                                modifier = Modifier.fillMaxWidth())
+                            Text("Beloning: " + campaign.optString("reward"))
+                            if (campaign.optBoolean("claimed")) Text("✓ Beloning al uitgegeven")
+                            else if (visited >= needed) Text(
+                                "Beloning beschikbaar. Laat je lidcode bij een deelnemende zaak scannen.",
+                                color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
