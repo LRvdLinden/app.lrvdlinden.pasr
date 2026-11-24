@@ -28,6 +28,45 @@ def section_nav(active="kaarten"):
     return ('<nav class="wrap ch-sections" aria-label="Soorten kaarten en voordelen">'
             + ''.join(links) + '</nav>')
 
+def hero(active="kaarten", count=None):
+    """Gedeelde hero met een directe cataloguszoekactie en herkenbare kaartcategorieën."""
+    title = {
+        "kaarten": "Al je kaarten &amp; voordelen op één plek",
+        "klantenkaart": "Vind jouw klantenkaart",
+        "cadeaubon": "Ontdek cadeaukaarten en check je saldo",
+        "kortingsbonnen": "Ontdek tijdelijke kortingsbonnen",
+    }.get(active, "Kaarten &amp; voordelen")
+    subtitle = {
+        "kaarten": "Zoek in de kaartencatalogus van Pasr en ontdek actuele acties van ondernemers.",
+        "klantenkaart": "Zoek een winkel en ontdek hoe je spaart en welke voordelen er zijn.",
+        "cadeaubon": "Bekijk kaartinformatie, geldigheid en de officiële saldo-checker van de uitgever.",
+        "kortingsbonnen": "Bewaar een persoonlijke kortingsbon en laat de unieke code bij de ondernemer scannen.",
+    }.get(active, "")
+    return f'''<section class="wrap ch-hero" aria-label="Kaarten en voordelen">
+      <div class="ch-hero-copy">
+        <span class="ch-eyebrow">Pasr · Kaarten &amp; Voordelen</span>
+        <h1>{title}</h1><p>{subtitle}</p>
+        <form action="/kaarten/" method="get" role="search" class="ch-global-search">
+          <label class="sr-only" for="ch-search">Zoek een winkel, kaart of voordeel</label>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="ch-search" type="search" name="q" placeholder="Zoek een winkel, kaart of aanbieding…" autocomplete="off">
+          <button type="submit">Zoeken</button>
+        </form>
+        <div class="ch-hero-tags">
+          <a href="/kaarten/?soort=klantenkaarten">Klantenkaarten</a>
+          <a href="/kaarten/?soort=cadeaukaarten">Cadeaukaarten</a>
+          <a href="/kaarten/?soort=stempelkaarten">Stempelkaarten</a>
+          <a href="/kaarten/?soort=kortingsbonnen">Kortingsbonnen</a>
+        </div>
+      </div>
+      <div class="ch-hero-art" aria-hidden="true">
+        <div class="ch-card ch-card-one"><span>pasr</span><strong>KLANTENKAART</strong><i></i><i></i><i></i></div>
+        <div class="ch-card ch-card-two"><span>pasr</span><strong>CADEAUKAART</strong><b>€ 50</b></div>
+        <div class="ch-card ch-card-three"><span>pasr</span><strong>KORTINGSBON</strong><b>%</b></div>
+      </div>
+    </section>'''
+
+
 def assets():
     return '<link rel="stylesheet" href="/assets/catalog-hub.css">'
 

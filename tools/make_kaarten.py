@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import store_catalog as sc
-from catalog_hub import site_nav, strip, assets as hub_assets
+from catalog_hub import site_nav, strip, hero as hub_hero, assets as hub_assets
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
@@ -306,18 +306,12 @@ def build(write=True):
   {site_nav("kaarten")}
 
   <main>
-    <div class="wrap kh">
-      <p class="pill">Alle kaarten</p>
-      <h1>Al je kaarten &amp; voordelen op één plek</h1>
-      <p class="lead">Zoek klantenkaarten, cadeaukaarten en stempelkaarten. Ontdek ook de actuele kortingsbonnen van ondernemers.</p>
-      <dl class="kh-stats">
-        <div><dt>Klantenkaarten</dt><dd data-count="loyalty">{n["loyalty"]}</dd></div>
-        <div><dt>Cadeaukaarten en vouchers</dt><dd data-count="voucher">{n["voucher"]}</dd></div>
-        <div><dt>Stempelkaarten</dt><dd data-count="stamp">{n["stamp"]}</dd></div>
-      </dl>
-      <p class="kh-date">Bijgewerkt op <time datetime="{now.date().isoformat()}">{day}</time>. Nieuwe winkels komen erbij zonder app-update.</p>
+    {hub_hero("kaarten")}
+    <div class="wrap ch-counts">
+      <span><strong>{n["loyalty"]}</strong> klantenkaarten</span>
+      <span><strong>{n["voucher"]}</strong> cadeaukaarten en vouchers</span>
+      <span><strong>{n["stamp"]}</strong> stempelkaarten</span>
     </div>
-
     {strip("kaarten")}
     <section class="wrap ch-featureline" aria-label="Ontdek meer voordelen">
       <a href="/cadeaubon/"><strong>Cadeaukaarten &amp; saldo</strong><span>Geldigheid, officiële voorwaarden en saldo-checkers van de uitgevers.</span><b>Bekijk cadeaukaarten ›</b></a>

@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import store_catalog as sc
 from make_kaarten import account_config, cover_img, esc, fold, is_light, sort_key, APP_STORE, MONTHS
-from catalog_hub import site_nav, strip, assets as hub_assets
+from catalog_hub import site_nav, strip, hero as hub_hero, assets as hub_assets
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
@@ -484,12 +484,8 @@ def overview(items, kind, year, today):
 {nav(k["dir"])}
 
   <main>
-    <div class="wrap kh">
-      <p class="pill{" loy" if kind == "loyalty" else ""}">{k["label"]}</p>
-      <h1>{h1}</h1>
-      <p class="lead">{lead}</p>
-      <p class="kh-date">{len(items)} {k["nouns"]} · bijgewerkt op <time datetime="{today}">{nl_date(today)}</time></p>
-    </div>
+    {hub_hero(k["dir"])}
+    <p class="wrap ch-guide-count">{len(items)} {k["nouns"]} · bijgewerkt op <time datetime="{today}">{nl_date(today)}</time></p>
 
     {strip(k["dir"])}
     <section class="wrap" id="gidsen" aria-label="{k["label"]}">

@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import verify_barcodes as v
 import store_catalog
 import make_kaarten
-from catalog_hub import site_nav, strip
+from catalog_hub import site_nav, strip, hero as hub_hero
 import make_gids
 
 # Aantallen kaarten, uit de bronnen (StoreTemplates.swift en de catalogus-seeds in supabase/schema.sql): nooit met de hand.
@@ -887,6 +887,7 @@ if __name__ == "__main__":
 </head><body class="cards-page ch-coupon-page">
 <a class="skip" href="#pz2Public">Naar de kortingsbonnen</a>
 {site_nav("kortingsbonnen")}
+{hub_hero("kortingsbonnen")}
 {strip("kortingsbonnen")}
 <main class="wrap" id="pz2Public"></main>
 <footer><div class="wrap"><p>Pasr · Kortingsbonnen worden uitsluitend door deelnemende ondernemers uitgegeven en gecontroleerd. Pasr verkoopt geen cadeaukaarten.</p>

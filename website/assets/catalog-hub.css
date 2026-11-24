@@ -62,3 +62,48 @@
 .cards-page .kf-kind { max-width:100%; overflow-x:auto; scrollbar-width:thin }
 .cards-page .kf-kind label { padding-inline:14px }
 @media(max-width:680px){.cards-page .kf-kind { width:100%; }.cards-page .kf-kind label { padding:9px 10px; font-size:12px; }}
+
+/* Centrale Pasr-catalogus: identieke hero, filters en kaartpresentatie op alle ingangen.
+   Gebruikt uitsluitend bestaande thema-variabelen; geen hardgecodeerde witte panelen. */
+.ch-hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(250px,.75fr);align-items:center;gap:28px;
+  padding:52px clamp(20px,4vw,56px);margin-top:18px;margin-bottom:20px;position:relative;isolation:isolate;
+  border:1px solid var(--line);border-radius:30px;overflow:hidden;
+  background:radial-gradient(circle at 85% 20%,color-mix(in srgb,var(--iris),transparent 82%),transparent 50%),var(--paper-2);}
+.ch-hero h1{font:800 clamp(35px,5vw,62px)/1.07 var(--display);letter-spacing:-.045em;max-width:15ch;margin:13px 0 16px;color:var(--ink)}
+.ch-hero-copy>p{color:var(--ink-2);font-size:clamp(16px,1.7vw,19px);line-height:1.55;max-width:54ch;margin:0 0 25px}
+.ch-global-search{display:flex;align-items:center;gap:12px;background:var(--paper);border:1.5px solid var(--line);padding:6px 6px 6px 17px;border-radius:16px;max-width:650px}
+.ch-global-search:focus-within{border-color:var(--iris);box-shadow:0 0 0 4px color-mix(in srgb,var(--iris),transparent 85%)}
+.ch-global-search svg{width:22px;height:22px;flex:none;color:var(--ink-2)}
+.ch-global-search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--ink);font:inherit;font-size:16px;padding:12px 0}
+.ch-global-search input::placeholder{color:var(--ink-2)}
+.ch-global-search button{border:0;background:var(--iris-deep);color:#fff;font:700 14px/1 inherit;padding:15px 19px;border-radius:11px;cursor:pointer}
+.ch-global-search button:hover{filter:brightness(1.08)}
+.ch-hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}
+.ch-hero-tags a{font-size:13px;font-weight:700;text-decoration:none;color:var(--ink-2);background:var(--paper);
+  border:1px solid var(--line);padding:8px 12px;border-radius:999px}
+.ch-hero-tags a:hover{border-color:var(--iris);color:var(--iris-deep)}
+.ch-hero-art{position:relative;min-height:280px;perspective:900px}
+.ch-card{position:absolute;width:min(94%,320px);height:185px;left:50%;top:50%;border-radius:22px;padding:23px;
+  display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 24px 55px rgba(14,10,37,.18);
+  color:white;transform-origin:center;transition:transform .3s ease}
+.ch-card span{font-size:21px;font-weight:900;letter-spacing:-.05em}
+.ch-card strong{font-size:11px;letter-spacing:.15em;opacity:.85}
+.ch-card b{font-size:43px;line-height:1;font-weight:800}
+.ch-card-one{background:linear-gradient(130deg,#6A5CFF,#9B90FF);transform:translate(-57%,-62%) rotate(-13deg)}
+.ch-card-two{background:linear-gradient(130deg,#17162A,#47416C);transform:translate(-42%,-49%) rotate(5deg)}
+.ch-card-three{background:linear-gradient(130deg,#168A73,#2ED3A6);transform:translate(-29%,-33%) rotate(16deg)}
+.ch-card-one i{display:none}
+.ch-hero-art:hover .ch-card-one{transform:translate(-69%,-70%) rotate(-17deg)}
+.ch-hero-art:hover .ch-card-three{transform:translate(-19%,-24%) rotate(20deg)}
+.ch-counts{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:0 auto 20px}
+.ch-counts span{background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:12px 18px;color:var(--ink-2);font-size:14px}
+.ch-counts strong{font-size:21px;color:var(--iris-deep);margin-right:4px}
+.ch-guide-count{text-align:center;color:var(--ink-2);font-size:14px;margin:0 auto 8px}
+@media(max-width:760px){.ch-hero{grid-template-columns:1fr;padding:30px 22px;gap:0;border-radius:24px}
+ .ch-hero h1{font-size:clamp(34px,9vw,49px)}.ch-hero-art{min-height:185px;transform:scale(.73);margin:-20px 0 -24px}
+ .ch-global-search{gap:8px}.ch-global-search button{padding:14px 12px}.ch-counts{gap:8px}
+ .ch-counts span{padding:10px 12px;font-size:12px}.ch-counts strong{font-size:17px}}
+@media(max-width:440px){.ch-hero-art{display:none}.ch-hero{padding:27px 19px}.ch-global-search input{font-size:14px}
+ .ch-global-search button{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.ch-card{transition:none}.ch-hero-art:hover .ch-card-one{transform:translate(-57%,-62%) rotate(-13deg)}
+ .ch-hero-art:hover .ch-card-three{transform:translate(-29%,-33%) rotate(16deg)}}
