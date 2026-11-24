@@ -209,10 +209,6 @@ fun CardsScreen(business: Business) {
                             Text("Bewerken of verwijderen",color=Pz.accent)
                         }
                     }
-                    TextButton(onClick={coupons=true}){
-                            Text("🎟 "+coupon.optString("title")+" · "+(if(active)"Actief" else "Concept / verlopen"),color=Pz.text)
-                        }
-                    }
                     TextButton(onClick={coupons=true}){Text("+ Kortingscoupon",color=Pz.accent)}
                 }
             }
@@ -224,11 +220,6 @@ fun CardsScreen(business: Business) {
                         BusinessOfferCard(business.name,code,true)
                         TextButton(onClick={promoCodes=true}) {
                             Text("Bewerken of verwijderen",color=Pz.accent)
-                        }
-                    }
-                    TextButton(onClick={promoCodes=true}){
-                            Text("# "+code.optString("code")+" · "+code.optString("title")+
-                                " · "+(if(active)"Actief" else "Niet actief"),color=Pz.text)
                         }
                     }
                     TextButton(onClick={promoCodes=true}){Text("+ Actiecode",color=Pz.accent)}
