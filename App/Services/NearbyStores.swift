@@ -149,7 +149,10 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     /// Zet het aan: vraagt om meldingen en locatie en plant de plekken.
     func enable(cards: [Card]) async -> Bool {
         UserDefaults.standard.set(true, forKey: Reminders.nearbyKey)
-        guard await Reminders.requestPermission() else { return false }
+        guard await Reminders.requestPermission() else {
+            UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
+            return false
+        }
         // Gebieden bewaken kan alleen met "Altijd". iOS vraagt eerst "Bij gebruik" en later zelf om Altijd.
         if manager.authorizationStatus == .notDetermined || manager.authorizationStatus == .authorizedWhenInUse {
             manager.requestAlwaysAuthorization()
@@ -157,7 +160,8 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
         }
         await refresh(cards: cards, force: true)
         updateBackgroundWatching()
-        return hasLocation
+        // Alleen Altijd geeft betrouwbare achtergrond-geofences; Bij gebruik is onvoldoende.
+        return hasAlways
     }
 
     func disable() async {
