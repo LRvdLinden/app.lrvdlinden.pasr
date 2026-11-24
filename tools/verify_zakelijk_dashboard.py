@@ -24,6 +24,8 @@ for breakpoint in ("980px","760px","470px"):
     require(breakpoint in css,"Dashboard has responsive breakpoint "+breakpoint)
 tabs=re.findall(r'\{ id: "([a-z-]+)", label: ',script)
 require(len(tabs)>=12 and len(tabs)==len(set(tabs)), "Dashboard contains 12+ unique tabs")
+require('/assets/promo-codes-business.js' in html and '/assets/promo-codes-business.js' in generator, "Custom promo-code business module included")
+require('window.PasrPromoCodes.mount(panel, b, rpc)' in script, "Promo codes use own RPC-backed dashboard view")
 for tab in tabs:
     require(re.search(r'VIEWS(?:\.'+re.escape(tab)+r'|\["'+re.escape(tab)+r'"\])\s*=',script) is not None,
             f"Tab {tab} has a view controller")
