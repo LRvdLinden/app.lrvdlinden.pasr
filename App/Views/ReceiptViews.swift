@@ -271,7 +271,18 @@ struct ReceiptReviewForm: View {
     }
 
     private func save() {
-        let linked = card ?? cards.first(where: { $0.id == cardID })
+        // OCR kan de winkel herkennen zonder dat al een kaart geselecteerd is.
+        // Gebruik alleen een eenduidig passende kaart; bij meerdere gelijknamige kaarten
+        // blijft de keuze bij de gebruiker.
+        let inferred: Card? = {
+            guard card == nil, cardID == nil else { return nil }
+            let exact = cards.filter {
+                $0.storeName.compare(store.trimmingCharacters(in: .whitespacesAndNewlines),
+                                     options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+            }
+            return exact.count == 1 ? exact.first : nil
+        }()
+        let linked = card ?? cards.first(where: { $0.id == cardID }) ?? inferred
         let r = Receipt(cardID: linked?.id, useID: nil, storeName: store.trimmingCharacters(in: .whitespaces), date: date)
         r.total = total
         r.currencyCode = linked?.currencyCode
@@ -346,8 +357,22 @@ enum ReceiptUseLinker {
     static func reconcile(_ receipts: [Receipt], cards: [Card], context: ModelContext) {
         var changed = false
         for receipt in receipts {
-            guard let cardID = receipt.cardID,
-                  let card = cards.first(where: { $0.id == cardID && $0.deletedAt == nil }) else { continue }
+            let card: Card? = {
+                if let cardID = receipt.cardID {
+                    return cards.first(where: { $0.id == cardID && $0.deletedAt == nil })
+                }
+                // Herstel ook oude bonnen waarbij OCR wel 'Action' herkende maar
+                // er nog geen kaart was vastgelegd. Alleen bij exact één winkelkaart.
+                guard receipt.total != nil else { return nil }
+                let sameStore = cards.filter {
+                    $0.deletedAt == nil &&
+                    $0.storeName.compare(receipt.storeName,
+                        options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+                }
+                return sameStore.count == 1 ? sameStore.first : nil
+            }()
+            guard let card else { continue }
+            if receipt.cardID == nil { receipt.cardID = card.id }
             let correctlyLinked = receipt.useID.flatMap { id in
                 card.uses.first(where: { $0.id == id && $0.receiptID == receipt.id })
             } != nil
