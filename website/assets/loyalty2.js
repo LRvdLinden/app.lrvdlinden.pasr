@@ -42,18 +42,22 @@
          section("12. Tijdelijke stempelacties","Extra stempels, alleen binnen de ingestelde periode.",
            toggle("Tijdelijke actie","campaign",cfg.campaign&&cfg.campaign.enabled,"Bijvoorbeeld dubbele stempels op dinsdag.")+
            '<div class="pz2-fields">'+field("Vermenigvuldiger (1–3)","multiplier",(cfg.campaign&&cfg.campaign.multiplier)||2,"number")+
-           field("Dag (0=zo t/m 6=za)","day",(cfg.campaign&&cfg.campaign.weekday)==null?2:cfg.campaign.weekday,"number")+'</div>')+
+           field("Actiedag (-1=elke dag, 0=zo t/m 6=za)","day",(cfg.campaign&&cfg.campaign.weekday)==null?2:cfg.campaign.weekday,"number")+
+           field("Startdatum","campaign_start",(cfg.campaign&&cfg.campaign.start)||new Date().toLocaleDateString("en-CA"),"date")+
+           field("Einddatum","campaign_end",(cfg.campaign&&cfg.campaign.end)||new Date(Date.now()+30*86400000).toLocaleDateString("en-CA"),"date")+'</div>')+
          section("13. Meerdere vestigingen","Alle vestigingen delen dezelfde kaart, maar rapportages blijven per vestiging.",
            toggle("Vestigingen beheren","locations",cfg.locations&&cfg.locations.enabled,"Bewaar hier de adresnamen; het uitgeven van stempels blijft aan bevoegd personeel.")+
            '<label class="pz2-field">Vestigingen (één per regel)<textarea name="locations_list" rows="3">'+escape(((cfg.locations&&cfg.locations.names)||[]).join("\n"))+'</textarea></label>')+
          section("14. VIP-niveaus","Brons, Zilver en Goud worden bepaald aan de hand van bezoeken.",
            toggle("VIP-niveaus","vip",cfg.vip&&cfg.vip.enabled,"Ondernemer bepaalt grenzen per kaart.")+
-           '<div class="pz2-fields">'+field("Zilver vanaf bezoeken","silver",(cfg.vip&&cfg.vip.silver)||10,"number")+field("Goud vanaf bezoeken","gold",(cfg.vip&&cfg.vip.gold)||25,"number")+'</div>')+
+           '<div class="pz2-fields">'+field("Zilver vanaf bezoeken","silver",(cfg.vip&&cfg.vip.silver)||10,"number")+field("Goud vanaf bezoeken","gold",(cfg.vip&&cfg.vip.gold)||25,"number")+'</div>'+
+           '<div class="pz2-fields">'+field("Voordeel bij zilver (optioneel)","vip_silver_benefit",(cfg.vip&&cfg.vip.silver_benefit)||"")+
+           field("Voordeel bij goud (optioneel)","vip_gold_benefit",(cfg.vip&&cfg.vip.gold_benefit)||"")+'</div>')+
          section("15. Marketingkalender","Plan een campagne en gebruik het bestaande promotiemateriaal voor socialmediabanners.",
            toggle("Marketingcampagne","marketing",cfg.marketing&&cfg.marketing.enabled,"Een conceptactie met begin- en einddatum.")+
            field("Campagnenaam","marketing_name",(cfg.marketing&&cfg.marketing.name)||""))+
          section("18. Winkelstraatacties","Deelnemende ondernemers moeten ieder afzonderlijk akkoord geven.",
-           toggle("Interesse in gezamenlijke actie","community",cfg.community&&cfg.community.enabled,"Geen klantgegevens worden automatisch gedeeld.")+
+           toggle("Interesse in gezamenlijke actie","community",cfg.community&&cfg.community.enabled,"Dit is een voorkeur. Maak een echte actie aan op het tabblad Samenwerkingen.")+
            field("Naam van de gezamenlijke actie","community_name",(cfg.community&&cfg.community.name)||""))+
          '<p class="pz2-notice" role="status"></p><button class="zk-btn" type="submit">Instellingen van deze kaart opslaan</button></form>';
        var form=$("#pz2Form",slot);
@@ -72,20 +76,25 @@
            rewards:rewards,
            retention:{enabled:yes("retention"),days:num("retention_days",30)},
            referral:{enabled:yes("referral"),bonus:num("referral_bonus",1)},
-           campaign:{enabled:yes("campaign"),multiplier:num("multiplier",2),weekday:num("day",2)},
+           campaign:{enabled:yes("campaign"),multiplier:num("multiplier",2),weekday:num("day",2),
+             start:String(f.get("campaign_start")||""),end:String(f.get("campaign_end")||"")},
            locations:{enabled:yes("locations"),names:String(f.get("locations_list")||"").split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean).slice(0,20)},
-           vip:{enabled:yes("vip"),silver:num("silver",10),gold:num("gold",25)},
+           vip:{enabled:yes("vip"),silver:num("silver",10),gold:num("gold",25),
+             silver_benefit:String(f.get("vip_silver_benefit")||"").trim().slice(0,120),
+             gold_benefit:String(f.get("vip_gold_benefit")||"").trim().slice(0,120)},
            marketing:{enabled:yes("marketing"),name:String(f.get("marketing_name")||"").slice(0,80)},
            community:{enabled:yes("community"),name:String(f.get("community_name")||"").slice(0,80)}
          };
          if(settings.referral.bonus<1||settings.referral.bonus>3||settings.retention.days<7||settings.retention.days>365||
-            settings.campaign.multiplier<1||settings.campaign.multiplier>3||settings.campaign.weekday<0||settings.campaign.weekday>6||
+            settings.campaign.multiplier<1||settings.campaign.multiplier>3||settings.campaign.weekday<-1||settings.campaign.weekday>6||
+            (settings.campaign.enabled && (!/^20\d{2}-\d{2}-\d{2}$/.test(settings.campaign.start)||
+             !/^20\d{2}-\d{2}-\d{2}$/.test(settings.campaign.end)||settings.campaign.end<settings.campaign.start))||
             settings.vip.silver<1||settings.vip.gold<=settings.vip.silver){
             notice(slot,"Controleer bonus, dagen, vermenigvuldiger en VIP-grenzen.",false);return;
          }
          var button=form.querySelector('button[type="submit"]');button.disabled=true;
          try{await rpc("pasr_business_program",{p_card:c.id,p_settings:settings},true);
-           notice(slot,"Instellingen opgeslagen. Optionele serverregels kunnen pas worden uitgevoerd zodra de campagneverwerking actief is.",true);
+           notice(slot,"Instellingen van deze kaart opgeslagen.",true);
          }catch(err){notice(slot,err.message||"Opslaan mislukt.",false);}finally{button.disabled=false;}
        });
      }catch(e){slot.textContent="Kon instellingen niet laden: "+(e.message||"onbekend");}
@@ -129,8 +138,15 @@
      }catch(err){notice(root,err.message||"Opslaan mislukt.",false);}finally{button.disabled=false;}
    });
    $("#pz2Redeem",root).addEventListener("click",async function(){var msg=$("#pz2RedeemMessage",root);
-     if(!window.confirm("Controleer bij de kassa of je de korting daadwerkelijk wilt geven. Deze bon wordt definitief als gebruikt gemarkeerd."))return;
-     try{var x=await rpc("pasr_business_coupon_redeem",{p_code:$("#pz2RedeemCode",root).value},true);
+     var code=$("#pz2RedeemCode",root).value.trim().toUpperCase();
+     if(!code){msg.textContent="Vul eerst de kortingsboncode in.";return;}
+     try{
+       var check=await rpc("pasr_business_coupon_check",{p_code:code},true);
+       if(!check||check.valid===false||check.ok===false){
+         msg.textContent=(check&&check.reason)||"De bon is ongeldig.";return;
+       }
+       if(!window.confirm("Kortingsbon "+(check.title||code)+" definitief verzilveren?"))return;
+       var x=await rpc("pasr_business_coupon_redeem",{p_code:code},true);
        msg.textContent="Geldig: "+x.title+" · korting "+money(x.discount_type,x.discount_value)+". Bon verzilverd.";reload();
      }catch(e){msg.textContent=e.message||"Niet geldig.";}
    });
@@ -342,5 +358,68 @@
   });
   refresh();
  }
- window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,locations:locationsView,publicPage:publicPage};
+
+ async function communityView(root,b,rpc){
+   root.innerHTML='<div class="zd-ptitle"><div><h2>Samenwerkingen</h2><p class="zd-sub">Gezamenlijke beloningen voor bezoeken bij verschillende winkels. Elke ondernemer kiest zelf om deel te nemen; er worden geen klantgegevens tussen winkels gedeeld.</p></div></div>'+
+     '<div class="pz2-grid"><section class="pz2-panel"><h3>Nieuwe gezamenlijke actie</h3><form class="pz2-form" id="pz2CommunityCreate">'+
+     field("Actienaam","name","")+field("Beloning","reward","")+
+     '<div class="pz2-fields">'+field("Verschillende winkels nodig (2–20)","required","3","number")+
+     field("Looptijd in dagen (1–366)","days","60","number")+'</div>'+
+     '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Samenwerking starten</button></form></section>'+
+     '<section class="pz2-panel"><h3>Beschikbare samenwerkingen</h3><div id="pz2CommunityList" role="status">Laden…</div></section></div>';
+   var form=$("#pz2CommunityCreate",root),list=$("#pz2CommunityList",root);
+   async function refresh(){
+     try{
+       var rows=await rpc("pasr_business_community_list",{p_business:b.id},true);
+       if(!Array.isArray(rows))throw new Error("Ongeldig antwoord");
+       list.innerHTML=rows.length?rows.map(function(c){
+         return '<article class="pz2-planned"><strong>'+escape(c.name)+'</strong>'+
+           '<small>Initiatief: '+escape(c.lead_business)+' · '+escape(c.participants)+' deelnemers · geldig tot '+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+'</small>'+
+           '<p>'+escape(c.reward)+' na bezoeken bij '+escape(c.required)+' verschillende winkels</p>'+
+           (c.joined?'<label class="pz2-field">Lidcode bij de kassa<input data-member="'+escape(c.id)+'" placeholder="PZ…" maxlength="40" autocomplete="off"></label>'+
+             '<button class="zk-btn sm" type="button" data-claim="'+escape(c.id)+'">Beloning controleren en uitgeven</button>':
+             '<button class="zk-btn ghost sm" type="button" data-join="'+escape(c.id)+'">Met mijn onderneming deelnemen</button>')+
+           '</article>';
+       }).join(""):'<p>Er zijn nog geen gezamenlijke acties.</p>';
+       list.querySelectorAll("[data-join]").forEach(function(btn){
+         btn.addEventListener("click",async function(){
+           if(!confirm("Met jouw onderneming deelnemen?"))return;
+           btn.disabled=true;
+           try{await rpc("pasr_business_community_join",{p_business:b.id,p_campaign:btn.dataset.join},true);refresh();}
+           catch(e){alert(e.message||"Deelnemen mislukt.");btn.disabled=false;}
+         });
+       });
+       list.querySelectorAll("[data-claim]").forEach(function(btn){
+         btn.addEventListener("click",async function(){
+           var id=btn.dataset.claim,entry=list.querySelector('[data-member="'+id+'"]');
+           var code=(entry&&entry.value||"").trim().toUpperCase();
+           if(!/^PZ[A-Z0-9]{5,38}$/.test(code)){alert("Vul een geldige PZ-lidcode in.");return;}
+           if(!confirm("De server controleert de bezoeken. Beloning nu eenmalig uitgeven?"))return;
+           btn.disabled=true;
+           try{
+             var result=await rpc("pasr_business_community_claim",
+               {p_campaign:id,p_business:b.id,p_member_code:code},true);
+             alert("Beloning uitgegeven: "+(result.reward||"gezamenlijke beloning"));refresh();
+           }catch(e){alert(e.message||"Deze beloning kan niet worden uitgegeven.");btn.disabled=false;}
+         });
+       });
+     }catch(e){list.textContent="Samenwerkingen konden niet worden geladen: "+(e.message||"onbekend");}
+   }
+   form.addEventListener("submit",async function(e){
+     e.preventDefault();var f=new FormData(form),name=String(f.get("name")||"").trim(),
+       reward=String(f.get("reward")||"").trim(),required=Number(f.get("required")),days=Number(f.get("days"));
+     if(name.length<3||name.length>80||reward.length<3||reward.length>120||
+        !Number.isInteger(required)||required<2||required>20||
+        !Number.isInteger(days)||days<1||days>366){
+       notice(form,"Controleer naam, beloning, aantal winkels en looptijd.",false);return;
+     }
+     var btn=form.querySelector("button[type=submit]");btn.disabled=true;
+     try{
+       await rpc("pasr_business_community_create",{p_business:b.id,p_name:name,p_reward:reward,p_required:required,p_days:days},true);
+       form.reset();notice(form,"Samenwerking gestart. Andere ondernemingen kunnen nu deelnemen.",true);refresh();
+     }catch(e){notice(form,e.message||"Opslaan mislukt.",false);}finally{btn.disabled=false;}
+   });
+   refresh();
+ }
+ window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,locations:locationsView,community:communityView,publicPage:publicPage};
 })();

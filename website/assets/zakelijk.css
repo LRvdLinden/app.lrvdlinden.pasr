@@ -449,15 +449,25 @@
 .zd-state-ic svg { width: 24px; height: 24px; }
 .zd-state a { color: #8A2A18; font-weight: 700; }
 
-/* tabs: één rij op tablet en desktop, een raster van 3 op een telefoon (geen horizontaal scrollen) */
-.zd-tabs { display: flex; gap: 6px; padding: 6px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 18px; margin: 0 0 22px; }
-.zd-tabs [role=tab] { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--body); color: var(--ink-2);
-  background: transparent; border: 0; border-radius: 13px; padding: 11px 10px; cursor: pointer; min-height: 46px; transition: background .2s, color .2s; }
-.zd-tabs [role=tab] svg { width: 19px; height: 19px; flex: none; }
+/* Dashboard met 11 tabs: nooit alles in één flex-rij persen.
+   Meerdere duidelijke rijen; ook in dark mode dezelfde merkvariabelen. */
+.zd-tabs { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 7px; padding: 8px;
+  background: var(--paper-2); border: 1px solid var(--line); border-radius: 18px; margin: 0 0 22px; }
+.zd-tabs [role=tab] { box-sizing: border-box; min-width: 0; width: 100%; display: inline-flex; align-items: center;
+  justify-content: center; gap: 8px; padding: 12px 8px; line-height: 1.35; text-align: center;
+  font: 600 13.5px/1.3 var(--body); color: var(--ink-2); overflow-wrap: anywhere; white-space: normal;
+  background: transparent; border: 0; border-radius: 13px; cursor: pointer; min-height: 48px;
+  transition: background .2s, color .2s; }
+.zd-tabs [role=tab] svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.zd-tabs [role=tab] span { min-width: 0; }
 .zd-tabs [role=tab]:hover { background: var(--paper); color: var(--ink); }
 .zd-tabs [role=tab][aria-selected=true] { background: var(--ink); color: #fff; }
 .zd-tabs [role=tab]:focus-visible { outline: 3px solid var(--iris); outline-offset: 2px; }
 .zd-tabs .s { display: none; }
+@media (min-width: 981px) and (max-width: 1199px) { .zd-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+@media (max-width: 980px) { .zd-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+@media (max-width: 760px) { .zd-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (max-width: 470px) { .zd-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 .zd-panel { padding: 0; }
 .zd-panel:focus { outline: none; }
 .zk-dash section.auth { padding: 34px 32px; }
@@ -610,18 +620,15 @@
 .zd-modal-foot { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin: 18px 0 0; }
 
 @media (max-width: 980px) {
-  .zd-tabs [role=tab] { font-size: 14px; gap: 6px; padding: 10px 6px; }
+  .zd-tabs [role=tab] { font-size: 13.5px; gap: 6px; padding: 10px 6px; }
 }
 @media (max-width: 860px) {
   .zd-two, .zd-first { grid-template-columns: 1fr; }
   .zd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .zd-tabs [role=tab] { flex-direction: column; gap: 3px; font-size: 12.5px; padding: 8px 4px; }
+  .zd-tabs [role=tab] { font-size: 13px; padding: 9px 6px; }
 }
 @media (max-width: 620px) {
-  .zd-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .zd-tabs [role=tab] { font-size: 13px; }
-  .zd-tabs .l:not(:only-of-type) { display: none; }
-  .zd-tabs .s { display: inline; }
+  .zd-tabs [role=tab] { font-size: 12.5px; }
   .zd-head { gap: 12px; }
   .zd-logo { width: 50px; height: 50px; border-radius: 15px; }
   .zd-user { width: 100%; justify-content: space-between; }

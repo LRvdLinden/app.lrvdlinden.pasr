@@ -9,6 +9,9 @@ on:
       - "Widgets/**"
       - "Pasr.xcodeproj/**"
       - "zakelijk/apple/**"
+      - "website/**"
+      - "tools/make_zakelijk.py"
+      - "tools/verify_zakelijk_dashboard.py"
       - "supabase/**"
       - ".github/workflows/backend.yml"
       - "android/pasr/**"
@@ -26,6 +29,17 @@ permissions:
   contents: read
 
 jobs:
+  zakelijk-website-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all website tabs and feature controllers
+        run: |
+          python3 tools/verify_zakelijk_dashboard.py
+          node --check website/assets/zakelijk.js
+          node --check website/assets/loyalty2.js
+          python3 -m py_compile tools/make_zakelijk.py
+
   version-and-project:
     runs-on: ubuntu-latest
     steps:
@@ -41,13 +55,13 @@ jobs:
           az = Path("android/zakelijk/app/build.gradle.kts").read_text()
           assert p.count('CURRENT_PROJECT_VERSION = "56";') == 6
           assert p.count('MARKETING_VERSION = "1.0.4";') == 6
-          assert z.count('CURRENT_PROJECT_VERSION = "10";') == 2
+          assert z.count('CURRENT_PROJECT_VERSION = "11";') == 2
           assert z.count('MARKETING_VERSION = "1.0.3";') == 2
-          assert 'BUILD = "10"' in g and 'VERSION = "1.0.3"' in g
+          assert 'BUILD = "11"' in g and 'VERSION = "1.0.3"' in g
           assert 'VERSION_NAME") ?: "1.0.4"' in ap
           assert 'versionName = "1.0.3"' in az
           assert 'CODE=127' in Path(".github/workflows/android-pasr.yml").read_text()
-          assert 'export VERSION_CODE=122' in Path(".github/workflows/android-zakelijk.yml").read_text()
+          assert 'export VERSION_CODE=123' in Path(".github/workflows/android-zakelijk.yml").read_text()
           print("App versions validated.")
           PY
       - name: Check generated Xcode project is in sync
