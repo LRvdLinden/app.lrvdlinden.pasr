@@ -80,6 +80,7 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf(demoResult) }
+    var couponCode by remember { mutableStateOf<String?>(null) }
     var torch by remember { mutableStateOf(false) }
     var torchAvailable by remember { mutableStateOf(false) }
     var typing by remember { mutableStateOf(false) }
@@ -96,7 +97,13 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     LaunchedEffect(Unit) { if (!granted && hasCamera && !inspection) permission.launch(Manifest.permission.CAMERA) }
 
     fun look(code: String) {
-        if (busy || result != null) return
+        val normalized = code.trim().uppercase()
+        if (normalized.matches(Regex("PC[A-HJ-NP-Z2-9]{22}"))) {
+            couponCode = normalized
+            manual = ""
+            return
+        }
+        if (busy || result != null || couponCode != null) return
         busy = true
         scope.launch {
             try {
@@ -114,7 +121,8 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     }
 
     fun lookManual() {
-        val code = MemberCode.extract(manual)
+        val code = manual.trim().uppercase().takeIf { it.matches(Regex("PC[A-HJ-NP-Z2-9]{22}")) }
+            ?: MemberCode.extract(manual)
         if (code == null) {
             error = L("Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat.")
             haptics.error()
@@ -142,7 +150,8 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
                         QrCamera(
                             paused = result != null || busy || typing, torch = torch,
                             onTorchAvailable = { torchAvailable = it }, onCode = { raw ->
-                                val code = MemberCode.extract(raw)
+                                val code = raw.trim().uppercase().takeIf { it.matches(Regex("PC[A-HJ-NP-Z2-9]{22}")) }
+                                    ?: MemberCode.extract(raw)
                                 if (code != null) look(code) else { error = L("Deze QR-code is geen klantkaart van Pasr."); haptics.error() }
                             },
                             modifier = Modifier.fillMaxSize(),
@@ -202,5 +211,10 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
 
     result?.let { r ->
         ScanResultSheet(business, r, onDismiss = { result = null })
+    }
+    couponCode?.let { code ->
+        app.lrvdlinden.pasrzakelijk.ui.cards.CouponBusinessDialog(business.id, initialCode = code) {
+            couponCode = null
+        }
     }
 }

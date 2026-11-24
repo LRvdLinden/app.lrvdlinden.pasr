@@ -9,6 +9,7 @@ struct ScanView: View {
     @State private var busy = false
     @State private var error: String?
     @State private var result: ScanResult?
+    @State private var couponCode: String?
     @State private var torch = false
     @State private var cameraDenied = false
     @State private var errorTick = 0
@@ -51,6 +52,10 @@ struct ScanView: View {
                 }
             }
             .sensoryFeedback(.error, trigger: errorTick)
+            .sheet(isPresented: Binding(get: { couponCode != nil }, set: { if !$0 { couponCode = nil } })) {
+                BusinessCouponsView(business: business, initialCode: couponCode ?? "")
+                    .trackModal()
+            }
             .sheet(item: Binding(get: { result.map { IdentifiedResult(result: $0) } }, set: { if $0 == nil { result = nil } })) { item in
                 ScanResultSheet(business: business, initial: item.result)
                     .presentationDetents([.medium, .large])
@@ -75,7 +80,7 @@ struct ScanView: View {
     @ViewBuilder private var camera: some View {
         if QRScanner.isAvailable && !cameraDenied {
             ZStack {
-                QRScanner(paused: result != nil || busy || typing || ModalTracker.shared.locked) { code in
+                QRScanner(paused: result != nil || couponCode != nil || busy || typing || ModalTracker.shared.locked) { code in
                     Task { await look(code) }
                 }
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
@@ -137,6 +142,11 @@ struct ScanView: View {
     }
 
     private func lookManual() async {
+        let normalized = manual.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if normalized.range(of: "^PC[A-HJ-NP-Z2-9]{22}$", options: .regularExpression) != nil {
+            await look(normalized)
+            return
+        }
         guard let code = MemberCode.extract(manual) else {
             withAnimation { error = String(localized: "Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat.") }
             errorTick += 1
@@ -147,6 +157,12 @@ struct ScanView: View {
     }
 
     private func look(_ code: String) async {
+        let normalized = code.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if normalized.range(of: "^PC[A-HJ-NP-Z2-9]{22}$", options: .regularExpression) != nil {
+            couponCode = normalized
+            manual = ""
+            return
+        }
         guard !busy, result == nil else { return }
         busy = true
         defer { busy = false }

@@ -30,14 +30,14 @@ import java.time.OffsetDateTime
 
 /** Kortingsbonnen aanmaken en verzilveren, direct met de ondernemerrechten uit de accountsession. */
 @Composable
-fun CouponBusinessDialog(businessId: String, onClose: () -> Unit) {
+fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("amount") }
     var value by remember { mutableStateOf("2.50") }
     var minSpend by remember { mutableStateOf("10") }
-    var code by remember { mutableStateOf("") }
+    var code by remember(initialCode) { mutableStateOf(initialCode) }
     var published by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var processing by remember { mutableStateOf(false) }

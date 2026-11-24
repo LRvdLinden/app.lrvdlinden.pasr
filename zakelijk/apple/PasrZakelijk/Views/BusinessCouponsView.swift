@@ -3,6 +3,7 @@ import SwiftUI
 /// Kortingsbonnen van deze zaak. Alleen de accountserver kan codes uitgeven en verzilveren.
 struct BusinessCouponsView: View {
     let business: Business
+    var initialCode: String = ""
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
     @State private var description = ""
@@ -15,6 +16,7 @@ struct BusinessCouponsView: View {
     @State private var published = false
     @State private var onePerCustomer = true
     @State private var code = ""
+    @State private var couponVerified = false
     @State private var rows: [CouponRow] = []
     @State private var busy = false
     @State private var status: String?
@@ -80,8 +82,10 @@ struct BusinessCouponsView: View {
                     TextField("PC-code van de klant", text: $code)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
-                    Button("Bon definitief verzilveren") { Task { await redeem() } }
+                    Button("Controleer bon") { Task { await checkCode() } }
                         .disabled(busy || !code.uppercased().hasPrefix("PC"))
+                    Button("Bon definitief verzilveren") { Task { await redeem() } }
+                        .disabled(busy || !couponVerified)
                 }
                 if let status {
                     Section { Text(status).font(.subheadline) }
@@ -94,7 +98,8 @@ struct BusinessCouponsView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) {
                 Button("Klaar") { dismiss() }
             } }
-            .task { await load() }
+            .onChange(of: code) { _, _ in couponVerified = false }
+            .task { code = initialCode; await load(); if !code.isEmpty { await checkCode() } }
         }
     }
 
@@ -133,6 +138,21 @@ struct BusinessCouponsView: View {
         } catch { status = error.localizedDescription }
     }
 
+    @MainActor private func checkCode() async {
+        do {
+            let response = try await Account.shared.rpc("pasr_business_coupon_check",
+                ["p_code": code.uppercased().trimmingCharacters(in: .whitespaces)])
+            let result = JSONObject(response)
+            couponVerified = result?.bool("valid") ?? false
+            status = couponVerified ?
+                "Geldige bon: \(result?.string("title") ?? "") · korting \(result?.string("discount_value") ?? "")" :
+                "Deze kortingsbon is al gebruikt, verlopen of ongeldig."
+        } catch {
+            couponVerified = false
+            status = error.localizedDescription
+        }
+    }
+
     @MainActor private func redeem() async {
         busy = true
         defer { busy = false }
@@ -141,6 +161,7 @@ struct BusinessCouponsView: View {
             let result = JSONObject(response)
             status = "Bon verzilverd: \(result?.string("title") ?? "kortingsbon")"
             code = ""
+            couponVerified = false
             await load()
         } catch { status = error.localizedDescription }
     }
