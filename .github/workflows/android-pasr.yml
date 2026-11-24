@@ -162,6 +162,20 @@ jobs:
           done
           grep -E "FAILURE|What went wrong|Could not|error:|ERROR:" -A4 build.log | head -60 | while IFS= read -r line; do echo "::error::$line"; done
 
+      - name: APK manifest controleren (permissions, pakket en versie)
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/release/app-release.apk
+          AAPT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt"
+          "$AAPT" dump permissions "$APK" > /tmp/pasr-permissions.txt
+          "$AAPT" dump badging "$APK" > /tmp/pasr-badging.txt
+          grep -Fq "package: name='app.lrvdlinden.pasr'" /tmp/pasr-badging.txt
+          grep -Fq "name='android.permission.CAMERA'" /tmp/pasr-permissions.txt
+          grep -Fq "name='android.permission.POST_NOTIFICATIONS'" /tmp/pasr-permissions.txt
+          grep -Fq "name='android.permission.ACCESS_COARSE_LOCATION'" /tmp/pasr-permissions.txt
+          grep -Fq "name='android.permission.ACCESS_FINE_LOCATION'" /tmp/pasr-permissions.txt
+          echo "APK manifest gevalideerd: app.lrvdlinden.pasr (camera, meldingen, voorgrondlocatie)."
+
       - name: Handtekening controleren
         id: verify
         run: |
