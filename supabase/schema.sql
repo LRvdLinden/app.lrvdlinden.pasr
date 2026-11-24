@@ -3998,15 +3998,15 @@ revoke all on public.pasr_business_coupon_claims from anon, authenticated;
 -- Alleen eigenaren kunnen configuraties van hun kaarten wijzigen; veld- en lengtelimieten worden op server gevalideerd.
 create or replace function public.pasr_business_program(p_card uuid, p_settings jsonb default null)
 returns jsonb language plpgsql security definer set search_path=public as $$
-declare b public.pasr_businesses; p jsonb; rewards jsonb; v jsonb; n int; prev int := 0;
+declare v_business public.pasr_businesses; p jsonb; rewards jsonb; v jsonb; n int; prev int := 0;
 begin
-  select b.* into b from public.pasr_business_cards c
-    join public.pasr_businesses b on b.id=c.business_id where c.id=p_card;
-  if b.id is null or b.owner is distinct from auth.uid() then
+  select business_row.* into v_business from public.pasr_business_cards card_row
+    join public.pasr_businesses business_row on business_row.id=card_row.business_id where card_row.id=p_card;
+  if v_business.id is null or v_business.owner is distinct from auth.uid() then
     raise exception 'Alleen de eigenaar kan kaartinstellingen wijzigen.' using errcode='42501';
   end if;
   if p_settings is not null then
-    if b.status='blocked' or jsonb_typeof(p_settings)<>'object' or octet_length(p_settings::text)>12000 then
+    if v_business.status='blocked' or jsonb_typeof(p_settings)<>'object' or octet_length(p_settings::text)>12000 then
       raise exception 'Ongeldige instellingen.' using errcode='22023';
     end if;
     if exists (select 1 from jsonb_object_keys(p_settings) k
