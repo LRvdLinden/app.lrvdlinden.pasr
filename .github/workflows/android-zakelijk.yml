@@ -104,10 +104,10 @@ jobs:
 
       - name: APK bouwen
         env:
-          VERSION_CODE: 123
+          VERSION_CODE: 124
         run: |
           set -o pipefail
-          export VERSION_CODE=123
+          export VERSION_CODE=124
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
 
@@ -149,12 +149,12 @@ jobs:
           echo "$FP" > dist/certificaat-sha256.txt
           # gegevens voor pasr.nl/android/ (de workflow Website zet dit naast de APK als /download/pasr-zakelijk.json)
           printf '{"app":"pasr-zakelijk","version":"%s","code":%s,"size":%s,"sha256":"%s","date":"%s","cert_sha256":"%s"}\n' \
-            "$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')" "123" \
+            "$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')" "124" \
             "$(stat -c %s dist/pasr-zakelijk.apk)" "$(sha256sum dist/pasr-zakelijk.apk | cut -d' ' -f1)" "$(date -u +%Y-%m-%d)" "$FP" > dist/pasr-zakelijk.json
           echo "version=$V" >> "$GITHUB_OUTPUT"
-          echo "code=123" >> "$GITHUB_OUTPUT"
+          echo "code=124" >> "$GITHUB_OUTPUT"
           echo "cert=$FP" >> "$GITHUB_OUTPUT"
-          echo "APK $V (123), $(stat -c %s dist/pasr-zakelijk.apk) bytes, sha256 $(cut -d' ' -f1 dist/pasr-zakelijk.apk.sha256)"
+          echo "APK $V (124), $(stat -c %s dist/pasr-zakelijk.apk) bytes, sha256 $(cut -d' ' -f1 dist/pasr-zakelijk.apk.sha256)"
 
       - name: Nieuwste APK naar de branch android-builds (zakelijk/), voor de website en de oplevering
         env:
@@ -251,7 +251,7 @@ jobs:
           ls app/src/test/snapshots/images/*.png >/dev/null 2>&1 || exit 0
           V=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
           (cd app/src/test/snapshots/images && zip -q -r "$RUNNER_TEMP/PasrZakelijk-Android-previews.zip" .)
-          gh release upload "android-zakelijk-$V-123" "$RUNNER_TEMP/PasrZakelijk-Android-previews.zip" --clobber -R "${{ github.repository }}"
+          gh release upload "android-zakelijk-$V-124" "$RUNNER_TEMP/PasrZakelijk-Android-previews.zip" --clobber -R "${{ github.repository }}"
       - name: Schermafbeeldingen naar de branch android-builds (zakelijk-previews/)
         if: success()
         env:
