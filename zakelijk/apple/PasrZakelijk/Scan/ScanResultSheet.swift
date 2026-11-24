@@ -143,7 +143,7 @@ struct ScanResultSheet: View {
             done = milestone.title + " uitgegeven"
             successTick += 1
             await loadMilestones()
-        } catch { error = error.localizedDescription; errorTick += 1 }
+        } catch { self.error = error.localizedDescription; errorTick += 1 }
     }
 
     private var status: some View {
