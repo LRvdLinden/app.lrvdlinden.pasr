@@ -88,13 +88,18 @@ struct OverviewView: View {
                 Section("Zakelijke acties") {
                     LabeledContent("Stempelkaarten online") { Text("\(business.cards.filter(\.published).count)") }
                     LabeledContent("Actieve kortingscoupons") {
-                        Text("\(coupons.filter { ($0["public"] as? Bool ?? false) &&
-                            ((($0["ends_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) }) ?? .distantPast) > .now }.count)")
+                        Text(String(coupons.filter { coupon in
+                            guard coupon["public"] as? Bool == true else { return false }
+                            let expiry = (coupon["ends_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) }
+                            return (expiry ?? .distantPast) > .now
+                        }.count))
                     }
                     LabeledContent("Actieve actiecodes") {
-                        Text("\(promoCodes.filter { ($0["active"] as? Bool ?? false) &&
-                            (($0["used_count"] as? NSNumber)?.intValue ?? 0) <
-                            (($0["max_uses"] as? NSNumber)?.intValue ?? 0) }.count)")
+                        Text(String(promoCodes.filter { code in
+                            (code["active"] as? Bool ?? false) &&
+                            ((code["used_count"] as? NSNumber)?.intValue ?? 0) <
+                            ((code["max_uses"] as? NSNumber)?.intValue ?? 0)
+                        }.count))
                     }
                     LabeledContent("Actiecodes gebruikt") {
                         Text("\(promoCodes.reduce(0) { $0 + (($1["used_count"] as? NSNumber)?.intValue ?? 0) })")
