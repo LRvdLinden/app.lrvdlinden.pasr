@@ -107,7 +107,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -o pipefail
-          export VERSION_CODE=115
+          export VERSION_CODE=117
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
 
