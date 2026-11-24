@@ -1,0 +1,54 @@
+/* Pasr Kaarten & Voordelen — één stijl voor catalogus, cadeaukaartgidsen en coupons.
+   Respecteert dezelfde CSS-variabelen en expliciete/system dark/light mode als Pasr. */
+.ch-site-nav .nav, .ch-site-nav nav { min-width:0 }
+.ch-site-nav a[aria-current="page"] { font-weight:800; color:var(--iris-deep) }
+.ch-intro { text-align:center; padding:22px 0 2px }
+.ch-eyebrow { display:inline-block; color:var(--iris-deep); font-size:13px; text-transform:uppercase; font-weight:800; letter-spacing:.09em }
+.ch-intro p { max-width:650px; margin:10px auto 0; color:var(--ink-2); line-height:1.6; font-size:16px }
+.ch-sections { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:9px; padding:22px 0; }
+.ch-sections a { min-height:43px; display:inline-flex; align-items:center; justify-content:center;
+  padding:11px 17px; border:1px solid var(--line); border-radius:999px; text-decoration:none;
+  font-size:14px; font-weight:700; background:var(--paper-2); color:var(--ink-2);
+  transition:transform .15s ease, background .15s ease, border-color .15s ease; }
+.ch-sections a:hover { border-color:var(--iris); color:var(--ink); transform:translateY(-1px) }
+.ch-sections a[aria-current="page"] { color:white; border-color:var(--iris); background:var(--iris-deep);
+ box-shadow:0 8px 22px color-mix(in srgb,var(--iris),transparent 80%); }
+.ch-featureline { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; padding:4px 0 28px }
+.ch-featureline a { position:relative; display:block; min-width:0; padding:22px; border:1px solid var(--line);
+  border-radius:22px; background:var(--paper-2); color:var(--ink); text-decoration:none; }
+.ch-featureline a:hover { border-color:var(--iris); box-shadow:0 12px 34px color-mix(in srgb,var(--iris),transparent 89%) }
+.ch-featureline strong { display:block; font:800 19px/1.2 var(--display); margin-bottom:8px; letter-spacing:-.02em }
+.ch-featureline span { display:block; color:var(--ink-2); line-height:1.5; font-size:14px }
+.ch-featureline b { display:block; color:var(--iris-deep); font-size:13px; margin-top:12px }
+.ch-featureline a:first-child { background:linear-gradient(140deg,color-mix(in srgb,var(--iris),var(--paper-2) 93%),var(--paper-2)) }
+.ch-featureline a:nth-child(2) { background:linear-gradient(140deg,color-mix(in srgb,var(--coral),var(--paper-2) 93%),var(--paper-2)) }
+.ch-featureline a:nth-child(3) { background:linear-gradient(140deg,color-mix(in srgb,var(--mint),var(--paper-2) 92%),var(--paper-2)) }
+.cards-page .kh { padding-bottom:12px }
+.gids-page .kh { padding-top:14px; padding-bottom:4px }
+.ch-coupon-page { color:var(--ink); background:var(--paper); min-height:100vh }
+.ch-coupon-page main { padding-bottom:55px }
+.ch-coupon-page .pz2-hero { padding:8px 0 10px; margin:16px 0 12px; max-width:760px; text-align:left }
+.ch-coupon-page .pz2-hero h1 { margin:8px 0 14px; color:var(--ink); letter-spacing:-.045em; font-family:var(--display); font-size:clamp(38px,6vw,62px) }
+.ch-coupon-page .pz2-hero p { color:var(--ink-2); font-size:17px; line-height:1.6 }
+.ch-coupon-page .pz2-controls { position:sticky; top:0; z-index:5; padding:16px 0; background:var(--paper);
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center }
+.ch-coupon-page .pz2-controls input { flex:1; min-width:220px; font-size:16px; background:var(--paper-2);
+  border:1px solid var(--line); border-radius:15px; padding:15px; color:var(--ink); }
+.ch-coupon-page .pz2-publiccard { border-radius:21px; box-shadow:0 10px 26px color-mix(in srgb,var(--ink),transparent 95%) }
+.ch-coupon-page .pz2-publicbody { display:grid; gap:9px; align-content:start }
+.ch-coupon-page .pz2-publicbody p { color:var(--ink-2) }
+.ch-coupon-page .pz2-publicbody .zk-btn { margin-top:auto }
+.ch-coupon-page .pz2-violet { background:linear-gradient(115deg,#6A5CFF,#4435AE); min-height:150px; display:flex; flex-direction:column; justify-content:center }
+.ch-coupon-page footer { border-top:1px solid var(--line); padding:30px 0; color:var(--ink-2); font-size:14px }
+.ch-coupon-page a { color:var(--iris-deep) }
+.ch-coupon-page .pz2-dialog .pz2-panel { background:var(--paper-2); color:var(--ink) }
+@media(max-width:720px) {
+ .ch-featureline { grid-template-columns:1fr }
+ .ch-featureline a { padding:16px }
+ .ch-sections { flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; padding:14px 0 18px;
+   scrollbar-width:thin; -webkit-overflow-scrolling:touch }
+ .ch-sections a { white-space:nowrap; padding:10px 13px; min-height:40px; font-size:13px; }
+ .ch-intro { padding-top:13px }
+ .ch-coupon-page .pz2-publiccard { min-width:0 }
+}
+@media(prefers-reduced-motion:reduce){.ch-sections a,.ch-featureline a{transition:none}}

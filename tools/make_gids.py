@@ -20,6 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import store_catalog as sc
 from make_kaarten import account_config, cover_img, esc, fold, is_light, sort_key, APP_STORE, MONTHS
+from catalog_hub import site_nav, strip, assets as hub_assets
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
@@ -196,27 +197,14 @@ def head(title, desc, url, ld, og_title, k):
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/kaarten.css">
   <link rel="stylesheet" href="/assets/gids.css">
+  {hub_assets()}
   <script>document.documentElement.classList.add('js')</script>
 {covers_script(k)}  <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False, separators=(",", ":"))}</script>
 </head>'''
 
 
 def nav(current):
-    cur = lambda d: ' aria-current="page"' if current == d else ""
-    return f'''  <header class="wrap nav">
-    <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span></a>
-    <nav aria-label="Hoofdmenu">
-      <ul>
-        <li><a href="/#functies">Functies</a></li>
-        <li><a href="/kaarten/">Kaarten</a></li>
-        <li><a href="/#delen">Delen</a></li>
-        <li><a href="/cadeaubon/"{cur("cadeaubon")}>Cadeaubons</a></li>
-        <li class="hide-sm"><a href="/klantenkaart/"{cur("klantenkaart")}>Klantenkaarten</a></li>
-        <li><a href="/support/">Support</a></li>
-      </ul>
-    </nav>
-  </header>'''
-
+    return site_nav(current or "kaarten")
 
 FOOTER = '''  <footer>
     <div class="wrap">
@@ -389,6 +377,7 @@ def guide_page(c, g, items, kind, year):
     <nav class="wrap gd-crumbs" aria-label="Kruimelpad">
       <ol><li><a href="/">Pasr</a></li><li><a href="/{k["dir"]}/">{k["label"]}</a></li><li aria-current="page">{esc(n)}</li></ol>
     </nav>
+    {strip(k["dir"])}
     <div class="wrap gd-hero">
       {card_face(c, big=True)}
       <div>
@@ -502,6 +491,7 @@ def overview(items, kind, year, today):
       <p class="kh-date">{len(items)} {k["nouns"]} · bijgewerkt op <time datetime="{today}">{nl_date(today)}</time></p>
     </div>
 
+    {strip(k["dir"])}
     <section class="wrap" id="gidsen" aria-label="{k["label"]}">
       <form class="kf gd-search" role="search" aria-label="Gids zoeken" onsubmit="return false">
         <div class="kf-search">

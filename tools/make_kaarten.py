@@ -22,6 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import store_catalog as sc
+from catalog_hub import site_nav, strip, assets as hub_assets
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
@@ -296,30 +297,19 @@ def build(write=True):
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/kaarten.css">
+  {hub_assets()}
   <script>document.documentElement.classList.add('js')</script>
   <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False, separators=(",", ":"))}</script>
 </head>
 <body class="cards-page">
   <a class="skip" href="#lijst">Naar de kaarten</a>
-  <header class="wrap nav">
-    <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span></a>
-    <nav aria-label="Hoofdmenu">
-      <ul>
-        <li><a href="/#functies">Functies</a></li>
-        <li><a href="/kaarten/" aria-current="page">Kaarten</a></li>
-        <li><a href="/#delen">Delen</a></li>
-        <li><a href="/cadeaubon/">Cadeaubons</a></li>
-        <li class="hide-sm"><a href="/#faq">Vragen</a></li>
-        <li><a href="/support/">Support</a></li>
-      </ul>
-    </nav>
-  </header>
+  {site_nav("kaarten")}
 
   <main>
     <div class="wrap kh">
       <p class="pill">Alle kaarten</p>
-      <h1>Welke kaarten kent Pasr?</h1>
-      <p class="lead">Zoek je winkel. Elke kaart staat in Pasr met het eigen logo en de eigen kleur, klaar om te scannen.</p>
+      <h1>Al je kaarten &amp; voordelen op één plek</h1>
+      <p class="lead">Zoek klantenkaarten, cadeaukaarten en stempelkaarten. Ontdek ook de actuele kortingsbonnen van ondernemers.</p>
       <dl class="kh-stats">
         <div><dt>Klantenkaarten</dt><dd data-count="loyalty">{n["loyalty"]}</dd></div>
         <div><dt>Cadeaukaarten en vouchers</dt><dd data-count="voucher">{n["voucher"]}</dd></div>
@@ -328,6 +318,12 @@ def build(write=True):
       <p class="kh-date">Bijgewerkt op <time datetime="{now.date().isoformat()}">{day}</time>. Nieuwe winkels komen erbij zonder app-update.</p>
     </div>
 
+    {strip("kaarten")}
+    <section class="wrap ch-featureline" aria-label="Ontdek meer voordelen">
+      <a href="/cadeaubon/"><strong>Cadeaukaarten &amp; saldo</strong><span>Geldigheid, officiële voorwaarden en saldo-checkers van de uitgevers.</span><b>Bekijk cadeaukaarten ›</b></a>
+      <a href="/klantenkaart/"><strong>Klantenkaarten &amp; voordelen</strong><span>Ontdek spaarprogramma’s en welke voordelen iedere klantenkaart biedt.</span><b>Bekijk klantenkaarten ›</b></a>
+      <a href="/kortingsbonnen/"><strong>Actuele kortingsbonnen</strong><span>Tijdelijke acties van deelnemende ondernemers, met persoonlijke inwisselcode.</span><b>Bekijk kortingsbonnen ›</b></a>
+    </section>
     <section class="wrap kl" id="lijst" aria-label="Kaarten">
       <form class="kf" role="search" aria-label="Kaarten zoeken en filteren" onsubmit="return false">
         <div class="kf-search">

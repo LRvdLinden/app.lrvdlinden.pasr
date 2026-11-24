@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import verify_barcodes as v
 import store_catalog
 import make_kaarten
+from catalog_hub import site_nav, strip
 import make_gids
 
 # Aantallen kaarten, uit de bronnen (StoreTemplates.swift en de catalogus-seeds in supabase/schema.sql): nooit met de hand.
@@ -867,17 +868,33 @@ if __name__ == "__main__":
     # Pasr kortingsbonnen: statisch blad met live (publiek leesbare) acties.
     coupons = ROOT / "kortingsbonnen"
     coupons.mkdir(parents=True, exist_ok=True)
-    (coupons / "index.html").write_text("""<!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kortingsbonnen | Pasr: Klantenkaarten</title>
-<meta name="description" content="Ontdek tijdelijke kortingsbonnen van ondernemers in Pasr. Bewaar een unieke kortingscode en laat hem bij de kassa verzilveren.">
-<link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/zakelijk.css"></head>
-<body class="pz2-public"><header class="wrap nav"><a href="/" aria-label="Pasr home"><img src="/assets/icon.png" width="38" height="38" alt=""> Pasr</a>
-<nav><a href="/">Home</a><a href="/zakelijk/">Voor ondernemers</a></nav></header>
+    (coupons / "index.html").write_text(f"""<!doctype html>
+<html lang="nl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Kortingsbonnen van ondernemers | Pasr Kaarten &amp; Voordelen</title>
+<meta name="description" content="Vind tijdelijke kortingsbonnen van Pasr-ondernemers. Ontdek kortingsbedragen en percentages, bewaar een persoonlijke QR-code en wissel de bon in bij de winkel.">
+<link rel="canonical" href="https://pasr.nl/kortingsbonnen/">
+<meta name="theme-color" content="#F4F3FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111020" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/kaarten.css">
+<link rel="stylesheet" href="/assets/zakelijk.css">
+<link rel="stylesheet" href="/assets/catalog-hub.css">
+<script src="/assets/consent.js" defer></script>
+</head><body class="cards-page ch-coupon-page">
+<a class="skip" href="#pz2Public">Naar de kortingsbonnen</a>
+{site_nav("kortingsbonnen")}
+{strip("kortingsbonnen")}
 <main class="wrap" id="pz2Public"></main>
-<footer class="wrap"><p>Pasr · Kortingsbonnen worden alleen door de deelnemende ondernemer uitgegeven en gecontroleerd.</p></footer>
+<footer><div class="wrap"><p>Pasr · Kortingsbonnen worden uitsluitend door deelnemende ondernemers uitgegeven en gecontroleerd. Pasr verkoopt geen cadeaukaarten.</p>
+<nav aria-label="Voettekst"><a href="/kaarten/">Alle kaarten</a> · <a href="/cadeaubon/">Cadeaukaarten</a> · <a href="/zakelijk/">Voor ondernemers</a> · <a href="/privacy/">Privacy</a> · <a href="/support/">Support</a></nav></div></footer>
 <script src="/assets/account-config.js"></script><script src="/assets/vendor/qrcode.js"></script>
-<script src="/assets/loyalty2.js"></script><script>window.PasrLoyalty2.publicPage(document.getElementById("pz2Public"));</script></body></html>""",encoding="utf-8")
+<script src="/assets/loyalty2.js"></script>
+<script>window.PasrLoyalty2.publicPage(document.getElementById("pz2Public"));</script>
+</body></html>""",encoding="utf-8")
     print("Wrote", coupons / "index.html")
     # pasr.nl/zakelijk: landingspagina voor ondernemers en de app-pagina's (dashboard, scanner, …)
     import make_zakelijk
