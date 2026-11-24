@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import store_catalog as sc
-from catalog_hub import site_nav, strip, hero as hub_hero, assets as hub_assets
+from catalog_hub import site_nav, strip, hero as hub_hero, assets as hub_assets, footer_links
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
@@ -390,13 +390,7 @@ def build(write=True):
   <footer>
     <div class="wrap">
       <span>&copy; {now.year} Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels; Pasr is niet aan hen verbonden. Winkel en wil je je logo anders of niet in Pasr? Mail <a href="mailto:support@pasr.nl?subject=Logo%20in%20Pasr">support@pasr.nl</a>.</span>
-      <nav aria-label="Voettekst">
-        <a href="/cadeaubon/">Cadeaubon-gids</a>
-        <a href="/klantenkaart/">Klantenkaart-gids</a>
-        <a href="/privacy/">Privacy</a>
-        <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
-        <a href="/support/">Support</a>
-      </nav>
+      <nav aria-label="Voettekst">{footer_links()}</nav>
     </div>
   </footer>
   <script type="application/json" id="kaarten-config">{json.dumps(config, ensure_ascii=False)}</script>
