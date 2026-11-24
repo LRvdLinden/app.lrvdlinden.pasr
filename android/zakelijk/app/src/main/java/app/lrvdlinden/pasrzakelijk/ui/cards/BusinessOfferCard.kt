@@ -1,5 +1,7 @@
 package app.lrvdlinden.pasrzakelijk.ui.cards
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,7 +38,16 @@ fun BusinessOfferCard(business: String, item: JSONObject, isCode: Boolean, logo:
             else listOf(tint.copy(alpha=.82f),tint)),RoundedCornerShape(22.dp))
         .padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment=Alignment.CenterVertically) {
-            LogoImage(item.optString("logo").ifBlank { logo ?: "" }, modifier=Modifier.size(44.dp))
+            val logoBitmap = LogoImage.bitmap(item.optString("logo").ifBlank { logo ?: "" })
+            if (logoBitmap != null) {
+                Image(logoBitmap.asImageBitmap(), "Bedrijfslogo",
+                    Modifier.size(44.dp).background(Color.White, RoundedCornerShape(10.dp)))
+            } else {
+                Box(Modifier.size(44.dp).background(Color.White.copy(alpha=.22f),RoundedCornerShape(10.dp)),
+                    contentAlignment=Alignment.Center) {
+                    Text(business.take(1),color=Color.White,fontWeight=FontWeight.Bold)
+                }
+            }
             Column(Modifier.weight(1f).padding(start=10.dp)) {
                 Text(business,color=Color.White,fontWeight=FontWeight.Bold)
                 Text(if(isCode)"Actiecode" else "Kortingscoupon",color=Color.White.copy(alpha=.85f),
