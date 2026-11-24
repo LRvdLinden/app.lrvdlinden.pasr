@@ -110,6 +110,21 @@ import java.io.File
 @Composable
 fun CardsScreen(business: Business) {
     var editing by remember { mutableStateOf<BusinessCard?>(null) }
+    var couponsList by remember { mutableStateOf<List<org.json.JSONObject>>(emptyList()) }
+    var codesList by remember { mutableStateOf<List<org.json.JSONObject>>(emptyList()) }
+    var offersError by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(business.id) {
+        try {
+            val arr=app.lrvdlinden.pasrzakelijk.data.Account.rpc("pasr_business_coupon_list",
+                org.json.JSONObject().put("p_business",business.id)) as? org.json.JSONArray
+            couponsList=(0 until (arr?.length() ?: 0)).mapNotNull { arr?.optJSONObject(it) }
+        } catch(e:Exception) { offersError=e.message }
+        try {
+            val arr=app.lrvdlinden.pasrzakelijk.data.Account.rpc("pasr_business_promo_list",
+                org.json.JSONObject().put("p_business",business.id)) as? org.json.JSONArray
+            codesList=(0 until (arr?.length() ?: 0)).mapNotNull { arr?.optJSONObject(it) }
+        } catch(e:Exception) { offersError=e.message }
+    }
     var sharing by remember { mutableStateOf<BusinessCard?>(null) }
     var program by remember { mutableStateOf<BusinessCard?>(null) }
     var coupons by remember { mutableStateOf(false) }
@@ -120,7 +135,7 @@ fun CardsScreen(business: Business) {
     var createChoices by remember { mutableStateOf(false) }
     var actionCardChoices by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    ScreenScaffold(L("Kaarten"), actions = {
+    ScreenScaffold(L("Acties"), actions = {
         TextButton(onClick = { community = true }) { Text("Samenwerken", color = Pz.accent) }
         TextButton(onClick = { locations = true }) { Text("Vestigingen", color = Pz.accent) }
         TextButton(onClick = { marketing = true }) { Text("Marketing", color = Pz.accent) }
@@ -182,6 +197,35 @@ fun CardsScreen(business: Business) {
                             }
                         }
                     }
+                }
+            }
+            item {
+                Column(verticalArrangement=Arrangement.spacedBy(9.dp)) {
+                    Text("Kortingscoupons",fontWeight=FontWeight.Bold,color=Pz.text)
+                    if(couponsList.isEmpty())Text("Nog geen kortingscoupons",color=Pz.muted)
+                    couponsList.forEach { coupon ->
+                        val expires=runCatching {java.time.Instant.parse(coupon.optString("ends_at"))}.getOrNull()
+                        val active=coupon.optBoolean("public") && (expires==null || expires.isAfter(java.time.Instant.now()))
+                        TextButton(onClick={coupons=true}){
+                            Text("🎟 "+coupon.optString("title")+" · "+(if(active)"Actief" else "Concept / verlopen"),color=Pz.text)
+                        }
+                    }
+                    TextButton(onClick={coupons=true}){Text("+ Kortingscoupon",color=Pz.accent)}
+                }
+            }
+            item {
+                Column(verticalArrangement=Arrangement.spacedBy(9.dp)){
+                    Text("Actiecodes",fontWeight=FontWeight.Bold,color=Pz.text)
+                    if(codesList.isEmpty())Text("Nog geen actiecodes",color=Pz.muted)
+                    codesList.forEach { code ->
+                        val active=code.optBoolean("active") && code.optInt("used_count")<code.optInt("max_uses")
+                        TextButton(onClick={promoCodes=true}){
+                            Text("# "+code.optString("code")+" · "+code.optString("title")+
+                                " · "+(if(active)"Actief" else "Niet actief"),color=Pz.text)
+                        }
+                    }
+                    TextButton(onClick={promoCodes=true}){Text("+ Actiecode",color=Pz.accent)}
+                    offersError?.let { Text("Acties laden mislukt: "+it,color=Pz.coral) }
                 }
             }
         }

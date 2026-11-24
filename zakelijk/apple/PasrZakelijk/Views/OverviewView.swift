@@ -52,6 +52,8 @@ struct OverviewView: View {
     @State private var previous: [DayStat] = []
     @State private var members: Int?
     @State private var loyalty: [String: Any] = [:]
+    @State private var coupons: [[String: Any]] = []
+    @State private var promoCodes: [[String: Any]] = []
     @State private var loading = false
     @State private var error: String?
     @State private var selected: MetricPoint?
@@ -82,6 +84,28 @@ struct OverviewView: View {
                     }
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
+                }
+                Section("Zakelijke acties") {
+                    LabeledContent("Stempelkaarten online") { Text("\(business.cards.filter(\.published).count)") }
+                    LabeledContent("Actieve kortingscoupons") {
+                        Text(String(coupons.filter { coupon in
+                            guard coupon["public"] as? Bool == true else { return false }
+                            let expiry = (coupon["ends_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) }
+                            return (expiry ?? .distantPast) > .now
+                        }.count))
+                    }
+                    LabeledContent("Actieve actiecodes") {
+                        Text(String(promoCodes.filter { code in
+                            (code["active"] as? Bool ?? false) &&
+                            ((code["used_count"] as? NSNumber)?.intValue ?? 0) <
+                            ((code["max_uses"] as? NSNumber)?.intValue ?? 0)
+                        }.count))
+                    }
+                    LabeledContent("Actiecodes gebruikt") {
+                        Text("\(promoCodes.reduce(0) { $0 + (($1["used_count"] as? NSNumber)?.intValue ?? 0) })")
+                    }
+                    Text("Klantbinding, campagnes, vestigingen en samenwerkingen beheer je via de bestaande functies. Deze cijfers komen rechtstreeks uit je zakelijke acties.")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
                 if !loyalty.isEmpty {
                     Section("Klantenbinding · laatste 30/90 dagen") {
@@ -260,6 +284,10 @@ struct OverviewView: View {
                 selected = nil
             }
             error = nil
+            if let list = try? await Account.shared.rpc("pasr_business_coupon_list",
+                ["p_business": business.id]) as? [[String: Any]] { coupons = list }
+            if let list = try? await Account.shared.rpc("pasr_business_promo_list",
+                ["p_business": business.id]) as? [[String: Any]] { promoCodes = list }
             if let response = try? await Account.shared.rpc("pasr_business_loyalty_insights",
                 ["p_business": business.id]),
                 let values = response as? [String: Any] {

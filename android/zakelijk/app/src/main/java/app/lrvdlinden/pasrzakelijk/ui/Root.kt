@@ -59,6 +59,7 @@ import app.lrvdlinden.pasrzakelijk.data.Business
 import app.lrvdlinden.pasrzakelijk.data.BusinessStore
 import app.lrvdlinden.pasrzakelijk.data.DeviceRegistry
 import app.lrvdlinden.pasrzakelijk.ui.cards.CardsScreen
+import app.lrvdlinden.pasrzakelijk.ui.cards.PromoMaterialsScreen
 import app.lrvdlinden.pasrzakelijk.ui.overview.OverviewScreen
 import app.lrvdlinden.pasrzakelijk.ui.scan.ScanScreen
 import app.lrvdlinden.pasrzakelijk.ui.settings.SettingsScreen
@@ -111,8 +112,9 @@ private fun LoadingScreen() {
 
 private enum class Tab(val key: String, val icon: ImageVector, val title: String, val ownerOnly: Boolean) {
     Scan("scan", Icons.Outlined.QrCodeScanner, "Scannen", false),
-    Cards("cards", Icons.Outlined.Style, "Kaarten", true),
+    Cards("cards", Icons.Outlined.Style, "Acties", true),
     Overview("overview", Icons.AutoMirrored.Outlined.ShowChart, "Overzicht", true),
+    Promo("promo", Icons.Outlined.Style, "Promotie", true),
     Staff("staff", Icons.Outlined.Group, "Medewerkers", true),
     Settings("settings", Icons.Outlined.Settings, "Instellingen", false),
 }
@@ -131,6 +133,7 @@ fun MainTabs(business: Business, initialTab: String? = null) {
                 Tab.Scan -> ScanScreen(business)
                 Tab.Cards -> CardsScreen(business)
                 Tab.Overview -> OverviewScreen(business)
+                Tab.Promo -> PromoMaterialsScreen(business)
                 Tab.Staff -> StaffScreen(business)
                 Tab.Settings -> SettingsScreen(business)
             }
