@@ -2605,6 +2605,7 @@ end $$;
 create or replace function public.pasr_business_stamp(p_code text, p_amount int default 1, p_device text default null) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare r record; m public.pasr_business_members; amt int := coalesce(p_amount, 1); left_s int; ev uuid;
+  cfg jsonb; mult int := 1; actual int; today int;
 begin
   select * into r from public.pasr_business_scan_member(p_code);
   if amt < 1 then raise exception 'Kies minstens 1 stempel.' using errcode = '22023', hint = 'bad_amount'; end if;
@@ -2621,12 +2622,25 @@ begin
     raise exception 'Deze klant kreeg net al een stempel, probeer het over % min opnieuw.', greatest(1, ceil(left_s / 60.0)::int)
       using errcode = '22023', hint = 'cooldown', detail = left_s::text;
   end if;
-  update public.pasr_business_members set stamps_count = least(stamps_count + amt, 1000), last_stamp_at = now(), updated_at = now()
+  -- Tijdelijke stempelactie alleen als de eigenaar hem op deze kaart aanzet.
+  select settings->'campaign' into cfg from public.pasr_business_programs where card_id=(r.c).id;
+  today := extract(dow from now() at time zone 'Europe/Amsterdam')::int;
+  if coalesce((cfg->>'enabled')::boolean,false)
+     and coalesce((cfg->>'weekday')::int,-1)=today then
+    mult := greatest(1, least(3,coalesce((cfg->>'multiplier')::int,1)));
+  end if;
+  actual := least(amt * mult,(r.b).max_per_scan);
+  update public.pasr_business_members set stamps_count = least(stamps_count + actual, 1000), last_stamp_at = now(), updated_at = now()
   where id = (r.m).id returning * into m;
   insert into public.pasr_business_events (business_card_id, business_id, member_id, kind, amount, by_user, device, stamps_before, stamps_after)
-  values ((r.c).id, (r.b).id, m.id, 'stamp', amt, auth.uid(), nullif(left(trim(coalesce(p_device, '')), 80), ''), (r.m).stamps_count, m.stamps_count)
+  values ((r.c).id, (r.b).id, m.id, 'stamp', actual, auth.uid(), nullif(left(trim(coalesce(p_device, '')), 80), ''), (r.m).stamps_count, m.stamps_count)
   returning event_id into ev;
-  return public.pasr_business_scan_json(m, r.c, r.b, ev);
+  -- Een uitgenodigde klant krijgt pas bij de eerste echte, door de zaak gescande aankoop een bonus.
+  if (r.m).last_stamp_at is null then
+    perform public.pasr_business_referral_award_internal(m.id,(r.b).id,(r.c).id);
+    select * into m from public.pasr_business_members where id=(r.m).id;
+  end if;
+  return public.pasr_business_scan_json(m, r.c, r.b, ev) || jsonb_build_object('stamps_added',actual,'campaign_multiplier',mult);
 end $$;
 
 create or replace function public.pasr_business_redeem(p_code text, p_device text default null) returns jsonb
@@ -4169,3 +4183,226 @@ revoke all on function public.pasr_business_program(uuid,jsonb),
 grant execute on function public.pasr_business_program(uuid,jsonb),public.pasr_business_coupon_save(jsonb),
   public.pasr_business_coupon_claim(uuid),public.pasr_business_coupon_mine(),public.pasr_business_coupon_redeem(text) to authenticated;
 grant execute on function public.pasr_business_program_public(uuid), public.pasr_business_coupon_list(uuid) to anon,authenticated;
+
+
+-- Tussentijdse beloningen: vaste mijlpalen per kaart; slechts eenmaal per ronde.
+create table if not exists public.pasr_business_reward_claims (
+  id uuid primary key default gen_random_uuid(),
+  member_id uuid not null references public.pasr_business_members(id) on delete cascade,
+  card_id uuid not null references public.pasr_business_cards(id) on delete cascade,
+  cycle integer not null check(cycle >= 0),
+  milestone integer not null check(milestone >= 2 and milestone <= 30),
+  title text not null check(char_length(title) between 3 and 80),
+  by_user uuid references auth.users(id),
+  at timestamptz not null default now(),
+  unique(member_id,cycle,milestone)
+);
+alter table public.pasr_business_reward_claims enable row level security;
+revoke all on public.pasr_business_reward_claims from anon,authenticated;
+
+-- Geeft de eigenaar/medewerker na een scan de beschikbare tussentijdse beloningen.
+create or replace function public.pasr_business_reward_progress(p_code text)
+returns jsonb language plpgsql security definer set search_path=public as $
+declare r record; cfg jsonb;
+begin
+  select * into r from public.pasr_business_scan_member(p_code);
+  select coalesce(settings->'rewards','[]'::jsonb) into cfg
+    from public.pasr_business_programs where card_id=(r.c).id;
+  return coalesce((select jsonb_agg(jsonb_build_object(
+     'stamps',(x.value->>'stamps')::int,'title',x.value->>'title',
+     'available', (r.m).stamps_count >= (x.value->>'stamps')::int
+       and not exists(select 1 from public.pasr_business_reward_claims v
+           where v.member_id=(r.m).id and v.cycle=(r.m).rewards_redeemed
+             and v.milestone=(x.value->>'stamps')::int))
+      order by (x.value->>'stamps')::int)
+    from jsonb_array_elements(coalesce(cfg,'[]'::jsonb)) x
+    where (x.value->>'stamps')::int < (r.c).stamps_total),'[]'::jsonb);
+end $$;
+
+create or replace function public.pasr_business_reward_claim(p_code text,p_stamps integer)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare r record; m public.pasr_business_members; reward_title text;
+begin
+  select * into r from public.pasr_business_scan_member(p_code);
+  select * into m from public.pasr_business_members where id=(r.m).id for update;
+  if p_stamps<2 or p_stamps>=(r.c).stamps_total then
+    raise exception 'Deze mijlpaal bestaat niet.' using errcode='22023';
+  end if;
+  select e.value->>'title' into reward_title
+    from public.pasr_business_programs p, lateral jsonb_array_elements(p.settings->'rewards') e
+    where p.card_id=(r.c).id and (e.value->>'stamps')::int=p_stamps
+    limit 1;
+  if reward_title is null then raise exception 'Mijlpaal niet gevonden.' using errcode='P0002'; end if;
+  if m.stamps_count<p_stamps then raise exception 'Nog niet genoeg stempels.' using errcode='22023'; end if;
+  insert into public.pasr_business_reward_claims(member_id,card_id,cycle,milestone,title,by_user)
+    values(m.id,(r.c).id,m.rewards_redeemed,p_stamps,reward_title,auth.uid())
+    on conflict(member_id,cycle,milestone) do nothing;
+  if not found then raise exception 'Deze beloning is al afgehaald.' using errcode='22023'; end if;
+  return public.pasr_business_scan_json(m,r.c,r.b) ||
+         jsonb_build_object('milestone_redeemed',p_stamps,'milestone_reward',reward_title);
+end $$;
+
+revoke all on function public.pasr_business_reward_progress(text),
+  public.pasr_business_reward_claim(text,integer) from public;
+grant execute on function public.pasr_business_reward_progress(text),
+  public.pasr_business_reward_claim(text,integer) to authenticated;
+
+
+-- Geaggregeerde zakelijke inzichten, uitsluitend voor de eigenaar. Geen namen, codes of persoonsgegevens.
+create or replace function public.pasr_business_loyalty_insights(p_business uuid)
+returns jsonb language plpgsql stable security definer set search_path=public as $$
+declare own public.pasr_businesses;
+begin
+  select * into own from public.pasr_businesses where id=p_business and owner=auth.uid();
+  if own.id is null then raise exception 'Alleen de eigenaar ziet deze inzichten.' using errcode='42501'; end if;
+  return jsonb_build_object(
+    'members',(select count(*) from public.pasr_business_members m
+       join public.pasr_business_cards c on c.id=m.business_card_id where c.business_id=p_business),
+    'members_30d',(select count(*) from public.pasr_business_members m
+       join public.pasr_business_cards c on c.id=m.business_card_id
+       where c.business_id=p_business and m.created_at >= now()-interval '30 days'),
+    'stamps_30d',(select coalesce(sum(e.amount),0) from public.pasr_business_events e
+       where e.business_id=p_business and e.kind='stamp' and e.undone_at is null
+         and e.at >= now()-interval '30 days'),
+    'returning_customers_90d',(select count(*) from (
+       select e.member_id from public.pasr_business_events e
+       where e.business_id=p_business and e.kind='stamp' and e.undone_at is null
+         and e.at >= now()-interval '90 days'
+       group by e.member_id having count(*)>=2
+    ) repeated),
+    'milestone_rewards',(select count(*) from public.pasr_business_reward_claims rc
+       join public.pasr_business_cards c on c.id=rc.card_id where c.business_id=p_business),
+    'claimed_coupons',(select count(*) from public.pasr_business_coupon_claims cc
+       join public.pasr_business_coupons c on c.id=cc.coupon_id where c.business_id=p_business),
+    'redeemed_coupons',(select count(*) from public.pasr_business_coupon_claims cc
+       join public.pasr_business_coupons c on c.id=cc.coupon_id
+       where c.business_id=p_business and cc.redeemed_at is not null));
+end $$;
+revoke all on function public.pasr_business_loyalty_insights(uuid) from public;
+grant execute on function public.pasr_business_loyalty_insights(uuid) to authenticated;
+
+
+-- Referral wordt uitgegeven per bestaande, aan een echt Pasr-account gekoppelde kaart.
+create table if not exists public.pasr_business_referral_invites(
+  member_id uuid primary key references public.pasr_business_members(id) on delete cascade,
+  token text not null unique check(token ~ '^PR[0-9A-F]{30}$'),
+  created_at timestamptz not null default now()
+);
+alter table public.pasr_business_referral_invites enable row level security;
+revoke all on public.pasr_business_referral_invites from anon,authenticated;
+
+create table if not exists public.pasr_business_referrals(
+  id uuid primary key default gen_random_uuid(),
+  inviter_member_id uuid not null references public.pasr_business_members(id) on delete cascade,
+  referred_member_id uuid not null unique references public.pasr_business_members(id) on delete cascade,
+  business_card_id uuid not null references public.pasr_business_cards(id) on delete cascade,
+  joined_at timestamptz not null default now(),
+  rewarded_at timestamptz,
+  constraint pasr_referrer_different check(inviter_member_id <> referred_member_id)
+);
+create index if not exists pasr_referrals_inviter_idx on public.pasr_business_referrals(inviter_member_id,joined_at);
+alter table public.pasr_business_referrals enable row level security;
+revoke all on public.pasr_business_referrals from anon,authenticated;
+
+create or replace function public.pasr_business_referral_invite(p_code text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare m public.pasr_business_members; c public.pasr_business_cards; b public.pasr_businesses;
+  cfg jsonb; existing text; token text;
+begin
+  if auth.uid() is null then raise exception 'Log in om vrienden uit te nodigen.' using errcode='28000'; end if;
+  select * into m from public.pasr_business_members
+    where member_code=upper(trim(p_code)) and user_id=auth.uid() for update;
+  if m.id is null then raise exception 'Deze kaart hoort niet bij je account.' using errcode='42501'; end if;
+  select * into c from public.pasr_business_cards where id=m.business_card_id and published;
+  select * into b from public.pasr_businesses where id=c.business_id and status='approved';
+  select settings->'referral' into cfg from public.pasr_business_programs where card_id=c.id;
+  if c.id is null or b.id is null or coalesce((cfg->>'enabled')::boolean,false) is not true then
+    raise exception 'Vrienden uitnodigen staat voor deze kaart niet aan.' using errcode='22023';
+  end if;
+  select i.token into existing from public.pasr_business_referral_invites i where i.member_id=m.id;
+  if existing is null then
+    token := 'PR'||upper(encode(gen_random_bytes(15),'hex'));
+    insert into public.pasr_business_referral_invites(member_id,token)
+       values(m.id,token) on conflict(member_id) do nothing;
+    select i.token into existing from public.pasr_business_referral_invites i where i.member_id=m.id;
+  end if;
+  return jsonb_build_object('token',existing,'card_id',c.id,'name',c.name,
+    'share_url','https://pasr.nl/zakelijk/kaart/'||c.id::text||'/?ref='||existing,
+    'terms','Beide klanten ontvangen de bonus pas na de eerste gecontroleerde aankoop.');
+end $$;
+
+create or replace function public.pasr_business_referral_join(p_card uuid,p_token text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare c public.pasr_business_cards; b public.pasr_businesses;
+  inviter public.pasr_business_members; invited public.pasr_business_members;
+  cfg jsonb; normalized text:=upper(trim(p_token));
+begin
+  if auth.uid() is null then raise exception 'Log in om de uitnodiging te accepteren.' using errcode='28000'; end if;
+  select * into c from public.pasr_business_cards where id=p_card and published;
+  select * into b from public.pasr_businesses where id=c.business_id and status='approved';
+  select m.* into inviter from public.pasr_business_referral_invites i
+    join public.pasr_business_members m on m.id=i.member_id
+    where i.token=normalized and m.business_card_id=p_card;
+  select settings->'referral' into cfg from public.pasr_business_programs where card_id=p_card;
+  if c.id is null or b.id is null or inviter.id is null or
+    coalesce((cfg->>'enabled')::boolean,false) is not true then
+    raise exception 'Uitnodiging ongeldig of niet meer actief.' using errcode='22023';
+  end if;
+  if inviter.user_id is null or inviter.user_id=auth.uid() then
+    raise exception 'Je kunt jezelf niet uitnodigen.' using errcode='22023';
+  end if;
+  if exists(select 1 from public.pasr_business_members where business_card_id=p_card and user_id=auth.uid()) then
+    raise exception 'Je hebt al een kaart bij deze ondernemer.' using errcode='22023';
+  end if;
+  -- Maximaal 50 open uitnodigingen per lid; voorkomt grootschalig misbruik.
+  if (select count(*) from public.pasr_business_referrals
+      where inviter_member_id=inviter.id and rewarded_at is null)>=50 then
+    raise exception 'Voor deze uitnodigingslink staan te veel aanvragen open.' using errcode='22023';
+  end if;
+  insert into public.pasr_business_members(business_card_id,member_code,user_id)
+    values(c.id,public.pasr_business_new_code(),auth.uid()) returning * into invited;
+  insert into public.pasr_business_referrals(inviter_member_id,referred_member_id,business_card_id)
+    values(inviter.id,invited.id,c.id);
+  insert into public.pasr_business_events(business_card_id,business_id,member_id,kind,amount,by_user)
+    values(c.id,b.id,invited.id,'join',0,auth.uid());
+  return public.pasr_business_member_json(invited,c,b)||
+    jsonb_build_object('referral_pending',true,'referral_bonus_after_first_verified_purchase',true);
+end $$;
+
+-- Wordt alleen aangeroepen vanuit de vertrouwde scantransactie, niet rechtstreeks door klanten.
+create or replace function public.pasr_business_referral_award_internal(
+ p_member uuid,p_business uuid,p_card uuid)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare rr public.pasr_business_referrals; cfg jsonb; bonus int; before_inv int; before_new int;
+  after_inv int; after_new int; approved boolean;
+begin
+  select * into rr from public.pasr_business_referrals
+    where referred_member_id=p_member and business_card_id=p_card and rewarded_at is null for update;
+  if rr.id is null then return '{}'::jsonb; end if;
+  select settings->'referral' into cfg from public.pasr_business_programs where card_id=p_card;
+  if coalesce((cfg->>'enabled')::boolean,false) is not true then return '{}'::jsonb; end if;
+  if public.pasr_business_role(p_business) is null then
+    raise exception 'Geen recht om referralbonussen te verwerken.' using errcode='42501';
+  end if;
+  bonus:=least(3,greatest(1,coalesce((cfg->>'bonus')::int,1)));
+  select stamps_count into before_inv from public.pasr_business_members where id=rr.inviter_member_id for update;
+  select stamps_count into before_new from public.pasr_business_members where id=rr.referred_member_id for update;
+  update public.pasr_business_members set stamps_count=least(stamps_count+bonus,1000),updated_at=now()
+    where id=rr.inviter_member_id returning stamps_count into after_inv;
+  update public.pasr_business_members set stamps_count=least(stamps_count+bonus,1000),updated_at=now()
+    where id=rr.referred_member_id returning stamps_count into after_new;
+  insert into public.pasr_business_events(business_card_id,business_id,member_id,kind,amount,by_user,stamps_before,stamps_after)
+    values(p_card,p_business,rr.inviter_member_id,'stamp',after_inv-before_inv,auth.uid(),before_inv,after_inv),
+          (p_card,p_business,rr.referred_member_id,'stamp',after_new-before_new,auth.uid(),before_new,after_new);
+  update public.pasr_business_referrals set rewarded_at=now() where id=rr.id;
+  return jsonb_build_object('referral_bonus',bonus,'rewarded',true);
+end $$;
+-- Deze helper mag alleen in de scancontext worden gebruikt, met personeel dat bij de zaak hoort.
+revoke all on function public.pasr_business_referral_award_internal(uuid,uuid,uuid)
+ from public,anon,authenticated;
+grant execute on function public.pasr_business_referral_award_internal(uuid,uuid,uuid) to service_role;
+
+revoke all on function public.pasr_business_referral_invite(text),
+ public.pasr_business_referral_join(uuid,text) from public,anon;
+grant execute on function public.pasr_business_referral_invite(text),
+ public.pasr_business_referral_join(uuid,text) to authenticated;

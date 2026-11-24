@@ -931,6 +931,8 @@
       } catch (e) { /* offline: gewoon hier */ }
     }
     var store = "pasr.zakelijk.member." + id;
+    var referral = new URLSearchParams(location.search).get("ref");
+    if(referral && !/^PR[0-9A-F]{30}$/i.test(referral)) referral = null;
     function fail(title, text) { root.innerHTML = "<h1>" + esc(title) + "</h1><p>" + esc(text) + '</p><a class="btn btn-ghost" href="/zakelijk/">Over Pasr voor ondernemers</a>'; }
     if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("Deze link werkt niet", "De link is niet compleet. Scan de QR-code bij de zaak opnieuw.");
     if (!ready) return fail("Even niet beschikbaar", "Probeer het later opnieuw.");
@@ -961,13 +963,34 @@
       document.title = card.name + " | " + card.business + " | Pasr";
       root.innerHTML = '<span class="zk-kicker">Stempelkaart</span><h1>' + esc(card.name) + "</h1><p>Spaar stempels bij " + esc(card.business) + (card.city ? " in " + esc(card.city) : "") + ". Bij " + card.stamps_total + " stempels: " + esc(card.reward) + ".</p>" +
         stampCard(card, null) +
-        '<div class="actions"><a class="btn btn-primary" href="pasr://zakelijk#' + esc(id) + '">Open in Pasr</a><a class="btn btn-ghost" href="' + APP_STORE + '" rel="noopener">Pasr voor iPhone</a><a class="btn btn-ghost" href="/android/">Pasr voor Android</a></div>' +
-        '<p class="note">Geen app? <button class="zk-btn sm" id="jJoin" type="button">Gebruik de kaart in je browser</button></p><p class="zk-msg" id="jMsg" role="status"></p>' +
+        '<div class="actions"><a class="btn btn-primary" href="pasr://zakelijk?ref=' + encodeURIComponent(referral || "") + '#' + esc(id) + '">Open in Pasr</a><a class="btn btn-ghost" href="' + APP_STORE + '" rel="noopener">Pasr voor iPhone</a><a class="btn btn-ghost" href="/android/">Pasr voor Android</a></div>' +
+        '<p class="note">Geen app? <button class="zk-btn sm" id="jJoin" type="button">Gebruik de kaart in je browser</button></p>' +
+        (referral ? '<p class="zd-help">Vriendenactie: de bonus komt pas na je eerste aankoop. Log in met je Pasr-account.</p>' +
+        '<form id="jReferralLogin" class="zk-form" style="max-width:410px"><label>E-mail<input name="email" type="email" required></label>' +
+        '<label>Wachtwoord<input name="password" type="password" required></label><button class="zk-btn ghost" type="submit">Inloggen</button></form>' : '') +
+        '<p class="zk-msg" id="jMsg" role="status"></p>' +
         '<p class="note" style="font-size:14px">Je krijgt een anonieme lidcode; Pasr vraagt geen naam of e-mailadres. <a href="/privacy/#stempelkaarten-van-ondernemers">Privacy</a></p>';
+      var loginForm = $("#jReferralLogin");
+      if (loginForm) loginForm.addEventListener("submit", async function (ev) {
+        ev.preventDefault();
+        try {
+          keep(await http("auth/v1/token?grant_type=password", {
+            email: loginForm.elements.email.value.trim(), password: loginForm.elements.password.value
+          }));
+          loginForm.innerHTML = '<p class="zd-ready">Ingelogd! Je kunt nu deelnemen aan de vriendenactie.</p>';
+          setMsg($("#jMsg"), "Ingelogd", true);
+        } catch(e) { setMsg($("#jMsg"), nice(e)); }
+      });
       $("#jJoin").addEventListener("click", async function (ev) {
         ev.target.disabled = true;
         try {
-          var m = await rpc("pasr_business_join", { p_card: id });
+          var m;
+          if (referral) {
+            if (!await token()) throw new Error("Log eerst in bij Pasr om de vriendenuitnodiging te gebruiken.");
+            m = await rpc("pasr_business_referral_join",{p_card:id,p_token:referral},true);
+          } else {
+            m = await rpc("pasr_business_join",{p_card:id});
+          }
           code = m.member_code;
           try { localStorage.setItem(store, code); } catch (e) { /* privévenster: alleen deze sessie */ }
           memberView(m);
@@ -1029,6 +1052,7 @@
         '<button class="zk-btn ghost" type="button" id="sPlus" aria-label="Eén stempel meer" aria-controls="sAmt">+</button></span><small>hoogstens ' + maxAmt + " per scan</small></div>" +
         '<div class="zk-actions zd-scanbtns"><button class="zk-btn mint" id="sStamp" type="button"' + (cool ? " disabled" : "") + ">" + ICON.stamp + '<span id="sStampTxt">Stempel erbij</span></button>' +
         '<button class="zk-btn coral" id="sRedeem" type="button"' + (full ? "" : " disabled") + ">" + ICON.gift + "Beloning inwisselen</button></div>" +
+        '<div id="pz2Milestones" class="pz2-milestones" aria-live="polite"></div>' +
         (m.can_undo_event_id ? '<p class="zd-undo"><button class="zk-btn ghost sm" type="button" id="sUndo">' + ICON.undo + 'Ongedaan maken <span id="sUndoLeft"></span></button></p>' : "") +
         '<p class="zd-help">' + esc(m.card.business || "") + " · klant …" + esc(m.member_code_suffix || String(m.member_code || "").slice(-4)) + (m.rewards_redeemed ? " · " + m.rewards_redeemed + "× beloning gehad" : "") + "</p></div>";
       function setAmt(n) {
@@ -1059,6 +1083,28 @@
         };
         tickUndo(); undoTimer = setInterval(tickUndo, 1000);
         undo.addEventListener("click", function (ev) { act(ev.currentTarget, "pasr_business_undo", { p_event: m.can_undo_event_id, p_device: DEVICE }, "Ongedaan gemaakt"); });
+      }
+      if (m.member_code) {
+        rpc("pasr_business_reward_progress",{p_code:m.member_code},true).then(function(list){
+          var el = $("#pz2Milestones",root);
+          if(!el || !Array.isArray(list) || !list.length) return;
+          el.innerHTML = '<h3>Tussentijdse beloningen</h3>' + list.map(function(r){
+            return '<div class="pz2-milestone"><span><b>'+esc(r.stamps)+' stempels</b> · '+esc(r.title)+'</span>' +
+              '<button class="zk-btn ghost sm" data-milestone="'+r.stamps+'"'+(r.available?'':' disabled')+'>' +
+              (r.available?'Uitgeven':'Niet beschikbaar')+'</button></div>';
+          }).join("");
+          el.querySelectorAll("button:not([disabled])").forEach(function(btn){
+            btn.addEventListener("click",async function(){
+              if(!confirm("Tussentijdse beloning definitief uitgeven?")) return;
+              btn.disabled=true;
+              try {
+                var fresh=await rpc("pasr_business_reward_claim",
+                  {p_code:m.member_code,p_stamps:Number(btn.dataset.milestone)},true);
+                result(fresh);toast("Tussentijdse beloning uitgegeven");
+              } catch(e){btn.disabled=false;toast(nice(e));}
+            });
+          });
+        }).catch(function(){});
       }
       var box = $("#sBox", root); box.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }

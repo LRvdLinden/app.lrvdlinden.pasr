@@ -116,7 +116,7 @@ struct RootView: View {
             if let url = note.object as? URL { handle(url) }
         }
         .sheet(item: $incomingBusiness) { item in
-            JoinBusinessSheet(cardID: item.cardID, memberCode: item.memberCode)
+            JoinBusinessSheet(cardID: item.cardID, memberCode: item.memberCode, referralToken: item.referralToken)
         }
         .sheet(item: $newStore) { item in
             AddCardView(store: item.template)
@@ -187,7 +187,9 @@ extension RootView {
         // zakelijke stempelkaart: pasr.nl/zakelijk/kaart/<id>/ (oud: …/kaart/#<id>) of pasr://zakelijk/kaart#<id>
         if let businessID = BusinessLink.cardID(from: url) {
             let code = BusinessLink.memberCode(from: url)
-            present { incomingBusiness = IncomingBusinessCard(cardID: businessID, memberCode: code) }
+            let referral = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "ref" })?.value
+            present { incomingBusiness = IncomingBusinessCard(cardID: businessID, memberCode: code, referralToken: referral) }
             return
         }
         let isTemp = (url.host() == "pasr.nl" && url.path().hasPrefix("/tijdelijk")) || (url.scheme == "pasr" && url.host() == "tijdelijk")

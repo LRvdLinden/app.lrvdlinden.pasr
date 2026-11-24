@@ -101,8 +101,11 @@ object Business {
     }
 
     /** Aansluiten: nieuwe klantcode, stand ophalen, kaart in Pasr zetten. */
-    suspend fun join(cardId: String, preview: BusinessInfo?): Card {
-        val json = Api.publicRpc("pasr_business_join", JSONObject().put("p_card", cardId))
+    suspend fun join(cardId: String, preview: BusinessInfo?, referralToken: String? = null): Card {
+        val json = if (!referralToken.isNullOrBlank()) {
+            if (!Account.isSignedIn) throw PasrError("Log in bij je Pasr-account om deze uitnodiging te gebruiken.")
+            Api.rpc("pasr_business_referral_join", JSONObject().put("p_card", cardId).put("p_token", referralToken))
+        } else Api.publicRpc("pasr_business_join", JSONObject().put("p_card", cardId))
         val joined = BusinessInfo.from(json)
         val code = (json as? String) ?: joined?.memberCode
         if (code.isNullOrEmpty() || code.length > 120) throw PasrError("Aanmelden bij deze stempelkaart lukte niet. Probeer het later opnieuw.")

@@ -78,6 +78,8 @@ import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import app.lrvdlinden.pasr.Incoming
 import app.lrvdlinden.pasr.data.Business
+import app.lrvdlinden.pasr.data.Api
+import org.json.JSONObject
 import app.lrvdlinden.pasr.data.CardKind
 import app.lrvdlinden.pasr.data.CardPlace
 import app.lrvdlinden.pasr.data.UseCapture
@@ -207,6 +209,25 @@ fun CardDetailScreen(id: String) {
                         Gap(6.dp)
                         Text("Laat de QR-code scannen bij de kassa. Alleen de zaak zet stempels.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    RowItem(Icons.Outlined.Share, "Nodig een vriend uit", "Bonus na de eerste geldige aankoop") {
+                        scope.launch {
+                            try {
+                                val memberCode = card.details.memberCode ?: return@launch
+                                val result = Api.rpc("pasr_business_referral_invite",
+                                    JSONObject().put("p_code", memberCode)) as? JSONObject
+                                val link = result?.optString("share_url").orEmpty()
+                                if (link.isNotBlank()) {
+                                    context.startActivity(Intent.createChooser(
+                                        Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_TEXT, link)
+                                        }, "Deel je vriendenuitnodiging"))
+                                }
+                            } catch (e: Exception) {
+                                snack.showSnackbar(e.message ?: "Vriendenactie is niet beschikbaar.")
+                            }
+                        }
                     }
                     RowItem(Icons.Outlined.Refresh, "Stand verversen") {
                         scope.launch {

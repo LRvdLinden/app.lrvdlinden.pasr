@@ -8,6 +8,8 @@ struct StampControls: View {
     var width: CGFloat
     @Environment(\.modelContext) private var context
     @State private var refreshing = false
+    @State private var referralURL: URL?
+    @State private var referralError: String?
 
     private var details: CardDetails { card.details }
 
@@ -26,6 +28,22 @@ struct StampControls: View {
                     .pasrGlassButton()
                     .disabled(refreshing)
                     .accessibilityLabel(Text("Stand verversen"))
+                }
+                if let referralURL {
+                    ShareLink(item: referralURL) {
+                        Label("Nodig een vriend uit", systemImage: "person.badge.plus")
+                            .font(.footnote.weight(.semibold))
+                    }
+                    .pasrGlassButton()
+                } else {
+                    Button { Task { await invite() } } label: {
+                        Label("Vriendenactie", systemImage: "person.badge.plus")
+                            .font(.footnote.weight(.semibold))
+                    }
+                    .pasrGlassButton()
+                }
+                if let referralError {
+                    Text(referralError).font(.caption).foregroundStyle(Brand.coral)
                 }
             } else {
                 progress
@@ -49,6 +67,21 @@ struct StampControls: View {
         .accessibilityElement(children: .combine)
     }
 
+    private func invite() async {
+        guard let code = details.memberCode else { return }
+        do {
+            let response = try await AccountService.shared.rpc("pasr_business_referral_invite",
+                body: ["p_code": code])
+            let data = response as? [String: Any]
+            if let raw = data?["share_url"] as? String {
+                referralURL = URL(string: raw)
+                referralError = nil
+            }
+        } catch {
+            referralError = error.localizedDescription
+        }
+    }
+
     private func refresh() async {
         refreshing = true
         defer { refreshing = false }
@@ -63,6 +96,7 @@ struct JoinBusinessSheet: View {
     var onDone: (() -> Void)? = nil
     /// Lidcode uit de browser ("Bewaar in Pasr" op pasr.nl): die nemen we over, zodat de stempels meegaan.
     var memberCode: String? = nil
+    var referralToken: String? = nil
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(filter: #Predicate<Card> { $0.deletedAt == nil }) private var cards: [Card]
@@ -161,7 +195,7 @@ struct JoinBusinessSheet: View {
             if let memberCode, let claimed = try await BusinessCards.claim(code: memberCode, cardID: cardID, preview: preview, in: context) {
                 card = claimed
             } else {
-                card = try await BusinessCards.join(cardID: cardID, preview: preview, in: context)
+                card = try await BusinessCards.join(cardID: cardID, preview: preview, in: context, referralToken: referralToken)
             }
             NotificationRouter.pendingCardID = card.id
             dismiss()
@@ -176,7 +210,8 @@ struct JoinBusinessSheet: View {
 struct IncomingBusinessCard: Identifiable {
     let cardID: String
     var memberCode: String? = nil
-    var id: String { cardID + (memberCode ?? "") }
+    var referralToken: String? = nil
+    var id: String { cardID + (memberCode ?? "") + (referralToken ?? "") }
 }
 
 /// Kaart toevoegen › Stempelkaart (sinds build 43): je maakt zelf geen stempelkaart, je kiest er een van een zaak.

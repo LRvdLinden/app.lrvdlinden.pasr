@@ -85,7 +85,7 @@ fun SimpleScaffold(title: String, content: @Composable () -> Unit) {
 
 /** Voorbeeld van een zakelijke stempelkaart en aansluiten (of een lidcode uit de browser overnemen). */
 @Composable
-fun StampJoinScreen(cardId: String, code: String?) {
+fun StampJoinScreen(cardId: String, code: String?, referralToken: String? = null) {
     val nav = LocalNav.current
     val scope = rememberCoroutineScope()
     var info by remember { mutableStateOf<BusinessInfo?>(null) }
@@ -123,7 +123,7 @@ fun StampJoinScreen(cardId: String, code: String?) {
                 busy = true; error = null
                 scope.launch {
                     try {
-                        val card = code?.let { Business.claim(it, cardId, i) } ?: Business.join(cardId, i)
+                        val card = code?.let { Business.claim(it, cardId, i) } ?: Business.join(cardId, i, referralToken)
                         nav.replace(Screen.Detail(card.id))
                     } catch (e: PasrError) { error = e.message } catch (e: Exception) { error = "Er ging iets mis. Probeer het opnieuw." }
                     busy = false

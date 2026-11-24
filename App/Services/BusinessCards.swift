@@ -81,8 +81,17 @@ enum BusinessCards {
     }
 
     /// Aanmelden: nieuwe klantcode, stand ophalen en de kaart in Pasr zetten.
-    static func join(cardID: String, preview: Info?, in context: ModelContext) async throws -> Card {
-        let json = try await AccountService.shared.publicRPC("pasr_business_join", body: ["p_card": cardID])
+    static func join(cardID: String, preview: Info?, in context: ModelContext, referralToken: String? = nil) async throws -> Card {
+        let json: Any
+        if let token = referralToken, !token.isEmpty {
+            guard AccountService.shared.isSignedIn else {
+                throw Failure(message: "Log eerst in bij je Pasr-account om een vriendenuitnodiging te gebruiken.")
+            }
+            json = try await AccountService.shared.rpc("pasr_business_referral_join",
+                body: ["p_card": cardID, "p_token": token])
+        } else {
+            json = try await AccountService.shared.publicRPC("pasr_business_join", body: ["p_card": cardID])
+        }
         let joined = Info(json: json)
         let code = (json as? String) ?? joined?.memberCode
         guard let code, !code.isEmpty, code.count <= 120 else {

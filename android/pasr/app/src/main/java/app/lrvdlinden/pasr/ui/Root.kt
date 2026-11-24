@@ -50,7 +50,7 @@ sealed interface Screen {
     data object Add : Screen
     data class Editor(val id: String? = null, val template: StoreTemplate? = null, val kind: CardKind = CardKind.LOYALTY,
                       val draft: Card? = null) : Screen
-    data class StampJoin(val cardId: String, val code: String? = null) : Screen
+    data class StampJoin(val cardId: String, val code: String? = null, val referralToken: String? = null) : Screen
     data class Import(val card: Card) : Screen
     data object Settings : Screen
     data object AccountScreen : Screen
@@ -175,7 +175,7 @@ private fun CompositionLocalProviders(nav: Nav, snack: SnackbarHostState, conten
 
 private fun handleLink(uri: Uri, nav: Nav) {
     Business.cardId(uri)?.let { id ->
-        nav.home(); nav.push(Screen.StampJoin(id, Business.memberCode(uri))); return
+        nav.home(); nav.push(Screen.StampJoin(id, Business.memberCode(uri), uri.getQueryParameter("ref"))); return
     }
     Share.decode(uri)?.let { card -> nav.home(); nav.push(Screen.Import(card)) }
 }
@@ -200,7 +200,7 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.Uses -> RecentUsesScreen(s.id)
             Screen.Add -> AddCardScreen()
             is Screen.Editor -> CardEditorScreen(s)
-            is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code)
+            is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code, s.referralToken)
             is Screen.Import -> ImportScreen(s.card)
             Screen.Settings -> SettingsScreen(onAppearance)
             Screen.AccountScreen -> AccountScreen()
