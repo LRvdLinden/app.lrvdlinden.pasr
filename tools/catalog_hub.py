@@ -20,7 +20,7 @@ def site_nav(active="kaarten"):
     <li><a href="/stempelkaarten/">Stempelkaarten</a></li>
     <li><a href="/kortingsbonnen/">Kortingsbonnen</a></li>
     <li><a href="/saldo-checken/">Saldo checken</a></li>
-    <li><a href="/zakelijk/">Zakelijk</a></li>
+    <li><a class="ch-business-link" href="/zakelijk/">Voor ondernemers</a></li>
   </ul></nav>
 </header>'''
 
