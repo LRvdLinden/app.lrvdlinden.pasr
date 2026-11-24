@@ -10,7 +10,8 @@
     if (!stamp) return;
     stamp.querySelectorAll(".pv-stamp-dot").forEach((el, i) => {
       el.classList.toggle("on", i < state.stampCount);
-      el.textContent = i < state.stampCount ? "✓" : "✧";
+      // De officiële Pasr-stempel wordt via het bestaande SVG getoond.
+      el.textContent = "";
       el.classList.remove("pop");
       if (animated && i === state.stampCount - 1 &&
           !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
