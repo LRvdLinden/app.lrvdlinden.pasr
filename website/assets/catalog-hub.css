@@ -40,7 +40,7 @@
 .ch-coupon-page .pz2-publicbody .zk-btn { margin-top:auto }
 .ch-coupon-page .pz2-violet { background:linear-gradient(115deg,#6A5CFF,#4435AE); min-height:150px; display:flex; flex-direction:column; justify-content:center }
 .ch-coupon-page footer { border-top:1px solid var(--line); padding:30px 0; color:var(--ink-2); font-size:14px }
-.ch-coupon-page a { color:var(--iris-deep) }
+.ch-coupon-page main a:not(.zk-btn):not(.ds-primary), .ch-coupon-page footer a { color:var(--iris-deep) }
 .ch-coupon-page .pz2-dialog .pz2-panel { background:var(--paper-2); color:var(--ink) }
 @media(max-width:720px) {
  .ch-featureline { grid-template-columns:1fr }
@@ -144,3 +144,12 @@
 .ch-coupon-page .pz2-publiccard{overflow:hidden;border:1px solid var(--line);background:var(--paper-2)}
 @media(max-width:900px){.gids-page .gd-list,.ds-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.gids-page .gd-list,.ds-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ds-item,.gids-page .gd-item>a{padding:9px}.ds-content h3,.gids-page .gd-item-t>b{font-size:14px}.ds-primary{padding:10px 7px;font-size:12px}.ds-section{padding-bottom:32px}}
+
+/* Keep consumer header identical on all catalog pages, including coupons. */
+.ch-site-nav .brand{color:var(--ink);flex-shrink:0;white-space:nowrap;text-decoration:none}
+.ch-site-nav .brand img{width:36px;height:36px;border-radius:9px;object-fit:contain}
+.ch-site-nav .brand span{font-family:var(--display);font-size:26px;font-weight:800;letter-spacing:-.03em}
+.ch-site-nav nav ul a{color:var(--ink-2);font-weight:500;text-decoration:none}
+.ch-site-nav nav ul a:hover,.ch-site-nav nav ul a[aria-current="page"]{color:var(--ink)}
+.ch-site-nav .ch-business-link{display:inline-flex;align-items:center;white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:9px 14px;background:var(--paper-2);color:var(--ink);font-weight:700}
+@media(max-width:760px){.ch-site-nav{flex-wrap:wrap;gap:12px}.ch-site-nav nav{width:100%}.ch-site-nav nav ul{gap:10px 15px;flex-wrap:wrap}.ch-site-nav nav ul li:nth-child(1),.ch-site-nav nav ul li:nth-child(3){display:list-item}.ch-site-nav nav ul a{font-size:13px}.ch-site-nav .brand img{width:32px;height:32px}.ch-site-nav .brand span{font-size:22px}}
