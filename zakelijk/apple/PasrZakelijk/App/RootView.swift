@@ -67,8 +67,11 @@ struct MainTabs: View {
                 .tag("scan")
             if business.isOwner {
                 CardsView(business: business)
-                    .tabItem { Label("Kaarten", systemImage: "rectangle.stack") }
+                    .tabItem { Label("Acties", systemImage: "tag") }
                     .tag("cards")
+                BusinessPromotionHub(business: business)
+                    .tabItem { Label("Promotie", systemImage: "photo.on.rectangle") }
+                    .tag("promotion")
                 OverviewView(business: business)
                     .tabItem { Label("Overzicht", systemImage: "chart.xyaxis.line") }
                     .tag("overview")
