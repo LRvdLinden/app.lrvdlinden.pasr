@@ -233,7 +233,7 @@
        show();
      });
  }
- function insightsView(root,b,rpc){
+ async function insightsView(root,b,rpc){
    root.innerHTML='<div class="zd-ptitle"><div><h2>Bedrijfsinzichten</h2><p class="zd-sub">Geaggregeerde gegevens van jouw stempelkaarten en kortingsbonnen. Er worden geen klantnamen of contactgegevens getoond.</p></div></div>'+
      '<div id="pz2Stats" class="pz2-statgrid" aria-live="polite"><p>Inzichten laden…</p></div>'+
      '<section class="pz2-panel"><h3>Hoe lees je deze cijfers?</h3>'+
