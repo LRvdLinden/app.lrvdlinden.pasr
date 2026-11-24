@@ -56,6 +56,8 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
     var campaignEnd by remember { mutableStateOf(LocalDate.now().plusDays(30).toString()) }
     var vipSilver by remember { mutableStateOf("10") }
     var vipGold by remember { mutableStateOf("25") }
+    var vipSilverBenefit by remember { mutableStateOf("") }
+    var vipGoldBenefit by remember { mutableStateOf("") }
     var communityName by remember { mutableStateOf("") }
     var locationsText by remember { mutableStateOf("") }
     var campaignName by remember { mutableStateOf("") }
@@ -79,6 +81,8 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                 ?.takeIf { it.isNotBlank() } ?: LocalDate.now().plusDays(30).toString()
             vipSilver = (s.optJSONObject("vip")?.optInt("silver", 10) ?: 10).toString()
             vipGold = (s.optJSONObject("vip")?.optInt("gold", 25) ?: 25).toString()
+            vipSilverBenefit = s.optJSONObject("vip")?.optString("silver_benefit").orEmpty()
+            vipGoldBenefit = s.optJSONObject("vip")?.optString("gold_benefit").orEmpty()
             communityName = s.optJSONObject("community")?.optString("name").orEmpty()
             referral = s.optJSONObject("referral")?.optBoolean("enabled") == true
             retention = s.optJSONObject("retention")?.optBoolean("enabled") == true
@@ -128,6 +132,8 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                 if (vip) {
                     OutlinedTextField(vipSilver, { vipSilver = it }, label = { Text("Zilver vanaf aantal bezoeken") }, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(vipGold, { vipGold = it }, label = { Text("Goud vanaf aantal bezoeken") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(vipSilverBenefit, { vipSilverBenefit = it }, label = { Text("Voordeel Zilver (optioneel)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(vipGoldBenefit, { vipGoldBenefit = it }, label = { Text("Voordeel Goud (optioneel)") }, modifier = Modifier.fillMaxWidth())
                 }
                 option("Meerdere vestigingen", locations) { locations = it }
                 if (locations) OutlinedTextField(locationsText, { locationsText = it },
@@ -165,6 +171,9 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                     silver == null || silver !in 1..1000 || gold == null || gold !in (silver+1)..2000) {
                     message = "Controleer alle dagen, bonussen, actiedagen en VIP-grenzen."; return@Button
                 }
+                if (vipSilverBenefit.length > 120 || vipGoldBenefit.length > 120) {
+                    message = "VIP-voordelen mogen maximaal 120 tekens hebben."; return@Button
+                }
                 if (r.length() > 8) { message = "Maximaal acht mijlpalen per kaart."; return@Button }
                 val milestones = (0 until r.length()).map { r.getJSONObject(it).optInt("stamps") }
                 if (milestones.distinct().size != milestones.size) {
@@ -181,7 +190,8 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                             .put("referral", JSONObject().put("enabled", referral).put("bonus", bonus))
                             .put("campaign", JSONObject().put("enabled", campaign).put("multiplier", multiplier)
                                 .put("weekday", weekday).put("start", campaignStart).put("end", campaignEnd))
-                            .put("vip", JSONObject().put("enabled", vip).put("silver", silver).put("gold", gold))
+                            .put("vip", JSONObject().put("enabled", vip).put("silver", silver).put("gold", gold)
+                                .put("silver_benefit", vipSilverBenefit).put("gold_benefit", vipGoldBenefit))
                             .put("locations", JSONObject().put("enabled", locations)
                                 .put("names", JSONArray(locationsText.lines().map { it.trim() }.filter { it.isNotEmpty() })))
                             .put("marketing", JSONObject().put("enabled", marketing).put("name", campaignName))
