@@ -85,7 +85,7 @@
          }
          var button=form.querySelector('button[type="submit"]');button.disabled=true;
          try{await rpc("pasr_business_program",{p_card:c.id,p_settings:settings},true);
-           notice(slot,"Instellingen opgeslagen. Optionele serverregels kunnen pas worden uitgevoerd zodra de campagneverwerking actief is.",true);
+           notice(slot,"Instellingen opgeslagen. Acties worden toegepast waar de serververwerking actief is. Automatische terugkomberichten zijn nog niet ingeschakeld.",true);
          }catch(err){notice(slot,err.message||"Opslaan mislukt.",false);}finally{button.disabled=false;}
        });
      }catch(e){slot.textContent="Kon instellingen niet laden: "+(e.message||"onbekend");}
