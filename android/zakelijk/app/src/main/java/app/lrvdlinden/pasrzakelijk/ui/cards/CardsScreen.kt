@@ -204,10 +204,9 @@ fun CardsScreen(business: Business) {
                     Text("Kortingscoupons",fontWeight=FontWeight.Bold,color=Pz.text)
                     if(couponsList.isEmpty())Text("Nog geen kortingscoupons",color=Pz.muted)
                     couponsList.forEach { coupon ->
-                        val expires=runCatching {java.time.Instant.parse(coupon.optString("ends_at"))}.getOrNull()
-                        val active=coupon.optBoolean("public") && (expires==null || expires.isAfter(java.time.Instant.now()))
-                        TextButton(onClick={coupons=true}){
-                            Text("🎟 "+coupon.optString("title")+" · "+(if(active)"Actief" else "Concept / verlopen"),color=Pz.text)
+                        BusinessOfferCard(business.name,coupon,false)
+                        TextButton(onClick={coupons=true}) {
+                            Text("Bewerken of verwijderen",color=Pz.accent)
                         }
                     }
                     TextButton(onClick={coupons=true}){Text("+ Kortingscoupon",color=Pz.accent)}
@@ -218,10 +217,9 @@ fun CardsScreen(business: Business) {
                     Text("Actiecodes",fontWeight=FontWeight.Bold,color=Pz.text)
                     if(codesList.isEmpty())Text("Nog geen actiecodes",color=Pz.muted)
                     codesList.forEach { code ->
-                        val active=code.optBoolean("active") && code.optInt("used_count")<code.optInt("max_uses")
-                        TextButton(onClick={promoCodes=true}){
-                            Text("# "+code.optString("code")+" · "+code.optString("title")+
-                                " · "+(if(active)"Actief" else "Niet actief"),color=Pz.text)
+                        BusinessOfferCard(business.name,code,true)
+                        TextButton(onClick={promoCodes=true}) {
+                            Text("Bewerken of verwijderen",color=Pz.accent)
                         }
                     }
                     TextButton(onClick={promoCodes=true}){Text("+ Actiecode",color=Pz.accent)}

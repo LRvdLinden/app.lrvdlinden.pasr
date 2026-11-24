@@ -73,20 +73,19 @@ struct CardsView: View {
                         Text("Nog geen kortingscoupons").foregroundStyle(.secondary)
                     }
                     ForEach(offers.indices, id: \.self) { i in
-                        let offer = offers[i]
-                        let published = offer["public"] as? Bool ?? false
-                        let validTo = (offer["ends_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) }
-                        let active = published && (validTo.map { $0 > .now } ?? false)
+                        let item = offers[i]
                         Button { coupons = true } label: {
-                            Label {
-                                HStack {
-                                    Text(offer["title"] as? String ?? "Kortingscoupon")
-                                    Spacer()
-                                    Text(active ? "Actief" : "Concept / verlopen")
-                                        .font(.caption).foregroundStyle(active ? Theme.mint : .secondary)
-                                }
-                            } icon: { Image(systemName: "ticket") }
-                        }
+                            BusinessDiscountCard(business: business.name,
+                                title: item["title"] as? String ?? "Kortingscoupon",
+                                discountType: item["discount_type"] as? String ?? "amount",
+                                discountValue: (item["discount_value"] as? NSNumber)?.doubleValue ?? 0,
+                                color: item["color"] as? String ?? "#6A5CFF",
+                                logo: item["logo"] as? String,
+                                kind: "Kortingscoupon",
+                                status: item["deleted"] as? Bool == true ? "Verwijderd" :
+                                    (item["public"] as? Bool == true ? "Actief" : "Gepauzeerd"),
+                                usage: "\((item["redeemed"] as? NSNumber)?.intValue ?? 0) gebruikt")
+                        }.buttonStyle(.plain)
                     }
                     Button("Kortingscoupon aanmaken", systemImage: "plus") { coupons = true }
                 }
@@ -95,17 +94,19 @@ struct CardsView: View {
                         Text("Nog geen actiecodes").foregroundStyle(.secondary)
                     }
                     ForEach(codes.indices, id: \.self) { i in
-                        let promo = codes[i]
-                        let active = promo["active"] as? Bool ?? false
+                        let item = codes[i]
                         Button { promoCodes = true } label: {
-                            Label {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(promo["title"] as? String ?? "Actiecode")
-                                    Text("\(promo["code"] as? String ?? "") · \(active ? "Actief" : "Niet actief")")
-                                        .font(.caption.monospaced()).foregroundStyle(.secondary)
-                                }
-                            } icon: { Image(systemName: "number") }
-                        }
+                            BusinessDiscountCard(business: business.name,
+                                title: item["title"] as? String ?? "Actiecode",
+                                discountType: item["discount_type"] as? String ?? "percent",
+                                discountValue: (item["discount_value"] as? NSNumber)?.doubleValue ?? 0,
+                                color: item["color"] as? String ?? "#6A5CFF",
+                                logo: item["logo"] as? String,
+                                kind: "Actiecode",
+                                status: item["deleted"] as? Bool == true ? "Verwijderd" :
+                                    (item["active"] as? Bool == true ? "Actief" : "Gepauzeerd"),
+                                usage: "\((item["used_count"] as? NSNumber)?.intValue ?? 0) gebruikt")
+                        }.buttonStyle(.plain)
                     }
                     Button("Actiecode aanmaken", systemImage: "plus") { promoCodes = true }
                 }

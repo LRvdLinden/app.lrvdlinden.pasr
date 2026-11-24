@@ -21,12 +21,18 @@ struct PasrCouponsView: View {
         let amount: Double
         let minimum: Double
         let end: Date?
+        let logo: String?
+        let color: String
+        let isPromo: Bool
 
         init?(_ json: [String: Any]) {
             guard let id = json["id"] as? String,
                   let title = json["title"] as? String else { return nil }
             self.id = id
             self.title = title
+            logo = json["logo"] as? String
+            color = json["color"] as? String ?? "#6A5CFF"
+            isPromo = json["kind"] as? String == "code"
             business = json["business"] as? String ?? "Ondernemer"
             text = json["description"] as? String ?? ""
             kind = json["discount_type"] as? String ?? "amount"
@@ -42,15 +48,29 @@ struct PasrCouponsView: View {
 
     struct Claim: Identifiable {
         let id: String
-        let code: String
+        let code: String?
         let title: String
         let business: String
         let redeemed: Bool
+        let disabled: Bool
+        let end: Date?
+        let logo: String?
+        let color: String
+        let amount: Double
+        let discountType: String
+        let isPromo: Bool
 
         init?(_ json: [String: Any]) {
-            guard let code = json["code"] as? String else { return nil }
-            self.id = json["id"] as? String ?? code
-            self.code = code
+            guard let id = json["id"] as? String else { return nil }
+            self.id = id
+            self.code = json["code"] as? String
+            disabled = json["disabled"] as? Bool ?? false
+            end = ISO8601DateFormatter().date(from: json["ends_at"] as? String ?? "")
+            logo = json["logo"] as? String
+            color = json["color"] as? String ?? "#6A5CFF"
+            amount = (json["discount_value"] as? NSNumber)?.doubleValue ?? 0
+            discountType = json["discount_type"] as? String ?? "amount"
+            isPromo = json["kind"] as? String == "code"
             title = json["title"] as? String ?? "Kortingsbon"
             business = json["business"] as? String ?? ""
             redeemed = json["redeemed"] as? Bool ?? false
@@ -72,17 +92,12 @@ struct PasrCouponsView: View {
                         Text("Mijn kortingsbonnen").font(.title3.bold())
                         ForEach(saved) { claim in
                             Button { selected = claim } label: {
-                                HStack {
-                                    Image(systemName: "ticket.fill").foregroundStyle(Brand.iris)
-                                    VStack(alignment: .leading) {
-                                        Text(claim.title).font(.headline)
-                                        Text(claim.business).font(.subheadline).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Text(claim.redeemed ? "Gebruikt" : "Bekijken")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
-                                .padding(16).background(Brand.inkRaised, in: RoundedRectangle(cornerRadius: 18))
+                                PasrDiscountCard(business: claim.business, title: claim.title,
+                                    discount: claim.discountType == "percent" ? "\(claim.amount.formatted())% korting" : "\(claim.amount.formatted(.currency(code: "EUR"))) korting",
+                                    kind: claim.isPromo ? "Actiecode" : "Kortingscoupon",
+                                    logo: claim.logo, color: claim.color,
+                                    state: claim.redeemed ? .used : claim.disabled ? .paused : ((claim.end ?? .distantFuture) < .now ? .expired : .saved),
+                                    expires: claim.end)
                             }
                             .buttonStyle(.plain)
                         }
@@ -96,26 +111,19 @@ struct PasrCouponsView: View {
                     }
                     ForEach(filtered) { coupon in
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text(coupon.business).font(.subheadline.weight(.semibold))
-                                Spacer()
-                                Image(systemName: "ticket.fill")
-                            }
-                            Text(coupon.discount)
-                                .font(.system(size: 30, weight: .heavy, design: .rounded))
-                            Text(coupon.title).font(.headline)
+                            PasrDiscountCard(business: coupon.business, title: coupon.title,
+                                discount: coupon.discount, kind: coupon.isPromo ? "Actiecode" : "Kortingscoupon",
+                                logo: coupon.logo, color: coupon.color, state: .available, expires: coupon.end)
                             if !coupon.text.isEmpty { Text(coupon.text).font(.subheadline) }
                             Text("Vanaf \(coupon.minimum.formatted(.currency(code: "EUR")))")
                                 .font(.caption)
-                            Button("Bewaar kortingsbon") {
+                            Button(coupon.isPromo ? "Bewaar actiecode in Pasr" : "Bewaar kortingsbon") {
                                 Task { await claim(coupon) }
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(Brand.iris)
                         }
-                        .padding(18)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Brand.inkRaised, in: RoundedRectangle(cornerRadius: 22))
                     }
                 }
                 .padding(18)
@@ -137,8 +145,10 @@ struct PasrCouponsView: View {
                         Text(claim.business).font(.headline)
                         Text(claim.title).font(.title2.bold())
                         if claim.redeemed {
-                            Label("Deze bon is al gebruikt", systemImage: "checkmark.seal.fill")
-                        } else if let qr = qrImage(claim.code) {
+                            Label("PASR · GEBRUIKT · Deze aanbieding is al verzilverd", systemImage: "checkmark.seal.fill")
+                        } else if claim.disabled || (claim.end ?? .distantFuture) < .now {
+                            Label("Deze aanbieding is niet meer geldig", systemImage: "lock.fill")
+                        } else if let code = claim.code, let qr = qrImage(code) {
                             Image(uiImage: qr)
                                 .interpolation(.none)
                                 .resizable()
@@ -146,7 +156,9 @@ struct PasrCouponsView: View {
                                 .frame(width: 250, height: 250)
                                 .padding(20).background(.white, in: RoundedRectangle(cornerRadius: 20))
                         }
-                        Text(claim.code).font(.footnote.monospaced()).textSelection(.enabled)
+                        if !claim.redeemed && !claim.disabled, let code = claim.code {
+                            Text(code).font(.footnote.monospaced()).textSelection(.enabled)
+                        }
                         Text("Laat deze code bij de kassa scannen. Alleen de ondernemer kan de bon verzilveren.")
                             .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     }
@@ -180,10 +192,19 @@ struct PasrCouponsView: View {
         defer { loading = false }
         do {
             let data = try await AccountService.shared.publicRPC("pasr_business_coupon_list", body: [:])
-            items = (data as? [[String: Any]] ?? []).compactMap(Coupon.init)
+            let merchantOffers = (data as? [[String: Any]] ?? []).compactMap(Coupon.init)
+            let promos = try await AccountService.shared.publicRPC("pasr_business_promo_public", body: [:])
+            let promoOffers = (promos as? [[String: Any]] ?? []).map { row -> [String: Any] in
+                var result = row; result["kind"] = "code"; return result
+            }.compactMap(Coupon.init)
+            items = merchantOffers + promoOffers
             if AccountService.shared.isSignedIn {
                 let mine = try await AccountService.shared.rpc("pasr_business_coupon_mine", body: [:])
-                saved = (mine as? [[String: Any]] ?? []).compactMap(Claim.init)
+                let promoMine = try await AccountService.shared.rpc("pasr_business_promo_mine", body: [:])
+                let promoClaims = (promoMine as? [[String: Any]] ?? []).map { row -> [String: Any] in
+                    var result = row; result["kind"] = "code"; return result
+                }
+                saved = ((mine as? [[String: Any]] ?? []) + promoClaims).compactMap(Claim.init)
             }
         } catch { self.error = error.localizedDescription }
     }
@@ -194,10 +215,14 @@ struct PasrCouponsView: View {
             return
         }
         do {
-            let data = try await AccountService.shared.rpc("pasr_business_coupon_claim", body: ["p_coupon": coupon.id])
-            if let j = data as? [String: Any], let code = j["code"] as? String {
-                let claim = Claim(["code":code,"id":j["id"] ?? code,"title":coupon.title,
-                                   "business":coupon.business,"redeemed":j["redeemed"] ?? false])
+            let data = try await AccountService.shared.rpc(coupon.isPromo ? "pasr_business_promo_claim" : "pasr_business_coupon_claim",
+                body: [coupon.isPromo ? "p_promo" : "p_coupon": coupon.id])
+            if let j = data as? [String: Any] {
+                let claim = Claim(["code":j["code"] ?? NSNull(),"id":j["id"] ?? coupon.id,"title":coupon.title,
+                                   "business":coupon.business,"redeemed":j["redeemed"] ?? false,
+                                   "discount_value":coupon.amount,"discount_type":coupon.kind,
+                                   "logo":coupon.logo ?? "", "color":coupon.color,
+                                   "kind":coupon.isPromo ? "code" : "coupon"])
                 selected = claim
                 await load()
             }

@@ -142,9 +142,12 @@
     var discount=product.discount_type==="percent"?String(product.discount_value)+"%":new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR"}).format(product.discount_value||0);
     text(ctx,discount,105,y+125,"900 112px 'Bricolage Grotesque',Figtree,sans-serif",accent);
     text(ctx,"KORTING",107,y+191,"800 39px Figtree,sans-serif",dark?"#FFFFFF":"#17162A");
-    if(product.kind==="code"&&product.code)text(ctx,String(product.code),105,y+250,"800 36px monospace",fg);
-    else text(ctx,"Bewaar je persoonlijke bon in Pasr",105,y+250,"600 29px Figtree,sans-serif",fg);
-    text(ctx,product.business||"",76,h-120,"700 32px Figtree,sans-serif",fg);
+    text(ctx,"Exclusief in de Pasr: Klantenkaarten-app",105,y+250,"600 29px Figtree,sans-serif",fg);
+    var raw=String(product.logo||"");
+    var logo=raw&&/^[A-Za-z0-9+/=]+$/.test(raw)?
+      await load("data:image/"+(raw.indexOf("/9j/")===0?"jpeg":"png")+";base64,"+raw):null;
+    if(logo){rr(ctx,76,h-169,72,72,12,"#FFFFFF");drawImg(ctx,logo,82,h-163,60,60);}
+    text(ctx,product.business||"",logo?164:76,h-120,"700 32px Figtree,sans-serif",fg);
     var validity=product.ends_at?"Geldig t/m "+String(product.ends_at).slice(0,10):"Vraag naar de actievoorwaarden";
     text(ctx,validity,76,h-66,"600 24px Figtree,sans-serif",dark?"#C9C6E9":"#4B4966");
     return canvas;

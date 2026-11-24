@@ -1,4 +1,5 @@
 -- Alleen testomgeving, geen productiedata.
+create extension if not exists pgcrypto;
 create role anon;
 create role authenticated;
 create role service_role;
@@ -10,7 +11,8 @@ $$;
 create table public.pasr_businesses (
  id uuid primary key default gen_random_uuid(),
  owner uuid not null references auth.users(id),
- name text not null, status text not null default 'approved',
+ name text not null, city text not null default '', status text not null default 'approved',
+ listed boolean not null default true,
  max_per_scan int not null default 1,
  cooldown_minutes int not null default 0
 );
@@ -18,6 +20,8 @@ create table public.pasr_business_cards (
  id uuid primary key default gen_random_uuid(),
  business_id uuid not null references public.pasr_businesses(id),
  name text not null,
+ logo text, color text not null default '#6A5CFF',
+ created_at timestamptz not null default now(),
  published boolean not null default true,
  stamps_total int not null default 10
 );
@@ -96,3 +100,26 @@ insert into public.pasr_business_programs(card_id,settings) values
  '{"retention":{"enabled":true,"days":30},"campaign":{"enabled":true,"weekday":-1,"multiplier":2}}'),
 ('dddddddd-dddd-4ddd-8ddd-dddddddddddd',
  '{"retention":{"enabled":false}}');
+
+-- Coupon model used by production app-only discount migrations.
+create table public.pasr_business_coupons(
+ id uuid primary key default gen_random_uuid(),
+ business_id uuid not null references public.pasr_businesses(id),
+ card_id uuid references public.pasr_business_cards(id),
+ title text not null,description text not null default '',
+ discount_type text not null,discount_value numeric not null,
+ min_spend numeric not null default 0,starts_at timestamptz not null,
+ ends_at timestamptz not null,max_claims int not null default 500,
+ one_per_customer boolean not null default true,
+ public boolean not null default false,
+ created_at timestamptz not null default now()
+);
+create table public.pasr_business_coupon_claims(
+ id uuid primary key default gen_random_uuid(),
+ coupon_id uuid not null references public.pasr_business_coupons(id),
+ user_id uuid not null references auth.users(id),
+ redeem_code text unique not null,
+ claimed_at timestamptz not null default now(),
+ redeemed_at timestamptz,
+ redeemed_by uuid references auth.users(id)
+);

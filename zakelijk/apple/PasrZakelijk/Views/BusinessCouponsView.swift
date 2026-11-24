@@ -18,6 +18,8 @@ struct BusinessCouponsView: View {
     @State private var code = ""
     @State private var couponVerified = false
     @State private var rows: [CouponRow] = []
+    @State private var editingID: String?
+    @State private var removeID: String?
     @State private var busy = false
     @State private var status: String?
 
@@ -27,9 +29,11 @@ struct BusinessCouponsView: View {
         let claimed: Int
         let redeemed: Int
         let published: Bool
+        let raw: [String: Any]
         init?(_ json: [String: Any]) {
             guard let id = json["id"] as? String else { return nil }
             self.id = id
+            raw = json
             title = json["title"] as? String ?? ""
             claimed = (json["claimed"] as? NSNumber)?.intValue ?? 0
             redeemed = (json["redeemed"] as? NSNumber)?.intValue ?? 0
@@ -40,7 +44,10 @@ struct BusinessCouponsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Nieuwe kortingsbon") {
+                Section(editingID == nil ? "Nieuwe kortingsbon" : "Kortingsbon bewerken") {
+                    if editingID != nil {
+                        Button("Annuleer bewerken") { editingID = nil; title = ""; description = "" }
+                    }
                     TextField("Naam actie", text: $title)
                         .textInputAutocapitalization(.sentences)
                     TextField("Omschrijving / voorwaarden", text: $description, axis: .vertical)
@@ -61,7 +68,7 @@ struct BusinessCouponsView: View {
                     Button { Task { await create() } } label: {
                         HStack {
                             if busy { ProgressView() }
-                            Label("Kortingsbon aanmaken", systemImage: "ticket.fill")
+                            Label(editingID == nil ? "Kortingsbon aanmaken" : "Wijzigingen opslaan", systemImage: "ticket.fill")
                         }
                     }
                     .disabled(busy || title.trimmingCharacters(in: .whitespaces).count < 3)
@@ -69,9 +76,25 @@ struct BusinessCouponsView: View {
                 Section("Bestaande kortingsbonnen") {
                     if rows.isEmpty { Text("Nog geen kortingsbonnen").foregroundStyle(.secondary) }
                     ForEach(rows) { row in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(row.title).font(.headline)
-                            Text("\(row.claimed) bewaard · \(row.redeemed) gebruikt · \(row.published ? "Gepubliceerd" : "Concept")")
+                        VStack(alignment: .leading, spacing: 8) {
+                            BusinessDiscountCard(business: business.name, title: row.title,
+                                discountType: row.raw["discount_type"] as? String ?? "amount",
+                                discountValue: (row.raw["discount_value"] as? NSNumber)?.doubleValue ?? 0,
+                                color: row.raw["color"] as? String ?? "#6A5CFF",
+                                logo: row.raw["logo"] as? String,
+                                kind: "Kortingscoupon",
+                                status: row.raw["deleted"] as? Bool == true ? "Verwijderd" :
+                                    (row.published ? "Actief" : "Gepauzeerd"),
+                                usage: "\(row.redeemed) gebruikt")
+                            HStack {
+                                Button("Bewerken") { edit(row) }
+                                    .disabled(row.raw["deleted"] as? Bool == true)
+                                Spacer()
+                                Button("Verwijderen", role: .destructive) { removeID = row.id }
+                                    .disabled(row.raw["deleted"] as? Bool == true)
+                            }
+                            .buttonStyle(.borderless)
+                            Text("\(row.claimed) bewaard · \(row.redeemed) gebruikt")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -98,6 +121,16 @@ struct BusinessCouponsView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) {
                 Button("Klaar") { dismiss() }
             } }
+            .confirmationDialog("Kortingscoupon verwijderen?", isPresented: Binding(
+                get: { removeID != nil }, set: { if !$0 { removeID = nil } }), titleVisibility: .visible) {
+                Button("Verwijderen en onbruikbaar maken", role: .destructive) {
+                    if let id = removeID { Task { await remove(id) } }
+                    removeID = nil
+                }
+                Button("Annuleren", role: .cancel) { removeID = nil }
+            } message: {
+                Text("Gebruikte bonnen blijven in de historie en nieuwe verzilveringen worden geblokkeerd.")
+            }
             .onChange(of: code) { _, _ in couponVerified = false }
             .task { code = initialCode; await load(); if !code.isEmpty { await checkCode() } }
         }
@@ -117,7 +150,7 @@ struct BusinessCouponsView: View {
         busy = true
         defer { busy = false }
         let iso = ISO8601DateFormatter()
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "business_id": business.id,
             "title": title.trimmingCharacters(in: .whitespacesAndNewlines),
             "description": description,
@@ -130,10 +163,41 @@ struct BusinessCouponsView: View {
             "one_per_customer": onePerCustomer,
             "public": published
         ]
+        if let editingID { payload["id"] = editingID }
         do {
             _ = try await Account.shared.rpc("pasr_business_coupon_save", ["p_coupon": payload])
             status = "Kortingsbon opgeslagen."
-            title = ""; description = ""
+            title = ""; description = ""; editingID = nil
+            await load()
+        } catch { status = error.localizedDescription }
+    }
+
+    @MainActor private func edit(_ row: CouponRow) {
+        let data = row.raw
+        editingID = row.id
+        title = row.title
+        description = data["description"] as? String ?? ""
+        type = data["discount_type"] as? String ?? "amount"
+        amount = "\((data["discount_value"] as? NSNumber)?.doubleValue ?? 0)"
+        minimum = "\((data["min_spend"] as? NSNumber)?.doubleValue ?? 0)"
+        count = (data["max_claims"] as? NSNumber)?.intValue ?? 500
+        onePerCustomer = data["one_per_customer"] as? Bool ?? true
+        published = row.published
+        let parser = ISO8601DateFormatter()
+        start = parser.date(from: data["starts_at"] as? String ?? "") ?? .now
+        end = parser.date(from: data["ends_at"] as? String ?? "") ??
+            Calendar.current.date(byAdding: .day, value: 30, to: .now) ?? .now
+        status = "Deze coupon kan ook na publicatie aangepast worden."
+    }
+
+    @MainActor private func remove(_ id: String) async {
+        busy = true
+        defer { busy = false }
+        do {
+            _ = try await Account.shared.rpc("pasr_business_discount_remove",
+                ["p_business": business.id, "p_id": id, "p_kind": "coupon"])
+            if editingID == id { editingID = nil; title = ""; description = "" }
+            status = "Kortingscoupon verwijderd en onbruikbaar; historie behouden."
             await load()
         } catch { status = error.localizedDescription }
     }
