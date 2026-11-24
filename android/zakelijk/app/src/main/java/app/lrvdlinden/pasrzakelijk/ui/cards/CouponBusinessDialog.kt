@@ -38,6 +38,7 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
     var value by remember { mutableStateOf("2.50") }
     var minSpend by remember { mutableStateOf("10") }
     var code by remember(initialCode) { mutableStateOf(initialCode) }
+    var couponVerified by remember(initialCode) { mutableStateOf(false) }
     var published by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var processing by remember { mutableStateOf(false) }
@@ -101,21 +102,41 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
                         " bewaard · " + c.optInt("redeemed") + " ingewisseld")
                 }
                 Text("Code van klant verzilveren")
-                OutlinedTextField(code, { code = it }, label = { Text("PC-code") },
+                OutlinedTextField(code, { code = it; couponVerified = false }, label = { Text("PC-code") },
                     modifier = Modifier.fillMaxWidth())
-                Button(enabled = code.startsWith("PC") && !processing, onClick = {
+                Button(enabled = code.trim().uppercase().startsWith("PC") && !processing && !couponVerified, onClick = {
                     processing = true
                     scope.launch {
                         try {
-                            val result = Account.rpc("pasr_business_coupon_redeem",
-                                JSONObject().put("p_code", code)) as? JSONObject
-                            message = "Bon verzilverd: " + (result?.optString("title") ?: "")
-                            code = ""
-                            load()
-                        } catch (e: Exception) { message = e.message ?: "Bon niet geldig." }
+                            val result = Account.rpc("pasr_business_coupon_check",
+                                JSONObject().put("p_code", code.trim().uppercase())) as? JSONObject
+                            couponVerified = result?.optBoolean("valid", false) == true
+                            message = if (couponVerified) {
+                                "Geldige bon: " + result.optString("title") + ". Controleer de korting aan de kassa."
+                            } else "Deze kortingsbon is ongeldig, verlopen of al gebruikt."
+                        } catch (e: Exception) { couponVerified = false; message = e.message ?: "Bon niet geldig." }
                         processing = false
                     }
-                }) { Text("Bon definitief verzilveren") }
+                }) { Text("Controleer kortingsbon") }
+                if (couponVerified) {
+                    Button(enabled = !processing, onClick = {
+                        processing = true
+                        scope.launch {
+                            try {
+                                val result = Account.rpc("pasr_business_coupon_redeem",
+                                    JSONObject().put("p_code", code.trim().uppercase())) as? JSONObject
+                                message = "Bon verzilverd: " + (result?.optString("title") ?: "")
+                                code = ""
+                                couponVerified = false
+                                load()
+                            } catch (e: Exception) {
+                                couponVerified = false
+                                message = e.message ?: "Bon kon niet worden verzilverd."
+                            }
+                            processing = false
+                        }
+                    }) { Text("Korting gegeven · bon definitief verzilveren") }
+                }
                 if (message.isNotBlank()) Text(message)
             }
         },
