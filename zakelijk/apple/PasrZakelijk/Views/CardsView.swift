@@ -12,6 +12,7 @@ struct CardsView: View {
     @State private var promoting: BusinessCard?
     @State private var program: BusinessCard?
     @State private var coupons = false
+    @State private var marketing = false
 
     var body: some View {
         NavigationStack {
@@ -67,6 +68,7 @@ struct CardsView: View {
             .toolbar {
                 BusinessPicker()
                 ToolbarItem(placement: .primaryAction) {
+                    Button("Marketingkalender", systemImage: "calendar") { marketing = true }
                     Button("Kortingsbonnen", systemImage: "ticket") { coupons = true }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -89,6 +91,9 @@ struct CardsView: View {
             }
             .sheet(isPresented: $coupons) {
                 BusinessCouponsView(business: business).trackModal()
+            }
+            .sheet(isPresented: $marketing) {
+                BusinessMarketingView(business: business).trackModal()
             }
         }
     }
