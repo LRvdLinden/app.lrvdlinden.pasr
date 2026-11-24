@@ -13,6 +13,10 @@ struct StampControls: View {
     @State private var vipTier: String?
     @State private var vipVisits = 0
     @State private var nextTierAt: Int?
+    @State private var retentionAvailable = false
+    @State private var retentionSubscribed = false
+    @State private var retentionDays = 30
+    @State private var retentionError: String?
 
     private var details: CardDetails { card.details }
 
@@ -54,6 +58,16 @@ struct StampControls: View {
                     }
                     .pasrGlassButton()
                 }
+                if (retentionAvailable || retentionSubscribed) && AccountService.shared.isSignedIn {
+                    Toggle("Terugkomherinnering na \(retentionDays) dagen", isOn: $retentionSubscribed)
+                        .font(.footnote)
+                        .onChange(of: retentionSubscribed) { _, enabled in
+                            Task { await saveRetention(enabled) }
+                        }
+                }
+                if let retentionError {
+                    Text(retentionError).font(.caption).foregroundStyle(Brand.coral)
+                }
                 if let referralError {
                     Text(referralError).font(.caption).foregroundStyle(Brand.coral)
                 }
@@ -62,7 +76,9 @@ struct StampControls: View {
             }
         }
         .frame(width: width)
-        .task(id: card.id) { if details.isBusiness { await refresh() } }
+        .task(id: card.id) {
+            if details.isBusiness { await refresh(); await loadRetention() }
+        }
     }
 
     private var progress: some View {
@@ -91,6 +107,29 @@ struct StampControls: View {
             }
         } catch {
             referralError = error.localizedDescription
+        }
+    }
+
+    private func loadRetention() async {
+        guard let code = details.memberCode, AccountService.shared.isSignedIn else { return }
+        guard let result = try? await AccountService.shared.rpc(
+            "pasr_business_retention_status", body: ["p_code": code]),
+            let value = result as? [String: Any] else { return }
+        retentionAvailable = value["available"] as? Bool ?? false
+        retentionDays = (value["days"] as? NSNumber)?.intValue ?? 30
+        // State is initialized from the server before a switch is shown.
+        retentionSubscribed = value["enabled"] as? Bool ?? false
+    }
+
+    private func saveRetention(_ enabled: Bool) async {
+        guard let code = details.memberCode else { return }
+        do {
+            _ = try await AccountService.shared.rpc("pasr_business_retention_consent",
+                body: ["p_code": code, "p_enabled": enabled])
+            retentionError = nil
+        } catch {
+            retentionSubscribed = !enabled
+            retentionError = error.localizedDescription
         }
     }
 
