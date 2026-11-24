@@ -101,8 +101,13 @@ enum BusinessAPI {
         return r
     }
 
-    static func stamp(_ code: String, amount: Int) async throws -> ScanResult? {
-        let json = try await account.rpc("pasr_business_stamp", ["p_code": code, "p_amount": amount, "p_device": deviceName])
+    static func stamp(_ code: String, amount: Int, location: String? = nil) async throws -> ScanResult? {
+        var args: [String: Any] = ["p_code": code, "p_amount": amount, "p_device": deviceName]
+        if let location, !location.isEmpty {
+            args["p_location"] = location
+        }
+        let json = try await account.rpc(location == nil || location?.isEmpty == true
+            ? "pasr_business_stamp" : "pasr_business_stamp_location", args)
         return ScanResult(json: json, code: code)
     }
 

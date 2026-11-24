@@ -14,6 +14,8 @@ struct ScanResultSheet: View {
     @State private var confirmRedeem = false
     @State private var successTick = 0
     @State private var errorTick = 0
+    @State private var locations: [LocationOption] = []
+    @State private var locationID = ""
     @State private var milestones: [Milestone] = []
 
     init(business: Business, initial: ScanResult) {
@@ -33,6 +35,16 @@ struct ScanResultSheet: View {
                     StampCardView(name: result.cardName, business: result.business, color: result.color, logo: result.logo,
                                   total: result.stampsTotal, filled: result.stamps, reward: result.reward)
                     status
+                    if !locations.isEmpty {
+                        Picker("Vestiging", selection: $locationID) {
+                            Text("Niet gekoppeld").tag("")
+                            ForEach(locations) { loc in Text(loc.name).tag(loc.id) }
+                        }
+                        .pickerStyle(.menu)
+                        .onChange(of: locationID) { _, value in
+                            UserDefaults.standard.set(value, forKey: "pasr.scan.location." + business.id)
+                        }
+                    }
                     if let cooldown = result.cooldownUntil, cooldown > .now {
                         cooldownNotice(until: cooldown)
                     }
@@ -79,6 +91,7 @@ struct ScanResultSheet: View {
                 }
             }
             .task(id: result.stamps) { await loadMilestones() }
+            .task(id: business.id) { await loadLocations() }
             .sensoryFeedback(.success, trigger: successTick)
             .sensoryFeedback(.error, trigger: errorTick)
             .confirmationDialog("Beloning inwisselen?", isPresented: $confirmRedeem, titleVisibility: .visible) {
@@ -144,6 +157,23 @@ struct ScanResultSheet: View {
             successTick += 1
             await loadMilestones()
         } catch { self.error = error.localizedDescription; errorTick += 1 }
+    }
+
+    private struct LocationOption: Identifiable {
+        let id: String
+        let name: String
+    }
+
+    @MainActor private func loadLocations() async {
+        guard let result = try? await Account.shared.rpc("pasr_business_locations_list", ["p_business": business.id]),
+              let list = result as? [[String: Any]] else { return }
+        locations = list.compactMap { x in
+            guard x["active"] as? Bool == true,
+                  let id = x["id"] as? String, let name = x["name"] as? String else { return nil }
+            return LocationOption(id: id, name: name)
+        }
+        let stored = UserDefaults.standard.string(forKey: "pasr.scan.location." + business.id) ?? ""
+        locationID = locations.contains(where: { $0.id == stored }) ? stored : ""
     }
 
     private var status: some View {
@@ -296,7 +326,7 @@ struct ScanResultSheet: View {
     private func stamp() async {
         let n = amount
         let message = n == 1 ? String(localized: "Stempel gezet") : String(format: String(localized: "%lld stempels gezet"), n)
-        await run(message, { try await BusinessAPI.stamp(result.code, amount: n) }, undoable: true)
+        await run(message, { try await BusinessAPI.stamp(result.code, amount: n, location: locationID.isEmpty ? nil : locationID) }, undoable: true)
         if error == nil { amount = 1 }
     }
 

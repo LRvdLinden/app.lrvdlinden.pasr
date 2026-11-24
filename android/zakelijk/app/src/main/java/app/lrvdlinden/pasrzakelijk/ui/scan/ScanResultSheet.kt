@@ -34,6 +34,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -98,10 +101,24 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
     var confirmRedeem by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val haptics = rememberHaptics()
+    val context = LocalContext.current
+    var locations by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var selectedLocation by remember { mutableStateOf<String?>(null) }
+    var locationMenu by remember { mutableStateOf(false) }
     val maxAmount = (result.maxPerScan ?: business.maxPerScan).coerceIn(1, 30)
     var milestones by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
 
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
+    LaunchedEffect(business.id) {
+        try {
+            val list = Account.rpc("pasr_business_locations_list",
+                JSONObject().put("p_business", business.id)) as? JSONArray
+            locations = (0 until (list?.length() ?: 0)).mapNotNull { list?.optJSONObject(it) }
+                .filter { it.optBoolean("active") }
+            val stored = context.getSharedPreferences("pasr_scan", 0).getString(business.id, null)
+            selectedLocation = stored?.takeIf { id -> locations.any { it.optString("id") == id } }
+        } catch (_: Exception) { locations = emptyList() }
+    }
     LaunchedEffect(result.stamps, result.rewardsRedeemed) {
         milestones = try {
             val r = Account.rpc("pasr_business_reward_progress", JSONObject().put("p_code", result.code)) as? JSONArray
@@ -150,6 +167,28 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             StampCardView(result.cardName, result.business, result.color, result.logo, result.stampsTotal, result.stamps, result.reward, textColor = result.textColor)
+            if (locations.isNotEmpty()) {
+                Box {
+                    OutlinedButton(onClick = { locationMenu = true }) {
+                        val name = locations.firstOrNull { it.optString("id") == selectedLocation }
+                            ?.optString("name") ?: "Niet gekoppeld"
+                        Text("Vestiging: $name")
+                    }
+                    DropdownMenu(expanded = locationMenu, onDismissRequest = { locationMenu = false }) {
+                        DropdownMenuItem(text = { Text("Niet gekoppeld") }, onClick = {
+                            selectedLocation = null; locationMenu = false
+                            context.getSharedPreferences("pasr_scan", 0).edit().remove(business.id).apply()
+                        })
+                        locations.forEach { loc ->
+                            DropdownMenuItem(text = { Text(loc.optString("name")) }, onClick = {
+                                selectedLocation = loc.optString("id"); locationMenu = false
+                                context.getSharedPreferences("pasr_scan", 0).edit()
+                                    .putString(business.id, selectedLocation).apply()
+                            })
+                        }
+                    }
+                }
+            }
             // stand
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 AnimatedContent(result.stamps, label = "status") { stamps ->
@@ -201,7 +240,7 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
                     {
                         val n = amount
                         run(if (n == 1) L("Stempel gezet") else L("%lld stempels gezet", n), undoable = true,
-                            action = { BusinessApi.stamp(result.code, n) }, after = { amount = 1 })
+                            action = { BusinessApi.stamp(result.code, n, selectedLocation) }, after = { amount = 1 })
                     },
                     icon = Icons.Filled.AddCircle, color = Pz.mint, foreground = Color.Black, busy = busy,
                 )

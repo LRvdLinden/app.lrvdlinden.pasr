@@ -4551,3 +4551,99 @@ begin
 end $$;
 revoke all on function public.pasr_business_vip_status(text) from public;
 grant execute on function public.pasr_business_vip_status(text) to anon,authenticated;
+
+
+-- Meerdere vestigingen: echte filiaalrecords. Een stempel kan aan precies één vestiging
+-- worden toegeschreven. Bestaande scans zonder locatie blijven gewoon werken.
+create table if not exists public.pasr_business_locations(
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.pasr_businesses(id) on delete cascade,
+  name text not null check(char_length(name) between 2 and 100),
+  address text not null default '' check(char_length(address)<=200),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists pasr_business_locations_business on public.pasr_business_locations(business_id,name);
+alter table public.pasr_business_locations enable row level security;
+revoke all on public.pasr_business_locations from public,anon,authenticated;
+alter table public.pasr_business_events
+  add column if not exists location_id uuid references public.pasr_business_locations(id) on delete set null;
+
+create or replace function public.pasr_business_locations_list(p_business uuid)
+returns jsonb language plpgsql stable security definer set search_path=public as $$
+begin
+  if public.pasr_business_role(p_business) is null then
+    raise exception 'Je hoort niet bij deze onderneming.' using errcode='42501';
+  end if;
+  return coalesce((select jsonb_agg(jsonb_build_object('id',l.id,'name',l.name,
+    'address',l.address,'active',l.active) order by l.name)
+    from public.pasr_business_locations l where l.business_id=p_business),'[]'::jsonb);
+end $$;
+
+create or replace function public.pasr_business_location_save(
+ p_business uuid,p_name text,p_address text default '',p_id uuid default null,p_active boolean default true)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare loc public.pasr_business_locations; clean_name text:=trim(p_name);
+begin
+  if not exists(select 1 from public.pasr_businesses where id=p_business and owner=auth.uid() and status='approved') then
+    raise exception 'Alleen de eigenaar kan vestigingen beheren.' using errcode='42501';
+  end if;
+  if char_length(clean_name) not between 2 and 100 or length(coalesce(p_address,''))>200 then
+    raise exception 'Controleer de vestigingsnaam en het adres.' using errcode='22023';
+  end if;
+  if p_id is null then
+    if (select count(*) from public.pasr_business_locations where business_id=p_business)>=30 then
+      raise exception 'Maximaal 30 vestigingen per zaak.' using errcode='22023';
+    end if;
+    insert into public.pasr_business_locations(business_id,name,address,active)
+      values(p_business,clean_name,trim(coalesce(p_address,'')),coalesce(p_active,true)) returning * into loc;
+  else
+    update public.pasr_business_locations set name=clean_name,address=trim(coalesce(p_address,'')),
+      active=coalesce(p_active,true) where id=p_id and business_id=p_business returning * into loc;
+    if loc.id is null then raise exception 'Vestiging niet gevonden.' using errcode='P0002'; end if;
+  end if;
+  return jsonb_build_object('id',loc.id,'name',loc.name,'active',loc.active);
+end $$;
+
+create or replace function public.pasr_business_stamp_location(
+ p_code text,p_amount int default 1,p_device text default null,p_location uuid default null)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare r record; loc public.pasr_business_locations; result jsonb; eventid uuid;
+begin
+  select * into r from public.pasr_business_scan_member(p_code);
+  if p_location is not null then
+    select * into loc from public.pasr_business_locations
+      where id=p_location and business_id=(r.b).id and active;
+    if loc.id is null then raise exception 'Onbekend of niet actief filiaal.' using errcode='22023'; end if;
+  end if;
+  result:=public.pasr_business_stamp(p_code,p_amount,p_device);
+  eventid:=nullif(result->>'event_id','')::uuid;
+  if eventid is not null and p_location is not null then
+    update public.pasr_business_events
+       set location_id=p_location
+       where event_id=eventid and business_id=(r.b).id;
+  end if;
+  return result || jsonb_build_object('location_id',p_location,'location_name',loc.name);
+end $$;
+
+create or replace function public.pasr_business_location_insights(p_business uuid)
+returns jsonb language plpgsql stable security definer set search_path=public as $$
+begin
+  if not exists(select 1 from public.pasr_businesses where id=p_business and owner=auth.uid()) then
+    raise exception 'Alleen de eigenaar kan filiaalinzichten zien.' using errcode='42501';
+  end if;
+  return coalesce((select jsonb_agg(jsonb_build_object('id',l.id,'name',l.name,
+    'stamps_30d',coalesce((select sum(e.amount) from public.pasr_business_events e
+      where e.location_id=l.id and e.kind='stamp' and e.undone_at is null
+      and e.at>=now()-interval '30 days'),0))
+    order by l.name) from public.pasr_business_locations l where l.business_id=p_business),'[]'::jsonb);
+end $$;
+
+revoke all on function public.pasr_business_locations_list(uuid),
+ public.pasr_business_location_save(uuid,text,text,uuid,boolean),
+ public.pasr_business_stamp_location(text,integer,text,uuid),
+ public.pasr_business_location_insights(uuid) from public,anon;
+grant execute on function public.pasr_business_locations_list(uuid),
+ public.pasr_business_location_save(uuid,text,text,uuid,boolean),
+ public.pasr_business_stamp_location(text,integer,text,uuid),
+ public.pasr_business_location_insights(uuid) to authenticated;

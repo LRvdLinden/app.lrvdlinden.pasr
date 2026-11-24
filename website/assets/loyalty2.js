@@ -300,5 +300,44 @@
   });
   refresh();
  }
- window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,publicPage:publicPage};
+
+ async function locationsView(root,b,rpc){
+  root.innerHTML='<div class="zd-ptitle"><div><h2>Vestigingen</h2><p class="zd-sub">Gebruik dezelfde stempelkaart in meerdere filialen. Medewerkers kiezen hun filiaal bij het scannen; statistieken blijven per locatie gescheiden.</p></div></div>'+
+   '<div class="pz2-grid"><section class="pz2-panel"><h3>Vestiging toevoegen</h3>'+
+   '<form id="pz2Location" class="pz2-form">'+field("Naam vestiging","name","")+
+   field("Adres (optioneel)","address","")+'<p class="pz2-notice" role="status"></p>'+
+   '<button type="submit" class="zk-btn">Vestiging toevoegen</button></form></section>'+
+   '<section class="pz2-panel"><h3>Mijn vestigingen</h3><div id="pz2Locations">Laden…</div></section></div>';
+  var form=$("#pz2Location",root),items=$("#pz2Locations",root);
+  async function refresh(){
+   try {
+    var rows=await rpc("pasr_business_locations_list",{p_business:b.id},true);
+    var stats=await rpc("pasr_business_location_insights",{p_business:b.id},true).catch(function(){return [];});
+    var counts={};(stats||[]).forEach(function(x){counts[x.id]=x.stamps_30d;});
+    items.innerHTML=rows.length?rows.map(function(l){
+     return '<article class="pz2-planned"><strong>'+escape(l.name)+'</strong>'+
+      (l.address?'<small>'+escape(l.address)+'</small>':'')+
+      '<small>'+escape(counts[l.id]||0)+' stempels afgelopen 30 dagen · '+(l.active?'Actief':'Inactief')+'</small>'+
+      '<button type="button" class="zk-btn ghost sm" data-id="'+escape(l.id)+'" data-active="'+(l.active?'1':'0')+'">'+
+      (l.active?'Deactiveren':'Activeren')+'</button></article>';
+    }).join(""):'<p>Nog geen vestigingen toegevoegd.</p>';
+    items.querySelectorAll("[data-id]").forEach(function(btn){btn.addEventListener("click",async function(){
+     var row=rows.find(function(v){return v.id===btn.dataset.id;});
+     if(!row)return;btn.disabled=true;
+     try{await rpc("pasr_business_location_save",{p_business:b.id,p_name:row.name,p_address:row.address||"",
+       p_id:row.id,p_active:!row.active},true);refresh();}
+     catch(e){alert(e.message||"Aanpassen mislukt.");btn.disabled=false;}
+    });});
+   }catch(e){items.textContent="Vestigingen konden niet worden geladen: "+(e.message||"onbekend");}
+  }
+  form.addEventListener("submit",async function(e){
+   e.preventDefault();var f=new FormData(form),btn=form.querySelector('button[type="submit"]');btn.disabled=true;
+   try{
+    await rpc("pasr_business_location_save",{p_business:b.id,p_name:f.get("name"),p_address:f.get("address")},true);
+    notice(root,"Vestiging opgeslagen.",true);form.reset();refresh();
+   }catch(e){notice(root,e.message||"Opslaan mislukt.",false);}finally{btn.disabled=false;}
+  });
+  refresh();
+ }
+ window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,locations:locationsView,publicPage:publicPage};
 })();

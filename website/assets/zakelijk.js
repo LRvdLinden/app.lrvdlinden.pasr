@@ -165,6 +165,7 @@
     { id: "kortingsbonnen", label: "Kortingsbonnen", short: "Bonnen", icon: "card", owner: true },
     { id: "inzichten", label: "Bedrijfsinzichten", short: "Inzichten", icon: "chart", owner: true },
     { id: "marketing", label: "Marketingkalender", short: "Planning", icon: "chart", owner: true },
+    { id: "vestigingen", label: "Vestigingen", short: "Filialen", icon: "gear", owner: true },
     { id: "scannen", label: "Scannen", icon: "scan" },
     { id: "medewerkers", label: "Medewerkers", short: "Team", icon: "users", owner: true },
     { id: "instellingen", label: "Instellingen", icon: "gear", owner: true },
@@ -379,6 +380,10 @@
   VIEWS.acties = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.settings(panel, b, rpc);
     else panel.textContent = "De instellingen zijn tijdelijk niet beschikbaar.";
+  };
+  VIEWS.vestigingen = function (panel, b) {
+    if (window.PasrLoyalty2) window.PasrLoyalty2.locations(panel, b, rpc);
+    else panel.textContent = "Vestigingen zijn tijdelijk niet beschikbaar.";
   };
   VIEWS.marketing = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.marketing(panel, b, rpc);
@@ -1041,13 +1046,28 @@
   function mountScanner(root, opts) {
     stopScanner();
     var DEVICE = "Webscanner";
+    var selectedLocation = "";
     root.innerHTML =
+      '<div class="pz2-controls" id="pz2ScanLocations" hidden><label>Stempels voor vestiging <select id="pz2ScanLocation"><option value="">Geen vestiging geselecteerd</option></select></label></div>'+
       '<div class="zk-cam" id="sCam"><video id="sVideo" playsinline muted aria-hidden="true"></video><span class="frame" aria-hidden="true"></span>' +
       '<div class="zk-cam-off" id="sOff"><span>' + ICON.camera + '</span><p>Scan de QR-code op de kaart van je klant.</p><button class="zk-btn mint" type="button" id="sStart">' + ICON.camera + "Camera aan</button></div>" +
       '<span class="hint" id="sHint" aria-live="polite"></span></div>' +
       '<form id="sManual" class="zk-form zd-manual" novalidate><label for="sCode">Of typ de code van je klant</label><span class="row"><input id="sCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PZ…" aria-describedby="sCodeHelp"><button class="zk-btn dark" type="submit">' + ICON.search + "Zoek</button></span>" +
       '<small id="sCodeHelp" class="zd-help">De code staat onder de QR-code en begint met PZ.</small></form>' +
       '<p class="zk-msg" id="sMsg" role="status" aria-live="assertive"></p><div id="sResult"></div>';
+    if (opts.zaak && opts.zaak.id) {
+      rpc("pasr_business_locations_list",{p_business:opts.zaak.id},true).then(function(rows){
+        if(!Array.isArray(rows)||!rows.some(function(x){return x.active;}))return;
+        var box=$("#pz2ScanLocations",root),select=$("#pz2ScanLocation",root);
+        rows.filter(function(x){return x.active;}).forEach(function(l){
+          var opt=document.createElement("option");opt.value=l.id;opt.textContent=l.name;select.appendChild(opt);
+        });
+        var key="pasr.zakelijk.scan.location."+opts.zaak.id;
+        var prior=store(key);if(rows.some(function(x){return x.id===prior && x.active;})){select.value=prior;selectedLocation=prior;}
+        box.hidden=false;
+        select.addEventListener("change",function(){selectedLocation=select.value;store(key,selectedLocation);});
+      }).catch(function(){/* Scanner blijft beschikbaar zonder filiaalkeuze. */});
+    }
     var video = $("#sVideo", root), busy = false, last = "", lastAt = 0, stream = null, alive = true, undoTimer = null;
     var detector = ("BarcodeDetector" in window) ? new window.BarcodeDetector({ formats: ["qr_code"] }) : null;
     var canvas = document.createElement("canvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -1113,7 +1133,12 @@
       $("#sMin", root).addEventListener("click", function () { setAmt(amount - 1); });
       $("#sPlus", root).addEventListener("click", function () { setAmt(amount + 1); });
       $("#sAmt", root).addEventListener("change", function (e) { setAmt(e.target.value); });
-      $("#sStamp", root).addEventListener("click", function (ev) { act(ev.currentTarget, "pasr_business_stamp", { p_code: m.member_code, p_amount: amount, p_device: DEVICE }, amount === 1 ? "Stempel gezet" : amount + " stempels gezet"); });
+      $("#sStamp", root).addEventListener("click", function(ev){
+        var args={p_code:m.member_code,p_amount:amount,p_device:DEVICE};
+        if(selectedLocation)args.p_location=selectedLocation;
+        act(ev.currentTarget,selectedLocation?"pasr_business_stamp_location":"pasr_business_stamp",
+          args,amount===1?"Stempel gezet":amount+" stempels gezet");
+      });
       $("#sRedeem", root).addEventListener("click", function (ev) {
         var btn = ev.currentTarget;
         var md = modal("Beloning inwisselen", "<h2>Beloning inwisselen?</h2><p>" + esc(m.reward) + ". Er gaan " + m.stamps_total + " stempels af.</p>" +

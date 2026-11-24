@@ -107,8 +107,12 @@ object BusinessApi {
             ?: throw ApiError(L("Deze code is niet bekend. Laat de klant de kaart opnieuw tonen of typ de code over."))
     }
 
-    suspend fun stamp(code: String, amount: Int): ScanResult? =
-        ScanResult.from(Account.rpc("pasr_business_stamp", obj("p_code" to code, "p_amount" to amount, "p_device" to deviceName)), code)
+    suspend fun stamp(code: String, amount: Int, location: String? = null): ScanResult? {
+        val params = obj("p_code" to code, "p_amount" to amount, "p_device" to deviceName)
+        if (!location.isNullOrBlank()) params.put("p_location", location)
+        return ScanResult.from(Account.rpc(
+            if (location.isNullOrBlank()) "pasr_business_stamp" else "pasr_business_stamp_location", params), code)
+    }
 
     suspend fun redeem(code: String): ScanResult? =
         ScanResult.from(Account.rpc("pasr_business_redeem", obj("p_code" to code, "p_device" to deviceName)), code)
