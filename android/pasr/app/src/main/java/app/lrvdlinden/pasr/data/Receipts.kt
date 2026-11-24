@@ -150,8 +150,15 @@ object ReceiptStore {
 object ReceiptUseLinker {
     fun attach(receipt: Receipt, card: Card, preferredUse: String? = null): Pair<Receipt, Card> {
         if (receipt.cardID != card.id) return receipt to card
-        card.uses.firstOrNull { it.receiptID == receipt.id }?.let {
-            return receipt.copy(useID = it.id) to card
+        card.uses.firstOrNull { it.receiptID == receipt.id }?.let { linked ->
+            if (linked.source == "receipt" &&
+                (linked.date != receipt.date || linked.amount != receipt.total)) {
+                val updated = card.updatingUse(linked.id) {
+                    it.copy(date = receipt.date, amount = receipt.total?.takeIf { value -> value > 0 })
+                }
+                return receipt.copy(useID = linked.id) to updated
+            }
+            return receipt.copy(useID = linked.id) to card
         }
         val available = card.uses.filter {
             it.receiptID == null && java.time.Instant.ofEpochMilli(it.date)
