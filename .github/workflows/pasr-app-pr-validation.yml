@@ -102,7 +102,7 @@ jobs:
       - name: Compile iOS Simulator without signing
         run: |
           xcodebuild -project "${{ matrix.project }}" -scheme "${{ matrix.scheme }}" \
-            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug CODE_SIGNING_ALLOWED=NO build
 
   android:
