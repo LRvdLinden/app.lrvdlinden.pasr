@@ -154,7 +154,10 @@ object ReceiptUseLinker {
             return receipt.copy(useID = it.id) to card
         }
         val available = card.uses.filter {
-            it.receiptID == null && abs(it.date - receipt.date) <= 86_400_000L
+            it.receiptID == null && java.time.Instant.ofEpochMilli(it.date)
+                .atZone(java.time.ZoneId.systemDefault()).toLocalDate() ==
+                java.time.Instant.ofEpochMilli(receipt.date)
+                .atZone(java.time.ZoneId.systemDefault()).toLocalDate()
         }
         val exact = available.filter { event ->
             receipt.total?.takeIf { it > 0 }?.let { value ->
