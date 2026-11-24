@@ -146,7 +146,7 @@ object ReceiptStore {
 
 /** Totaal en datum uit de tekst van een kassabon (zelfde regels als ReceiptReader op iOS). */
 object ReceiptParser {
-    data class Result(val total: Double?, val date: Long?)
+    data class Result(val total: Double?, val date: Long?, val lines: List<String> = emptyList())
 
     private val amount = Regex("""(?<![\d,.])(\d{1,3}(?:[.\s]\d{3})*|\d+)[,.](\d{2})(?!\d)""")
     private val totalWords = listOf("te betalen", "totaal", "total", "tot.", "eindtotaal", "betaald", "bedrag", "pin", "amount", "to pay")
@@ -168,7 +168,7 @@ object ReceiptParser {
                 ?: lines.getOrNull(i + 1)?.let { amounts(it).lastOrNull() }?.let { candidates += it }
         }
         val total = candidates.maxOrNull() ?: lines.flatMap { amounts(it) }.maxOrNull()
-        return Result(total, date(lines, now))
+        return Result(total, date(lines, now), lines)
     }
 
     fun date(lines: List<String>, now: Long = nowMs()): Long? {

@@ -400,7 +400,8 @@
     panel.innerHTML = panelTitle("Overzicht", "Hoe je stempelkaarten het doen.") +
       '<div class="zd-kpis" id="ovKpi">' + ["Stempels", "Beloningen", "Nieuwe leden", "Leden"].map(function (t, i) { return '<div class="zd-kpi k' + i + '"><small>' + t + "</small><b>–</b></div>"; }).join("") + "</div>" +
       '<div class="zd-insights" id="ovChart"><p class="zk-empty">Laden…</p></div>' +
-      '<div class="zd-two"><div class="zk-panel" id="ovCards"></div><div class="zk-panel" id="ovLog"><h3>Logboek</h3><p class="zk-empty">Laden…</p></div></div>';
+      '<div class="zd-two"><div class="zk-panel" id="ovCards"></div><div class="zk-panel" id="ovLog"><h3>Logboek</h3><p class="zk-empty">Laden…</p></div></div>' +
+      '<section class="pz2-panel" id="pz2Insights"><h3>Klantenbinding en kortingsbonnen</h3><p>Inzichten laden…</p></section>';
     var cards = b.cards || [];
     $("#ovCards").innerHTML = "<h3>Leden per kaart</h3>" + (cards.length ? '<ul class="zd-list">' + cards.map(function (c) {
       return '<li><button type="button" data-card="' + esc(c.id) + '"><span class="dot" style="background:' + esc(c.color) + '"></span><span class="t"><b>' + esc(c.name) + "</b><small>" + (c.published ? "Online" : "Concept") + " · " + plural(c.stamps || 0, "stempel", "stempels") + "</small></span><span class=\"n\">" + (c.members || 0) + '<small>leden</small></span>' + ICON.chevron + "</button></li>";
@@ -411,6 +412,21 @@
     var nb = $("#ovNew"); if (nb) nb.addEventListener("click", function () { go("kaarten"); });
     drawInsights(b);
     logView($("#ovLog"), b, 8, true);
+    rpc("pasr_business_loyalty_insights",{p_business:b.id},true).then(function(metrics){
+      var box=$("#pz2Insights");
+      if(!box)return;
+      var labels=[
+        ["members","Actieve kaartleden"],["members_30d","Nieuwe leden (30 dagen)"],
+        ["stamps_30d","Stempels (30 dagen)"],["returning_customers_90d","Terugkerende klanten (90 dagen)"],
+        ["milestone_rewards","Tussentijdse beloningen"],["claimed_coupons","Bonnen bewaard"],
+        ["redeemed_coupons","Bonnen gebruikt"]];
+      box.innerHTML='<h3>Klantenbinding en kortingsbonnen</h3><p>Alleen geaggregeerde aantallen; geen klantnamen of privégegevens.</p>' +
+        '<div class="zd-kpis">'+labels.map(function(x){
+          return '<div class="zd-kpi"><small>'+esc(x[1])+'</small><b>'+Number(metrics[x[0]]||0)+'</b></div>';
+        }).join("")+'</div>';
+    }).catch(function(e){
+      var box=$("#pz2Insights");if(box)box.innerHTML='<h3>Klantenbinding en kortingsbonnen</h3><p>'+esc(nice(e))+'</p>';
+    });
   };
 
   async function drawInsights(b) {
@@ -1003,6 +1019,8 @@
   // ---------------------------------------------------------------- scanner (pasr.nl/zakelijk/scan en de tab Scannen)
   function codeFrom(text) {
     var t = String(text || "").trim().toUpperCase();
+    var coupon = t.match(/PC[A-HJ-NP-Z2-9]{22}(?![A-HJ-NP-Z2-9])/);
+    if (coupon) return coupon[0];
     var m = t.match(/PZ(?:[A-HJ-NP-Z2-9]{14}|[A-HJ-NP-Z2-9]{10})(?![A-HJ-NP-Z2-9])/);
     return m ? m[0] : null;
   }
@@ -1032,6 +1050,28 @@
     async function show(code) {
       busy = true; setMsg($("#sMsg", root), "");
       try {
+        if (/^PC[A-HJ-NP-Z2-9]{22}$/.test(code)) {
+          var coupon = await rpc("pasr_business_coupon_check",{p_code:code},true);
+          var amount = coupon.discount_type === "percent" ? coupon.discount_value + "%" :
+            new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR"}).format(coupon.discount_value);
+          $("#sResult",root).innerHTML =
+            '<div class="pz2-panel"><h2>Kortingsbon · '+esc(coupon.business)+'</h2>' +
+            '<h3>'+esc(coupon.title)+'</h3><p><strong>'+esc(amount)+' korting</strong></p>' +
+            '<p>Minimale besteding: € '+esc(coupon.min_spend)+'. '+esc(coupon.description)+'</p>' +
+            (coupon.valid ? '<button class="zk-btn mint" type="button" id="pz2RedeemScan">Korting gegeven · verzilver bon</button>' :
+              '<p class="zk-msg bad">Bon al gebruikt of niet meer geldig.</p>') + '</div>';
+          var redeemButton=$("#pz2RedeemScan",root);
+          if (redeemButton) redeemButton.addEventListener("click",async function(){
+            if(!confirm("Weet je zeker dat je deze korting hebt gegeven? Na verzilveren kan deze code niet opnieuw gebruikt worden.")) return;
+            redeemButton.disabled=true;
+            try {
+              await rpc("pasr_business_coupon_redeem",{p_code:code},true);
+              setMsg($("#sMsg",root),"Kortingsbon verzilverd",true);
+              $("#sResult",root).innerHTML='<p class="zd-ready">Deze kortingsbon is gebruikt.</p>';
+            } catch(e) { redeemButton.disabled=false;setMsg($("#sMsg",root),nice(e)); }
+          });
+          busy=false;return;
+        }
         var m = await rpc("pasr_business_scan", { p_code: code }, true);
         result(m);
         if (navigator.vibrate) navigator.vibrate(40);
@@ -1116,7 +1156,7 @@
     $("#sManual", root).addEventListener("submit", function (ev) {
       ev.preventDefault();
       var c = codeFrom($("#sCode", root).value.replace(/\s+/g, ""));
-      if (!c) { $("#sCode", root).focus(); return setMsg($("#sMsg", root), "Een code begint met PZ en heeft 16 tekens (oudere codes 12)."); }
+      if (!c) { $("#sCode", root).focus(); return setMsg($("#sMsg", root), "Een stempelkaart begint met PZ; een kortingsbon met PC."); }
       show(c);
     });
     async function tick() {

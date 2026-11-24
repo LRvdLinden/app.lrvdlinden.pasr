@@ -57,6 +57,9 @@ import androidx.compose.ui.unit.sp
 import app.lrvdlinden.pasrzakelijk.core.L
 import app.lrvdlinden.pasrzakelijk.data.Business
 import app.lrvdlinden.pasrzakelijk.data.BusinessApi
+import app.lrvdlinden.pasrzakelijk.data.Account
+import org.json.JSONObject
+import org.json.JSONArray
 import app.lrvdlinden.pasrzakelijk.data.ScanResult
 import app.lrvdlinden.pasrzakelijk.ui.BigButton
 import app.lrvdlinden.pasrzakelijk.ui.ConfirmDialog
@@ -96,8 +99,15 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
     val scope = rememberCoroutineScope()
     val haptics = rememberHaptics()
     val maxAmount = (result.maxPerScan ?: business.maxPerScan).coerceIn(1, 30)
+    var milestones by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
 
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
+    LaunchedEffect(result.stamps, result.rewardsRedeemed) {
+        milestones = try {
+            val r = Account.rpc("pasr_business_reward_progress", JSONObject().put("p_code", result.code)) as? JSONArray
+            (0 until (r?.length() ?: 0)).mapNotNull { r?.optJSONObject(it) }
+        } catch (_: Exception) { emptyList() }
+    }
 
     fun reload(quiet: Boolean = false) {
         scope.launch {
@@ -198,6 +208,38 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
             }
             if (result.isFull) {
                 BigButton(L("Beloning inwisselen"), { confirmRedeem = true }, icon = Icons.Filled.CardGiftcard, color = Pz.coral, enabled = !busy)
+            }
+            if (milestones.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Pz.card).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Tussentijdse beloningen", fontWeight = FontWeight.Bold, color = Pz.text)
+                    milestones.forEach { milestone ->
+                        val number = milestone.optInt("stamps")
+                        val available = milestone.optBoolean("available")
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("$number stempels", color = Pz.text, fontWeight = FontWeight.Bold)
+                                Text(milestone.optString("title"), color = Pz.muted)
+                            }
+                            TextButton(enabled = available && !busy, onClick = {
+                                busy = true
+                                scope.launch {
+                                    try {
+                                        Account.rpc("pasr_business_reward_claim",
+                                            JSONObject().put("p_code",result.code).put("p_stamps",number))
+                                        done = milestone.optString("title") + " uitgegeven"
+                                        result = BusinessApi.scan(result.code)
+                                        val r = Account.rpc("pasr_business_reward_progress",
+                                            JSONObject().put("p_code", result.code)) as? JSONArray
+                                        milestones = (0 until (r?.length() ?: 0)).mapNotNull { r?.optJSONObject(it) }
+                                        haptics.success()
+                                    } catch(e: Exception) { error = e.message; haptics.error() }
+                                    busy = false
+                                }
+                            }) { Text(if (available) "Uitgeven" else "Niet beschikbaar") }
+                        }
+                    }
+                }
             }
             val undoID = result.undoEventID
             if (undoID != null && undoUntil > now) {

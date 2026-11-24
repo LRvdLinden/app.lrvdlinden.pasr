@@ -4202,7 +4202,7 @@ revoke all on public.pasr_business_reward_claims from anon,authenticated;
 
 -- Geeft de eigenaar/medewerker na een scan de beschikbare tussentijdse beloningen.
 create or replace function public.pasr_business_reward_progress(p_code text)
-returns jsonb language plpgsql security definer set search_path=public as $
+returns jsonb language plpgsql security definer set search_path=public as $$
 declare r record; cfg jsonb;
 begin
   select * into r from public.pasr_business_scan_member(p_code);
@@ -4406,3 +4406,25 @@ revoke all on function public.pasr_business_referral_invite(text),
  public.pasr_business_referral_join(uuid,text) from public,anon;
 grant execute on function public.pasr_business_referral_invite(text),
  public.pasr_business_referral_join(uuid,text) to authenticated;
+
+
+-- Controleer een kortingsbon op de zakelijke scanner zonder hem voortijdig te verzilveren.
+create or replace function public.pasr_business_coupon_check(p_code text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare claim public.pasr_business_coupon_claims; c public.pasr_business_coupons; b public.pasr_businesses;
+begin
+  if auth.uid() is null then raise exception 'Log eerst in bij Pasr Zakelijk.' using errcode='28000'; end if;
+  select * into claim from public.pasr_business_coupon_claims where redeem_code=upper(trim(p_code));
+  if claim.id is null then raise exception 'Onbekende kortingsbon.' using errcode='P0002'; end if;
+  select * into c from public.pasr_business_coupons where id=claim.coupon_id;
+  select * into b from public.pasr_businesses where id=c.business_id;
+  if public.pasr_business_role(b.id) is null or b.status<>'approved' then
+    raise exception 'Deze bon hoort niet bij jouw zaak.' using errcode='42501';
+  end if;
+  return jsonb_build_object('business',b.name,'title',c.title,'description',c.description,
+    'discount_type',c.discount_type,'discount_value',c.discount_value,'min_spend',c.min_spend,
+    'valid',claim.redeemed_at is null and c.public and now() between c.starts_at and c.ends_at,
+    'used',claim.redeemed_at is not null,'ends_at',c.ends_at);
+end $$;
+revoke all on function public.pasr_business_coupon_check(text) from public,anon;
+grant execute on function public.pasr_business_coupon_check(text) to authenticated;

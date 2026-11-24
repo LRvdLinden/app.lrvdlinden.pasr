@@ -242,6 +242,17 @@ fun ReceiptReviewScreen(cardId: String?, useId: String?, receiptId: String? = nu
         if (existing != null) return@LaunchedEffect
         repeat(60) {
             ReceiptDraft.read?.let { r ->
+                if (cardId == null && chosenCard == null && r.lines.isNotEmpty()) {
+                    val heading = app.lrvdlinden.pasr.data.Catalog.fold(r.lines.take(12).joinToString(" "))
+                    val candidates = cards.filter { c ->
+                        val name = app.lrvdlinden.pasr.data.Catalog.fold(c.storeName)
+                        name.length >= 4 && heading.contains(name)
+                    }
+                    if (candidates.size == 1) {
+                        chosenCard = candidates.single().id
+                        store = candidates.single().storeName
+                    }
+                }
                 if (totalText.isBlank()) r.total?.let { totalText = String.format(Locale("nl", "NL"), "%.2f", it) }
                 if (r.date != null && (useDate == null || kotlin.math.abs(r.date - useDate) > 2 * 86_400_000L)) date = r.date
                 if (!hasWarranty) warranty = Receipt.defaultWarranty(date)
@@ -301,12 +312,22 @@ fun ReceiptReviewScreen(cardId: String?, useId: String?, receiptId: String? = nu
             Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Gap(16.dp)
         BrandButton("Bewaar", Modifier.fillMaxWidth().height(52.dp), enabled = store.isNotBlank() && (totalText.isBlank() || total != null)) {
-            val r = (existing ?: Receipt(cardID = chosenCard, useID = useId)).copy(
-                cardID = existing?.cardID ?: chosenCard, storeName = store.trim(), date = date, total = total,
-                currencyCode = card?.currencyCode, title = title.trim(), warrantyUntil = if (hasWarranty) warranty else null,
+            val linked = cards.firstOrNull { it.id == (existing?.cardID ?: chosenCard) }
+            val matchedUse = useId ?: linked?.history?.firstOrNull { event ->
+                event.receiptID == null && event.amount != null && total != null &&
+                    kotlin.math.abs(event.amount - total) <= 0.02 &&
+                    kotlin.math.abs(event.date - date) <= 86_400_000L
+            }?.id
+            val r = (existing ?: Receipt(cardID = chosenCard, useID = matchedUse)).copy(
+                cardID = existing?.cardID ?: chosenCard, useID = existing?.useID ?: matchedUse,
+                storeName = store.trim(), date = date, total = total,
+                currencyCode = linked?.currencyCode, title = title.trim(),
+                warrantyUntil = if (hasWarranty) warranty else null,
             )
             ReceiptStore.save(r, if (existing == null) pages else null)
-            if (existing == null && useId != null) card?.let { c -> CardStore.upsert(c.updatingUse(useId) { it.copy(receiptID = r.id) }) }
+            if (existing == null && linked != null && matchedUse != null) {
+                CardStore.upsert(linked.updatingUse(matchedUse) { it.copy(receiptID = r.id) })
+            }
             ReceiptDraft.pages = emptyList()
             nav.pop()
         }

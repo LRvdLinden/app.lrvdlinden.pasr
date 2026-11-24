@@ -14,6 +14,7 @@ struct ScanResultSheet: View {
     @State private var confirmRedeem = false
     @State private var successTick = 0
     @State private var errorTick = 0
+    @State private var milestones: [Milestone] = []
 
     init(business: Business, initial: ScanResult) {
         self.business = business
@@ -57,6 +58,7 @@ struct ScanResultSheet: View {
                         .buttonStyle(BigButtonStyle(color: Theme.coral))
                         .disabled(busy)
                     }
+                    if !milestones.isEmpty { milestoneControls }
                     undoButton
                 }
                 .padding(20)
@@ -76,6 +78,7 @@ struct ScanResultSheet: View {
                     .disabled(busy)
                 }
             }
+            .task(id: result.stamps) { await loadMilestones() }
             .sensoryFeedback(.success, trigger: successTick)
             .sensoryFeedback(.error, trigger: errorTick)
             .confirmationDialog("Beloning inwisselen?", isPresented: $confirmRedeem, titleVisibility: .visible) {
@@ -85,6 +88,62 @@ struct ScanResultSheet: View {
                 Text(String(format: String(localized: "Er gaan %lld stempels af."), result.stampsTotal))
             }
         }
+    }
+
+    private struct Milestone: Identifiable {
+        let stamps: Int
+        let title: String
+        let available: Bool
+        var id: Int { stamps }
+        init?(_ data: [String: Any]) {
+            guard let stamps = data["stamps"] as? Int,
+                  let title = data["title"] as? String else { return nil }
+            self.stamps = stamps
+            self.title = title
+            self.available = data["available"] as? Bool ?? false
+        }
+    }
+
+    private var milestoneControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Tussentijdse beloningen", systemImage: "gift.fill").font(.headline)
+            ForEach(milestones) { milestone in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("\(milestone.stamps) stempels").font(.subheadline.bold())
+                        Text(milestone.title).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button(milestone.available ? "Uitgeven" : "Niet beschikbaar") {
+                        Task { await redeemMilestone(milestone) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(busy || !milestone.available)
+                }
+            }
+        }
+        .padding(16)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    @MainActor private func loadMilestones() async {
+        do {
+            let result = try await Account.shared.rpc("pasr_business_reward_progress",
+                ["p_code": self.result.code])
+            milestones = (result as? [[String: Any]] ?? []).compactMap(Milestone.init)
+        } catch { milestones = [] }
+    }
+
+    @MainActor private func redeemMilestone(_ milestone: Milestone) async {
+        busy = true
+        defer { busy = false }
+        do {
+            _ = try await Account.shared.rpc("pasr_business_reward_claim",
+                ["p_code": result.code, "p_stamps": milestone.stamps])
+            done = milestone.title + " uitgegeven"
+            successTick += 1
+            await loadMilestones()
+        } catch { error = error.localizedDescription; errorTick += 1 }
     }
 
     private var status: some View {

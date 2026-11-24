@@ -253,6 +253,14 @@ struct ReceiptReviewForm: View {
 
     private func apply(_ r: ReceiptReader.Result?) {
         guard let r else { return }
+        // Alleen een duidelijke overeenkomst als kaart voorstellen. Gebruiker controleert de bon.
+        if card == nil, cardID == nil, !r.text.isEmpty {
+            let merchant = r.text.prefix(12).joined(separator: " ")
+            if let match = PurchaseMatcher.best(merchant: merchant, among: cards) {
+                cardID = match.id
+                store = match.storeName
+            }
+        }
         if totalText.isEmpty, let t = r.total {
             totalText = t.formatted(.number.precision(.fractionLength(2)).locale(UseFormat.locale))
         }
@@ -263,14 +271,22 @@ struct ReceiptReviewForm: View {
     }
 
     private func save() {
-        let r = Receipt(cardID: card?.id ?? cardID, useID: useID, storeName: store.trimmingCharacters(in: .whitespaces), date: date)
+        let linked = card ?? cards.first(where: { $0.id == cardID })
+        let matchingEvent = useID ?? linked?.history.first(where: { event in
+            guard event.receiptID == nil, let spent = event.amount, let total else { return false }
+            return abs(event.date.timeIntervalSince(date)) <= 86_400 &&
+                abs(spent - total) <= 0.02
+        })?.id
+        let r = Receipt(cardID: linked?.id, useID: matchingEvent, storeName: store.trimmingCharacters(in: .whitespaces), date: date)
         r.total = total
-        r.currencyCode = card?.currencyCode
+        r.currencyCode = linked?.currencyCode
         r.title = title.trimmingCharacters(in: .whitespaces)
         r.warrantyUntil = hasWarranty ? Calendar.current.startOfDay(for: warranty) : nil
         r.pages = pages.compactMap { $0.jpegData(compressionQuality: 0.85).flatMap { ImageResizer.jpeg($0, maxSide: 2000, quality: 0.78) } }
         context.insert(r)
-        if let card, let useID { card.updateUse(useID) { $0.receiptID = r.id } }
+        if let linked, let matchingEvent {
+            linked.updateUse(matchingEvent) { $0.receiptID = r.id }
+        }
         try? context.save()
         Task { await ReceiptReminders.schedule(r) }
         onSaved(total)
