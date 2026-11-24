@@ -39,15 +39,15 @@ jobs:
           g = Path("zakelijk/apple/make_project.py").read_text()
           ap = Path("android/pasr/app/build.gradle.kts").read_text()
           az = Path("android/zakelijk/app/build.gradle.kts").read_text()
-          assert p.count('CURRENT_PROJECT_VERSION = "54";') == 6
+          assert p.count('CURRENT_PROJECT_VERSION = "55";') == 6
           assert p.count('MARKETING_VERSION = "1.0.4";') == 6
-          assert z.count('CURRENT_PROJECT_VERSION = "9";') == 2
+          assert z.count('CURRENT_PROJECT_VERSION = "10";') == 2
           assert z.count('MARKETING_VERSION = "1.0.3";') == 2
-          assert 'BUILD = "9"' in g and 'VERSION = "1.0.3"' in g
+          assert 'BUILD = "10"' in g and 'VERSION = "1.0.3"' in g
           assert 'VERSION_NAME") ?: "1.0.4"' in ap
           assert 'versionName = "1.0.3"' in az
-          assert 'CODE=125' in Path(".github/workflows/android-pasr.yml").read_text()
-          assert 'export VERSION_CODE=121' in Path(".github/workflows/android-zakelijk.yml").read_text()
+          assert 'CODE=126' in Path(".github/workflows/android-pasr.yml").read_text()
+          assert 'export VERSION_CODE=122' in Path(".github/workflows/android-zakelijk.yml").read_text()
           print("App versions validated.")
           PY
       - name: Check generated Xcode project is in sync
