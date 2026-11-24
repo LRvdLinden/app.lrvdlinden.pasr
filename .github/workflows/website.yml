@@ -13,7 +13,8 @@ on:
   push:
     branches: [main]
     paths: ["website/**", ".github/workflows/website.yml", "tools/make_*.py", "tools/store_catalog.py",
-            "tools/fetch_live_catalog.py", "tools/catalog_hub.py", "tools/verify_website.py", "tools/version_assets.py", "supabase/catalog/**"]
+            "tools/fetch_live_catalog.py", "tools/catalog_hub.py", "tools/verify_website.py",
+            "tools/verify_zakelijk_dashboard.py", "tools/version_assets.py", "supabase/catalog/**"]
   schedule:
     - cron: "17 * * * *"   # elk uur: bijwerken uit het beheer (uploadt alleen als er iets veranderd is)
   workflow_dispatch:
@@ -36,6 +37,7 @@ jobs:
           node --check website/assets/promo.js
           node --check website/assets/zakelijk.js
           node --check website/assets/loyalty2.js
+          python3 tools/verify_zakelijk_dashboard.py
           node --check website/assets/discovery.js
           python3 -m py_compile tools/make_website.py tools/make_kaarten.py tools/make_gids.py tools/make_zakelijk.py tools/catalog_hub.py
       - name: Account settings for the website
