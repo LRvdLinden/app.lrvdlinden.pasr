@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import store_catalog as sc
 from make_kaarten import account_config, cover_img, esc, fold, is_light, sort_key, APP_STORE, MONTHS
-from catalog_hub import site_nav, strip, hero as hub_hero, assets as hub_assets
+from catalog_hub import site_nav, strip, hero as hub_hero, assets as hub_assets, footer_links
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
@@ -209,14 +209,7 @@ def nav(current):
 FOOTER = '''  <footer>
     <div class="wrap">
       <span>&copy; {year} Pasr · Merknamen en logo&rsquo;s zijn van de betreffende winkels en uitgevers; Pasr is niet aan hen verbonden. Klopt er iets niet? Mail <a href="mailto:support@pasr.nl?subject=Gids">support@pasr.nl</a>.</span>
-      <nav aria-label="Voettekst">
-        <a href="/kaarten/">Alle kaarten</a>
-        <a href="/cadeaubon/">Cadeaubon-gids</a>
-        <a href="/klantenkaart/">Klantenkaart-gids</a>
-        <a href="/privacy/">Privacy</a>
-        <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
-        <a href="/support/">Support</a>
-      </nav>
+      <nav aria-label="Voettekst">{links}</nav>
     </div>
   </footer>'''
 
@@ -406,7 +399,7 @@ def guide_page(c, g, items, kind, year):
     </section>
   </main>
 
-{FOOTER.format(year=year)}
+{FOOTER.format(year=year, links=footer_links())}
 </body>
 </html>
 '''
@@ -518,7 +511,7 @@ def overview(items, kind, year, today):
     </section>
   </main>
 
-{FOOTER.format(year=year)}
+{FOOTER.format(year=year, links=footer_links())}
   <script>
   (function () {{
     var q = document.getElementById('gd-q'), items = document.querySelectorAll('.gd-item'), status = document.getElementById('gd-status'), empty = document.getElementById('gd-empty');
@@ -529,7 +522,7 @@ def overview(items, kind, year, today):
       status.textContent = t ? (n === 1 ? '1 gids' : n + ' gidsen') : '';
       empty.hidden = n !== 0;
     }}
-    q.addEventListener('input', apply);
+    q.value = new URLSearchParams(location.search).get('q') || ''; q.addEventListener('input', apply); apply();
   }})();
   </script>
 </body>
