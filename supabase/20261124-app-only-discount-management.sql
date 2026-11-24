@@ -369,7 +369,7 @@ begin
    raise exception 'Alleen de eigenaar mag actiecodes beheren.' using errcode='42501';
  end if;
  return coalesce((select jsonb_agg(jsonb_build_object(
-   'id',p.id,'code',p.code,'title',p.title,'discount_type',p.discount_type,
+   'id',p.id,'code',p.code,'business',(select biz.name from public.pasr_businesses biz where biz.id=p.business_id),'title',p.title,'discount_type',p.discount_type,
    'discount_value',p.discount_value,'min_spend',p.min_spend,
    'starts_at',p.starts_at,'ends_at',p.ends_at,'max_uses',p.max_uses,
    'used_count',p.used_count,'active',p.active,'deleted',p.deleted_at is not null,
