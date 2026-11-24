@@ -113,8 +113,10 @@ fun CardsScreen(business: Business) {
     var program by remember { mutableStateOf<BusinessCard?>(null) }
     var coupons by remember { mutableStateOf(false) }
     var marketing by remember { mutableStateOf(false) }
+    var locations by remember { mutableStateOf(false) }
     val context = LocalContext.current
     ScreenScaffold(L("Kaarten"), actions = {
+        TextButton(onClick = { locations = true }) { Text("Vestigingen", color = Pz.accent) }
         TextButton(onClick = { marketing = true }) { Text("Marketing", color = Pz.accent) }
         TextButton(onClick = { coupons = true }) { Text("Kortingsbonnen", color = Pz.accent) }
         IconButton(onClick = { editing = BusinessCard() }, enabled = business.cards.size < 5) {
@@ -182,6 +184,7 @@ fun CardsScreen(business: Business) {
     program?.let { ProgramDialog(it) { program = null } }
     if (coupons) CouponBusinessDialog(business.id) { coupons = false }
     if (marketing) BusinessMarketingDialog(business) { marketing = false }
+    if (locations) BusinessLocationsDialog(business) { locations = false }
 }
 
 @Composable
