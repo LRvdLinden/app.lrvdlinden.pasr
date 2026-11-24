@@ -105,7 +105,7 @@
  async function couponDashboard(root,b,rpc){
    root.innerHTML='<div class="zd-ptitle"><div><h2>Kortingsbonnen</h2><p class="zd-sub">Maak een tijdelijke kortingsbon met een uniek te verzilveren QR- of tekstcode.</p></div></div>'+
     '<div class="pz2-grid"><form class="pz2-panel pz2-form" id="pz2Coupon">'+
-      '<h3>Nieuwe kortingsbon</h3>'+
+      '<h3 id="pz2CouponHeading">Nieuwe kortingsbon</h3>'+
       field("Titel","title","Korting op je volgende aankoop")+
       field("Omschrijving","description","Alleen in de winkel")+
       '<label class="pz2-field">Korting <select name="discount_type"><option value="amount">Vast bedrag (€)</option><option value="percent">Percentage (%)</option></select></label>'+
@@ -115,17 +115,43 @@
       field("Maximaal aantal uitgiftes","max_claims","500","number")+
       '<label class="pz2-toggle"><span><b>Eenmalig per klant</b><small>Voorkom herhaald claimen</small></span><input name="one_per_customer" type="checkbox" checked></label>'+
       '<label class="pz2-toggle"><span><b>Publiceer in Pasr</b><small>Pas na publiceren en de startdatum zichtbaar</small></span><input name="public" type="checkbox"></label>'+
-      '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Kortingsbon maken</button></form>'+
+      '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Kortingsbon opslaan</button><button type="button" class="zk-btn ghost" id="pz2CouponReset">Nieuw</button></form>'+
       '<section class="pz2-panel"><h3>Jouw kortingsbonnen</h3><div id="pz2Coupons">Laden…</div>'+
       '<p>Klanten bewaren de bon in Pasr en krijgen een unieke code. Alleen je eigen team kan die code inwisselen.</p></section></div>'+
       '<section class="pz2-panel"><h3>Bon aan de kassa verzilveren</h3><div class="pz2-inline">'+
       '<label class="pz2-field">PC-code <input id="pz2RedeemCode" maxlength="24" placeholder="PC…"></label>'+
       '<button class="zk-btn" id="pz2Redeem" type="button">Controleer en verzilver</button></div><p id="pz2RedeemMessage" role="status"></p></section>';
+   var editingID=null, allCoupons=[];
    async function reload(){try{
        var rows=await rpc("pasr_business_coupon_list",{p_business:b.id},true);
-       $("#pz2Coupons",root).innerHTML=rows.length?rows.map(function(c){return '<article class="pz2-coupon"><b>'+escape(c.title)+'</b> · '+
+       allCoupons=rows;
+       $("#pz2Coupons",root).innerHTML=rows.length?rows.map(function(c,i){return '<article class="pz2-coupon"><b>'+escape(c.title)+'</b> · '+
          money(c.discount_type,c.discount_value)+'<br><small>'+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+
-         ' · '+c.claimed+' opgehaald · '+c.redeemed+' gebruikt · '+(c.public?"Gepubliceerd":"Concept")+'</small></article>';}).join(""):"Nog geen kortingsbonnen.";
+         ' · '+c.claimed+' opgehaald · '+c.redeemed+' gebruikt · '+(c.deleted?"Verwijderd":c.public?"Actief":"Gepauzeerd")+'</small>'+
+         (!c.deleted?'<div class="zk-actions"><button type="button" class="zk-btn ghost" data-editcoupon="'+i+'">Bewerken</button>'+
+         '<button type="button" class="zk-btn ghost" data-removecoupon="'+i+'">Verwijderen</button></div>':'')+
+         '</article>';}).join(""):"Nog geen kortingsbonnen.";
+       root.querySelectorAll("[data-editcoupon]").forEach(function(btn){btn.addEventListener("click",function(){
+          var c=allCoupons[Number(btn.dataset.editcoupon)],form=$("#pz2Coupon",root);
+          editingID=c.id;
+          ["title","description","discount_type","discount_value","min_spend","max_claims"].forEach(function(k){
+            form.elements[k].value=c[k]||"";
+          });
+          form.elements.starts_at.value=String(c.starts_at||"").slice(0,10);
+          form.elements.ends_at.value=String(c.ends_at||"").slice(0,10);
+          form.elements.one_per_customer.checked=!!c.one_per_customer;
+          form.elements.public.checked=!!c.public;
+          $("#pz2CouponHeading",root).textContent="Kortingsbon bewerken · "+c.title;
+          form.scrollIntoView({behavior:"smooth",block:"start"});
+       });});
+       root.querySelectorAll("[data-removecoupon]").forEach(function(btn){btn.addEventListener("click",async function(){
+          var c=allCoupons[Number(btn.dataset.removecoupon)];
+          if(!window.confirm("Verwijder "+c.title+"? De actie wordt onbruikbaar, eerdere verzilveringen blijven bewaard."))return;
+          btn.disabled=true;
+          try{await rpc("pasr_business_discount_remove",{p_business:b.id,p_id:c.id,p_kind:"coupon"},true);
+            notice(root,"Kortingsbon verwijderd; historie behouden.",true);if(editingID===c.id)editingID=null;await reload();
+          }catch(e){notice(root,e.message||"Verwijderen mislukt.",false);btn.disabled=false;}
+       });});
      }catch(e){$("#pz2Coupons",root).textContent="Kon kortingsbonnen niet laden: "+(e.message||"onbekend");}
    }
    $("#pz2Coupon",root).addEventListener("submit",async function(e){
@@ -134,8 +160,15 @@
        discount_value:Number(f.get("discount_value")),min_spend:Number(f.get("min_spend")),starts_at:f.get("starts_at")+"T00:00:00+01:00",
        ends_at:f.get("ends_at")+"T23:59:59+01:00",max_claims:Number(f.get("max_claims")),
        one_per_customer:f.has("one_per_customer"),public:f.has("public")};
-       await rpc("pasr_business_coupon_save",{p_coupon:payload},true);notice(root,"Kortingsbon opgeslagen.",true);reload();
+       if(editingID)payload.id=editingID;
+       await rpc("pasr_business_coupon_save",{p_coupon:payload},true);
+       notice(root,"Kortingsbon opgeslagen.",true);editingID=null;
+       $("#pz2CouponHeading",root).textContent="Nieuwe kortingsbon";reload();
      }catch(err){notice(root,err.message||"Opslaan mislukt.",false);}finally{button.disabled=false;}
+   });
+   $("#pz2CouponReset",root).addEventListener("click",function(){
+     editingID=null;$("#pz2Coupon",root).reset();
+     $("#pz2CouponHeading",root).textContent="Nieuwe kortingsbon";
    });
    $("#pz2Redeem",root).addEventListener("click",async function(){var msg=$("#pz2RedeemMessage",root);
      var code=$("#pz2RedeemCode",root).value.trim().toUpperCase();
