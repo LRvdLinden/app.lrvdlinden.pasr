@@ -20,6 +20,8 @@ def site_nav(active="kaarten"):
         ("kortingsbonnen", "/kortingsbonnen/", "Kortingsbonnen"),
         ("saldo-checken", "/saldo-checken/", "Saldo checken"),
         ("functies", "/#functies", "Functies"),
+        ("overstappen", "/#overstappen", "Overstappen"),
+        ("support", "/support/", "Support"),
         ("zakelijk", "/zakelijk/", "Voor ondernemers"),
     ]
     items = []
