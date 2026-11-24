@@ -8,6 +8,7 @@
     <!-- Alleen bij de winkel vragen (opt-in): je plek één keer opvragen bij het sluiten van een kaart, nooit bewaard of verstuurd -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -22,6 +23,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Pasr.Starting">
 
+        <receiver android:name=".notify.NearbyGeofenceReceiver" android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
