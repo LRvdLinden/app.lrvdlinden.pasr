@@ -19,6 +19,8 @@ struct LoyaltyProgramView: View {
     @State private var vipOn = false
     @State private var silver = 10
     @State private var gold = 25
+    @State private var vipSilverBenefit = ""
+    @State private var vipGoldBenefit = ""
     @State private var locationsOn = false
     @State private var locationNames = ""
     @State private var marketingOn = false
@@ -78,6 +80,8 @@ struct LoyaltyProgramView: View {
                     if vipOn {
                         Stepper("Zilver vanaf \(silver) bezoeken", value: $silver, in: 1...1000)
                         Stepper("Goud vanaf \(gold) bezoeken", value: $gold, in: (silver+1)...2000)
+                        TextField("Voordeel Zilver (optioneel)", text: $vipSilverBenefit)
+                        TextField("Voordeel Goud (optioneel)", text: $vipGoldBenefit)
                     }
                 } header: { Label("VIP", systemImage: "crown") }
                 Section {
@@ -153,6 +157,8 @@ struct LoyaltyProgramView: View {
             vipOn = vip?.bool("enabled") ?? false
             silver = vip?.int("silver") ?? 10
             gold = vip?.int("gold") ?? 25
+            vipSilverBenefit = vip?.string("silver_benefit") ?? ""
+            vipGoldBenefit = vip?.string("gold_benefit") ?? ""
             let locations = settings?.object("locations")
             locationsOn = locations?.bool("enabled") ?? false
             locationNames = (locations?.raw["names"] as? [String] ?? []).joined(separator: "\n")
@@ -185,6 +191,7 @@ struct LoyaltyProgramView: View {
             message = "Maximaal acht verschillende mijlpalen per kaart."; return
         }
         guard gold > silver else { message = "Goud moet boven Zilver liggen."; return }
+        guard vipSilverBenefit.count <= 120 && vipGoldBenefit.count <= 120 else { message = "VIP-voordeel is maximaal 120 tekens."; return }
         guard campaignEnd >= campaignStart else { message = "Actie eindigt vóór de startdatum."; return }
         let dateFormat = DateFormatter()
         dateFormat.locale = Locale(identifier: "en_US_POSIX")
@@ -196,7 +203,8 @@ struct LoyaltyProgramView: View {
             "campaign": ["enabled": campaignOn, "multiplier": campaignMultiplier, "weekday": campaignWeekday,
                          "start": dateFormat.string(from: campaignStart),
                          "end": dateFormat.string(from: campaignEnd)],
-            "vip": ["enabled": vipOn, "silver": silver, "gold": gold],
+            "vip": ["enabled": vipOn, "silver": silver, "gold": gold,
+                    "silver_benefit": vipSilverBenefit, "gold_benefit": vipGoldBenefit],
             "locations": ["enabled": locationsOn, "names": locationNames.split(whereSeparator: \.isNewline).map(String.init)],
             "marketing": ["enabled": marketingOn, "name": String(marketingName.prefix(80))],
             "community": ["enabled": communityOn, "name": String(communityName.prefix(80))]
