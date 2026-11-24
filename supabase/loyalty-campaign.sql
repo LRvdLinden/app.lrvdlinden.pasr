@@ -1,6 +1,5 @@
--- Promo-engine: bestaande scan-RPC blijft exact dezelfde parameters houden.
--- De maximum-per-scan grens geldt voor basisstempels; promotiebonussen tellen erbovenop.
--- Inclusief optionele YYYY-MM-DD begin/eindperiode en -1 voor elke dag.
+-- Pasr Zakelijk: safe promotional multipliers with optional start/end dates.
+-- The number of base stamps remains limited by max_per_scan.
 create or replace function public.pasr_business_stamp(p_code text, p_amount int default 1, p_device text default null) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare r record; m public.pasr_business_members; amt int := coalesce(p_amount, 1); left_s int; ev uuid;
@@ -27,40 +26,12 @@ begin
   if coalesce((cfg->>'enabled')::boolean,false)
      and (coalesce((cfg->>'weekday')::int,-1)=-1 or (cfg->>'weekday')::int=today)
      and (nullif(cfg->>'start','') is null or
-       ((cfg->>'start') ~ '^20[0-9]{2}-[01][0-9]-[0-3][0-9]
-  update public.pasr_business_members set stamps_count = least(stamps_count + actual, 1000), last_stamp_at = now(), updated_at = now()
-  where id = (r.m).id returning * into m;
-  insert into public.pasr_business_events (business_card_id, business_id, member_id, kind, amount, by_user, device, stamps_before, stamps_after)
-  values ((r.c).id, (r.b).id, m.id, 'stamp', actual, auth.uid(), nullif(left(trim(coalesce(p_device, '')), 80), ''), (r.m).stamps_count, m.stamps_count)
-  returning event_id into ev;
-  -- Een uitgenodigde klant krijgt pas bij de eerste echte, door de zaak gescande aankoop een bonus.
-  if (r.m).last_stamp_at is null then
-    perform public.pasr_business_referral_award_internal(m.id,(r.b).id,(r.c).id);
-    select * into m from public.pasr_business_members where id=(r.m).id;
-  end if;
-  return public.pasr_business_scan_json(m, r.c, r.b, ev) || jsonb_build_object('stamps_added',actual,'campaign_multiplier',mult);
-end $$;
-        and (cfg->>'start') <= ((now() at time zone 'Europe/Amsterdam')::date)::text))
+        (cfg->>'start')::date <= (now() at time zone 'Europe/Amsterdam')::date)
      and (nullif(cfg->>'end','') is null or
-       ((cfg->>'end') ~ '^20[0-9]{2}-[01][0-9]-[0-3][0-9]
-  update public.pasr_business_members set stamps_count = least(stamps_count + actual, 1000), last_stamp_at = now(), updated_at = now()
-  where id = (r.m).id returning * into m;
-  insert into public.pasr_business_events (business_card_id, business_id, member_id, kind, amount, by_user, device, stamps_before, stamps_after)
-  values ((r.c).id, (r.b).id, m.id, 'stamp', actual, auth.uid(), nullif(left(trim(coalesce(p_device, '')), 80), ''), (r.m).stamps_count, m.stamps_count)
-  returning event_id into ev;
-  -- Een uitgenodigde klant krijgt pas bij de eerste echte, door de zaak gescande aankoop een bonus.
-  if (r.m).last_stamp_at is null then
-    perform public.pasr_business_referral_award_internal(m.id,(r.b).id,(r.c).id);
-    select * into m from public.pasr_business_members where id=(r.m).id;
-  end if;
-  return public.pasr_business_scan_json(m, r.c, r.b, ev) || jsonb_build_object('stamps_added',actual,'campaign_multiplier',mult);
-end $$;
-        and (cfg->>'end') >= ((now() at time zone 'Europe/Amsterdam')::date)::text))
+        (cfg->>'end')::date >= (now() at time zone 'Europe/Amsterdam')::date)
   then
     mult := greatest(1, least(3,coalesce((cfg->>'multiplier')::int,1)));
   end if;
-  -- max_per_scan beperkt hoeveel basisstempels personeel mag uitdelen.
-  -- Een door de eigenaar geactiveerde promotie mag die basislimiet overschrijden.
   if (r.m).stamps_count >= 1000 then
     raise exception 'Maximaal aantal stempels bereikt.' using errcode='22023';
   end if;
@@ -77,5 +48,3 @@ end $$;
   end if;
   return public.pasr_business_scan_json(m, r.c, r.b, ev) || jsonb_build_object('stamps_added',actual,'campaign_multiplier',mult);
 end $$;
-
--- CRITICAL: functie heeft dezelfde signature. CREATE OR REPLACE bewaart bestaande EXECUTE-grants.
