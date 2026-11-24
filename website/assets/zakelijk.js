@@ -404,6 +404,33 @@
     if (window.PasrPromoCodes) window.PasrPromoCodes.mount(panel, b, rpc);
     else panel.textContent = "Actiecodes kunnen niet worden geladen.";
   };
+  VIEWS.promotiemateriaal = async function(panel,b) {
+    panel.innerHTML=panelTitle("Promotiemateriaal","Kies een bestaande stempelkaart, kortingscoupon of actiecode. Download PNG's of een complete ZIP.")+
+      '<section class="pz2-panel"><label class="pz2-field">Actie<select id="zkPromoProduct"><option value="">Producten laden…</option></select></label>'+
+      '<p id="zkPromoStatus" role="status"></p><div id="zkPromoHub"></div></section>';
+    var picker=$("#zkPromoProduct"),status=$("#zkPromoStatus"),target=$("#zkPromoHub"),products=[];
+    (b.cards||[]).forEach(function(c){products.push({kind:"Stempelkaart",title:c.name,raw:Object.assign({},c,{business:b.name})});});
+    var responses=await Promise.allSettled([
+      rpc("pasr_business_coupon_list",{p_business:b.id},true),
+      rpc("pasr_business_promo_list",{p_business:b.id},true)
+    ]);
+    if(responses[0].status==="fulfilled")responses[0].value.forEach(function(c){
+      products.push({kind:"Kortingscoupon",title:c.title,raw:Object.assign({},c,{kind:"coupon",business:b.name,color:"#6A5CFF"})});
+    });else status.textContent="Kortingscoupons konden niet worden geladen. ";
+    if(responses[1].status==="fulfilled")responses[1].value.forEach(function(c){
+      products.push({kind:"Actiecode",title:c.title+" · "+c.code,raw:Object.assign({},c,{kind:"code",business:b.name,color:"#6A5CFF"})});
+    });else status.textContent+="Actiecodes konden niet worden geladen.";
+    picker.innerHTML='<option value="">Kies een actie</option>'+products.map(function(p,i){
+      return '<option value="'+i+'">'+esc(p.kind)+' · '+esc(p.title)+'</option>';
+    }).join("");
+    picker.addEventListener("change",function(){
+      target.innerHTML="";
+      if(picker.value==="")return;
+      var p=products[Number(picker.value)];
+      if(window.PasrPromo)window.PasrPromo.mount(target,p.raw);
+      else target.textContent="Generator kon niet worden geladen.";
+    });
+  };
   VIEWS.kortingsbonnen = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.coupons(panel, b, rpc);
     else panel.textContent = "Kortingsbonnen zijn tijdelijk niet beschikbaar.";
@@ -427,7 +454,8 @@
       '<div class="zd-kpis" id="ovKpi">' + ["Stempels", "Beloningen", "Nieuwe leden", "Leden"].map(function (t, i) { return '<div class="zd-kpi k' + i + '"><small>' + t + "</small><b>–</b></div>"; }).join("") + "</div>" +
       '<div class="zd-insights" id="ovChart"><p class="zk-empty">Laden…</p></div>' +
       '<div class="zd-two"><div class="zk-panel" id="ovCards"></div><div class="zk-panel" id="ovLog"><h3>Logboek</h3><p class="zk-empty">Laden…</p></div></div>' +
-      '<section class="pz2-panel" id="pz2Insights"><h3>Klantenbinding en kortingsbonnen</h3><p>Inzichten laden…</p></section>';
+      '<section class="pz2-panel" id="pz2Insights"><h3>Klantenbinding en kortingsbonnen</h3><p>Inzichten laden…</p></section>' +
+      '<section class="pz2-panel"><h3>Overzicht zakelijke producten</h3><div id="ovBusinessProducts">Laden…</div></section>';
     var cards = b.cards || [];
     $("#ovCards").innerHTML = "<h3>Leden per kaart</h3>" + (cards.length ? '<ul class="zd-list">' + cards.map(function (c) {
       return '<li><button type="button" data-card="' + esc(c.id) + '"><span class="dot" style="background:' + esc(c.color) + '"></span><span class="t"><b>' + esc(c.name) + "</b><small>" + (c.published ? "Online" : "Concept") + " · " + plural(c.stamps || 0, "stempel", "stempels") + "</small></span><span class=\"n\">" + (c.members || 0) + '<small>leden</small></span>' + ICON.chevron + "</button></li>";
@@ -437,6 +465,21 @@
     });
     var nb = $("#ovNew"); if (nb) nb.addEventListener("click", function () { go("kaarten"); });
     drawInsights(b);
+    Promise.allSettled([
+      rpc("pasr_business_coupon_list",{p_business:b.id},true),
+      rpc("pasr_business_promo_list",{p_business:b.id},true)
+    ]).then(function(results) {
+      var el=$("#ovBusinessProducts");if(!el)return;
+      var coupons=results[0].status==="fulfilled"?results[0].value:null;
+      var codes=results[1].status==="fulfilled"?results[1].value:null;
+      var now=Date.now();
+      var activeCoupons=coupons?coupons.filter(function(x){return x.public&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now;}):null;
+      var activeCodes=codes?codes.filter(function(x){return x.active&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now&&Number(x.used_count)<Number(x.max_uses);}):null;
+      el.innerHTML='<div class="zd-kpis"><div class="zd-kpi"><small>Stempelkaarten online</small><b>'+cards.filter(function(x){return x.published;}).length+'</b></div>'+
+        '<div class="zd-kpi"><small>Actieve coupons</small><b>'+(activeCoupons?activeCoupons.length:"–")+'</b></div>'+
+        '<div class="zd-kpi"><small>Actieve codes</small><b>'+(activeCodes?activeCodes.length:"–")+'</b></div>'+
+        '<div class="zd-kpi"><small>Codegebruik totaal</small><b>'+(codes?codes.reduce(function(n,x){return n+Number(x.used_count||0);},0):"–")+'</b></div></div>';
+    });
     logView($("#ovLog"), b, 8, true);
     rpc("pasr_business_loyalty_insights",{p_business:b.id},true).then(function(metrics){
       var box=$("#pz2Insights");
