@@ -198,8 +198,8 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pasr Zakelijk bewaart gemaakte promotieafbeeldingen in je Foto’s-bibliotheek.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr Zakelijk gebruikt Face ID om de app te vergrendelen, zodat alleen jij stempels kunt zetten.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pasr Zakelijk bewaart gemaakte promotieafbeeldingen in je Foto’s-bibliotheek.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -238,8 +238,8 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pasr Zakelijk bewaart gemaakte promotieafbeeldingen in je Foto’s-bibliotheek.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr Zakelijk gebruikt Face ID om de app te vergrendelen, zodat alleen jij stempels kunt zetten.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pasr Zakelijk bewaart gemaakte promotieafbeeldingen in je Foto’s-bibliotheek.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
