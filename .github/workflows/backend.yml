@@ -51,6 +51,15 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/q.json)
           head -c 600 /tmp/r.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Schema failed (HTTP $code)"; exit 1; }
+      - name: Tijdelijke stempelacties (veilige multipliertechniek)
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/loyalty-campaign.sql").read()}))' > /tmp/campaign.json
+          code=$(curl -s -o /tmp/campaign-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/campaign.json)
+          head -c 500 /tmp/campaign-result.txt; echo
+          [ "$code" -lt 300 ] || { echo "::error::Campaign engine failed HTTP $code"; exit 1; }
       - name: Toestemming en automatische terugkomherinneringen
         if: steps.check.outputs.skip != '1'
         run: |
