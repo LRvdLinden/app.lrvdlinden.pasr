@@ -136,6 +136,13 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     /// Bij het opstarten (ook als iOS Pasr op de achtergrond start na een verplaatsing): weer meeluisteren.
     func resume() {
         updateBackgroundWatching()
+        // Na een appstart (ook door iOS op de achtergrond) opnieuw de status van
+        // bestaande regio's opvragen: binnen een al actieve regio komt geen entry-event.
+        if Reminders.nearbyEnabled, hasAlways {
+            for region in manager.monitoredRegions where region.identifier.hasPrefix(Self.regionPrefix) {
+                manager.requestState(for: region)
+            }
+        }
         Task { await removeLegacyNotifications() }
     }
 
@@ -315,6 +322,9 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
                 region.notifyOnEntry = true
                 region.notifyOnExit = false
                 manager.startMonitoring(for: region)
+                // Een nieuw bewaakt gebied geeft niet vanzelf 'didEnterRegion' als je
+                // er al binnen staat. Vraag de actuele status expliciet op.
+                manager.requestState(for: region)
             }
         }
         watched = kept
@@ -612,6 +622,11 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         guard region.identifier.hasPrefix("pasr.nearby.") else { return }
+        Task { @MainActor in self.startCheck() }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didDetermineState state: CLRegionState, for region: CLRegion) {
+        guard state == .inside, region.identifier.hasPrefix("pasr.nearby.") else { return }
         Task { @MainActor in self.startCheck() }
     }
 
