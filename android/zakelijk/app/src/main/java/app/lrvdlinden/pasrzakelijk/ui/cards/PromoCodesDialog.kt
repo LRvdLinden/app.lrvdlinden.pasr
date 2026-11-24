@@ -110,7 +110,7 @@ fun PromoCodesDialog(businessId: String, onClose: () -> Unit) {
                 }) { Text(if(editing==null)"Actiecode aanmaken" else "Wijzigingen opslaan") }
                 Text("Bestaande actiecodes")
                 rows.forEach { row ->
-                    BusinessOfferCard("Pasr ondernemer",row,true)
+                    BusinessOfferCard(row.optString("business","Ondernemer"),row,true)
                     Text("Ondernemerscode: "+row.optString("code")+" · "+
                         row.optInt("used_count")+"/"+row.optInt("max_uses")+" gebruikt")
                     Row {
