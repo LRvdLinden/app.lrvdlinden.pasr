@@ -44,7 +44,7 @@ struct WalletView: View {
     enum Sheet: Identifiable {
         case add, importScreenshots, settings, edit(Card), share(Card), history(Card), spend(Card, String?), info(Card)
         /// Bonnetjes: alle bonnen (eventueel met een zoekterm), of één bon.
-        case receipts(String), receipt(Receipt), coupons
+        case receipts(String), receipt(Receipt), coupons, benefits
         /// "Laatst gebruikt": alles, of het bedrag bij één keer.
         case uses(Card), useAmount(Card, UUID)
         var id: String {
@@ -52,6 +52,7 @@ struct WalletView: View {
             case .uses(let card): "uses-\(card.id)"
             case .receipts: "receipts"
             case .coupons: "coupons"
+            case .benefits: "benefits"
             case .receipt(let r): "receipt-\(r.id)"
             case .useAmount(let card, let use): "useAmount-\(card.id)-\(use)"
             case .info(let card): "info-\(card.id)"
@@ -136,6 +137,7 @@ struct WalletView: View {
             case .useAmount(let card, let use): UseAmountSheet(card: card, useID: use, offersReceipt: true)
             case .receipts(let query): ReceiptsView(initialQuery: query)
             case .coupons: PasrCouponsView()
+            case .benefits: PasrBenefitsView()
             case .receipt(let r): ReceiptDetailView(receipt: r)
             case .info(let card):
                 CardInfoSheet(card: card) {
@@ -576,6 +578,7 @@ struct WalletView: View {
         ToolbarItem(placement: .primaryAction) {
             if selectedID == nil {
                 Button { sheet = .coupons } label: { Label("Kortingsbonnen", systemImage: "ticket") }
+                Button { sheet = .benefits } label: { Label("Mijn voordelen", systemImage: "gift") }
             }
         }
         ToolbarItem(placement: .primaryAction) {

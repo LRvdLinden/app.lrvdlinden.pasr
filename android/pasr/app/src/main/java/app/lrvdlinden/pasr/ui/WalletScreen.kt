@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.ConfirmationNumber
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Search
@@ -116,6 +117,7 @@ fun WalletScreen() {
                             }
                         }
                     }
+                    IconButton({ nav.push(Screen.Benefits) }) { Icon(Icons.Outlined.CardGiftcard, "Mijn voordelen") }
                     IconButton({ nav.push(Screen.Coupons) }) { Icon(Icons.Outlined.ConfirmationNumber, "Kortingsbonnen") }
                     IconButton({ nav.push(Screen.Receipts()) }) { Icon(Icons.Outlined.Receipt, "Bonnetjes") }
                     IconButton({ nav.push(Screen.Settings) }) { Icon(Icons.Outlined.Settings, "Instellingen") }

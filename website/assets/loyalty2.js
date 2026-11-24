@@ -156,19 +156,73 @@
        '<p>Er zijn momenteel geen beschikbare kortingsbonnen.</p>';
      root.querySelectorAll("[data-coupon]").forEach(function(button){button.addEventListener("click",function(){claim(button.dataset.coupon);});});
    }
+   // Bij webgebruik een normale Pasr-accountlogin; native apps gebruiken hun bestaande sessie.
+   var couponSessionKey="pasr.coupons.session";
+   var pendingCoupon=null;
+   function couponSession(){try{
+     var s=JSON.parse(sessionStorage.getItem(couponSessionKey)||"null");
+     if(s&&s.token&&s.until>Date.now()+60000)return s;
+   }catch(e){}return null;}
+   function loginForCoupon(id){
+     pendingCoupon=id;
+     var modal=el("div","pz2-dialog");
+     modal.innerHTML='<form class="pz2-panel pz2-form" aria-label="Log in bij Pasr" id="pz2Login">'+
+       '<h2>Log in bij Pasr</h2><p>Om een persoonlijke kortingsbon te bewaren, heb je een gratis Pasr-account nodig.</p>'+
+       '<label class="pz2-field">E-mailadres<input type="email" name="email" required autocomplete="email"></label>'+
+       '<label class="pz2-field">Wachtwoord<input type="password" name="password" required autocomplete="current-password"></label>'+
+       '<p role="status" class="pz2-notice"></p><button class="zk-btn" type="submit">Inloggen en bewaren</button>'+
+       '<button class="zk-btn ghost" type="button" data-close>Annuleren</button><a href="/account/">Nog geen account?</a></form>';
+     document.body.appendChild(modal);
+     modal.querySelector("[data-close]").addEventListener("click",function(){modal.remove();});
+     $("#pz2Login",modal).addEventListener("submit",async function(e){
+       e.preventDefault();var form=this,button=form.querySelector('button[type=submit]');button.disabled=true;
+       try{
+         var res=await fetch(cfg.url.replace(/\/$/,"")+"/auth/v1/token?grant_type=password",{
+           method:"POST",headers:{"Content-Type":"application/json","apikey":cfg.key},
+           body:JSON.stringify({email:form.elements.email.value.trim(),password:form.elements.password.value})
+         });
+         var data=await res.json();if(!res.ok||!data.access_token)throw Error("Inloggen mislukt. Controleer je e-mailadres en wachtwoord.");
+         sessionStorage.setItem(couponSessionKey,JSON.stringify({token:data.access_token,until:Date.now()+(data.expires_in||3600)*1000}));
+         modal.remove();if(id)claim(id);else myCoupons();
+       }catch(e){notice(modal,e.message||"Inloggen mislukt.",false);button.disabled=false;}
+     });
+   }
+   function showClaim(c,customerTitle){
+     var modal=el("div","pz2-dialog");
+     modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Jouw kortingsbon" class="pz2-panel"><h2>Jouw kortingsbon</h2>'+
+       '<p>'+escape(customerTitle||"Toon deze unieke code aan de ondernemer.")+'</p>'+
+       '<div class="pz2-qr" id="pz2ClaimQR"></div>'+
+       '<p class="pz2-code">'+escape(c.code)+'</p><button class="zk-btn" type="button">Sluiten</button></div>';
+     document.body.appendChild(modal);
+     if(typeof qrcode==="function"){var qr=qrcode(0,"M");qr.addData(c.code);qr.make();
+       $("#pz2ClaimQR",modal).innerHTML=qr.createSvgTag({cellSize:5,margin:2,scalable:true});}
+     modal.querySelector("button").addEventListener("click",function(){modal.remove();});
+   }
    async function claim(id){
-     // Geen anonieme claim of misleidende demo-QR: eerst een geauthenticeerde Pasr-sessie.
-     var token=null;
-     try{var raw=localStorage.getItem("pasr.zakelijk.session");var saved=JSON.parse(raw||"null");if(saved&&saved.access_token&&saved.expires_at>Date.now()+60000)token=saved.access_token;}catch(e){}
-     if(!token){alert("Log in met je Pasr-account om een unieke kortingsbon te bewaren. In de Pasr-app komt hier een rechtstreekse accountkoppeling.");return;}
-     try{var c=await rpcPublic("pasr_business_coupon_claim",{p_coupon:id},token);
-       var modal=el("div","pz2-dialog");modal.innerHTML='<div role="dialog" aria-modal="true" class="pz2-panel"><h2>Jouw unieke kortingsbon</h2>'+
-         '<p>Toon deze code bij de ondernemer. Bewaar hem zorgvuldig.</p><div class="pz2-qr" id="pz2ClaimQR"></div>'+
-         '<p class="pz2-code">'+escape(c.code)+'</p><button class="zk-btn" type="button">Sluiten</button></div>';
-       document.body.appendChild(modal);if(typeof qrcode==="function"){var qr=qrcode(0,"M");qr.addData(c.code);qr.make();$("#pz2ClaimQR",modal).innerHTML=qr.createSvgTag({cellSize:5,margin:2,scalable:true});}
-       modal.querySelector("button").addEventListener("click",function(){modal.remove();});
+     var sess=couponSession();if(!sess){loginForCoupon(id);return;}
+     try{var c=await rpcPublic("pasr_business_coupon_claim",{p_coupon:id},sess.token);
+       showClaim(c,"Toon de unieke QR-code bij de kassa. Alleen de ondernemer kan de bon verzilveren.");
      }catch(e){alert(e.message||"Bewaren mislukt.");}
    }
+   async function myCoupons(){
+     var sess=couponSession();if(!sess){loginForCoupon(null);return;}
+     try{
+       var list=await rpcPublic("pasr_business_coupon_mine",{},sess.token);
+       var modal=el("div","pz2-dialog");
+       modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Mijn kortingsbonnen" class="pz2-panel"><h2>Mijn kortingsbonnen</h2>'+
+         '<div id="pz2Mine"></div><button class="zk-btn ghost" type="button" data-close>Sluiten</button></div>';
+       document.body.appendChild(modal);
+       $("#pz2Mine",modal).innerHTML=list.length?list.map(function(c,i){return '<button type="button" class="zk-btn ghost" data-idx="'+i+'">'+
+         escape(c.business)+" · "+escape(c.title)+(c.redeemed?" (Gebruikt)":"")+'</button>';}).join(""):'<p>Je hebt nog geen kortingsbonnen bewaard.</p>';
+       modal.querySelectorAll("[data-idx]").forEach(function(b){b.addEventListener("click",function(){
+         var c=list[Number(b.dataset.idx)];if(c.redeemed)return;modal.remove();showClaim(c,c.title);
+       });});
+       modal.querySelector("[data-close]").addEventListener("click",function(){modal.remove();});
+     }catch(e){alert(e.message||"Kon bonnen niet ophalen.");}
+   }
+   var mineButton=document.createElement("button");mineButton.className="zk-btn ghost";
+   mineButton.textContent="Mijn kortingsbonnen";mineButton.type="button";
+   $(".pz2-controls",root).appendChild(mineButton);mineButton.addEventListener("click",myCoupons);
    $("#pz2Search",root).addEventListener("input",show);
    rpcPublic("pasr_business_coupon_list",{}).then(function(r){rows=Array.isArray(r)?r:[];show();})
      .catch(function(){$("#pz2PublicList",root).textContent="De aanbiedingen konden niet worden opgehaald.";});
