@@ -42,18 +42,22 @@
          section("12. Tijdelijke stempelacties","Extra stempels, alleen binnen de ingestelde periode.",
            toggle("Tijdelijke actie","campaign",cfg.campaign&&cfg.campaign.enabled,"Bijvoorbeeld dubbele stempels op dinsdag.")+
            '<div class="pz2-fields">'+field("Vermenigvuldiger (1–3)","multiplier",(cfg.campaign&&cfg.campaign.multiplier)||2,"number")+
-           field("Dag (0=zo t/m 6=za)","day",(cfg.campaign&&cfg.campaign.weekday)==null?2:cfg.campaign.weekday,"number")+'</div>')+
+           field("Actiedag (-1=elke dag, 0=zo t/m 6=za)","day",(cfg.campaign&&cfg.campaign.weekday)==null?2:cfg.campaign.weekday,"number")+
+           field("Startdatum","campaign_start",(cfg.campaign&&cfg.campaign.start)||new Date().toLocaleDateString("en-CA"),"date")+
+           field("Einddatum","campaign_end",(cfg.campaign&&cfg.campaign.end)||new Date(Date.now()+30*86400000).toLocaleDateString("en-CA"),"date")+'</div>')+
          section("13. Meerdere vestigingen","Alle vestigingen delen dezelfde kaart, maar rapportages blijven per vestiging.",
            toggle("Vestigingen beheren","locations",cfg.locations&&cfg.locations.enabled,"Bewaar hier de adresnamen; het uitgeven van stempels blijft aan bevoegd personeel.")+
            '<label class="pz2-field">Vestigingen (één per regel)<textarea name="locations_list" rows="3">'+escape(((cfg.locations&&cfg.locations.names)||[]).join("\n"))+'</textarea></label>')+
          section("14. VIP-niveaus","Brons, Zilver en Goud worden bepaald aan de hand van bezoeken.",
            toggle("VIP-niveaus","vip",cfg.vip&&cfg.vip.enabled,"Ondernemer bepaalt grenzen per kaart.")+
-           '<div class="pz2-fields">'+field("Zilver vanaf bezoeken","silver",(cfg.vip&&cfg.vip.silver)||10,"number")+field("Goud vanaf bezoeken","gold",(cfg.vip&&cfg.vip.gold)||25,"number")+'</div>')+
+           '<div class="pz2-fields">'+field("Zilver vanaf bezoeken","silver",(cfg.vip&&cfg.vip.silver)||10,"number")+field("Goud vanaf bezoeken","gold",(cfg.vip&&cfg.vip.gold)||25,"number")+'</div>'+
+           '<div class="pz2-fields">'+field("Voordeel bij zilver (optioneel)","vip_silver_benefit",(cfg.vip&&cfg.vip.silver_benefit)||"")+
+           field("Voordeel bij goud (optioneel)","vip_gold_benefit",(cfg.vip&&cfg.vip.gold_benefit)||"")+'</div>')+
          section("15. Marketingkalender","Plan een campagne en gebruik het bestaande promotiemateriaal voor socialmediabanners.",
            toggle("Marketingcampagne","marketing",cfg.marketing&&cfg.marketing.enabled,"Een conceptactie met begin- en einddatum.")+
            field("Campagnenaam","marketing_name",(cfg.marketing&&cfg.marketing.name)||""))+
          section("18. Winkelstraatacties","Deelnemende ondernemers moeten ieder afzonderlijk akkoord geven.",
-           toggle("Interesse in gezamenlijke actie","community",cfg.community&&cfg.community.enabled,"Geen klantgegevens worden automatisch gedeeld.")+
+           toggle("Interesse in gezamenlijke actie","community",cfg.community&&cfg.community.enabled,"Dit is een voorkeur. Maak een echte actie aan op het tabblad Samenwerkingen.")+
            field("Naam van de gezamenlijke actie","community_name",(cfg.community&&cfg.community.name)||""))+
          '<p class="pz2-notice" role="status"></p><button class="zk-btn" type="submit">Instellingen van deze kaart opslaan</button></form>';
        var form=$("#pz2Form",slot);
@@ -72,20 +76,25 @@
            rewards:rewards,
            retention:{enabled:yes("retention"),days:num("retention_days",30)},
            referral:{enabled:yes("referral"),bonus:num("referral_bonus",1)},
-           campaign:{enabled:yes("campaign"),multiplier:num("multiplier",2),weekday:num("day",2)},
+           campaign:{enabled:yes("campaign"),multiplier:num("multiplier",2),weekday:num("day",2),
+             start:String(f.get("campaign_start")||""),end:String(f.get("campaign_end")||"")},
            locations:{enabled:yes("locations"),names:String(f.get("locations_list")||"").split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean).slice(0,20)},
-           vip:{enabled:yes("vip"),silver:num("silver",10),gold:num("gold",25)},
+           vip:{enabled:yes("vip"),silver:num("silver",10),gold:num("gold",25),
+             silver_benefit:String(f.get("vip_silver_benefit")||"").trim().slice(0,120),
+             gold_benefit:String(f.get("vip_gold_benefit")||"").trim().slice(0,120)},
            marketing:{enabled:yes("marketing"),name:String(f.get("marketing_name")||"").slice(0,80)},
            community:{enabled:yes("community"),name:String(f.get("community_name")||"").slice(0,80)}
          };
          if(settings.referral.bonus<1||settings.referral.bonus>3||settings.retention.days<7||settings.retention.days>365||
-            settings.campaign.multiplier<1||settings.campaign.multiplier>3||settings.campaign.weekday<0||settings.campaign.weekday>6||
+            settings.campaign.multiplier<1||settings.campaign.multiplier>3||settings.campaign.weekday<-1||settings.campaign.weekday>6||
+            (settings.campaign.enabled && (!/^20\d{2}-\d{2}-\d{2}$/.test(settings.campaign.start)||
+             !/^20\d{2}-\d{2}-\d{2}$/.test(settings.campaign.end)||settings.campaign.end<settings.campaign.start))||
             settings.vip.silver<1||settings.vip.gold<=settings.vip.silver){
             notice(slot,"Controleer bonus, dagen, vermenigvuldiger en VIP-grenzen.",false);return;
          }
          var button=form.querySelector('button[type="submit"]');button.disabled=true;
          try{await rpc("pasr_business_program",{p_card:c.id,p_settings:settings},true);
-           notice(slot,"Instellingen opgeslagen. Optionele serverregels kunnen pas worden uitgevoerd zodra de campagneverwerking actief is.",true);
+           notice(slot,"Instellingen van deze kaart opgeslagen.",true);
          }catch(err){notice(slot,err.message||"Opslaan mislukt.",false);}finally{button.disabled=false;}
        });
      }catch(e){slot.textContent="Kon instellingen niet laden: "+(e.message||"onbekend");}
