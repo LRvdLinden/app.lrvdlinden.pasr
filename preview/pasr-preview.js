@@ -1,4 +1,4 @@
-/* Only loaded by Pasr /test/ previews. Existing production animations continue unchanged. */
+/* Shared animated website experience, without altering the existing production animations. */
 (() => {
   "use strict";
   const state = { stampCount: 6 };
