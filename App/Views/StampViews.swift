@@ -64,11 +64,14 @@ struct StampControls: View {
                     .pasrGlassButton()
                 }
                 if (retentionAvailable || retentionSubscribed) && AccountService.shared.isSignedIn {
-                    Toggle("Terugkomherinnering na \(retentionDays) dagen", isOn: $retentionSubscribed)
-                        .font(.footnote)
-                        .onChange(of: retentionSubscribed) { _, enabled in
-                            Task { await saveRetention(enabled) }
-                        }
+                    Button {
+                        Task { await saveRetention(!retentionSubscribed) }
+                    } label: {
+                        Label("Terugkomherinnering na \(retentionDays) dagen: " +
+                              (retentionSubscribed ? "Aan" : "Uit"),
+                              systemImage: retentionSubscribed ? "bell.badge.fill" : "bell.slash")
+                            .font(.footnote)
+                    }.pasrGlassButton()
                 }
                 if let retentionError {
                     Text(retentionError).font(.caption).foregroundStyle(Brand.coral)
@@ -131,9 +134,9 @@ struct StampControls: View {
         do {
             _ = try await AccountService.shared.rpc("pasr_business_retention_consent",
                 body: ["p_code": code, "p_enabled": enabled])
+            retentionSubscribed = enabled
             retentionError = nil
         } catch {
-            retentionSubscribed = !enabled
             retentionError = error.localizedDescription
         }
     }
