@@ -12,15 +12,25 @@ SECTIONS = (
 )
 
 def site_nav(active="kaarten"):
+    """Shared consumer navigation; highlight the active destination."""
+    links = (
+        ("kaarten", "/kaarten/", "Klantenkaarten"),
+        ("cadeaubon", "/cadeaubon/", "Cadeaukaarten"),
+        ("stempelkaarten", "/stempelkaarten/", "Stempelkaarten"),
+        ("kortingsbonnen", "/kortingsbonnen/", "Kortingsbonnen"),
+        ("saldo-checken", "/saldo-checken/", "Saldo checken"),
+    )
+    items = ''.join(
+        f'<li><a href="{url}"' +
+        (' aria-current="page"' if active == key else '') +
+        f'>{escape(label)}</a></li>'
+        for key, url, label in links
+    )
     return f'''<header class="wrap nav ch-site-nav">
-  <a class="brand" href="/"><img src="/assets/icon.png" width="36" height="36" alt=""><span>pasr</span></a>
+  <a class="brand" href="/" aria-label="Pasr homepage"><img src="/assets/icon.png" width="36" height="36" alt=""><span>pasr</span></a>
   <nav aria-label="Hoofdmenu"><ul>
-    <li><a href="/kaarten/">Klantenkaarten</a></li>
-    <li><a href="/cadeaubon/">Cadeaukaarten</a></li>
-    <li><a href="/stempelkaarten/">Stempelkaarten</a></li>
-    <li><a href="/kortingsbonnen/">Kortingsbonnen</a></li>
-    <li><a href="/saldo-checken/">Saldo checken</a></li>
-    <li><a href="/zakelijk/">Zakelijk</a></li>
+    {items}
+    <li><a class="ch-business-link" href="/zakelijk/">Voor ondernemers</a></li>
   </ul></nav>
 </header>'''
 
