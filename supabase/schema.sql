@@ -4428,3 +4428,97 @@ begin
 end $$;
 revoke all on function public.pasr_business_coupon_check(text) from public,anon;
 grant execute on function public.pasr_business_coupon_check(text) to authenticated;
+
+
+-- Marketingkalender: echte geplande acties, niet alleen een tekstveld in de instellingen.
+-- Alleen de eigenaar kan campagnes lezen of wijzigen; publicatie stuurt geen berichten zonder toestemming.
+create table if not exists public.pasr_business_marketing_events(
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.pasr_businesses(id) on delete cascade,
+  card_id uuid references public.pasr_business_cards(id) on delete set null,
+  title text not null check(char_length(title) between 3 and 100),
+  details text not null default '' check(char_length(details)<=600),
+  channel text not null default 'social' check(channel in ('social','winkel','web','email')),
+  starts_on date not null,
+  ends_on date not null,
+  status text not null default 'planned' check(status in ('draft','planned','completed')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check(ends_on >= starts_on and ends_on <= starts_on + 366)
+);
+create index if not exists pasr_marketing_business_dates on public.pasr_business_marketing_events(business_id,starts_on);
+alter table public.pasr_business_marketing_events enable row level security;
+revoke all on public.pasr_business_marketing_events from public,anon,authenticated;
+
+create or replace function public.pasr_business_marketing_list(p_business uuid)
+returns jsonb language plpgsql stable security definer set search_path=public as $$
+begin
+  if not exists(select 1 from public.pasr_businesses where id=p_business and owner=auth.uid()) then
+    raise exception 'Alleen de eigenaar mag de marketingkalender zien.' using errcode='42501';
+  end if;
+  return coalesce((select jsonb_agg(jsonb_build_object(
+     'id',e.id,'card_id',e.card_id,'card_name',c.name,'title',e.title,'details',e.details,
+     'channel',e.channel,'starts_on',e.starts_on,'ends_on',e.ends_on,'status',e.status)
+     order by e.starts_on,e.created_at)
+    from public.pasr_business_marketing_events e
+    left join public.pasr_business_cards c on c.id=e.card_id
+    where e.business_id=p_business),'[]'::jsonb);
+end $$;
+
+create or replace function public.pasr_business_marketing_save(p_event jsonb)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare b uuid; cid uuid; eid uuid; t text; d text; ch text; st text; sd date; ed date;
+begin
+  if auth.uid() is null or jsonb_typeof(p_event)<>'object' or octet_length(p_event::text)>3000 then
+    raise exception 'Ongeldige campagne.' using errcode='22023';
+  end if;
+  b:=(p_event->>'business_id')::uuid;
+  if not exists(select 1 from public.pasr_businesses where id=b and owner=auth.uid() and status='approved') then
+    raise exception 'Alleen een goedgekeurde eigenaar kan campagnes maken.' using errcode='42501';
+  end if;
+  cid:=nullif(p_event->>'card_id','')::uuid;
+  if cid is not null and not exists(select 1 from public.pasr_business_cards where id=cid and business_id=b) then
+    raise exception 'De geselecteerde kaart is niet van deze zaak.' using errcode='42501';
+  end if;
+  eid:=nullif(p_event->>'id','')::uuid;
+  t:=trim(coalesce(p_event->>'title',''));
+  d:=trim(coalesce(p_event->>'details',''));
+  ch:=coalesce(p_event->>'channel','social');
+  st:=coalesce(p_event->>'status','planned');
+  sd:=(p_event->>'starts_on')::date;ed:=(p_event->>'ends_on')::date;
+  if length(t) not between 3 and 100 or length(d)>600 or ch not in ('social','winkel','web','email')
+     or st not in ('draft','planned','completed') or sd is null or ed is null
+     or ed<sd or ed>sd+366 then
+     raise exception 'Controleer de campagnevelden en datums.' using errcode='22023';
+  end if;
+  if eid is null then
+    if (select count(*) from public.pasr_business_marketing_events where business_id=b)>=200 then
+      raise exception 'Maximaal 200 geplande campagnes per zaak.' using errcode='22023';
+    end if;
+    insert into public.pasr_business_marketing_events(business_id,card_id,title,details,channel,starts_on,ends_on,status)
+    values(b,cid,t,d,ch,sd,ed,st) returning id into eid;
+  else
+    update public.pasr_business_marketing_events
+      set card_id=cid,title=t,details=d,channel=ch,starts_on=sd,ends_on=ed,status=st,updated_at=now()
+      where id=eid and business_id=b returning id into eid;
+    if eid is null then raise exception 'Campagne niet gevonden.' using errcode='P0002'; end if;
+  end if;
+  return jsonb_build_object('id',eid,'ok',true);
+end $$;
+
+create or replace function public.pasr_business_marketing_delete(p_event uuid)
+returns boolean language plpgsql security definer set search_path=public as $$
+declare removed uuid;
+begin
+  delete from public.pasr_business_marketing_events e
+   where e.id=p_event and exists(select 1 from public.pasr_businesses b where b.id=e.business_id and b.owner=auth.uid())
+  returning e.id into removed;
+  return removed is not null;
+end $$;
+
+revoke all on function public.pasr_business_marketing_list(uuid),
+ public.pasr_business_marketing_save(jsonb),public.pasr_business_marketing_delete(uuid)
+ from public,anon;
+grant execute on function public.pasr_business_marketing_list(uuid),
+ public.pasr_business_marketing_save(jsonb),public.pasr_business_marketing_delete(uuid)
+ to authenticated;

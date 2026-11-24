@@ -164,6 +164,7 @@
     { id: "acties", label: "Acties en beloningen", short: "Acties", icon: "gift", owner: true },
     { id: "kortingsbonnen", label: "Kortingsbonnen", short: "Bonnen", icon: "card", owner: true },
     { id: "inzichten", label: "Bedrijfsinzichten", short: "Inzichten", icon: "chart", owner: true },
+    { id: "marketing", label: "Marketingkalender", short: "Planning", icon: "chart", owner: true },
     { id: "scannen", label: "Scannen", icon: "scan" },
     { id: "medewerkers", label: "Medewerkers", short: "Team", icon: "users", owner: true },
     { id: "instellingen", label: "Instellingen", icon: "gear", owner: true },
@@ -378,6 +379,10 @@
   VIEWS.acties = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.settings(panel, b, rpc);
     else panel.textContent = "De instellingen zijn tijdelijk niet beschikbaar.";
+  };
+  VIEWS.marketing = function (panel, b) {
+    if (window.PasrLoyalty2) window.PasrLoyalty2.marketing(panel, b, rpc);
+    else panel.textContent = "De marketingkalender is tijdelijk niet beschikbaar.";
   };
   VIEWS.inzichten = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.insights(panel, b, rpc);

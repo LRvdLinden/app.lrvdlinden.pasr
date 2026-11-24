@@ -249,5 +249,56 @@
        escape(item[2])+'</small></article>';}).join("");
    }catch(e){$("#pz2Stats",root).textContent="De inzichten konden niet worden geladen: "+(e.message||"onbekend");}
  }
- window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,publicPage:publicPage};
+
+ async function marketingView(root,b,rpc){
+  var cards=b.cards||[];
+  root.innerHTML='<div class="zd-ptitle"><div><h2>Marketingkalender</h2><p class="zd-sub">Plan acties per kaart en maak er promotiemateriaal bij. Berichten worden niet automatisch verzonden.</p></div></div>'+
+   '<div class="pz2-grid"><section class="pz2-panel"><h3>Campagne plannen</h3><form class="pz2-form" id="pz2Marketing">'+
+   field("Campagnenaam","title","")+
+   '<label class="pz2-field">Stempelkaart <select name="card_id"><option value="">Algemene actie</option>'+
+   cards.map(function(c){return '<option value="'+escape(c.id)+'">'+escape(c.name)+'</option>';}).join("")+'</select></label>'+
+   '<div class="pz2-fields">'+field("Start","starts_on",new Date().toISOString().slice(0,10),"date")+
+   field("Einde","ends_on",new Date(Date.now()+7*86400000).toISOString().slice(0,10),"date")+'</div>'+
+   '<label class="pz2-field">Kanaal <select name="channel"><option value="social">Social</option><option value="winkel">Winkel</option><option value="web">Website</option><option value="email">E-mail (handmatig)</option></select></label>'+
+   '<label class="pz2-field">Status <select name="status"><option value="draft">Concept</option><option value="planned" selected>Gepland</option><option value="completed">Afgerond</option></select></label>'+
+   '<label class="pz2-field">Omschrijving<textarea name="details" maxlength="600" rows="3"></textarea></label>'+
+   '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Campagne opslaan</button></form></section>'+
+   '<section class="pz2-panel"><h3>Mijn campagneplanning</h3><div id="pz2MarketingItems" aria-live="polite">Laden…</div></section></div>';
+  var form=$("#pz2Marketing",root),items=$("#pz2MarketingItems",root);
+  async function refresh(){
+   try{
+    var rows=await rpc("pasr_business_marketing_list",{p_business:b.id},true);
+    items.innerHTML=rows.length?rows.map(function(x){
+     var url=x.card_id?'/zakelijk/flyer/#'+encodeURIComponent(x.card_id):'';
+     return '<article class="pz2-planned"><span class="pz2-planned-date">'+escape(x.starts_on)+' – '+escape(x.ends_on)+'</span>'+
+      '<strong>'+escape(x.title)+'</strong><small>'+escape(x.card_name||"Algemene actie")+' · '+escape(x.channel)+' · '+escape(x.status)+'</small>'+
+      (x.details?'<p>'+escape(x.details)+'</p>':'')+
+      (url?'<a class="zk-btn ghost sm" href="'+url+'" target="_blank" rel="noopener">Promotiemateriaal maken</a>':'')+
+      '<button type="button" class="zk-btn ghost sm" data-remove="'+escape(x.id)+'">Verwijderen</button></article>';
+    }).join(""):'<p>Er zijn nog geen campagnes gepland.</p>';
+    items.querySelectorAll("[data-remove]").forEach(function(btn){btn.addEventListener("click",async function(){
+     if(!window.confirm("Deze campagne verwijderen?"))return;btn.disabled=true;
+     try{await rpc("pasr_business_marketing_delete",{p_event:btn.dataset.remove},true);refresh();}
+     catch(e){btn.disabled=false;alert(e.message||"Verwijderen mislukt.");}
+    });});
+   }catch(e){items.textContent="Kon de planning niet laden: "+(e.message||"onbekend");}
+  }
+  form.addEventListener("submit",async function(e){
+   e.preventDefault();var f=new FormData(form),btn=form.querySelector('button[type="submit"]');
+   if(String(f.get("title")||"").trim().length<3||f.get("ends_on")<f.get("starts_on")){
+    notice(root,"Controleer de titel en datums.",false);return;
+   }
+   btn.disabled=true;
+   try{
+    await rpc("pasr_business_marketing_save",{p_event:{
+     business_id:b.id,card_id:f.get("card_id")||null,title:f.get("title"),details:f.get("details"),
+     channel:f.get("channel"),status:f.get("status"),starts_on:f.get("starts_on"),ends_on:f.get("ends_on")
+    }},true);
+    notice(root,"Campagne opgeslagen.",true);form.elements.title.value="";form.elements.details.value="";refresh();
+   }catch(e){notice(root,e.message||"Opslaan mislukt.",false);}
+   finally{btn.disabled=false;}
+  });
+  refresh();
+ }
+ window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,publicPage:publicPage};
 })();

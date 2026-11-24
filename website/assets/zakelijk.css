@@ -719,3 +719,10 @@
   border-radius:20px;padding:22px;min-width:0}
 .pz2-stat strong{font:800 clamp(27px,4vw,38px)/1.05 var(--display);color:var(--iris-deep);font-variant-numeric:tabular-nums}
 .pz2-stat b{font-size:15px}.pz2-stat small{font-size:13px;line-height:1.5;color:var(--ink-2)}
+
+.pz2-planned{display:flex;flex-direction:column;gap:7px;padding:16px 0;border-bottom:1px solid var(--line)}
+.pz2-planned-date{font-size:13px;font-weight:700;color:var(--iris-deep)}
+.pz2-planned strong{font:750 17px var(--display);color:var(--ink)}
+.pz2-planned small{font-size:13px;color:var(--ink-2)}
+.pz2-planned p{margin:0;font-size:14px}
+.pz2-planned .zk-btn{align-self:flex-start}
