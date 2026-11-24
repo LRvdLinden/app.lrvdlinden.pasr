@@ -104,7 +104,7 @@ struct BusinessPromoCodesView: View {
     @MainActor private func load() async {
         do {
             let response = try await Account.shared.rpc("pasr_business_promo_list", ["p_business": business.id])
-            entries = response as? [[String: Any]] ?? []
+            entries = (response as? [[String: Any]] ?? []).filter { $0["deleted"] as? Bool != true }
         } catch { message = error.localizedDescription }
     }
 

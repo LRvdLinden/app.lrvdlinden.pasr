@@ -28,7 +28,7 @@ form.elements.ends_at.value=later.toISOString().slice(0,10);
 function money(v,type){return type==="percent"?v+"%":new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR"}).format(v);}
 async function refresh(){try{
 var rows=await rpc("pasr_business_promo_list",{p_business:b.id},true);
-allCodes=rows||[];
+allCodes=(rows||[]).filter(function(row){return !row.deleted;});
 var card=(b.cards||[]).find(function(c){return !!c.logo;})||{};
 var logo=card.logo&&/^[A-Za-z0-9+/=]+$/.test(card.logo)?
  '<img alt="Bedrijfslogo" src="data:image/'+(card.logo.indexOf("/9j/")===0?"jpeg":"png")+';base64,'+card.logo+'" style="width:44px;height:44px;object-fit:contain;background:white;border-radius:9px">':

@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -45,6 +47,8 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Eigen Pasr-scherm: de bon wordt pas uitgegeven na een server-side claim voor het account. */
@@ -59,8 +63,13 @@ fun CouponsScreen() {
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(true) }
 
-    suspend fun refresh() {
-        busy = true
+    var marked by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var removing by remember { mutableStateOf(false) }
+    val used = mine.filter { it.optBoolean("redeemed") }
+
+    suspend fun refresh(background: Boolean = false) {
+        if (removing) return
+        if (!background) busy = true
         try {
             val publicCoupons = (Api.publicRpc("pasr_business_coupon_list", JSONObject()) as? JSONArray)
                 ?.let { j -> (0 until j.length()).mapNotNull(j::optJSONObject) } ?: emptyList()
@@ -76,14 +85,44 @@ fun CouponsScreen() {
                     ?: emptyList()
                 coupons + promos
             } else emptyList()
-            error = null
+            marked = marked.intersect(mine.filter { it.optBoolean("redeemed") }.map { it.optString("id") }.toSet())
+            if (mine.none { !it.isNull("code") && it.optString("code") == openCode }) openCode = null
+            if (!background) error = null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            error = e.message ?: "De kortingsbonnen konden niet worden geladen."
-        }
-        busy = false
+            if (!background) error = e.message ?: "De kortingsbonnen konden niet worden geladen."
+        } finally { if (!background) busy = false }
     }
 
-    LaunchedEffect(Unit) { refresh() }
+    fun remove(items: List<JSONObject>) {
+        if (removing || items.isEmpty()) return
+        removing = true
+        scope.launch {
+            try {
+                val payload = JSONArray(items.map {
+                    JSONObject().put("id", it.optString("id"))
+                        .put("kind", if (it.optString("kind") == "code") "code" else "coupon")
+                })
+                Api.rpc("pasr_customer_hide_used_offers", JSONObject().put("p_items", payload))
+                val ids = items.map { it.optString("id") }.toSet()
+                mine = mine.filterNot { it.optString("id") in ids }
+                marked = marked - ids
+                error = null
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) { error = e.message ?: "Verwijderen mislukt." }
+            finally { removing = false }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        refresh()
+        while (true) {
+            delay(30_000)
+            if (!busy) refresh(background = true)
+        }
+    }
 
     Scaffold(topBar = {
         TopAppBar(title = { Text("Kortingsbonnen", fontWeight = FontWeight.Bold) },
@@ -121,12 +160,31 @@ fun CouponsScreen() {
                 }
             }
             if (mine.isNotEmpty()) {
-                item { Text("Mijn kortingsbonnen", style = MaterialTheme.typography.titleLarge) }
+                item {
+                    Text("Mijn kortingsbonnen", style = MaterialTheme.typography.titleLarge)
+                    if (used.isNotEmpty()) TextButton(onClick = { marked = used.map { it.optString("id") }.toSet() }) {
+                        Text("Alle gebruikte selecteren")
+                    }
+                    if (marked.isNotEmpty()) TextButton(
+                        enabled = !removing,
+                        onClick = { remove(used.filter { it.optString("id") in marked }) },
+                    ) { Text("Selectie verwijderen", color = MaterialTheme.colorScheme.error) }
+                }
                 items(mine, key = { "saved-" + it.optString("id") }) { x ->
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         PasrOfferCard(x, saved = true)
                         if (x.optBoolean("redeemed")) {
                             Text("PASR · GEBRUIKT · Niet opnieuw te gebruiken")
+                            val id = x.optString("id")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(id in marked, onCheckedChange = { checked ->
+                                    marked = if (checked) marked + id else marked - id
+                                })
+                                Text("Selecteer " + x.optString("title"), Modifier.weight(1f))
+                                TextButton(enabled = !removing, onClick = { remove(listOf(x)) }) {
+                                    Text("Verwijderen", color = MaterialTheme.colorScheme.error)
+                                }
+                            }
                         } else if (x.optBoolean("disabled") || x.isNull("code") || x.optString("code").isBlank()) {
                             Text("Deze aanbieding is niet meer geldig.")
                         } else Button(onClick = { openCode = x.optString("code") }) {

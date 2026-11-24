@@ -22,93 +22,69 @@ struct CardsView: View {
     @State private var showingCreateChoices = false
     @State private var showingActionCardChoices = false
 
+    private struct Item: Hashable {
+        let id: String
+        let kind: String
+        let title: String
+    }
+
+    @State private var showingTrash = false
+    @State private var selecting = false
+    @State private var marked: Set<Item> = []
+    @State private var trash: [Item] = []
+    @State private var pending: [Item] = []
+    @State private var confirm = false
+    @State private var busy = false
+
+    private func item(_ row: [String: Any], kind: String) -> Item? {
+        guard let id = row["id"] as? String else { return nil }
+        return Item(id: id, kind: kind, title: row["title"] as? String ?? "")
+    }
+
+    private var active: [Item] {
+        business.cards.map { Item(id: $0.id, kind: "card", title: $0.name) }
+            + offers.compactMap { item($0, kind: "coupon") }
+            + codes.compactMap { item($0, kind: "code") }
+    }
+
     var body: some View {
         NavigationStack {
             List {
-                if business.cards.isEmpty {
-                    ContentUnavailableView {
-                        Label("Nog geen stempelkaart", systemImage: "rectangle.stack.badge.plus")
-                    } description: {
-                        Text("Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning.")
-                    } actions: {
-                        Button("Nieuw aanmaken") { showingCreateChoices = true }
-                            .buttonStyle(.borderedProminent)
+                Section {
+                    Picker("Acties", selection: $showingTrash) {
+                        Text("Acties").tag(false)
+                        Text("Verwijderd").tag(true)
+                    }.pickerStyle(.segmented)
+                    let visible = showingTrash ? trash : active
+                    if !visible.isEmpty {
+                        Button(selecting ? "Selectie sluiten" : "Selecteren") {
+                            selecting.toggle()
+                            marked.removeAll()
+                        }
+                        if selecting {
+                            Button("Alles selecteren") { marked = Set(visible) }
+                            Button(showingTrash ? "Selectie definitief verwijderen" : "Selectie verwijderen", role: .destructive) {
+                                requestRemoval(visible.filter { marked.contains($0) })
+                            }.disabled(busy || marked.isEmpty)
+                        }
                     }
-                    .listRowBackground(Color.clear)
                 }
-                ForEach(business.cards) { card in
-                    Section {
-                        Button { editing = card } label: {
-                            StampCardView(name: card.name, business: business.name, color: card.color, logo: card.logo,
-                                          total: card.stampsTotal, filled: min(card.stampsTotal, max(1, card.stampsTotal / 2)), reward: card.reward,
-                                          textColor: card.textColor)
-                        }
-                        .buttonStyle(.plain)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                        HStack(spacing: 14) {
-                            Label(card.published ? "Online" : "Concept", systemImage: card.published ? "checkmark.seal.fill" : "pencil.circle")
-                                .foregroundStyle(card.published ? Theme.mint : .secondary)
-                            Spacer()
-                            stat("person.2", card.members)
-                            stat("seal", card.stamps)
-                            stat("gift", card.rewards)
-                        }
-                        .font(.subheadline)
+                if showingTrash {
+                    if trash.isEmpty { Text("Geen verwijderde items").foregroundStyle(.secondary) }
+                    ForEach(trash, id: \.self) { entry in
                         HStack {
-                            Button("Bewerken", systemImage: "pencil") { editing = card }
+                            Text(entry.title)
                             Spacer()
-                            if card.published {
-                                Button("QR, link en flyer", systemImage: "qrcode") { sharing = card }
-                                Button("Promotiemateriaal", systemImage: "photo.on.rectangle") { promoting = card }
-                                Button("Acties en beloningen", systemImage: "gift") { program = card }
+                            Text(entry.kind == "card" ? "Stempelkaart" : entry.kind == "coupon" ? "Kortingscoupon" : "Actiecode")
+                                .foregroundStyle(.secondary)
+                            if !selecting {
+                                Button("Definitief verwijderen", systemImage: "trash", role: .destructive) { requestRemoval([entry]) }
+                                    .labelStyle(.iconOnly).buttonStyle(.borderless)
                             }
-                        }
-                        .buttonStyle(.borderless)
-                        .font(.subheadline.weight(.semibold))
+                        }.modifier(RowRemoval(view: self, item: entry))
                     }
-                }
-                Section("Kortingscoupons") {
-                    if offers.isEmpty {
-                        Text("Nog geen kortingscoupons").foregroundStyle(.secondary)
-                    }
-                    ForEach(offers.indices, id: \.self) { i in
-                        let item = offers[i]
-                        Button { coupons = true } label: {
-                            BusinessDiscountCard(business: business.name,
-                                title: item["title"] as? String ?? "Kortingscoupon",
-                                discountType: item["discount_type"] as? String ?? "amount",
-                                discountValue: (item["discount_value"] as? NSNumber)?.doubleValue ?? 0,
-                                color: item["color"] as? String ?? "#6A5CFF",
-                                logo: item["logo"] as? String,
-                                kind: "Kortingscoupon",
-                                status: item["deleted"] as? Bool == true ? "Verwijderd" :
-                                    (item["public"] as? Bool == true ? "Actief" : "Gepauzeerd"),
-                                usage: "\((item["redeemed"] as? NSNumber)?.intValue ?? 0) gebruikt")
-                        }.buttonStyle(.plain)
-                    }
-                    Button("Kortingscoupon aanmaken", systemImage: "plus") { coupons = true }
-                }
-                Section("Actiecodes") {
-                    if codes.isEmpty {
-                        Text("Nog geen actiecodes").foregroundStyle(.secondary)
-                    }
-                    ForEach(codes.indices, id: \.self) { i in
-                        let item = codes[i]
-                        Button { promoCodes = true } label: {
-                            BusinessDiscountCard(business: business.name,
-                                title: item["title"] as? String ?? "Actiecode",
-                                discountType: item["discount_type"] as? String ?? "percent",
-                                discountValue: (item["discount_value"] as? NSNumber)?.doubleValue ?? 0,
-                                color: item["color"] as? String ?? "#6A5CFF",
-                                logo: item["logo"] as? String,
-                                kind: "Actiecode",
-                                status: item["deleted"] as? Bool == true ? "Verwijderd" :
-                                    (item["active"] as? Bool == true ? "Actief" : "Gepauzeerd"),
-                                usage: "\((item["used_count"] as? NSNumber)?.intValue ?? 0) gebruikt")
-                        }.buttonStyle(.plain)
-                    }
-                    Button("Actiecode aanmaken", systemImage: "plus") { promoCodes = true }
+                } else {
+                    activeRows
                 }
                 if let offerError { Section { Text(offerError).font(.footnote).foregroundStyle(Theme.coral) } }
             }
@@ -116,7 +92,24 @@ struct CardsView: View {
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Acties")
             .refreshable { await store.load(); await loadOffers() }
-            .task(id: business.id) { await loadOffers() }
+            .task(id: business.id) { marked.removeAll(); await loadOffers() }
+            .onChange(of: showingTrash) { _, _ in
+                marked.removeAll()
+                selecting = false
+                Task { await loadOffers() }
+            }
+            .onChange(of: coupons) { _, open in if !open { Task { await loadOffers() } } }
+            .onChange(of: promoCodes) { _, open in if !open { Task { await loadOffers() } } }
+            .confirmationDialog(showingTrash ? "Definitief verwijderen?" : "Verwijderen?", isPresented: $confirm, titleVisibility: .visible) {
+                Button(showingTrash ? "Definitief verwijderen" : "Verwijderen", role: .destructive) {
+                    let permanent = showingTrash
+                    let items = pending
+                    Task { await remove(items, permanent: permanent) }
+                }
+                Button("Annuleren", role: .cancel) {}
+            } message: {
+                Text(showingTrash ? "Dit kan niet ongedaan worden gemaakt." : "De geselecteerde items verdwijnen ook bij klanten.")
+            }
             .toolbar {
                 BusinessPicker()
                 ToolbarItem(placement: .primaryAction) {
@@ -186,14 +179,164 @@ struct CardsView: View {
         }
     }
 
+    @ViewBuilder private var activeRows: some View {
+        if business.cards.isEmpty {
+            ContentUnavailableView {
+                Label("Nog geen stempelkaart", systemImage: "rectangle.stack.badge.plus")
+            } description: {
+                Text("Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning.")
+            } actions: {
+                Button("Nieuw aanmaken") { showingCreateChoices = true }
+                    .buttonStyle(.borderedProminent)
+            }
+            .listRowBackground(Color.clear)
+        }
+        ForEach(business.cards) { card in
+            Section {
+                Button { editing = card } label: {
+                    StampCardView(name: card.name, business: business.name, color: card.color, logo: card.logo,
+                                  total: card.stampsTotal, filled: min(card.stampsTotal, max(1, card.stampsTotal / 2)), reward: card.reward,
+                                  textColor: card.textColor)
+                }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .modifier(RowRemoval(view: self, item: Item(id: card.id, kind: "card", title: card.name)))
+                HStack(spacing: 14) {
+                    Label(card.published ? "Online" : "Concept", systemImage: card.published ? "checkmark.seal.fill" : "pencil.circle")
+                        .foregroundStyle(card.published ? Theme.mint : .secondary)
+                    Spacer()
+                    stat("person.2", card.members)
+                    stat("seal", card.stamps)
+                    stat("gift", card.rewards)
+                }
+                .font(.subheadline)
+                HStack {
+                    Button("Bewerken", systemImage: "pencil") { editing = card }
+                    Spacer()
+                    if card.published {
+                        Button("QR, link en flyer", systemImage: "qrcode") { sharing = card }
+                        Button("Promotiemateriaal", systemImage: "photo.on.rectangle") { promoting = card }
+                        Button("Acties en beloningen", systemImage: "gift") { program = card }
+                    }
+                }
+                .buttonStyle(.borderless)
+                .font(.subheadline.weight(.semibold))
+            }
+        }
+        Section("Kortingscoupons") {
+            if offers.isEmpty {
+                Text("Nog geen kortingscoupons").foregroundStyle(.secondary)
+            }
+            ForEach(offers.indices, id: \.self) { i in
+                let item = offers[i]
+                Button { coupons = true } label: {
+                    BusinessDiscountCard(business: business.name,
+                        title: item["title"] as? String ?? "Kortingscoupon",
+                        discountType: item["discount_type"] as? String ?? "amount",
+                        discountValue: (item["discount_value"] as? NSNumber)?.doubleValue ?? 0,
+                        color: item["color"] as? String ?? "#6A5CFF",
+                        logo: item["logo"] as? String,
+                        kind: "Kortingscoupon",
+                        status: item["deleted"] as? Bool == true ? "Verwijderd" :
+                            (item["public"] as? Bool == true ? "Actief" : "Gepauzeerd"),
+                        usage: "\((item["redeemed"] as? NSNumber)?.intValue ?? 0) gebruikt")
+                }.buttonStyle(.plain)
+                    .modifier(RowRemoval(view: self, item: self.item(item, kind: "coupon")))
+            }
+            Button("Kortingscoupon aanmaken", systemImage: "plus") { coupons = true }
+        }
+        Section("Actiecodes") {
+            if codes.isEmpty {
+                Text("Nog geen actiecodes").foregroundStyle(.secondary)
+            }
+            ForEach(codes.indices, id: \.self) { i in
+                let item = codes[i]
+                Button { promoCodes = true } label: {
+                    BusinessDiscountCard(business: business.name,
+                        title: item["title"] as? String ?? "Actiecode",
+                        discountType: item["discount_type"] as? String ?? "percent",
+                        discountValue: (item["discount_value"] as? NSNumber)?.doubleValue ?? 0,
+                        color: item["color"] as? String ?? "#6A5CFF",
+                        logo: item["logo"] as? String,
+                        kind: "Actiecode",
+                        status: item["deleted"] as? Bool == true ? "Verwijderd" :
+                            (item["active"] as? Bool == true ? "Actief" : "Gepauzeerd"),
+                        usage: "\((item["used_count"] as? NSNumber)?.intValue ?? 0) gebruikt")
+                }.buttonStyle(.plain)
+                    .modifier(RowRemoval(view: self, item: self.item(item, kind: "code")))
+            }
+            Button("Actiecode aanmaken", systemImage: "plus") { promoCodes = true }
+        }
+    }
+
+    private struct RowRemoval: ViewModifier {
+        let view: CardsView
+        let item: Item?
+
+        func body(content: Content) -> some View {
+            if let item {
+                HStack {
+                    if view.selecting {
+                        Button {
+                            if view.marked.contains(item) { view.marked.remove(item) }
+                            else { view.marked.insert(item) }
+                        } label: {
+                            Image(systemName: view.marked.contains(item) ? "checkmark.circle.fill" : "circle")
+                        }
+                        .accessibilityLabel(Text("Selecteer \(item.title)"))
+                        .buttonStyle(.borderless)
+                    }
+                    content
+                }.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) { view.requestRemoval([item]) } label: {
+                        Label(view.showingTrash ? "Definitief verwijderen" : "Verwijderen", systemImage: "trash")
+                    }.disabled(view.busy)
+                }
+            } else { content }
+        }
+    }
+
+    private func requestRemoval(_ items: [Item]) {
+        guard !busy, !items.isEmpty else { return }
+        pending = items
+        confirm = true
+    }
+
+    @MainActor private func remove(_ items: [Item], permanent: Bool) async {
+        guard !busy else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            _ = try await Account.shared.rpc("pasr_business_delete_items", [
+                "p_business": business.id, "p_permanent": permanent,
+                "p_items": items.map { ["id": $0.id, "kind": $0.kind] }
+            ])
+            marked.removeAll()
+            await store.load()
+            await loadOffers()
+        } catch { offerError = error.localizedDescription }
+    }
+
     @MainActor private func loadOffers() async {
+        offerError = nil
+        if showingTrash {
+            do {
+                let result = try await Account.shared.rpc("pasr_business_trash", ["p_business": business.id])
+                trash = (result as? [[String: Any]] ?? []).compactMap {
+                    guard let kind = $0["kind"] as? String else { return nil }
+                    return item($0, kind: kind)
+                }
+            } catch { offerError = error.localizedDescription }
+            return
+        }
         do {
             let result = try await Account.shared.rpc("pasr_business_coupon_list", ["p_business": business.id])
-            offers = result as? [[String: Any]] ?? []
+            offers = (result as? [[String: Any]] ?? []).filter { $0["deleted"] as? Bool != true }
         } catch { offerError = "Kortingscoupons laden: \(error.localizedDescription)" }
         do {
             let result = try await Account.shared.rpc("pasr_business_promo_list", ["p_business": business.id])
-            codes = result as? [[String: Any]] ?? []
+            codes = (result as? [[String: Any]] ?? []).filter { $0["deleted"] as? Bool != true }
         } catch { offerError = "Actiecodes laden: \(error.localizedDescription)" }
     }
 

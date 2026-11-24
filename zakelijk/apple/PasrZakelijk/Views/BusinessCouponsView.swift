@@ -139,7 +139,7 @@ struct BusinessCouponsView: View {
     @MainActor private func load() async {
         do {
             let response = try await Account.shared.rpc("pasr_business_coupon_list", ["p_business": business.id])
-            rows = (response as? [[String: Any]] ?? []).compactMap(CouponRow.init)
+            rows = (response as? [[String: Any]] ?? []).filter { $0["deleted"] as? Bool != true }.compactMap(CouponRow.init)
         } catch { status = error.localizedDescription }
     }
 

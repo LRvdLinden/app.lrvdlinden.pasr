@@ -53,7 +53,7 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
         try {
             val result = Account.rpc("pasr_business_coupon_list",
                 JSONObject().put("p_business", businessId)) as? JSONArray
-            coupons = (0 until (result?.length() ?: 0)).mapNotNull { result?.optJSONObject(it) }
+            coupons = (0 until (result?.length() ?: 0)).mapNotNull { result?.optJSONObject(it) }.filterNot { it.optBoolean("deleted") }
         } catch (e: Exception) { message = e.message ?: "Kan bonnen niet laden." }
     }
     LaunchedEffect(businessId) { load() }
@@ -182,7 +182,7 @@ fun CouponBusinessDialog(businessId: String, initialCode: String = "", onClose: 
                             message="Coupon verwijderd, historie behouden.";load()
                         } catch(e:Exception){message=e.message ?: "Verwijderen mislukt."}
                     }
-                }) { Text("Definitief verwijderen") }
+                }) { Text("Verwijderen") }
             },
             dismissButton = { TextButton(onClick = { deleting = null }) { Text("Annuleren") } }
         )

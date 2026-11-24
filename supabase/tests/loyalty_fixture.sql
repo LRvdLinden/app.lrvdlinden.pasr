@@ -27,7 +27,7 @@ create table public.pasr_business_cards (
 );
 create table public.pasr_business_members (
  id uuid primary key default gen_random_uuid(),
- business_card_id uuid not null references public.pasr_business_cards(id),
+ business_card_id uuid not null references public.pasr_business_cards(id) on delete cascade,
  user_id uuid references auth.users(id),
  member_code text unique not null,
  stamps_count int not null default 0,
@@ -37,9 +37,9 @@ create table public.pasr_business_members (
 );
 create table public.pasr_business_events (
  event_id uuid primary key default gen_random_uuid(),
- business_card_id uuid references public.pasr_business_cards(id),
+ business_card_id uuid references public.pasr_business_cards(id) on delete set null,
  business_id uuid not null references public.pasr_businesses(id),
- member_id uuid references public.pasr_business_members(id),
+ member_id uuid references public.pasr_business_members(id) on delete set null,
  kind text not null,
  amount integer default 1,
  by_user uuid,
@@ -50,7 +50,7 @@ create table public.pasr_business_events (
  at timestamptz not null default now()
 );
 create table public.pasr_business_programs (
- card_id uuid primary key references public.pasr_business_cards(id),
+ card_id uuid primary key references public.pasr_business_cards(id) on delete cascade,
  settings jsonb not null default '{}'::jsonb
 );
 create or replace function public.pasr_business_role(p_business uuid)
@@ -105,7 +105,7 @@ insert into public.pasr_business_programs(card_id,settings) values
 create table public.pasr_business_coupons(
  id uuid primary key default gen_random_uuid(),
  business_id uuid not null references public.pasr_businesses(id),
- card_id uuid references public.pasr_business_cards(id),
+ card_id uuid references public.pasr_business_cards(id) on delete cascade,
  title text not null,description text not null default '',
  discount_type text not null,discount_value numeric not null,
  min_spend numeric not null default 0,starts_at timestamptz not null,
@@ -116,7 +116,7 @@ create table public.pasr_business_coupons(
 );
 create table public.pasr_business_coupon_claims(
  id uuid primary key default gen_random_uuid(),
- coupon_id uuid not null references public.pasr_business_coupons(id),
+ coupon_id uuid not null references public.pasr_business_coupons(id) on delete cascade,
  user_id uuid not null references auth.users(id),
  redeem_code text unique not null,
  claimed_at timestamptz not null default now(),

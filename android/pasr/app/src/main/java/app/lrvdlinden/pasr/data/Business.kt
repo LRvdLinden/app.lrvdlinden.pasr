@@ -127,7 +127,14 @@ object Business {
         val d = card.details
         val code = d.memberCode ?: return null
         if (!d.isBusiness) return null
-        val info = runCatching { member(code) }.getOrNull() ?: return null
+        val info = runCatching {
+            BusinessInfo.from(Api.publicRpc("pasr_business_member", JSONObject().put("p_code", code)))
+        }.getOrNull() ?: return null
+        if (info.status == "not_found") {
+            GoogleWallet.removeIfSaved(card)
+            CardStore.purge(card.id)
+            return null
+        }
         val nd = d.copy(
             stampsTotal = info.stampsTotal?.coerceIn(2, 30) ?: d.stampsTotal,
             stampsCount = info.stampsCount?.coerceAtLeast(0) ?: d.stampsCount,

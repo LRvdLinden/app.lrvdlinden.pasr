@@ -5,6 +5,8 @@ import CoreImage.CIFilterBuiltins
 /// Persoonlijke codes komen uitsluitend van de server; de app kan niet zelf inwisselen.
 struct PasrCouponsView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var marked: Set<String> = []
+    @State private var removing = false
     @State private var items: [Coupon] = []
     @State private var saved: [Claim] = []
     @State private var selected: Claim?
@@ -84,12 +86,36 @@ struct PasrCouponsView: View {
         }
     }
 
+    private var used: [Claim] { saved.filter(\.redeemed) }
+
+    private func remove(_ claims: [Claim]) async {
+        guard !removing, !loading else { return }
+        removing = true
+        defer { removing = false }
+        do {
+            let payload = claims.map { ["id": $0.id, "kind": $0.isPromo ? "code" : "coupon"] }
+            _ = try await AccountService.shared.rpc("pasr_customer_hide_used_offers", body: ["p_items": payload])
+            let ids = Set(claims.map(\.id))
+            saved.removeAll { ids.contains($0.id) }
+            marked.subtract(ids)
+            if let claim = selected, ids.contains(claim.id) { selected = nil }
+        } catch { self.error = error.localizedDescription }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     if !saved.isEmpty {
                         Text("Mijn kortingsbonnen").font(.title3.bold())
+                        if !used.isEmpty {
+                            Button("Alle gebruikte selecteren") { marked = Set(used.map(\.id)) }
+                            if !marked.isEmpty {
+                                Button("Selectie verwijderen", role: .destructive) {
+                                    Task { await remove(used.filter { marked.contains($0.id) }) }
+                                }.disabled(removing || loading)
+                            }
+                        }
                         ForEach(saved) { claim in
                             Button { selected = claim } label: {
                                 PasrDiscountCard(business: claim.business, title: claim.title,
@@ -100,6 +126,16 @@ struct PasrCouponsView: View {
                                     expires: claim.end)
                             }
                             .buttonStyle(.plain)
+                            if claim.redeemed {
+                                HStack {
+                                    Toggle("Selecteer \(claim.title)", isOn: Binding(
+                                        get: { marked.contains(claim.id) },
+                                        set: { if $0 { marked.insert(claim.id) } else { marked.remove(claim.id) } }
+                                    ))
+                                    Button("Verwijderen", role: .destructive) { Task { await remove([claim]) } }
+                                        .disabled(removing || loading)
+                                }.font(.subheadline)
+                            }
                         }
                     }
                     Text("Aanbiedingen").font(.title3.bold())
@@ -138,7 +174,13 @@ struct PasrCouponsView: View {
             }
             .searchable(text: $query, prompt: "Zoek aanbieding of winkel")
             .refreshable { await load() }
-            .task { await load() }
+            .task {
+                await load()
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .seconds(30)) } catch { break }
+                    if !removing { await load(inBackground: true) }
+                }
+            }
             .sheet(item: $selected) { claim in
                 NavigationStack {
                     VStack(spacing: 18) {
@@ -187,8 +229,10 @@ struct PasrCouponsView: View {
         return UIImage(cgImage: cgImage)
     }
 
-    @MainActor private func load() async {
-        loading = true; error = nil
+    @MainActor private func load(inBackground: Bool = false) async {
+        guard !loading else { return }
+        loading = true
+        if !inBackground { error = nil }
         defer { loading = false }
         do {
             let data = try await AccountService.shared.publicRPC("pasr_business_coupon_list", body: [:])
@@ -205,8 +249,10 @@ struct PasrCouponsView: View {
                     var result = row; result["kind"] = "code"; return result
                 }
                 saved = ((mine as? [[String: Any]] ?? []) + promoClaims).compactMap(Claim.init)
-            }
-        } catch { self.error = error.localizedDescription }
+            } else { saved = [] }
+            marked.formIntersection(used.map(\.id))
+            if let claim = selected { selected = saved.first { $0.id == claim.id } }
+        } catch { if !inBackground { self.error = error.localizedDescription } }
     }
 
     @MainActor private func claim(_ coupon: Coupon) async {

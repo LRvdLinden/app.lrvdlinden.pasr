@@ -52,7 +52,7 @@ fun PromoCodesDialog(businessId: String, onClose: () -> Unit) {
         try {
             val res = Account.rpc("pasr_business_promo_list",
                 JSONObject().put("p_business", businessId)) as? JSONArray
-            rows = (0 until (res?.length() ?: 0)).mapNotNull { res?.optJSONObject(it) }
+            rows = (0 until (res?.length() ?: 0)).mapNotNull { res?.optJSONObject(it) }.filterNot { it.optBoolean("deleted") }
         } catch (e: Exception) { status = e.message ?: "Kan actiecodes niet laden." }
     }
     LaunchedEffect(businessId) { reload() }
@@ -172,7 +172,7 @@ fun PromoCodesDialog(businessId: String, onClose: () -> Unit) {
                         status="Actiecode verwijderd en onbruikbaar.";reload()
                     }catch(e:Exception){status=e.message?:"Verwijderen mislukt."}
                 }
-            }){Text("Definitief verwijderen")}},
+            }){Text("Verwijderen")}},
             dismissButton={TextButton(onClick={deleting=null}){Text("Annuleren")}}
         )
     }

@@ -54,6 +54,9 @@ begin
     for c in select * from jsonb_array_elements(changes) loop
       continue when (c->>'id') is null or (c->>'updated_at') is null;
       continue when octet_length(coalesce(c->'card', '{}'::jsonb)::text) > 400000;
+      if public.pasr_business_card_revoked(c->'card') then
+        c := (c - 'card') || jsonb_build_object('deleted', true);
+      end if;
       n := n + 1;
       insert into public.pasr_cards as p (user_id, id, payload, updated_at, deleted, server_at)
       values (uid, (c->>'id')::uuid,
@@ -69,9 +72,10 @@ begin
     'now', started,
     'cards', coalesce((
       select jsonb_agg(jsonb_build_object(
-               'id', p.id, 'updated_at', p.updated_at, 'deleted', p.deleted,
-               'card', case when p.deleted then null else pgp_sym_decrypt(p.payload, k)::jsonb end))
+               'id', p.id, 'updated_at', p.updated_at, 'deleted', p.deleted or public.pasr_business_card_revoked(data.card),
+               'card', case when public.pasr_business_card_revoked(data.card) then null else data.card end))
       from public.pasr_cards p
+      cross join lateral (select case when p.deleted then null else pgp_sym_decrypt(p.payload, k)::jsonb end as card) data
       where p.user_id = uid and (since is null or p.server_at > since)
     ), '[]'::jsonb));
 end $$;
@@ -750,6 +754,9 @@ begin
     for c in select * from jsonb_array_elements(changes) loop
       continue when (c->>'id') is null or (c->>'updated_at') is null;
       continue when octet_length(coalesce(c->'card', '{}'::jsonb)::text) > 400000;
+      if public.pasr_business_card_revoked(c->'card') then
+        c := (c - 'card') || jsonb_build_object('deleted', true);
+      end if;
       insert into public.pasr_group_cards as p (group_id, id, payload, updated_at, deleted, updated_by, server_at)
       values (p_group, (c->>'id')::uuid,
               pgp_sym_encrypt(coalesce(c->'card', '{}'::jsonb)::text, k, 'cipher-algo=aes256'),
@@ -764,9 +771,10 @@ begin
     'now', started,
     'cards', coalesce((
       select jsonb_agg(jsonb_build_object(
-               'id', p.id, 'updated_at', p.updated_at, 'deleted', p.deleted,
-               'card', case when p.deleted then null else pgp_sym_decrypt(p.payload, k)::jsonb end))
+               'id', p.id, 'updated_at', p.updated_at, 'deleted', p.deleted or public.pasr_business_card_revoked(data.card),
+               'card', case when public.pasr_business_card_revoked(data.card) then null else data.card end))
       from public.pasr_group_cards p
+      cross join lateral (select case when p.deleted then null else pgp_sym_decrypt(p.payload, k)::jsonb end as card) data
       where p.group_id = p_group and (since is null or p.server_at > since)
     ), '[]'::jsonb));
 end $$;
@@ -5157,3 +5165,15 @@ begin
    order by p.created_at desc) from public.pasr_business_promo_codes p
    where p.business_id=p_business),'[]'::jsonb);
 end $$;
+
+create or replace function public.pasr_business_card_revoked(p_card jsonb)
+returns boolean language sql stable security definer set search_path=public as $$
+  select case when p_card #>> '{details,issuer}' = 'business'
+    and nullif(p_card #>> '{details,memberCode}', '') is not null
+  then not exists (
+    select 1 from public.pasr_business_members
+    where member_code = upper(trim(p_card #>> '{details,memberCode}'))
+  )
+  else false end;
+$$;
+revoke all on function public.pasr_business_card_revoked(jsonb) from public, anon, authenticated;

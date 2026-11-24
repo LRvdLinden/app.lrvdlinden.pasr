@@ -144,8 +144,8 @@ fun WalletScreen() {
             onRefresh = {
                 scope.launch {
                     refreshing = true
-                    Business.refreshAll(force = true)
                     if (Account.isSignedIn) Sync.sync()
+                    Business.refreshAll(force = true)
                     Catalog.refresh(force = true)
                     refreshing = false
                     Sync.lastError.value?.let { snack.showSnackbar(it) }

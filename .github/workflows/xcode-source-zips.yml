@@ -66,7 +66,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="xcode-pasr-1.0.4-zakelijk-1.0.3"
+          TAG="xcode-pasr-1.0.4-60-zakelijk-1.0.3-16"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --target "$GITHUB_SHA" --title "Xcode projecten: Pasr 1.0.4 + Zakelijk 1.0.3" --notes "Twee volledige Xcode-bronprojecten om lokaal met Xcode te archiveren en naar App Store Connect te uploaden. Apple signing en archive gebeuren lokaal." --latest=false
           fi

@@ -22,6 +22,7 @@ enum BusinessCards {
         var stampsCount: Int?
         var reward: String?
         var active = true
+        var missing = false
 
         init?(json: Any?) {
             var dict = json as? [String: Any]
@@ -46,6 +47,8 @@ enum BusinessCards {
             stampsTotal = int("stamps_total", "stampsTotal", "total") ?? (card?["stamps_total"] as? NSNumber)?.intValue
             stampsCount = int("stamps_count", "stampsCount", "stamps", "count")
             reward = text("reward") ?? (card?["reward"] as? String)
+            missing = text("status") == "not_found"
+            if missing { active = false }
             if d["published"] as? Bool == false { active = false }
             if let status = text("status")?.lowercased(), ["blocked", "removed", "unpublished", "inactive"].contains(status) { active = false }
         }
@@ -146,9 +149,14 @@ enum BusinessCards {
 
     /// Stand van één zakelijke kaart bijwerken. Geeft true als er iets veranderde.
     @discardableResult
-    static func refresh(_ card: Card) async -> Bool {
+    static func refresh(_ card: Card, in context: ModelContext) async -> Bool {
         let before = card.details
         guard before.isBusiness, let code = before.memberCode, let info = try? await member(code: code) else { return false }
+        if info.missing {
+            WalletPass.removeRevokedPass(card)
+            context.delete(card)
+            return true
+        }
         var d = before
         if let total = info.stampsTotal { d.stampsTotal = min(max(total, CardDetails.stampsRange.lowerBound), CardDetails.stampsRange.upperBound) }
         if let count = info.stampsCount { d.stampsCount = max(0, count) }
@@ -172,7 +180,7 @@ enum BusinessCards {
         let all = (try? context.fetch(FetchDescriptor<Card>(predicate: #Predicate<Card> { $0.deletedAt == nil }))) ?? []
         var changed = false
         for card in all where card.kind == .stamps && card.details.isBusiness {
-            if await refresh(card) { changed = true }
+            if await refresh(card, in: context) { changed = true }
         }
         if changed { try? context.save() }
     }

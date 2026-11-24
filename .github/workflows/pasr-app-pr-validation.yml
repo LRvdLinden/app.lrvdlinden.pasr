@@ -72,15 +72,15 @@ jobs:
           g = Path("zakelijk/apple/make_project.py").read_text()
           ap = Path("android/pasr/app/build.gradle.kts").read_text()
           az = Path("android/zakelijk/app/build.gradle.kts").read_text()
-          assert p.count('CURRENT_PROJECT_VERSION = "59";') == 6
+          assert p.count('CURRENT_PROJECT_VERSION = "60";') == 6
           assert p.count('MARKETING_VERSION = "1.0.4";') == 6
-          assert z.count('CURRENT_PROJECT_VERSION = "15";') == 2
+          assert z.count('CURRENT_PROJECT_VERSION = "16";') == 2
           assert z.count('MARKETING_VERSION = "1.0.3";') == 2
-          assert 'BUILD = "15"' in g and 'VERSION = "1.0.3"' in g
+          assert 'BUILD = "16"' in g and 'VERSION = "1.0.3"' in g
           assert 'VERSION_NAME") ?: "1.0.4"' in ap
           assert 'versionName = "1.0.3"' in az
-          assert 'CODE=129' in Path(".github/workflows/android-pasr.yml").read_text()
-          assert 'export VERSION_CODE=127' in Path(".github/workflows/android-zakelijk.yml").read_text()
+          assert 'CODE=130' in Path(".github/workflows/android-pasr.yml").read_text()
+          assert 'export VERSION_CODE=128' in Path(".github/workflows/android-zakelijk.yml").read_text()
           print("App versions validated.")
           PY
       - name: Check generated Xcode project is in sync
@@ -122,6 +122,7 @@ jobs:
             supabase/loyalty-vip.sql \
             supabase/20261124-promo-codes.sql \
             supabase/20261124-app-only-discount-management.sql \
+            supabase/20261124-deletion.sql \
             supabase/tests/loyalty_smoke.sql \
             supabase/tests/promo_smoke.sql; do
             echo "::group::SQL $file"
@@ -140,7 +141,7 @@ jobs:
           /tmp/pasr-sql/bin/python - <<'PY'
           from pathlib import Path
           from pglast import parse_sql
-          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql'):
+          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql','20261124-deletion.sql'):
               path=Path('supabase')/name
               if path.exists():
                   parse_sql(path.read_text())

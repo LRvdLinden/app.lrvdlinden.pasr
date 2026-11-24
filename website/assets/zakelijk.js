@@ -161,6 +161,7 @@
   var TABS = [
     { id: "overzicht", label: "Overzicht", icon: "chart", owner: true },
     { id: "kaarten", label: "Acties", icon: "card", owner: true },
+    { id: "verwijderd", label: "Verwijderd", icon: "trash", owner: true },
     { id: "acties", label: "Beloningen", icon: "gift", owner: true },
     { id: "kortingsbonnen", label: "Kortingsbonnen", short: "Bonnen", icon: "card", owner: true },
     { id: "actiecodes", label: "Actiecodes", short: "Codes", icon: "gift", owner: true },
@@ -370,6 +371,11 @@
     var panel = $("#zd-panel");
     if (b.status === "blocked" && b.role !== "owner") { panel.innerHTML = '<p class="zk-empty">Er is hier nu niets te doen.</p>'; return; }
     (VIEWS[tab.id] || function () {})(panel, b);
+    if (tab.id === "kaarten" && !dash.sub) {
+      var removal = document.createElement("section");
+      panel.append(removal);
+      mountRemoval(removal, b, false);
+    }
   }
   async function refresh() {
     try { dash.me = await rpc("pasr_business_me", {}, true); }
@@ -380,6 +386,106 @@
     }
     render();
   }
+  async function mountRemoval(root, business, permanent) {
+    var kindLabels = { card: "Stempelkaart", coupon: "Kortingscoupon", code: "Actiecode" };
+    root.className = "pz2-panel";
+    root.innerHTML = "<h3>" + (permanent ? "Verwijderd" : "Acties verwijderen") + '</h3><p role="status">Laden…</p>';
+    var message = root.querySelector("[role=status]");
+    try {
+      var rows;
+      if (permanent) {
+        rows = await rpc("pasr_business_trash", { p_business: business.id }, true);
+      } else {
+        var offers = await Promise.all([
+          rpc("pasr_business_coupon_list", { p_business: business.id }, true),
+          rpc("pasr_business_promo_list", { p_business: business.id }, true)
+        ]);
+        rows = (business.cards || []).map(function (card) { return { id: card.id, title: card.name, kind: "card" }; });
+        offers.forEach(function (group, i) {
+          group.filter(function (offer) { return !offer.deleted; }).forEach(function (offer) {
+            rows.push({ id: offer.id, title: offer.title, kind: i === 0 ? "coupon" : "code" });
+          });
+        });
+      }
+      if (!root.isConnected) return;
+      message.textContent = rows.length ? "" : (permanent ? "Geen verwijderde items." : "Geen acties om te verwijderen.");
+      if (!rows.length) return;
+      var label = permanent ? "Definitief verwijderen" : "Verwijderen";
+      var controls = document.createElement("div");
+      controls.className = "zk-actions";
+      controls.innerHTML = '<label><input type="checkbox" data-all> Alles selecteren</label> ' +
+        '<button type="button" class="zk-btn ghost danger" data-bulk disabled> Selectie ' + label.toLowerCase() + "</button>";
+      root.append(controls);
+      var all = controls.querySelector("[data-all]");
+      var bulk = controls.querySelector("[data-bulk]");
+      var checks = [];
+      var busy = false;
+      function update() {
+        var count = checks.filter(function (check) { return check.checked; }).length;
+        all.checked = count === rows.length;
+        all.indeterminate = count > 0 && count < rows.length;
+        bulk.disabled = busy || count === 0;
+      }
+      async function remove(indices) {
+        if (busy || !indices.length) return;
+        if (!window.confirm(permanent
+          ? indices.length + " item(s) definitief verwijderen? Dit kan niet ongedaan worden gemaakt."
+          : indices.length + " item(s) verwijderen? Ze verdwijnen ook bij klanten.")) return;
+        busy = true;
+        update();
+        try {
+          await rpc("pasr_business_delete_items", {
+            p_business: business.id, p_permanent: permanent,
+            p_items: indices.map(function (i) { return { id: rows[i].id, kind: rows[i].kind }; })
+          }, true);
+          await refresh();
+          toast(permanent ? "Definitief verwijderd" : "Verplaatst naar Verwijderd");
+        } catch (e) {
+          message.textContent = nice(e);
+          busy = false;
+          update();
+        }
+      }
+      all.addEventListener("change", function () {
+        checks.forEach(function (check) { check.checked = all.checked; });
+        update();
+      });
+      bulk.addEventListener("click", function () {
+        remove(rows.flatMap(function (_, i) { return checks[i].checked ? [i] : []; }));
+      });
+      rows.forEach(function (row, i) {
+        var entry = document.createElement("article");
+        entry.className = "pz2-coupon";
+        entry.style.touchAction = "pan-y";
+        entry.innerHTML = '<label><input type="checkbox"> <b>' + esc(row.title) + "</b> · " +
+          esc(kindLabels[row.kind]) + '</label> <button type="button" class="zk-btn ghost danger">' + label + "</button>";
+        root.append(entry);
+        var check = entry.querySelector("input");
+        var button = entry.querySelector("button");
+        checks.push(check);
+        check.addEventListener("change", update);
+        button.addEventListener("click", function () { remove([i]); });
+        var start;
+        entry.addEventListener("pointerdown", function (event) {
+          if (event.target.closest("button,input") || !event.isPrimary) return;
+          start = { x: event.clientX, y: event.clientY };
+        });
+        entry.addEventListener("pointercancel", function () { start = null; });
+        entry.addEventListener("pointerup", function (event) {
+          if (start && start.x - event.clientX > 55 && Math.abs(start.y - event.clientY) < 32) {
+            button.classList.remove("ghost");
+            button.classList.add("danger-solid");
+            button.focus({ preventScroll: true });
+          }
+          start = null;
+        });
+      });
+    } catch (e) { message.textContent = nice(e); }
+  }
+
+  VIEWS.verwijderd = function (panel, business) {
+    mountRemoval(panel, business, true);
+  };
   VIEWS.acties = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.settings(panel, b, rpc);
     else panel.textContent = "De instellingen zijn tijdelijk niet beschikbaar.";
@@ -823,7 +929,7 @@
       $("#dNo", md.el).addEventListener("click", md.close);
       $("#dYes", md.el).addEventListener("click", async function (ev) {
         ev.currentTarget.disabled = true;
-        try { await rpc("pasr_business_card_delete", { p_card: c.id }, true); md.close(); dash.sub = null; dash.edit = null; await refresh(); toast("Kaart verwijderd"); }
+        try { await rpc("pasr_business_card_delete", { p_card: c.id }, true); md.close(); dash.sub = null; dash.edit = null; await refresh(); toast("Kaart verplaatst naar Verwijderd"); }
         catch (e) { md.close(); setMsg($("#cMsg"), nice(e)); }
       });
     });

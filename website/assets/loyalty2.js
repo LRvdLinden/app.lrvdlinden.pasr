@@ -124,6 +124,7 @@
    var editingID=null, allCoupons=[];
    async function reload(){try{
        var rows=await rpc("pasr_business_coupon_list",{p_business:b.id},true);
+       rows=(rows||[]).filter(function(row){return !row.deleted;});
        allCoupons=rows;
        $("#pz2Coupons",root).innerHTML=rows.length?rows.map(function(c,i){return '<article class="pz2-coupon"><b>'+escape(c.title)+'</b> · '+
          money(c.discount_type,c.discount_value)+'<br><small>'+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+

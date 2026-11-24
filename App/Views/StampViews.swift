@@ -156,8 +156,8 @@ struct StampControls: View {
     private func refresh() async {
         refreshing = true
         defer { refreshing = false }
-        if await BusinessCards.refresh(card) { try? context.save() }
-        await refreshVIP()
+        if await BusinessCards.refresh(card, in: context) { try? context.save() }
+        if !card.isDeleted { await refreshVIP() }
     }
 }
 

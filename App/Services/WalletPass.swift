@@ -34,6 +34,13 @@ enum WalletPass {
     }
 
     /// Already in Wallet? (Same serial number = the card's id.)
+    static func removeRevokedPass(_ card: Card) {
+        let library = PKPassLibrary()
+        if let pass = library.pass(withPassTypeIdentifier: passTypeID, serialNumber: card.id.uuidString) {
+            library.removePass(pass)
+        }
+    }
+
     static func isInWallet(_ card: Card) -> Bool {
         PKPassLibrary().pass(withPassTypeIdentifier: passTypeID, serialNumber: card.id.uuidString) != nil
     }

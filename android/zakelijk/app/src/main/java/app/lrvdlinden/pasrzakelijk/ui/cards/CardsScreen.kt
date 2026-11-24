@@ -1,6 +1,14 @@
 package app.lrvdlinden.pasrzakelijk.ui.cards
 
 import android.content.Intent
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.ui.input.pointer.pointerInput
+import app.lrvdlinden.pasrzakelijk.data.Account
+import org.json.JSONArray
+import org.json.JSONObject
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -106,6 +114,47 @@ import app.lrvdlinden.pasrzakelijk.ui.shareText
 import kotlinx.coroutines.launch
 import java.io.File
 
+private data class RemovalItem(val id: String, val kind: String, val title: String) {
+    fun payload() = JSONObject().put("id", id).put("kind", kind)
+}
+
+private fun JSONObject.removalItem(kind: String) =
+    RemovalItem(optString("id"), kind, optString("title"))
+
+@Composable
+private fun RemovalRow(
+    item: RemovalItem,
+    selecting: Boolean,
+    checked: Boolean,
+    permanent: Boolean,
+    onCheck: () -> Unit,
+    onRemove: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    var revealed by remember(item) { mutableStateOf(false) }
+    val label = if (permanent) "Definitief verwijderen" else "Verwijderen"
+    Column(Modifier.fillMaxWidth().pointerInput(item, selecting) {
+        if (selecting) return@pointerInput
+        var offset = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { offset = 0f },
+            onDragEnd = { if (offset < -48.dp.toPx()) revealed = true else if (offset > 48.dp.toPx()) revealed = false },
+        ) { change, amount ->
+            change.consume()
+            offset += amount
+        }
+    }) {
+        if (selecting) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked, onCheckedChange = { onCheck() })
+                Text("Selecteer " + item.title, color = Pz.text)
+            }
+        }
+        content()
+        if (revealed || permanent) TextButton(onClick = onRemove) { Text(label, color = Pz.coral) }
+    }
+}
+
 /** Kaarten van de zaak (eigenaar): maken, bewerken, publiceren, delen en flyer. */
 @Composable
 fun CardsScreen(business: Business) {
@@ -113,16 +162,33 @@ fun CardsScreen(business: Business) {
     var couponsList by remember { mutableStateOf<List<org.json.JSONObject>>(emptyList()) }
     var codesList by remember { mutableStateOf<List<org.json.JSONObject>>(emptyList()) }
     var offersError by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(business.id) {
+    var trash by remember(business.id) { mutableStateOf<List<RemovalItem>>(emptyList()) }
+    var showingTrash by remember(business.id) { mutableStateOf(false) }
+    var selecting by remember(business.id) { mutableStateOf(false) }
+    var marked by remember(business.id) { mutableStateOf<Set<RemovalItem>>(emptySet()) }
+    var pending by remember(business.id) { mutableStateOf<List<RemovalItem>>(emptyList()) }
+    var busy by remember { mutableStateOf(false) }
+    var reload by remember { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(business.id, showingTrash, reload) {
+        offersError = null
+        if (showingTrash) {
+            try {
+                val result = Account.rpc("pasr_business_trash", JSONObject().put("p_business", business.id)) as? JSONArray
+                trash = (0 until (result?.length() ?: 0)).mapNotNull { result?.optJSONObject(it) }
+                    .map { it.removalItem(it.optString("kind")) }
+            } catch (e: Exception) { offersError = e.message }
+            return@LaunchedEffect
+        }
         try {
             val arr=app.lrvdlinden.pasrzakelijk.data.Account.rpc("pasr_business_coupon_list",
                 org.json.JSONObject().put("p_business",business.id)) as? org.json.JSONArray
-            couponsList=(0 until (arr?.length() ?: 0)).mapNotNull { arr?.optJSONObject(it) }
+            couponsList=(0 until (arr?.length() ?: 0)).mapNotNull { arr?.optJSONObject(it) }.filterNot { it.optBoolean("deleted") }
         } catch(e:Exception) { offersError=e.message }
         try {
             val arr=app.lrvdlinden.pasrzakelijk.data.Account.rpc("pasr_business_promo_list",
                 org.json.JSONObject().put("p_business",business.id)) as? org.json.JSONArray
-            codesList=(0 until (arr?.length() ?: 0)).mapNotNull { arr?.optJSONObject(it) }
+            codesList=(0 until (arr?.length() ?: 0)).mapNotNull { arr?.optJSONObject(it) }.filterNot { it.optBoolean("deleted") }
         } catch(e:Exception) { offersError=e.message }
     }
     var sharing by remember { mutableStateOf<BusinessCard?>(null) }
@@ -145,15 +211,58 @@ fun CardsScreen(business: Business) {
             Icon(Icons.Filled.Add, L("Nieuw aanmaken"), tint = Pz.accent)
         }
     }) {
-        if (business.cards.isEmpty()) {
-            EmptyState(
-                Icons.Outlined.LibraryAdd, L("Nog geen stempelkaart"),
-                L("Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning."),
-                Modifier.padding(top = 40.dp),
-            ) { BigButton(L("Nieuw aanmaken"), { createChoices = true }, Modifier.widthIn(max = 260.dp)) }
-        }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
+        val active = business.cards.map { RemovalItem(it.id, "card", it.name) } +
+            couponsList.map { it.removalItem("coupon") } + codesList.map { it.removalItem("code") }
+        val visible = if (showingTrash) trash else active
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            item {
+                TabRow(selectedTabIndex = if (showingTrash) 1 else 0) {
+                    Tab(!showingTrash, onClick = {
+                        showingTrash = false; selecting = false; marked = emptySet()
+                    }, text = { Text("Acties") })
+                    Tab(showingTrash, onClick = {
+                        showingTrash = true; selecting = false; marked = emptySet()
+                    }, text = { Text("Verwijderd") })
+                }
+                if (visible.isNotEmpty()) {
+                    TextButton(onClick = { selecting = !selecting; marked = emptySet() }) {
+                        Text(if (selecting) "Selectie sluiten" else "Selecteren")
+                    }
+                    if (selecting) {
+                        TextButton(onClick = { marked = visible.toSet() }) { Text("Alles selecteren") }
+                        TextButton(enabled = marked.isNotEmpty() && !busy, onClick = { pending = visible.filter { it in marked } }) {
+                            Text(if (showingTrash) "Selectie definitief verwijderen" else "Selectie verwijderen", color = Pz.coral)
+                        }
+                    }
+                }
+                offersError?.let { Text("Acties laden mislukt: " + it, color = Pz.coral) }
+            }
+            if (showingTrash) {
+                if (trash.isEmpty()) item { Text("Geen verwijderde items", color = Pz.muted) }
+                items(trash, key = { it.kind + it.id }) { entry ->
+                    RemovalRow(entry, selecting, entry in marked, true,
+                        { marked = if (entry in marked) marked - entry else marked + entry }, { pending = listOf(entry) }) {
+                        val kind = when (entry.kind) {
+                            "card" -> "Stempelkaart"
+                            "coupon" -> "Kortingscoupon"
+                            else -> "Actiecode"
+                        }
+                        Text(entry.title, color = Pz.text, fontWeight = FontWeight.Bold)
+                        Text(kind, color = Pz.muted)
+                    }
+                }
+            } else {
+            if (business.cards.isEmpty()) item {
+                EmptyState(Icons.Outlined.LibraryAdd, L("Nog geen stempelkaart"),
+                    L("Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning.")) {
+                    BigButton(L("Nieuw aanmaken"), { createChoices = true }, Modifier.widthIn(max = 260.dp))
+                }
+            }
             items(business.cards, key = { it.id }) { card ->
+                val entry = RemovalItem(card.id, "card", card.name)
+                RemovalRow(entry, selecting, entry in marked, false,
+                    { marked = if (entry in marked) marked - entry else marked + entry }, { pending = listOf(entry) }) {
                 Column(Modifier.widthIn(max = 620.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     StampCardView(
                         card.name, business.name, card.color, card.logo, card.stampsTotal,
@@ -198,15 +307,18 @@ fun CardsScreen(business: Business) {
                         }
                     }
                 }
+                }
             }
             item {
                 Column(verticalArrangement=Arrangement.spacedBy(9.dp)) {
                     Text("Kortingscoupons",fontWeight=FontWeight.Bold,color=Pz.text)
                     if(couponsList.isEmpty())Text("Nog geen kortingscoupons",color=Pz.muted)
                     couponsList.forEach { coupon ->
-                        BusinessOfferCard(business.name,coupon,false)
-                        TextButton(onClick={coupons=true}) {
-                            Text("Bewerken of verwijderen",color=Pz.accent)
+                        val entry = coupon.removalItem("coupon")
+                        RemovalRow(entry, selecting, entry in marked, false,
+                            { marked = if (entry in marked) marked - entry else marked + entry }, { pending = listOf(entry) }) {
+                            BusinessOfferCard(business.name, coupon, false)
+                            TextButton(onClick = { coupons = true }) { Text("Bewerken", color = Pz.accent) }
                         }
                     }
                     TextButton(onClick={coupons=true}){Text("+ Kortingscoupon",color=Pz.accent)}
@@ -217,16 +329,43 @@ fun CardsScreen(business: Business) {
                     Text("Actiecodes",fontWeight=FontWeight.Bold,color=Pz.text)
                     if(codesList.isEmpty())Text("Nog geen actiecodes",color=Pz.muted)
                     codesList.forEach { code ->
-                        BusinessOfferCard(business.name,code,true)
-                        TextButton(onClick={promoCodes=true}) {
-                            Text("Bewerken of verwijderen",color=Pz.accent)
+                        val entry = code.removalItem("code")
+                        RemovalRow(entry, selecting, entry in marked, false,
+                            { marked = if (entry in marked) marked - entry else marked + entry }, { pending = listOf(entry) }) {
+                            BusinessOfferCard(business.name, code, true)
+                            TextButton(onClick = { promoCodes = true }) { Text("Bewerken", color = Pz.accent) }
                         }
                     }
                     TextButton(onClick={promoCodes=true}){Text("+ Actiecode",color=Pz.accent)}
-                    offersError?.let { Text("Acties laden mislukt: "+it,color=Pz.coral) }
                 }
             }
+            }
         }
+    }
+    if (pending.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { if (!busy) pending = emptyList() },
+            title = { Text(if (showingTrash) "Definitief verwijderen?" else "Verwijderen?") },
+            text = { Text(if (showingTrash) "Dit kan niet ongedaan worden gemaakt." else "De geselecteerde items verdwijnen ook bij klanten.") },
+            confirmButton = {
+                TextButton(enabled = !busy, onClick = {
+                    val payload = JSONArray(pending.map { it.payload() })
+                    busy = true
+                    scope.launch {
+                        try {
+                            Account.rpc("pasr_business_delete_items", JSONObject().put("p_business", business.id)
+                                .put("p_items", payload).put("p_permanent", showingTrash))
+                            marked = emptySet()
+                            pending = emptyList()
+                            reload++
+                            BusinessStore.load()
+                        } catch (e: Exception) { offersError = e.message; pending = emptyList() }
+                        finally { busy = false }
+                    }
+                }) { Text(if (showingTrash) "Definitief verwijderen" else "Verwijderen") }
+            },
+            dismissButton = { TextButton(enabled = !busy, onClick = { pending = emptyList() }) { Text("Annuleren") } },
+        )
     }
     if (createChoices) {
         AlertDialog(
@@ -266,8 +405,8 @@ fun CardsScreen(business: Business) {
     editing?.let { CardEditorSheet(business, it) { editing = null } }
     sharing?.let { CardShareSheet(business, it) { sharing = null } }
     program?.let { ProgramDialog(it) { program = null } }
-    if (coupons) CouponBusinessDialog(business.id) { coupons = false }
-    if (promoCodes) PromoCodesDialog(business.id) { promoCodes = false }
+    if (coupons) CouponBusinessDialog(business.id) { coupons = false; reload++ }
+    if (promoCodes) PromoCodesDialog(business.id) { promoCodes = false; reload++ }
     if (marketing) BusinessMarketingDialog(business) { marketing = false }
     if (locations) BusinessLocationsDialog(business) { locations = false }
     if (community) BusinessCommunityDialog(business) { community = false }

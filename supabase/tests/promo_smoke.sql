@@ -2,6 +2,9 @@
 -- one-time redemption, post-publication updates and soft-deletion without losing history.
 do $$
 declare promo jsonb; coupon jsonb; personal jsonb; check_result jsonb;
+ claim_ids jsonb; batch jsonb;
+ business constant uuid := 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ stamp_card constant uuid := 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
  v_promo_id uuid; v_coupon_id uuid; pa text; pc text;
 begin
  perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);
@@ -56,6 +59,21 @@ begin
  perform public.pasr_business_coupon_redeem(pc);
  if (select redeemed_at from public.pasr_business_coupon_claims where redeem_code=pc) is null then
   raise exception 'PC redemption missing'; end if;
+ claim_ids := jsonb_build_array(
+   jsonb_build_object('kind','coupon','id',(select id from public.pasr_business_coupon_claims where redeem_code=pc)),
+   jsonb_build_object('kind','code','id',(select id from public.pasr_business_promo_claims where redeem_code=pa))
+ );
+ perform set_config('app.user_id','22222222-2222-4222-8222-222222222222',true);
+ perform public.pasr_customer_hide_used_offers(claim_ids);
+ perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
+ if jsonb_array_length(public.pasr_business_coupon_mine())<>1 or
+    jsonb_array_length(public.pasr_business_promo_mine())<>1 then
+   raise exception 'Another customer hid claims'; end if;
+ perform public.pasr_customer_hide_used_offers(claim_ids);
+ if jsonb_array_length(public.pasr_business_coupon_mine())<>0 or
+    jsonb_array_length(public.pasr_business_promo_mine())<>0 then
+   raise exception 'Used offers still shown after hiding'; end if;
+ perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);
  -- Published offers may be modified, but edits do not erase redemption history.
  perform public.pasr_business_coupon_save(jsonb_build_object(
    'id',v_coupon_id,'business_id','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -69,8 +87,20 @@ begin
    'discount_value',15,'min_spend',5,
    'starts_at',now()-interval '1 hour','ends_at',now()+interval '2 days',
    'max_uses',2,'active',true));
- perform public.pasr_business_discount_remove('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',v_coupon_id,'coupon');
- perform public.pasr_business_discount_remove('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',v_promo_id,'code');
+ batch := jsonb_build_array(
+   jsonb_build_object('kind','coupon','id',v_coupon_id),
+   jsonb_build_object('kind','code','id',v_promo_id),
+   jsonb_build_object('kind','card','id',stamp_card));
+ perform public.pasr_business_delete_items(business,batch,true);
+ if not exists (select 1 from public.pasr_business_cards where id=stamp_card)
+    or not exists (select 1 from public.pasr_business_promo_codes where id=v_promo_id)
+    or not exists (select 1 from public.pasr_business_coupons where id=v_coupon_id) then
+   raise exception 'Purge deleted active products'; end if;
+ perform public.pasr_business_delete_items(business,batch,false);
+ if jsonb_array_length(public.pasr_business_trash(business))<>3 then
+   raise exception 'Archive is missing products'; end if;
+ if exists (select 1 from public.pasr_business_members where business_card_id=stamp_card) then
+   raise exception 'Removed stamp card still has membership'; end if;
  if jsonb_array_length(public.pasr_business_coupon_list(null))<>0 or
     jsonb_array_length(public.pasr_business_promo_public())<>0 then
     raise exception 'Removed offers are still publicly shown'; end if;
@@ -84,5 +114,24 @@ begin
   raise exception 'Different owner removed promo';
  exception when sqlstate '42501' then null;
  end;
+ begin
+  perform public.pasr_business_delete_items(business,batch,true);
+  raise exception 'Different owner purged products';
+ exception when sqlstate '42501' then null;
+ end;
+ -- Undo the customer hiding only inside the fixture to assert merchant deletion independently.
+ update public.pasr_business_coupon_claims set hidden_at=null where redeem_code=pc;
+ update public.pasr_business_promo_claims set hidden_at=null where redeem_code=pa;
+ perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
+ if jsonb_array_length(public.pasr_business_coupon_mine())<>0 or
+    jsonb_array_length(public.pasr_business_promo_mine())<>0 then
+   raise exception 'Merchant-deleted products are still displayed'; end if;
+ perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);
+ perform public.pasr_business_delete_items(business,batch,true);
+ perform public.pasr_business_delete_items(business,batch,true);
+ if jsonb_array_length(public.pasr_business_trash(business))<>0
+    or exists (select 1 from public.pasr_business_promo_claims where promo_id=v_promo_id)
+    or exists (select 1 from public.pasr_business_coupon_claims where coupon_id=v_coupon_id) then
+   raise exception 'Purge left archive or claim records'; end if;
  raise notice 'PASR APP-ONLY DISCOUNT AND OWNER EDIT/DELETE TEST PASSED';
 end $$;
