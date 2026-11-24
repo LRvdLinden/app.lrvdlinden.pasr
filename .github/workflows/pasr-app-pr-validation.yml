@@ -41,7 +41,7 @@ jobs:
           assert 'VERSION_NAME") ?: "1.0.4"' in ap
           assert 'versionName = "1.0.3"' in az
           assert 'CODE=125' in Path(".github/workflows/android-pasr.yml").read_text()
-          assert 'export VERSION_CODE=118' in Path(".github/workflows/android-zakelijk.yml").read_text()
+          assert 'export VERSION_CODE=121' in Path(".github/workflows/android-zakelijk.yml").read_text()
           print("App versions validated.")
           PY
       - name: Check generated Xcode project is in sync
