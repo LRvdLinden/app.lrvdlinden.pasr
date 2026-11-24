@@ -56,7 +56,7 @@ end $$;
 -- Alleen service_role haalt dagelijkse ontvangers op. Een claim wordt maximaal eenmaal per dag geprobeerd.
 -- Na een succesvolle push wordt precies de huidige stempelbeurt gemarkeerd als verzonden.
 create or replace function public.pasr_business_retention_due(p_limit integer default 50)
-returns jsonb language plpgsql security definer set search_path = '' as $
+returns jsonb language plpgsql security definer set search_path = '' as $$
 declare result jsonb;
 begin
  if p_limit not between 1 and 100 then raise exception 'Ongeldige limiet.' using errcode='22023'; end if;
