@@ -25,7 +25,7 @@ for breakpoint in ("980px","760px","470px"):
 tabs=re.findall(r'\{ id: "([a-z-]+)", label: ',script)
 require(len(tabs)>=12 and len(tabs)==len(set(tabs)), "Dashboard contains 12+ unique tabs")
 for tab in tabs:
-    require(re.search(r'VIEWS\.'+re.escape(tab)+r'\s*=',script) is not None,
+    require(re.search(r'VIEWS(?:\.'+re.escape(tab)+r'|\["'+re.escape(tab)+r'"\])\s*=',script) is not None,
             f"Tab {tab} has a view controller")
 mapping={
  "acties":"settings","vestigingen":"locations","marketing":"marketing",
