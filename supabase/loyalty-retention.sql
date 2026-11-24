@@ -94,7 +94,7 @@ begin
    join public.pasr_business_programs cfg on cfg.card_id=c.id
  into result;
  return coalesce(result,'[]'::jsonb);
-end $;
+end $$;
 
 create or replace function public.pasr_business_retention_sent(p_member uuid,p_stamp timestamptz)
 returns boolean language plpgsql security definer set search_path = '' as $$
