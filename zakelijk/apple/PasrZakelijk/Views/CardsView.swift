@@ -12,6 +12,7 @@ struct CardsView: View {
     @State private var promoting: BusinessCard?
     @State private var program: BusinessCard?
     @State private var coupons = false
+    @State private var promoCodes = false
     @State private var marketing = false
     @State private var locations = false
     @State private var community = false
@@ -76,6 +77,7 @@ struct CardsView: View {
                     Button("Vestigingen", systemImage: "mappin.and.ellipse") { locations = true }
                     Button("Marketingkalender", systemImage: "calendar") { marketing = true }
                     Button("Kortingsbonnen", systemImage: "ticket") { coupons = true }
+                    Button("Actiecodes", systemImage: "number") { promoCodes = true }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button { showingCreateChoices = true } label: { Image(systemName: "plus") }
@@ -87,9 +89,10 @@ struct CardsView: View {
                     editing = BusinessCard()
                 }
                 .disabled(business.cards.count >= 5)
-                Button("Kortingscoupon of kortingscode", systemImage: "ticket") {
+                Button("Kortingscoupon", systemImage: "ticket") {
                     coupons = true
                 }
+                Button("Zelfgekozen actiecode", systemImage: "number") { promoCodes = true }
                 Button("Actie of beloning bij stempelkaart", systemImage: "gift") {
                     showingActionCardChoices = true
                 }
@@ -120,6 +123,9 @@ struct CardsView: View {
             }
             .sheet(isPresented: $coupons) {
                 BusinessCouponsView(business: business).trackModal()
+            }
+            .sheet(isPresented: $promoCodes) {
+                BusinessPromoCodesView(business: business).trackModal()
             }
             .sheet(isPresented: $marketing) {
                 BusinessMarketingView(business: business).trackModal()

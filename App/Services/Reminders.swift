@@ -387,7 +387,8 @@ struct RemindersSettingsSection: View {
                 Task {
                     if on {
                         let ok = await stores.enable(cards: cards)
-                        note = ok ? nil : String(localized: "Geef Pasr toegang tot je locatie en meldingen in de Instellingen van je iPhone.")
+                        if !ok { nearby = false }
+                        note = ok ? nil : String(localized: "Geef Pasr toestemming Altijd voor locatie en schakel meldingen in bij Instellingen.")
                     } else {
                         await stores.disable()
                         note = nil

@@ -113,6 +113,7 @@ fun CardsScreen(business: Business) {
     var sharing by remember { mutableStateOf<BusinessCard?>(null) }
     var program by remember { mutableStateOf<BusinessCard?>(null) }
     var coupons by remember { mutableStateOf(false) }
+    var promoCodes by remember { mutableStateOf(false) }
     var marketing by remember { mutableStateOf(false) }
     var locations by remember { mutableStateOf(false) }
     var community by remember { mutableStateOf(false) }
@@ -124,6 +125,7 @@ fun CardsScreen(business: Business) {
         TextButton(onClick = { locations = true }) { Text("Vestigingen", color = Pz.accent) }
         TextButton(onClick = { marketing = true }) { Text("Marketing", color = Pz.accent) }
         TextButton(onClick = { coupons = true }) { Text("Kortingsbonnen", color = Pz.accent) }
+        TextButton(onClick = { promoCodes = true }) { Text("Actiecodes", color = Pz.accent) }
         IconButton(onClick = { createChoices = true }) {
             Icon(Icons.Filled.Add, L("Nieuw aanmaken"), tint = Pz.accent)
         }
@@ -193,8 +195,9 @@ fun CardsScreen(business: Business) {
                     TextButton(onClick = { createChoices = false; editing = BusinessCard() },
                         enabled = business.cards.size < 5) { Text("Stempelkaart") }
                     TextButton(onClick = { createChoices = false; coupons = true }) {
-                        Text("Kortingscoupon of kortingscode")
+                        Text("Kortingscoupon")
                     }
+                    TextButton(onClick = { createChoices = false; promoCodes = true }) { Text("Zelfgekozen actiecode") }
                     TextButton(onClick = { createChoices = false; actionCardChoices = true },
                         enabled = business.cards.isNotEmpty()) { Text("Actie of beloning bij stempelkaart") }
                 }
@@ -222,6 +225,7 @@ fun CardsScreen(business: Business) {
     sharing?.let { CardShareSheet(business, it) { sharing = null } }
     program?.let { ProgramDialog(it) { program = null } }
     if (coupons) CouponBusinessDialog(business.id) { coupons = false }
+    if (promoCodes) PromoCodesDialog(business.id) { promoCodes = false }
     if (marketing) BusinessMarketingDialog(business) { marketing = false }
     if (locations) BusinessLocationsDialog(business) { locations = false }
     if (community) BusinessCommunityDialog(business) { community = false }

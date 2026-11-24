@@ -163,6 +163,7 @@
     { id: "kaarten", label: "Kaarten", icon: "card", owner: true },
     { id: "acties", label: "Acties en beloningen", short: "Acties", icon: "gift", owner: true },
     { id: "kortingsbonnen", label: "Kortingsbonnen", short: "Bonnen", icon: "card", owner: true },
+    { id: "actiecodes", label: "Actiecodes", short: "Codes", icon: "gift", owner: true },
     { id: "inzichten", label: "Bedrijfsinzichten", short: "Inzichten", icon: "chart", owner: true },
     { id: "marketing", label: "Marketingkalender", short: "Planning", icon: "chart", owner: true },
     { id: "vestigingen", label: "Vestigingen", short: "Filialen", icon: "gear", owner: true },
@@ -398,6 +399,10 @@
     if (window.PasrLoyalty2) window.PasrLoyalty2.community(panel, b, rpc);
     else panel.textContent = "Het samenwerkingsscherm kon niet worden geladen. Ververs de pagina.";
   };
+  VIEWS.actiecodes = function (panel, b) {
+    if (window.PasrPromoCodes) window.PasrPromoCodes.mount(panel, b, rpc);
+    else panel.textContent = "Actiecodes kunnen niet worden geladen.";
+  };
   VIEWS.kortingsbonnen = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.coupons(panel, b, rpc);
     else panel.textContent = "Kortingsbonnen zijn tijdelijk niet beschikbaar.";
@@ -597,11 +602,13 @@
         '<h2>Wat wil je aanmaken?</h2><p>Kies een product voor ' + esc(b.name) + '.</p>' +
         '<div class="zd-modal-foot" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-start">' +
         '<button class="zk-btn" id="zkCreateCard" type="button"' + (cards.length >= 5 ? ' disabled' : '') + '>Stempelkaart</button>' +
-        '<button class="zk-btn" id="zkCreateCoupon" type="button">Kortingscoupon of code</button>' +
+        '<button class="zk-btn" id="zkCreateCoupon" type="button">Kortingscoupon</button>' +
+        '<button class="zk-btn" id="zkCreatePromo" type="button">Zelfgekozen actiecode</button>' +
         '<button class="zk-btn" id="zkCreateAction" type="button"' + (!cards.length ? ' disabled' : '') + '>Actie of beloning</button>' +
         '<button class="zk-btn ghost" id="zkCreateClose" type="button">Annuleren</button></div>', nb);
       $("#zkCreateCard", md.el).addEventListener("click", function () { md.close(); dash.edit = null; dash.sub = "edit"; render(); });
       $("#zkCreateCoupon", md.el).addEventListener("click", function () { md.close(); go("kortingsbonnen"); });
+      $("#zkCreatePromo", md.el).addEventListener("click", function () { md.close(); go("actiecodes"); });
       $("#zkCreateAction", md.el).addEventListener("click", function () { md.close(); go("acties"); });
       $("#zkCreateClose", md.el).addEventListener("click", md.close);
     });

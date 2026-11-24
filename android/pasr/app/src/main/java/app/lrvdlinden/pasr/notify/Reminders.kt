@@ -40,6 +40,7 @@ object Reminders {
     const val CHANNEL = "reminders"
     const val CHANNEL_STAMPS = "stamps"
     const val CHANNEL_NEWS = "news"
+    const val CHANNEL_NEARBY = "nearby"
 
     fun setup(context: Context) {
         if (Build.VERSION.SDK_INT >= 26) {
@@ -49,6 +50,9 @@ object Reminders {
             })
             nm.createNotificationChannel(NotificationChannel(CHANNEL_STAMPS, "Stempelkaarten", NotificationManager.IMPORTANCE_DEFAULT).apply {
                 description = "Een stempel erbij of je stempelkaart is vol"
+            })
+            nm.createNotificationChannel(NotificationChannel(CHANNEL_NEARBY, "Kaart tonen bij de winkel", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "Alleen bij een bewaard filiaal en alleen na GPS-verificatie"
             })
             nm.createNotificationChannel(NotificationChannel(CHANNEL_NEWS, "Nieuws over mijn kaarten", NotificationManager.IMPORTANCE_DEFAULT).apply {
                 description = "Berichten van Pasr over winkels waarvan je een kaart hebt"

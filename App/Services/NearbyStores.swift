@@ -94,6 +94,8 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var waiting: [CheckedContinuation<CLLocation?, Never>] = []
     private var planning = false
+    // Tijdens de eerste iOS-toestemmingsdialoog is 'Bij gebruik' een tussentoestand.
+    private var requestingAlways = false
 
     private(set) var authorization: CLAuthorizationStatus
     private(set) var watched: [Watched] = []
@@ -153,15 +155,25 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
             UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
             return false
         }
-        // Gebieden bewaken kan alleen met "Altijd". iOS vraagt eerst "Bij gebruik" en later zelf om Altijd.
+        // Gebieden bewaken kan alleen met 'Altijd'. Verwerk de eerste iOS-dialoog als een lopende aanvraag.
+        requestingAlways = true
         if manager.authorizationStatus == .notDetermined || manager.authorizationStatus == .authorizedWhenInUse {
             manager.requestAlwaysAuthorization()
             for _ in 0..<60 where manager.authorizationStatus == .notDetermined { try? await Task.sleep(for: .milliseconds(500)) }
         }
+        requestingAlways = false
+        // Geen ingeschakelde schakelaar bewaren als de achtergrondtoestemming ontbreekt.
+        guard hasAlways else {
+            UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
+            manager.stopMonitoringSignificantLocationChanges()
+            stopRegions()
+            return false
+        }
+        // Door de toestemmingscallback kan de voorkeur tussentijds zijn veranderd.
+        UserDefaults.standard.set(true, forKey: Reminders.nearbyKey)
         await refresh(cards: cards, force: true)
         updateBackgroundWatching()
-        // Alleen Altijd geeft betrouwbare achtergrond-geofences; Bij gebruik is onvoldoende.
-        return hasAlways
+        return true
     }
 
     func disable() async {
@@ -620,7 +632,12 @@ final class NearbyStores: NSObject, CLLocationManagerDelegate {
             self.updateBackgroundWatching()
             // Net "Altijd" gekregen: de gebieden zetten (zonder Altijd bewaakt iOS ze niet).
             if gotAlways, Reminders.nearbyEnabled, !self.watched.isEmpty { await self.schedule(self.watched) }
-            if status != .authorizedAlways { self.stopRegions() }
+            if status != .authorizedAlways, !self.requestingAlways {
+                self.stopRegions()
+                self.manager.stopMonitoringSignificantLocationChanges()
+                // Altijd ingetrokken via Instellingen: de UI mag geen actieve bewaking tonen.
+                UserDefaults.standard.set(false, forKey: Reminders.nearbyKey)
+            }
         }
     }
 

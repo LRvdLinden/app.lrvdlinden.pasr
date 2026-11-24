@@ -94,6 +94,7 @@ fun Root() {
         LifecycleEventEffect(Lifecycle.Event.ON_START) {
             scope.launch {
                 Catalog.refresh()
+                app.lrvdlinden.pasr.notify.NearbyStoresAndroid.sync(appContext)
                 DeviceRegistry.registerIfNeeded(appContext)
                 if (Account.isSignedIn) Sync.sync()
                 val before = CardStore.visible.filter { it.isBusinessStamps }.associate { it.id to it.details.stampsFull }
@@ -144,6 +145,9 @@ fun Root() {
         }
         // kaarten veranderd (winkels, zakelijke stempelkaarten): push-gegevens opnieuw melden
         val cardsNow by CardStore.cards.collectAsState()
+        LaunchedEffect(cardsNow.map { "${it.id}|${it.storeName}|${it.deletedAt}|${it.places.hashCode()}" }) {
+            app.lrvdlinden.pasr.notify.NearbyStoresAndroid.sync(appContext)
+        }
         LaunchedEffect(cardsNow.map { "${it.templateID}|${it.details.memberCode}|${it.deletedAt != null}" }.toSet()) {
             kotlinx.coroutines.delay(3000)
             DeviceRegistry.registerIfNeeded(appContext)
