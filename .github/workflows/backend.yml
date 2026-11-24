@@ -60,6 +60,15 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/campaign.json)
           head -c 500 /tmp/campaign-result.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Campaign engine failed HTTP $code"; exit 1; }
+      - name: VIP-voordelen per niveau
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/loyalty-vip.sql").read()}))' > /tmp/vip.json
+          code=$(curl -s -o /tmp/vip-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/vip.json)
+          head -c 500 /tmp/vip-result.txt; echo
+          [ "$code" -lt 300 ] || { echo "::error::VIP rewards schema failed HTTP $code"; exit 1; }
       - name: Toestemming en automatische terugkomherinneringen
         if: steps.check.outputs.skip != '1'
         run: |
