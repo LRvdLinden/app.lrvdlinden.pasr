@@ -49,7 +49,7 @@ jobs:
         id: version
         run: |
           NAME=$(grep -m1 'System.getenv("VERSION_NAME")' app/build.gradle.kts | sed -E 's/.*\?: "([^"]+)".*/\1/')
-          CODE=127
+          CODE=128
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
           echo "Versie $NAME ($CODE)"
