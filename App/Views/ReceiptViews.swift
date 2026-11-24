@@ -309,6 +309,13 @@ enum ReceiptUseLinker {
         // Ook herhaald openen/herstellen blijft idempotent.
         if let linked = card.uses.first(where: { $0.receiptID == receipt.id }) {
             receipt.useID = linked.id
+            if linked.source == "receipt" {
+                // Handmatig gecorrigeerde bon: bijbehorend automatisch moment volgt mee.
+                card.updateUse(linked.id) { event in
+                    event.date = receipt.date
+                    event.amount = receipt.total.flatMap { $0 > 0 ? $0 : nil }
+                }
+            }
             return
         }
         let candidates = card.uses.filter {
@@ -681,7 +688,13 @@ struct ReceiptDetailView: View {
         ReceiptReminders.cancel(receipt)
         let id = receipt.id
         if let cardID = receipt.cardID, let useID = receipt.useID, let card = cards.first(where: { $0.id == cardID }) {
-            card.updateUse(useID) { if $0.receiptID == id { $0.receiptID = nil } }
+            if let event = card.uses.first(where: { $0.id == useID && $0.receiptID == id }),
+               event.source == "receipt" {
+                // Een uitsluitend vanuit de bon aangemaakt gebruiksmoment ook verwijderen.
+                card.history = card.history.filter { $0.id != useID }
+            } else {
+                card.updateUse(useID) { if $0.receiptID == id { $0.receiptID = nil } }
+            }
         }
         context.delete(receipt)
         try? context.save()
