@@ -10,6 +10,7 @@ on:
       - "Pasr.xcodeproj/**"
       - "zakelijk/apple/**"
       - "website/**"
+      - "preview/**"
       - "tools/make_zakelijk.py"
       - "tools/verify_zakelijk_dashboard.py"
       - "supabase/**"
@@ -29,6 +30,20 @@ permissions:
   contents: read
 
 jobs:
+  pasr-test-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate the actual isolated test pages
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check Pillow python-barcode
+          python3 tools/make_website.py
+          python3 preview/build_preview.py
+          node --check preview/pasr-preview.js
+          python3 -m py_compile preview/build_preview.py
+          test -f website/test/assets/pasr-preview.css
+          test -f website/test/zakelijk/index.html
+
   zakelijk-website-integrity:
     runs-on: ubuntu-latest
     steps:
