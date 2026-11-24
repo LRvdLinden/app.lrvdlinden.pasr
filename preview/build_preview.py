@@ -51,6 +51,68 @@ def stamps_visual() -> str:
       <button id="pv-add-stamp" type="button" class="pv-btn pv-stamp-control">Probeer +1 stempel</button>
     </div>"""
 
+
+def business_platform_visual() -> str:
+    """Show loyalty AND coupons AND VIP, with real Pasr stamp artwork and interactions."""
+    stamps = "".join('<span class="pv-stamp-dot" aria-hidden="true"></span>' for _ in range(10))
+    return f"""<div class="pv-business-demo" aria-label="Interactieve voorbeelden Pasr Zakelijk">
+      <div class="pv-demo-switch" role="group" aria-label="Kies een functievoorbeeld">
+        <button class="pv-demo-tab" type="button" data-pv-demo="stempel" aria-pressed="true">Stempelkaart</button>
+        <button class="pv-demo-tab" type="button" data-pv-demo="coupon" aria-pressed="false">Kortingscoupon</button>
+        <button class="pv-demo-tab" type="button" data-pv-demo="vip" aria-pressed="false">VIP &amp; voordeel</button>
+      </div>
+      <div class="pv-demo-panel" data-pv-panel="stempel">
+        <div class="pv-stamp" aria-label="Digitale stempelkaartdemonstratie">
+          <div class="pv-stamp-head">Koffiebar De Hoek <span>Stempelkaart</span></div>
+          <div class="pv-stamp-dots" id="pv-stamps">{stamps}</div>
+          <div class="pv-stamp-bottom" id="pv-stamp-status" aria-live="polite">6 van 10 stempels · 4 te gaan</div>
+        </div>
+        <button id="pv-add-stamp" type="button" class="pv-btn pv-demo-action">Probeer +1 stempel</button>
+      </div>
+      <div class="pv-demo-panel" data-pv-panel="coupon" hidden>
+        <div class="pv-coupon-visual pv-merchant-coupon">
+          <span class="pv-demo-label">VOORBEELD · NIET INWISSELBAAR</span>
+          <p>Pasr Zakelijk · eigen kortingscoupon</p>
+          <b id="pv-coupon-value">10% korting</b>
+          <div class="pv-dash"></div><span class="pv-soft">QR of barcode bij de kassa · beperkt geldig</span>
+        </div>
+        <button id="pv-change-coupon" type="button" class="pv-btn pv-demo-action">Bekijk een € 5-coupon</button>
+      </div>
+      <div class="pv-demo-panel" data-pv-panel="vip" hidden>
+        <div class="pv-vip-card">
+          <span class="pv-demo-label">VOORBEELD · KLANTENBINDING</span>
+          <span class="pv-vip-crown" aria-hidden="true">✦</span>
+          <strong>VIP Goud</strong>
+          <p>25 bezoeken · exclusieve beloning en tijdelijke acties</p>
+          <span>Stel voordelen per klantniveau in</span>
+        </div>
+        <a class="pv-btn pv-demo-action" href="/zakelijk/dashboard/">Bekijk het ondernemersdashboard</a>
+      </div>
+      <p class="pv-demo-footnote">Interactie is een demonstratie. Er worden geen echte stempels, coupons of VIP-voordelen aangemaakt.</p>
+    </div>"""
+
+def business_feature_grid() -> str:
+    features = [
+        ("Digitale stempelkaarten", "Maak kaarten met eigen kleuren, meerdere beloningen en de officiële Pasr-stempel.", "Stempelkaarten"),
+        ("Kortingscoupons", "Stel een vast kortingsbedrag of percentage in, met unieke QR- of barcode.", "Coupons"),
+        ("Tijdelijke acties", "Plan dubbele stempels en aanbiedingen met een begin- en einddatum.", "Acties"),
+        ("VIP &amp; referrals", "Beloon vaste klanten en geef vriendenbonussen na een geldige aankoop.", "VIP"),
+        ("Marketingkalender", "Plan acties en download promotiemateriaal voor je winkel.", "Marketing"),
+        ("Vestigingen &amp; medewerkers", "Beheer meerdere locaties en toegang voor je team.", "Beheer"),
+        ("Inzichten", "Bekijk stempels, beloningen en terugkerende bezoeken.", "Statistieken"),
+        ("Samenwerkingen", "Maak gezamenlijke acties met andere deelnemende ondernemers.", "Samen"),
+    ]
+    items = "".join(
+        '<article class="pv-feature"><small>' + label + '</small><h3>' + title +
+        '</h3><p>' + text + '</p></article>'
+        for title, text, label in features
+    )
+    return ('<section class="pv-business-features" id="pv-business-features" aria-label="Alles wat ondernemers met Pasr kunnen doen">'
+            '<div class="pv-feature-heading"><div><span class="pv-business-eyebrow">ÉÉN ONDERNEMERSPLATFORM</span>'
+            '<h2>Veel meer dan alleen stempelkaarten.</h2></div>'
+            '<a href="/zakelijk/dashboard/" class="pv-feature-link">Naar het bestaande dashboard</a></div>'
+            '<div class="pv-feature-grid">' + items + '</div></section>')
+
 def coupon_visual() -> str:
     return """<div class="pv-cards"><div class="pv-coupon-visual">
       <span class="pv-show">Voorbeeld, geen echte aanbieding</span>
@@ -89,12 +151,12 @@ def concept(key: str) -> str:
                     '<a class="pv-btn" href="#pz2Public">Bekijk actuele kortingsbonnen</a>'
                     '<a class="pv-btn alt" href="/test/zakelijk/">Zelf een actie maken</a>',
                     coupon_visual()),
-        "zakelijk": ("PASR VOOR ONDERNEMERS", "Maak van bezoekers<br>vaste klanten.",
-                    "Start gratis met een digitale stempelkaart. Beloon klanten, maak kortingsbonnen, "
-                    "plan campagnes en bekijk bedrijfsinzichten. Alle bestaande zakelijke functies blijven behouden.",
-                    '<a class="pv-btn" href="/zakelijk/dashboard/#account">Maak gratis een kaart</a>'
-                    '<a class="pv-btn alt" href="#functies">Bekijk alle bestaande functies</a>',
-                    stamps_visual()),
+        "zakelijk": ("PASR ZAKELIJK · KLANTENBINDING", "Klantenbinding.<br>Alle tools in één.",
+                    "Maak digitale stempelkaarten én kortingscoupons, stel VIP-beloningen en vriendenacties in, "
+                    "plan campagnes en ontdek je resultaten. Eén platform voor jouw onderneming.",
+                    '<a class="pv-btn" href="/zakelijk/dashboard/#account">Gratis beginnen</a>'
+                    '<a class="pv-btn alt" href="#pv-business-features">Ontdek alle functies</a>',
+                    business_platform_visual()),
     }
     kicker, heading, description, actions, visual = configs[key]
     extra = {
@@ -106,8 +168,9 @@ def concept(key: str) -> str:
                     ("Kortingsbonnen","/test/kortingsbonnen/")],
         "korting": [("Alle kortingsbonnen","#pz2Public"),("Kaartenhub","/test/kaarten/"),
                     ("Voor ondernemers","/test/zakelijk/")],
-        "zakelijk": [("Zo werkt het","#zo-werkt-het"),("Stempelkaartanimatie","#functies"),
-                    ("Gratis aanmelden","/zakelijk/dashboard/#account"),("Dashboard","/zakelijk/dashboard/")],
+        "zakelijk": [("Kortingscoupons","#pv-business-features"),("Stempelkaarten","#pv-business-features"),
+                    ("VIP & referrals","#pv-business-features"),("Marketing","#pv-business-features"),
+                    ("Samenwerkingen","#pv-business-features"),("Dashboard","/zakelijk/dashboard/")],
     }
     pills = "".join(f'<a href="{html.escape(h,quote=True)}">{html.escape(t)}</a>' for t, h in extra[key])
     return f"""<div class="pv-stage" id="preview">
@@ -122,7 +185,8 @@ def concept(key: str) -> str:
       </section>
       <p class="pv-note">Interactief concept · de bestaande kaartanimaties, flips, stempels,
       zoekfilters, apps en zakelijke functies staan verderop ongewijzigd op deze pagina.
-      De voorbeeldstempels hierboven worden niet opgeslagen.</p>
+      De voorbeelden hierboven zijn demonstraties en worden niet opgeslagen.</p>
+      {business_feature_grid() if key == "zakelijk" else ""}
       <div class="pv-under"><h3>Wat wil je ontdekken?</h3><div class="pv-pills">{pills}</div></div>
       <div class="pv-original"><strong>Alle bestaande Pasr-functies en animaties</strong>
         <p>Hieronder staat de huidige volledige pagina. Niets is weggehaald of vervangen.</p>
@@ -190,6 +254,11 @@ def verify() -> None:
         if key == "zakelijk":
             assert "zv-designer" in document or "zv-scan" in document, "Original business demo missing"
             assert '/zakelijk/dashboard/' in document, "Actual dashboard link lost"
+            for feature in ("Kortingscoupons", "Digitale stempelkaarten", "VIP", "Marketingkalender",
+                            "Vestigingen", "Inzichten", "Samenwerkingen"):
+                assert feature in document, "Business preview missing " + feature
+            for mode in ("stempel", "coupon", "vip"):
+                assert 'data-pv-demo="' + mode + '"' in document, "Missing merchant demo " + mode
         if key == "kaarten":
             assert 'id="kf-q"' in document, "Original catalog filters missing"
         if key == "cadeau":

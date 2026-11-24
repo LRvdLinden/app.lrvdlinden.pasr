@@ -32,6 +32,29 @@
   }
   if (reset) reset.addEventListener("click", () => { state.stampCount = 0; draw(false); });
 
+  // Three separate demonstrations of genuine business product categories.
+  // All interactions are local and never create/redeem real merchant discounts.
+  document.querySelectorAll("[data-pv-demo]").forEach(button => {
+    button.addEventListener("click", () => {
+      const selected = button.dataset.pvDemo;
+      document.querySelectorAll("[data-pv-demo]").forEach(tab => {
+        tab.setAttribute("aria-pressed", String(tab.dataset.pvDemo === selected));
+      });
+      document.querySelectorAll("[data-pv-panel]").forEach(panel => {
+        panel.hidden = panel.dataset.pvPanel !== selected;
+      });
+    });
+  });
+  const couponButton = document.getElementById("pv-change-coupon");
+  const couponValue = document.getElementById("pv-coupon-value");
+  if (couponButton && couponValue) {
+    couponButton.addEventListener("click", () => {
+      const isPercentage = couponValue.textContent.includes("%");
+      couponValue.textContent = isPercentage ? "€ 5 korting" : "10% korting";
+      couponButton.textContent = isPercentage ? "Bekijk een 10%-coupon" : "Bekijk een € 5-coupon";
+    });
+  }
+
   // Search input in concept hero leads to EXISTING catalog and gift-guide filters.
   // Never change or replace the existing catalog's search implementation.
   const qs = new URLSearchParams(location.search);
