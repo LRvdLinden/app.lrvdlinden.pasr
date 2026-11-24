@@ -38,11 +38,12 @@ enum PurchaseCapture {
         if let amount, amount > 0, use?.amount == nil {
             let money = CardHistoryFormat.money(amount, card.currencyCode)
             if card.kind == .voucher {
-                // cadeaukaart: eerst vragen voordat het van het tegoed gaat
+                // Apple Pay toont alleen dat er is betaald bij deze winkel: het bewijst niet dat
+                // de cadeaukaart is gebruikt. Verlaag het tegoed uitsluitend na een expliciet 'Ja'.
                 card.updateUse(useID) { $0.pendingAmount = amount }
-                message = String(localized: "\(money) bij \(card.storeName): afboeken van je tegoed?")
-                notify(title: String(localized: "\(money) afboeken van \(card.storeName)?"),
-                       body: String(localized: "Tegoed nu \(CardHistoryFormat.money(card.balance ?? 0, card.currencyCode)). Houd de melding ingedrukt om af te boeken."),
+                message = String(localized: "Betaling van \(money) bij \(card.storeName) herkend. Cadeaukaarttegoed nog niet afgeboekt.")
+                notify(title: String(localized: "\(card.storeName) – betaling van \(money) herkend"),
+                       body: String(localized: "Heb je bij deze aankoop ook \(money) van je \(card.storeName)-cadeaukaart gebruikt? Houd de melding ingedrukt en kies Ja of Nee. Je tegoed blijft anders ongewijzigd."),
                        id: "pay-\(useID.uuidString)", category: notificationCategory,
                        info: ["cardID": card.id.uuidString, "useID": useID.uuidString])
             } else {
@@ -109,8 +110,8 @@ enum PurchaseCapture {
 
     /// Knoppen onder de melding "€ 12,34 afboeken van …?".
     static func registerCategories() {
-        let book = UNNotificationAction(identifier: bookAction, title: String(localized: "Afboeken"), options: [.authenticationRequired])
-        let skip = UNNotificationAction(identifier: skipAction, title: String(localized: "Niet afboeken"), options: [])
+        let book = UNNotificationAction(identifier: bookAction, title: String(localized: "Ja, tegoed afboeken"), options: [.authenticationRequired])
+        let skip = UNNotificationAction(identifier: skipAction, title: String(localized: "Nee, niet afboeken"), options: [])
         let category = UNNotificationCategory(identifier: notificationCategory, actions: [book, skip], intentIdentifiers: [])
         let center = UNUserNotificationCenter.current()
         center.getNotificationCategories { existing in
@@ -248,7 +249,7 @@ struct PurchaseAutomationView: View {
                     Image(systemName: "wave.3.right.circle.fill")
                         .font(.system(size: 44)).foregroundStyle(Brand.mint)
                     Text("Aankopen vanzelf vastleggen").font(.title2.weight(.bold))
-                    Text("Betaal je met Apple Pay, dan geeft de app Opdrachten de winkel en het bedrag aan Pasr. Pasr zoekt de kaart die erbij past en zet de aankoop in Laatst gebruikt. Bij een cadeaukaart vraagt Pasr eerst in een melding of het bedrag van je tegoed af mag.")
+                    Text("Betaal je met Apple Pay, dan geeft de app Opdrachten de winkel en het bedrag aan Pasr. Pasr zoekt de kaart die erbij past en zet de aankoop in Laatst gebruikt. Een Apple Pay-betaling betekent niet dat je ook een cadeaukaart hebt gebruikt. Daarom vraagt Pasr bij een cadeaukaart expliciet of je dat bedrag van het tegoed hebt betaald. Zonder jouw bevestiging verandert het tegoed niet.")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 6)
@@ -317,7 +318,7 @@ struct PurchaseAutomationView: View {
             } header: {
                 Text("Meldingen")
             } footer: {
-                Text("Met meldingen laat Pasr weten als er geen kaart bij een winkel past, en vraagt het bij een cadeaukaart of het bedrag afgeboekt mag worden.")
+                Text("Met meldingen laat Pasr weten als er geen kaart bij een winkel past. Bij een cadeaukaart vraagt Pasr of je die ook echt hebt gebruikt. Alleen met ‘Ja, tegoed afboeken’ wordt het tegoed aangepast.")
             }
             Section {
             } footer: {

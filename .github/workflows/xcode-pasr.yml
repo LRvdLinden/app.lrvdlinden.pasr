@@ -1,0 +1,53 @@
+name: Pasr Klantenkaarten 1.0.4 Xcode-project
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "App/**"
+      - "Shared/**"
+      - "Watch/**"
+      - "Widgets/**"
+      - "Config/**"
+      - "Pasr.xcodeproj/**"
+      - ".github/workflows/xcode-pasr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  source-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Maak volledig Xcode-project
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'MARKETING_VERSION = "1.0.4"' Pasr.xcodeproj/project.pbxproj
+          grep -q 'CURRENT_PROJECT_VERSION = "52"' Pasr.xcodeproj/project.pbxproj
+          mkdir -p dist
+          work="$(mktemp -d)"
+          folder="Pasr-Klantenkaarten-1.0.4-build52"
+          mkdir -p "$work/$folder"
+          cp -a App Shared Watch Widgets Config Pasr.xcodeproj "$work/$folder/"
+          printf '%s\n' '# Pasr Klantenkaarten 1.0.4 build 52' 'Open Pasr.xcodeproj in Xcode. Selecteer scheme Pasr, stel signing in en gebruik Product > Archive om via Organizer te distribueren.' > "$work/$folder/OPEN-IN-XCODE.md"
+          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Klantenkaarten-Xcode-1.0.4-build52.zip" "$folder")
+          unzip -tq dist/Pasr-Klantenkaarten-Xcode-1.0.4-build52.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pasr-Klantenkaarten-Xcode-1.0.4-build52
+          path: dist/Pasr-Klantenkaarten-Xcode-1.0.4-build52.zip
+          retention-days: 90
+      - name: Publiceer ZIP op GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="xcode-pasr-1.0.4-build52"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Klantenkaarten 1.0.4 (build 52) – Xcode" --notes "Dezelfde Siri-opdracht, duidelijkere cadeaukaartbevestiging. Het Xcode-project kan lokaal worden gearchiveerd en ingediend bij App Store Connect."
+          fi
+          gh release upload "$TAG" dist/Pasr-Klantenkaarten-Xcode-1.0.4-build52.zip --clobber
