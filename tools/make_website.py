@@ -862,6 +862,21 @@ if __name__ == "__main__":
         out.mkdir(parents=True, exist_ok=True)
         (out / "index.html").write_text(move_page(slug, m))
         print("Wrote", out / "index.html")
+    # Pasr kortingsbonnen: statisch blad met live (publiek leesbare) acties.
+    coupons = ROOT / "kortingsbonnen"
+    coupons.mkdir(parents=True, exist_ok=True)
+    (coupons / "index.html").write_text("""<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kortingsbonnen | Pasr: Klantenkaarten</title>
+<meta name="description" content="Ontdek tijdelijke kortingsbonnen van ondernemers in Pasr. Bewaar een unieke kortingscode en laat hem bij de kassa verzilveren.">
+<link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/zakelijk.css"></head>
+<body class="pz2-public"><header class="wrap nav"><a href="/" aria-label="Pasr home"><img src="/assets/icon.png" width="38" height="38" alt=""> Pasr</a>
+<nav><a href="/">Home</a><a href="/zakelijk/">Voor ondernemers</a></nav></header>
+<main class="wrap" id="pz2Public"></main>
+<footer class="wrap"><p>Pasr · Kortingsbonnen worden alleen door de deelnemende ondernemer uitgegeven en gecontroleerd.</p></footer>
+<script src="/assets/account-config.js"></script><script src="/assets/vendor/qrcode.js"></script>
+<script src="/assets/loyalty2.js"></script><script>window.PasrLoyalty2.publicPage(document.getElementById("pz2Public"));</script></body></html>""",encoding="utf-8")
+    print("Wrote", coupons / "index.html")
     # pasr.nl/zakelijk: landingspagina voor ondernemers en de app-pagina's (dashboard, scanner, …)
     import make_zakelijk
     for w in make_zakelijk.build():

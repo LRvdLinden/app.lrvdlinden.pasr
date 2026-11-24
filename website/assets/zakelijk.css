@@ -681,3 +681,34 @@
   .pz-promo, .pz-promo-intro, .pz-old-flyer>h2 { display:none !important; }
   .pz-old-flyer {margin:0!important;}
 }
+
+/* Loyalty v2: bestaande Pasr-huisstijl, shared met het ondernemersdashboard. */
+.pz2-controls{display:flex;gap:16px;margin:16px 0;flex-wrap:wrap}
+.pz2-controls label{font-weight:700;display:grid;gap:5px;min-width:min(100%,290px)}
+.pz2-controls select,.pz2-controls input,.pz2-field input,.pz2-field select,.pz2-field textarea{
+  width:100%;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);color:var(--ink);
+  padding:12px 13px;font:500 15px var(--body);line-height:1.4}
+.pz2-form{display:grid;gap:16px;align-items:start}
+.pz2-panel{background:var(--paper-2);border:1px solid var(--line);padding:24px;border-radius:22px;margin:14px 0;min-width:0}
+.pz2-panel h3{font:800 24px var(--display);letter-spacing:-.03em;margin:0 0 4px}
+.pz2-panel p{color:var(--ink-2);font-size:15px;margin:2px 0 12px}
+.pz2-panel details{padding:12px;border-radius:12px;background:var(--paper);font-size:14px}
+.pz2-field{display:grid;gap:6px;font:700 14px var(--body);min-width:0}
+.pz2-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.pz2-toggle{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid var(--line)}
+.pz2-toggle b{display:block;font-size:15px}.pz2-toggle small{display:block;color:var(--ink-2);font-size:13px;font-weight:400;max-width:520px}
+.pz2-toggle input{width:22px;height:22px;accent-color:var(--iris);flex:none}
+.pz2-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,350px),1fr));gap:18px}
+.pz2-inline{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+.pz2-notice{min-height:1.3em;color:var(--ink-2)}
+.pz2-notice[data-ok=true]{color:#0A7F60}.pz2-notice[data-ok=false]{color:#A82B2B}
+.pz2-coupon{border-bottom:1px solid var(--line);padding:12px 0}.pz2-coupon small{color:var(--ink-2)}
+.pz2-hero{max-width:920px;margin:32px auto}.pz2-hero h1{font:800 clamp(32px,6vw,68px)/1.1 var(--display);margin:7px 0}
+.pz2-hero p{color:var(--ink-2);max-width:650px}
+.pz2-publiccard{border-radius:22px;border:1px solid var(--line);overflow:hidden;background:var(--paper-2)}
+.pz2-violet{padding:26px;background:linear-gradient(125deg,#6A5CFF,#4A3CE0);color:#fff}
+.pz2-violet small{display:block}.pz2-violet strong{display:block;font:800 38px var(--display)}
+.pz2-publicbody{padding:22px}.pz2-publicbody h2{font:800 22px var(--display);margin:0}.pz2-publicbody p{font-size:15px}.pz2-publicbody small{display:block;margin-bottom:15px;color:var(--ink-2)}
+.pz2-dialog{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:rgba(14,12,35,.8);padding:20px}
+.pz2-dialog .pz2-panel{max-width:480px;width:100%}.pz2-qr{max-width:240px;background:white;padding:18px;margin:16px auto}
+.pz2-code{text-align:center;word-break:break-all;font:800 20px var(--display)}

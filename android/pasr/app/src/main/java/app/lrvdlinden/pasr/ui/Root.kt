@@ -60,6 +60,7 @@ sealed interface Screen {
     data class ReceiptDetail(val id: String) : Screen
     data class ReceiptReview(val cardId: String?, val useId: String?, val receiptId: String? = null) : Screen
     /** Uitleg en aan/uit voor aankopen vanzelf vastleggen (betaalmeldingen). */
+    data object Coupons : Screen
     data object PayCapture : Screen
 }
 
@@ -206,6 +207,7 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.Receipts -> ReceiptsScreen(s.query)
             is Screen.ReceiptDetail -> ReceiptDetailScreen(s.id)
             is Screen.ReceiptReview -> ReceiptReviewScreen(s.cardId, s.useId, s.receiptId)
+            Screen.Coupons -> CouponsScreen()
             Screen.PayCapture -> PayCaptureScreen()
         }
     }

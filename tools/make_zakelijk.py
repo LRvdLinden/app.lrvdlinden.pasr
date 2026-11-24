@@ -125,6 +125,14 @@ FEATURES = [
     ("lock", "#6A5CFF", "Privacy voor je klanten",
      "Klanten sparen met een anonieme klantcode. Pasr vraagt geen naam, e-mailadres of telefoonnummer; jij ziet alleen "
      "de laatste tekens van de code en de stempels.", 2, "privacy"),
+    ("gift", "#6A5CFF", "Meerdere beloningen en VIP-niveaus",
+     "Stel per kaart beloningen en niveaus in. Kies zelf wanneer klanten een extra voordeel ontvangen.", 4, "designer"),
+    ("bell", "#12A77E", "Terugkomacties en vrienden uitnodigen",
+     "Configureer campagnes en vriendenbonussen per stempelkaart, met heldere voorwaarden en uitleg.", 2, "push"),
+    ("print", "#FF6B57", "Tijdelijke kortingsbonnen",
+     "Maak acties met een vast kortingsbedrag of percentage, geldigheid en eenmalige unieke code.", 2, "flyer"),
+    ("chart", "#6A5CFF", "Campagnes, filialen en winkelstraatacties",
+     "Beheer meerdere locaties, plan acties en bekijk statistieken. Werk samen met andere ondernemers.", 4, "insights"),
     ("stamp", "#6A5CFF", "Branded socialmediabanners voor elke kaart",
      "Maak per eigen stempelkaart Instagram-posts, Stories, WhatsApp-statussen en websitebanners. "
      "Met je echte bedrijfslogo, kaartkleur, Pasr-stempels en QR-code, als PNG of complete ZIP.", 4, "designer"),
@@ -412,6 +420,7 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
 SCRIPTS = '''  <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>
 {jsqr}  <script src="/assets/promo.js"></script>
+  <script src="/assets/loyalty2.js"></script>
   <script src="/assets/zakelijk.js"></script>'''
 JSQR = '  <script src="/assets/vendor/jsqr.min.js"></script>\n'
 APP_PAGES = [

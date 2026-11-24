@@ -110,8 +110,11 @@ import java.io.File
 fun CardsScreen(business: Business) {
     var editing by remember { mutableStateOf<BusinessCard?>(null) }
     var sharing by remember { mutableStateOf<BusinessCard?>(null) }
+    var program by remember { mutableStateOf<BusinessCard?>(null) }
+    var coupons by remember { mutableStateOf(false) }
     val context = LocalContext.current
     ScreenScaffold(L("Kaarten"), actions = {
+        TextButton(onClick = { coupons = true }) { Text("Kortingsbonnen", color = Pz.accent) }
         IconButton(onClick = { editing = BusinessCard() }, enabled = business.cards.size < 5) {
             Icon(Icons.Filled.Add, L("Nieuwe kaart"), tint = if (business.cards.size < 5) Pz.accent else Pz.muted)
         }
@@ -155,6 +158,12 @@ fun CardsScreen(business: Business) {
                                 }
                             }
                         }
+                        if (card.id.isNotEmpty()) {
+                            TextButton(onClick = { program = card }, modifier = Modifier.padding(horizontal = 10.dp)) {
+                                Icon(Icons.Filled.Share, null, tint = Pz.accent, modifier = Modifier.size(18.dp))
+                                Text("  Acties en beloningen", color = Pz.accent, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
                         if (card.published) {
                             TextButton(onClick = { openPromo(context, card) }, modifier = Modifier.padding(horizontal = 10.dp)) {
                                 Icon(Icons.Filled.Share, null, tint = Pz.accent, modifier = Modifier.size(18.dp))
@@ -168,6 +177,8 @@ fun CardsScreen(business: Business) {
     }
     editing?.let { CardEditorSheet(business, it) { editing = null } }
     sharing?.let { CardShareSheet(business, it) { sharing = null } }
+    program?.let { ProgramDialog(it) { program = null } }
+    if (coupons) CouponBusinessDialog(business.id) { coupons = false }
 }
 
 @Composable

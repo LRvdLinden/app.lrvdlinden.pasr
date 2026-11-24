@@ -10,6 +10,8 @@ struct CardsView: View {
     @State private var editing: BusinessCard?
     @State private var sharing: BusinessCard?
     @State private var promoting: BusinessCard?
+    @State private var program: BusinessCard?
+    @State private var coupons = false
 
     var body: some View {
         NavigationStack {
@@ -50,6 +52,7 @@ struct CardsView: View {
                             if card.published {
                                 Button("QR, link en flyer", systemImage: "qrcode") { sharing = card }
                                 Button("Promotiemateriaal", systemImage: "photo.on.rectangle") { promoting = card }
+                                Button("Acties en beloningen", systemImage: "gift") { program = card }
                             }
                         }
                         .buttonStyle(.borderless)
@@ -64,6 +67,9 @@ struct CardsView: View {
             .toolbar {
                 BusinessPicker()
                 ToolbarItem(placement: .primaryAction) {
+                    Button("Kortingsbonnen", systemImage: "ticket") { coupons = true }
+                }
+                ToolbarItem(placement: .primaryAction) {
                     Button { editing = BusinessCard() } label: { Image(systemName: "plus") }
                         .accessibilityLabel(Text("Nieuwe kaart"))
                         .disabled(business.cards.count >= 5)
@@ -77,6 +83,12 @@ struct CardsView: View {
             }
             .sheet(item: $promoting) { card in
                 PromoBrowser(card: card).ignoresSafeArea()
+            }
+            .sheet(item: $program) { card in
+                LoyaltyProgramView(card: card).trackModal()
+            }
+            .sheet(isPresented: $coupons) {
+                BusinessCouponsView(business: business).trackModal()
             }
         }
     }

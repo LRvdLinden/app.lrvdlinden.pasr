@@ -161,6 +161,8 @@
   var TABS = [
     { id: "overzicht", label: "Overzicht", icon: "chart", owner: true },
     { id: "kaarten", label: "Kaarten", icon: "card", owner: true },
+    { id: "acties", label: "Acties en beloningen", short: "Acties", icon: "gift", owner: true },
+    { id: "kortingsbonnen", label: "Kortingsbonnen", short: "Bonnen", icon: "card", owner: true },
     { id: "scannen", label: "Scannen", icon: "scan" },
     { id: "medewerkers", label: "Medewerkers", short: "Team", icon: "users", owner: true },
     { id: "instellingen", label: "Instellingen", icon: "gear", owner: true },
@@ -372,7 +374,15 @@
     }
     render();
   }
-  function panelTitle(title, sub, actions) {
+  VIEWS.acties = function (panel, b) {
+    if (window.PasrLoyalty2) window.PasrLoyalty2.settings(panel, b, rpc);
+    else panel.textContent = "De instellingen zijn tijdelijk niet beschikbaar.";
+  };
+  VIEWS.kortingsbonnen = function (panel, b) {
+    if (window.PasrLoyalty2) window.PasrLoyalty2.coupons(panel, b, rpc);
+    else panel.textContent = "Kortingsbonnen zijn tijdelijk niet beschikbaar.";
+  };
+    function panelTitle(title, sub, actions) {
     return '<div class="zd-ptitle"><div><h2 id="zd-title">' + esc(title) + "</h2>" + (sub ? '<p class="zd-sub">' + sub + "</p>" : "") + "</div>" + (actions || "") + "</div>";
   }
   function table(cols, rows, cls) {
