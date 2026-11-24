@@ -234,3 +234,12 @@
 .ch-hero-stempelkaarten.ch-hero { background:var(--hero-stamps-bg); }
 .ch-hero-kortingsbonnen.ch-hero { background:var(--hero-coupons-bg); }
 .ds-primary, .ch-global-search button, .ch-sections a[aria-current="page"] { background:var(--action-bg); color:var(--action-ink); }
+
+/* Preserve category-specific heroes without light backgrounds behind dark-mode text. */
+.ch-hero.ch-hero-cadeaubon, .ch-hero.ch-hero-saldo-checken {
+  background:var(--hero-gift-bg); color:var(--hero-gift-ink);
+}
+.ch-hero.ch-hero-cadeaubon h1, .ch-hero.ch-hero-saldo-checken h1 { color:var(--hero-gift-ink); }
+.ch-hero.ch-hero-cadeaubon .ch-hero-copy>p, .ch-hero.ch-hero-saldo-checken .ch-hero-copy>p { color:var(--hero-gift-muted); }
+.ch-hero.ch-hero-kaarten, .ch-hero.ch-hero-klantenkaart { background:var(--hero-cards-bg); }
+.ch-sections a[aria-current="page"]:hover { color:var(--action-ink); }

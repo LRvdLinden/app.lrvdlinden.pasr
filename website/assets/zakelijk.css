@@ -767,3 +767,26 @@
 .zv-find .t b, .zv-a4 b, .zv-push .nt b { color:#17162A; }
 .zv-a4 em, .zv-code i, .zv-push .nt { color:#4B4966; }
 .zv-find li i { background:#6A5CFF; }
+
+/* Status chips, alerts, statistics and forms share the public theme palette. */
+.zk-status,.zk-status.pending,.zk-pill.wait {
+  color:var(--warning); background:var(--warning-bg);
+}
+.zk-status.approved,.zk-pill.on { color:var(--success); background:var(--success-bg); }
+.zk-status.blocked { color:var(--danger); background:var(--danger-bg); }
+.zk-pill:not(.on):not(.wait) { color:var(--ink-2); background:var(--soft); }
+.zd-state.pending .zd-state-ic { color:var(--warning); background:var(--warning-bg); }
+.zd-state.blocked .zd-state-ic { color:var(--danger); background:var(--danger-bg); }
+.zd-state a { color:var(--iris-deep); }
+.zd-dangerlink,.zd-ready { color:var(--danger); }
+.zd-danger { border-color:color-mix(in srgb,var(--danger),var(--line) 55%); }
+.zi-unit,.zi-y,.zi-x,.zi-empty,.zd-list .chev,.zd-more .chev,.zd-table tr.undone td { color:var(--ink-2); }
+.zi-plot { border-color:var(--line); }
+.zi-grid line { stroke:var(--line); }
+.zi-rule { background:var(--ink-2); }
+.zi-dot { background:var(--ink); }
+.zd-logo { background:var(--action-bg); color:var(--action-ink); }
+.zk-btn.danger-solid,.zk-btn.coral { color:#fff; }
+.zk-form input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.zk-form textarea,.zk-form select,.pz2-form input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.pz2-form textarea,.pz2-form select {
+  background:var(--paper); color:var(--ink); border-color:var(--line);
+}

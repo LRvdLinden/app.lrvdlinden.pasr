@@ -114,3 +114,12 @@ footer nav { flex-wrap: wrap; gap: 8px 22px; }
 @media (prefers-reduced-motion: reduce) { .gd-item a { transition: none; } .gd-item a:hover { transform: none; } }
 .gids-page #gidsen { padding: 0 0 20px; }
 .gd-btn { border-color: transparent; }
+
+/* One semantic status palette for both explicit and OS theme preferences. */
+.gids-page .pill { color:var(--danger); background:var(--danger-bg); }
+.gids-page .pill.loy { color:var(--success); background:var(--success-bg); }
+.gd-flag.yes,.gd-chip.yes { color:var(--success); }
+.gd-flag.no,.gd-chip.no { color:var(--danger); }
+.gd-chip.yes { background:var(--success-bg); }
+.gd-chip.no { background:var(--danger-bg); }
+.gd-btn { background:var(--action-bg); color:var(--action-ink); }

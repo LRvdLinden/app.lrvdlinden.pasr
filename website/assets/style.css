@@ -1098,3 +1098,36 @@ input::placeholder, textarea::placeholder { color:var(--ink-2); opacity:1; }
 .anchor.copied::after { color:var(--paper); }
 .mini-pass.ink-dark { color:#17162A; }
 .fv-types .t1 .code { color:#4A3CE0; }
+
+/* Shared semantic colours: the same tokens serve every public and account page. */
+:root {
+  --warning: #795100;
+  --warning-bg: #FFF1D6;
+  --success-bg: #D9F7EE;
+  --danger-bg: #FFE1DC;
+  --hero-gift-bg: linear-gradient(125deg,#e7eff8,#e0ebfa);
+  --hero-cards-bg: linear-gradient(125deg,#f0ebff,#dfd7ff);
+  --hero-gift-ink: #162c43;
+  --hero-gift-muted: #38536f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --warning: #FFD18B; --warning-bg: #382D20;
+    --success-bg: #183832; --danger-bg: #41272F;
+    --hero-gift-bg: linear-gradient(135deg,#182b3d,#243650);
+    --hero-cards-bg: linear-gradient(135deg,#25213d,#312b4c);
+    --hero-gift-ink: var(--ink); --hero-gift-muted: var(--ink-2);
+  }
+}
+:root[data-theme="dark"] {
+  --warning: #FFD18B; --warning-bg: #382D20;
+  --success-bg: #183832; --danger-bg: #41272F;
+  --hero-gift-bg: linear-gradient(135deg,#182b3d,#243650);
+  --hero-cards-bg: linear-gradient(135deg,#25213d,#312b4c);
+  --hero-gift-ink: var(--ink); --hero-gift-muted: var(--ink-2);
+}
+.pill { color:var(--success); background:var(--success-bg); }
+.pill.coral { color:var(--danger); background:var(--danger-bg); }
+.auth .badge { background:var(--action-bg); color:var(--action-ink); }
+.anchor.copied::after { color:var(--inverse-ink); background:var(--inverse-bg); }
+input[type=checkbox], input[type=radio], input[type=range] { accent-color:var(--iris); }
