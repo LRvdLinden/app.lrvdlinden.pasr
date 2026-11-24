@@ -227,5 +227,27 @@
    rpcPublic("pasr_business_coupon_list",{}).then(function(r){rows=Array.isArray(r)?r:[];show();})
      .catch(function(){$("#pz2PublicList",root).textContent="De aanbiedingen konden niet worden opgehaald.";});
  }
- window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,publicPage:publicPage};
+ async function insightsView(root,b,rpc){
+   root.innerHTML='<div class="zd-ptitle"><div><h2>Bedrijfsinzichten</h2><p class="zd-sub">Geaggregeerde gegevens van jouw stempelkaarten en kortingsbonnen. Er worden geen klantnamen of contactgegevens getoond.</p></div></div>'+
+     '<div id="pz2Stats" class="pz2-statgrid" aria-live="polite"><p>Inzichten laden…</p></div>'+
+     '<section class="pz2-panel"><h3>Hoe lees je deze cijfers?</h3>'+
+     '<p>De cijfers zijn gebaseerd op echte scans en geregistreerde inwisselingen. Een terugkerende klant heeft minimaal twee stempels ontvangen in de afgelopen 90 dagen. Deze cijfers zijn geen omzetmeting.</p>'+
+     '<p>Een ondernemer ziet uitsluitend zijn eigen gegevens. Er worden geen volledige klantcodes of persoonlijke gegevens gedeeld.</p></section>';
+   try{
+     var x=await rpc("pasr_business_loyalty_insights",{p_business:b.id},true);
+     var stats=[
+       ["Klanten",x.members,"Houders van je zakelijke stempelkaarten"],
+       ["Nieuwe klanten (30 dagen)",x.members_30d,"Ingeschreven in de laatste 30 dagen"],
+       ["Stempels (30 dagen)",x.stamps_30d,"Aantal geldige stempels in de laatste 30 dagen"],
+       ["Terugkerende klanten (90 dagen)",x.returning_customers_90d,"Minimaal twee geregistreerde stempelacties"],
+       ["Tussentijdse beloningen",x.milestone_rewards,"Door de ondernemer uitgegeven"],
+       ["Kortingsbonnen bewaard",x.claimed_coupons,"Persoonlijke boncodes uitgegeven"],
+       ["Kortingsbonnen gebruikt",x.redeemed_coupons,"Aan de kassa ingewisseld"]
+     ];
+     $("#pz2Stats",root).innerHTML=stats.map(function(item){return '<article class="pz2-stat"><strong>'+
+       new Intl.NumberFormat("nl-NL").format(Number(item[1]||0))+'</strong><b>'+escape(item[0])+'</b><small>'+
+       escape(item[2])+'</small></article>';}).join("");
+   }catch(e){$("#pz2Stats",root).textContent="De inzichten konden niet worden geladen: "+(e.message||"onbekend");}
+ }
+ window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,publicPage:publicPage};
 })();
