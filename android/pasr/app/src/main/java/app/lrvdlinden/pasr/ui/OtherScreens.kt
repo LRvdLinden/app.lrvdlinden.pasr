@@ -1,6 +1,15 @@
 package app.lrvdlinden.pasr.ui
 
 import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import app.lrvdlinden.pasr.notify.NearbyStoresAndroid
+import app.lrvdlinden.pasr.notify.Reminders
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
@@ -166,6 +175,42 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
     var appearance by remember { mutableStateOf(Prefs.appearance) }
     var news by remember { mutableStateOf(Prefs.bool("push.news")) }
     val scope = rememberCoroutineScope()
+    var nearby by remember { mutableStateOf(NearbyStoresAndroid.enabled()) }
+    var nearbyHint by remember { mutableStateOf("") }
+    val backgroundPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted && NearbyStoresAndroid.ready(context)) {
+            NearbyStoresAndroid.setEnabled(context, true)
+            nearby = NearbyStoresAndroid.enabled()
+        } else nearbyHint = "Geef toegang Altijd bij de locatie-instellingen en zet de schakelaar opnieuw aan."
+    }
+    val foregroundPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+        if (grants[Manifest.permission.ACCESS_FINE_LOCATION] != true) {
+            nearbyHint = "Precieze locatie is vereist om bij de winkel te kunnen controleren."
+        } else if (Build.VERSION.SDK_INT >= 30) {
+            nearbyHint = "Kies bij Android-instellingen voor locatietoegang Altijd, daarna kan je winkelmeldingen activeren."
+            Incoming.leavingOnPurpose = true
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:${context.packageName}")))
+        } else if (Build.VERSION.SDK_INT == 29) {
+            backgroundPermission.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        } else if (NearbyStoresAndroid.ready(context)) {
+            NearbyStoresAndroid.setEnabled(context, true)
+            nearby = NearbyStoresAndroid.enabled()
+        }
+    }
+    val notificationPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()) { granted ->
+        nearbyHint = if (granted) "Zet 'Kaart tonen bij de winkel' opnieuw aan." else "Sta meldingen toe in Android-instellingen."
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        nearby = NearbyStoresAndroid.enabled()
+        if (nearby && !NearbyStoresAndroid.ready(context)) {
+            NearbyStoresAndroid.setEnabled(context, false)
+            nearby = false
+        }
+    }
     SimpleScaffold("Instellingen") {
         SectionHeader("Account")
         Group {
@@ -192,6 +237,43 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
                     news = it; Prefs.setBool("push.news", it)
                     scope.launch { app.lrvdlinden.pasr.data.DeviceRegistry.registerIfNeeded(context, force = true) }
                 }
+            }
+            Toggle("Kaart tonen bij de winkel", nearby,
+                "Automatische melding bij een bewaarde winkelspeld, alleen met toestemming Altijd en precieze locatie.") { on ->
+                if (!on) {
+                    NearbyStoresAndroid.setEnabled(context, false)
+                    nearby = false
+                    nearbyHint = ""
+                } else if (Build.VERSION.SDK_INT >= 33 && !Reminders.canNotify(context)) {
+                    nearbyHint = "Sta eerst meldingen toe."
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    foregroundPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION))
+                } else if (Build.VERSION.SDK_INT >= 29 &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    if (Build.VERSION.SDK_INT >= 30) {
+                        nearbyHint = "Kies in Android-instellingen Locatie > Altijd voor Pasr, en zet de schakelaar daarna aan."
+                        Incoming.leavingOnPurpose = true
+                        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            android.net.Uri.parse("package:${context.packageName}")))
+                    } else {
+                        backgroundPermission.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    }
+                } else if (!NearbyStoresAndroid.available(context)) {
+                    nearbyHint = "Google Play-services is nodig voor automatische winkelmeldingen."
+                } else {
+                    NearbyStoresAndroid.setEnabled(context, true)
+                    nearby = NearbyStoresAndroid.enabled()
+                    nearbyHint = if (NearbyStoresAndroid.monitoredCount(context) == 0)
+                        "Bewaar eerst een winkelspeld bij een kaart. Alleen opgeslagen locaties kunnen worden bewaakt."
+                        else "Winkelmeldingen zijn actief."
+                }
+            }
+            if (nearbyHint.isNotBlank()) {
+                Text(nearbyHint, Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             RowItem(Icons.Outlined.Notifications, "Meldingen in Android-instellingen") {
                 val i = if (Build.VERSION.SDK_INT >= 26) Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
