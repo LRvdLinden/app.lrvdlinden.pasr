@@ -105,6 +105,7 @@ fun CardDetailScreen(id: String) {
     var revealed by remember(id) { mutableStateOf(!card.isLocked) }
     var gwAvailable by remember { mutableStateOf(false) }
     var vipStatus by remember(id) { mutableStateOf<String?>(null) }
+    var vipBenefit by remember(id) { mutableStateOf<String?>(null) }
     var retentionAvailable by remember(id) { mutableStateOf(false) }
     var retentionEnabled by remember(id) { mutableStateOf(false) }
     var retentionDays by remember(id) { mutableStateOf(30) }
@@ -154,6 +155,7 @@ fun CardDetailScreen(id: String) {
             }
             if (!code.isNullOrBlank()) runCatching {
                 val data = Api.publicRpc("pasr_business_vip_status", JSONObject().put("p_code", code)) as? JSONObject
+                vipBenefit = data?.optString("benefit")?.takeIf { it.isNotBlank() }
                 vipStatus = if (data?.optBoolean("enabled") == true) {
                     val tier = data.optString("tier")
                     val count = data.optInt("visits")
@@ -230,6 +232,7 @@ fun CardDetailScreen(id: String) {
                             fontWeight = FontWeight.SemiBold)
                         card.details.reward?.let { Text("Beloning: $it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         vipStatus?.let { Text(it, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) }
+                        vipBenefit?.let { Text("Jouw VIP-voordeel: $it", color = MaterialTheme.colorScheme.primary) }
                         Gap(6.dp)
                         Text("Laat de QR-code scannen bij de kassa. Alleen de zaak zet stempels.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
