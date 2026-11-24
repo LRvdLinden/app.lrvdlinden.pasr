@@ -107,3 +107,40 @@
  .ch-global-search button{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.ch-card{transition:none}.ch-hero-art:hover .ch-card-one{transform:translate(-57%,-62%) rotate(-13deg)}
  .ch-hero-art:hover .ch-card-three{transform:translate(-29%,-33%) rotate(16deg)}}
+
+/* Pasr 2.0 discovery and editorial catalog */
+.ch-site-nav nav ul{flex-wrap:wrap;gap:clamp(9px,1.5vw,22px)}
+.ch-hero{background:radial-gradient(ellipse at 92% 5%,color-mix(in srgb,var(--iris),transparent 65%),transparent 52%),radial-gradient(ellipse at 85% 95%,color-mix(in srgb,var(--mint),transparent 77%),transparent 55%),var(--paper-2)}
+.ch-hero .ch-card{border:1px solid #ffffff35}
+.ch-hero .ch-card-one{background:linear-gradient(140deg,#7460dd,#a196ff)}
+.ch-hero .ch-card-three{background:linear-gradient(140deg,#176e61,#36bf9e)}
+.ch-global-search button{font:inherit;font-size:14px;font-weight:700}
+.gids-page .gd-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;list-style:none;padding:0}
+.gids-page .gd-item{min-width:0;border:1px solid var(--line);border-radius:20px;background:var(--paper-2);overflow:hidden}
+.gids-page .gd-item[hidden],.ds-item[hidden]{display:none!important}
+.gids-page .gd-item>a{display:flex;flex-direction:column;align-items:stretch;padding:12px;gap:13px;height:100%;text-decoration:none;color:var(--ink)}
+.gids-page .gd-item .kc-card{width:100%;max-width:none;aspect-ratio:1.65;height:auto;border-radius:12px}
+.gids-page .gd-item-t{display:flex;flex-direction:column;gap:8px;padding:3px 3px 8px;min-width:0}
+.gids-page .gd-item-t>b{font-size:16px;line-height:1.2}
+.gids-page .gd-valid{color:var(--ink-2);font-size:13px;line-height:1.4}
+.gids-page .gd-hero{padding:30px clamp(18px,4vw,45px);border:1px solid var(--line);border-radius:28px;background:radial-gradient(ellipse at 5% 5%,color-mix(in srgb,var(--iris),transparent 85%),transparent 65%),var(--paper-2)}
+.gids-page .gd-hero .gd-card{box-shadow:0 15px 34px #17162a20}
+.gids-page .gd-body{margin-top:26px}
+.gids-page .gd-item:hover,.ds-item:hover{border-color:var(--iris)}
+.ds-section{padding-block:24px 60px}
+.ds-section h2{font:800 clamp(24px,4vw,38px)/1.1 var(--display);letter-spacing:-.04em;margin:26px 0 16px}
+.ds-section label{display:block;font-weight:700;margin-bottom:8px}
+.ds-search{display:block;width:100%;max-width:740px;background:var(--paper-2);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:16px;font:inherit}
+.ds-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.ds-item{border:1px solid var(--line);background:var(--paper-2);border-radius:20px;overflow:hidden;min-width:0;display:flex;flex-direction:column;padding:12px;gap:12px}
+.ds-face{display:block;text-decoration:none}.ds-face .kc-card{width:100%;height:auto;aspect-ratio:1.65;border-radius:12px}
+.ds-content{display:flex;flex-direction:column;gap:9px;flex:1;padding:4px}.ds-content h3{font-size:17px;line-height:1.25;margin:0;color:var(--ink)}.ds-content p{color:var(--ink-2);font-size:13px;margin:0 0 4px;flex:1}
+.ds-primary{display:inline-block;border-radius:11px;background:var(--iris-deep);color:white!important;text-decoration:none;padding:12px 14px;font-weight:700;font-size:13px;text-align:center}
+.ds-secondary{font-size:13px;color:var(--ink);text-align:center;padding:5px;text-decoration:none}
+.ds-stamp-face{list-style:none;margin:0;padding:0}.ds-stamp-face .kc-card{width:100%;min-height:145px}
+.ds-callout{background:color-mix(in srgb,var(--iris),var(--paper-2) 91%);border:1px solid var(--line);border-radius:22px;padding:24px;margin:16px 0}
+.ds-callout strong{font-size:20px;color:var(--ink)}.ds-callout p{color:var(--ink-2);margin:8px 0 12px}
+#ds-count{color:var(--ink-2);font-size:14px}
+.ch-coupon-page .pz2-publiccard{overflow:hidden;border:1px solid var(--line);background:var(--paper-2)}
+@media(max-width:900px){.gids-page .gd-list,.ds-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.gids-page .gd-list,.ds-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ds-item,.gids-page .gd-item>a{padding:9px}.ds-content h3,.gids-page .gd-item-t>b{font-size:14px}.ds-primary{padding:10px 7px;font-size:12px}.ds-section{padding-bottom:32px}}
