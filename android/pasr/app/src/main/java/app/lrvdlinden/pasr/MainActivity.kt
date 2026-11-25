@@ -45,11 +45,21 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // kaartnummers niet in de lijst met recente apps tonen als het slot aanstaat
-        if (Prefs.lockEnabled) window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        applyScreenProtection()
         if (savedInstanceState == null) Incoming.locked.value = Prefs.lockEnabled && Prefs.onboarded
         ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
         handle(intent)
         setContent { Root() }
+    }
+
+    fun applyScreenProtection() {
+        if (Prefs.lockEnabled || Prefs.bool("screen.block")) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        applyScreenProtection()
     }
 
     override fun onDestroy() {

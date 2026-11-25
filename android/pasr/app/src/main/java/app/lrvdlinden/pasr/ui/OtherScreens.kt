@@ -170,6 +170,7 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
     val context = LocalContext.current
     val session by Account.session.collectAsState()
     var lock by remember { mutableStateOf(Prefs.lockEnabled) }
+    var screenshotBlock by remember { mutableStateOf(Prefs.bool("screen.block")) }
     var reminders by remember { mutableStateOf(Prefs.remindersEnabled) }
     var brightness by remember { mutableStateOf(Prefs.brightness) }
     var appearance by remember { mutableStateOf(Prefs.appearance) }
@@ -223,8 +224,12 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
                 val a = context as? FragmentActivity
                 if (a == null || !AppLock.isAvailable(context)) return@Toggle
                 AppLock.authenticate(a, if (on) "Zet het slot aan" else "Zet het slot uit") { ok ->
-                    if (ok) { Prefs.lockEnabled = on; lock = on }
+                    if (ok) { Prefs.lockEnabled = on; lock = on; (a as? app.lrvdlinden.pasr.MainActivity)?.applyScreenProtection() }
                 }
+            }
+            Toggle("Screenshots blokkeren", screenshotBlock, "Blokkeer screenshots en schermopnames onafhankelijk van het app-slot") { on ->
+                screenshotBlock = on; Prefs.setBool("screen.block", on)
+                (context as? app.lrvdlinden.pasr.MainActivity)?.applyScreenProtection()
             }
             Toggle("Volle helderheid bij een kaart", brightness, "Makkelijker scannen bij de kassa") { brightness = it; Prefs.brightness = it }
         }
@@ -300,6 +305,7 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
         }
         SectionHeader("Over Pasr")
         Group {
+            RowItem(Icons.AutoMirrored.Outlined.HelpOutline, "Welkomstscherm opnieuw bekijken") { nav.push(Screen.Welcome) }
             RowItem(Icons.Outlined.PrivacyTip, "Privacy") { Incoming.leavingOnPurpose = true; openUrl(context, "https://pasr.nl/privacy/") }
             RowItem(Icons.AutoMirrored.Outlined.HelpOutline, "Support") { Incoming.leavingOnPurpose = true; openUrl(context, "https://pasr.nl/support/") }
         }

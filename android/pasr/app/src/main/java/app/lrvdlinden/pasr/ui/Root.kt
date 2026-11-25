@@ -53,6 +53,7 @@ sealed interface Screen {
     data class StampJoin(val cardId: String, val code: String? = null, val referralToken: String? = null) : Screen
     data class Import(val card: Card) : Screen
     data object Settings : Screen
+    data object Welcome : Screen
     data object AccountScreen : Screen
     data object Deleted : Screen
     /** Bonnetjes: alle bonnen (met een zoekterm), één bon, en controleren of wijzigen. */
@@ -207,6 +208,7 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code, s.referralToken)
             is Screen.Import -> ImportScreen(s.card)
             Screen.Settings -> SettingsScreen(onAppearance)
+            Screen.Welcome -> Onboarding(onDone = { nav.pop() }, replay = true)
             Screen.AccountScreen -> AccountScreen()
             Screen.Deleted -> DeletedScreen()
             is Screen.Receipts -> ReceiptsScreen(s.query)

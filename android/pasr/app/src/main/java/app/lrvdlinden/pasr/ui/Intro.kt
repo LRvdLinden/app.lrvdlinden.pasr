@@ -159,7 +159,7 @@ private val pages = listOf(
 /** Welkom: uitleg, daarna (optioneel) een account en het app-slot. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Onboarding(onDone: () -> Unit) {
+fun Onboarding(onDone: () -> Unit, replay: Boolean = false) {
     val context = LocalContext.current
     val pager = rememberPagerState { pages.size + 2 }
     val scope = rememberCoroutineScope()
@@ -218,7 +218,7 @@ fun Onboarding(onDone: () -> Unit) {
             val page = pager.currentPage
             val primary = ButtonDefaults.buttonColors(containerColor = Brand.iris, contentColor = Color.White)
             fun finish() {
-                if (Build.VERSION.SDK_INT >= 33) notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                if (!replay && Build.VERSION.SDK_INT >= 33) notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                 onDone()
             }
             when {
@@ -233,7 +233,7 @@ fun Onboarding(onDone: () -> Unit) {
                     val activity = context as? FragmentActivity
                     if (activity != null && AppLock.isAvailable(context)) {
                         Button({
-                            AppLock.authenticate(activity, "Bevestig om Pasr te vergrendelen") { ok -> if (ok) Prefs.lockEnabled = true; finish() }
+                            AppLock.authenticate(activity, "Bevestig om Pasr te vergrendelen") { ok -> if (ok) { Prefs.lockEnabled = true; (activity as? app.lrvdlinden.pasr.MainActivity)?.applyScreenProtection() }; finish() }
                         }, Modifier.fillMaxWidth().height(54.dp), colors = primary) { Text("Zet het slot aan", fontWeight = FontWeight.SemiBold) }
                     }
                     TextButton({ finish() }) { Text("Niet nu", color = Color.White.copy(alpha = 0.8f)) }

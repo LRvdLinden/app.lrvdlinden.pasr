@@ -296,6 +296,7 @@ fun CardDetailScreen(id: String) {
                         IconButton({ amountDialog = "spent" }) { Icon(Icons.Outlined.Remove, "Uitgegeven") }
                         IconButton({ amountDialog = "topup" }) { Icon(Icons.Outlined.Add, "Opgewaardeerd") }
                     }
+                    RowItem(null, "Saldo corrigeren") { amountDialog = "set" }
                     val page = card.balanceURL ?: Catalog.balancePages[card.templateID?.lowercase()]
                     if (page != null) RowItem(Icons.Outlined.OpenInNew, "Saldo checken") { Incoming.leavingOnPurpose = true; openUrl(context, page) }
                 }
@@ -381,10 +382,10 @@ fun CardDetailScreen(id: String) {
     useAmount?.let { useId -> UseAmountDialog(card, useId, offersReceipt = true) { useAmount = null } }
 
     amountDialog?.let { mode ->
-        var text by remember { mutableStateOf("") }
+        var text by remember(mode) { mutableStateOf(if (mode == "set") card.balance?.toString().orEmpty() else "") }
         AlertDialog(
             onDismissRequest = { amountDialog = null },
-            title = { Text(if (mode == "spent") "Uitgegeven" else "Opgewaardeerd") },
+            title = { Text(when (mode) { "spent" -> "Uitgegeven"; "set" -> "Saldo corrigeren"; else -> "Opgewaardeerd" }) },
             text = {
                 OutlinedTextField(text, { text = it.filter { c -> c.isDigit() || c == ',' || c == '.' } }, label = { Text("Bedrag in euro") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true)
@@ -392,8 +393,8 @@ fun CardDetailScreen(id: String) {
             confirmButton = {
                 TextButton({
                     val v = text.replace(',', '.').toDoubleOrNull()
-                    if (v != null && v > 0) {
-                        val updated = if (mode == "spent") card.spent(v) else card.toppedUp(v)
+                    if (v != null && v.isFinite() && (v > 0 || (mode == "set" && v == 0.0))) {
+                        val updated = when (mode) { "spent" -> card.spent(v); "set" -> card.copy(balance = v, history = app.lrvdlinden.pasr.data.Card.trimHistory(listOf(app.lrvdlinden.pasr.data.CardEvent(kind = "set", balance = v)) + card.history)); else -> card.toppedUp(v) }
                         CardStore.upsert(updated)
                         scope.launch { GoogleWallet.updateIfSaved(updated) }
                     }
