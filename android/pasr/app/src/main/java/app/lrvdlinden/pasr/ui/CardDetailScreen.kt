@@ -90,7 +90,6 @@ import app.lrvdlinden.pasr.data.Catalog
 import app.lrvdlinden.pasr.data.GoogleWallet
 import app.lrvdlinden.pasr.data.PasrError
 import app.lrvdlinden.pasr.data.Prefs
-import app.lrvdlinden.pasr.data.Share
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -183,6 +182,10 @@ fun CardDetailScreen(id: String) {
                 navigationIcon = { IconButton({ nav.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
+                if (revealed && card.number.isNotEmpty()) {
+                    IconButton({ nav.push(Screen.ShareCard(card.id)) }) { Icon(Icons.Outlined.Share, "Delen") }
+                }
+
                     IconButton({ CardStore.upsert(card.copy(isFavorite = !card.isFavorite)) }) {
                         Icon(if (card.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder, "Favoriet")
                     }
@@ -360,12 +363,13 @@ fun CardDetailScreen(id: String) {
                         }
                     }
                 }
-                RowItem(Icons.Outlined.Share, "Delen", if (card.isBusinessStamps) "Deel de link van de zaak (niet je eigen code)" else "Via WhatsApp, mail of andere apps") {
-                    val link = Share.link(card)
-                    val text = if (card.isBusinessStamps) "Spaar ook stempels bij ${card.storeName} met Pasr: $link"
-                        else "Mijn ${card.kind.title.lowercase()} van ${card.storeName} in Pasr: $link"
-                    Incoming.leavingOnPurpose = true
-                    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Kaart delen"))
+                if (revealed && card.number.isNotEmpty()) {
+                    RowItem(Icons.Outlined.Share, "Delen", "Deel een kopie, tijdelijk of via Gedeelde Pasr") {
+                        nav.push(Screen.ShareCard(card.id))
+                    }
+                }
+                app.lrvdlinden.pasr.data.Birthday.perk(card)?.let { perk ->
+                    RowItem(null, "Verjaardagsvoordeel", perk)
                 }
                 if (card.number.isNotEmpty() && revealed) RowItem(Icons.Outlined.ContentCopy, "Nummer kopiëren") {
                     copy(context, card.number); scope.launch { snack.showSnackbar("Gekopieerd") }

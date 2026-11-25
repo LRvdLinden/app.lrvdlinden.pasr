@@ -146,8 +146,9 @@ object Account {
     }
 
     fun clear() {
-        _session.value?.userID?.let { Sync.forget(it) }
+        val user = _session.value?.userID
         _session.value = null
+        user?.let { Sync.forget(it); Sync.discardGroups(it) }
         Prefs.setString("session", null)
     }
 

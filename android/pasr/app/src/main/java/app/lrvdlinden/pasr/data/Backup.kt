@@ -34,7 +34,7 @@ object Backup {
 
     fun write(context: Context, uri: Uri, password: String) {
         val archive = Archive(
-            CardStore.visible.map { card ->
+            CardStore.visible.filter { it.groupId == null }.map { card ->
                 val photos = card.photos.filter { it in photoSlots }.mapNotNull { slot ->
                     CardStore.photo(card.id, slot)?.let { slot to encode(it) }
                 }.toMap()
@@ -69,7 +69,7 @@ object Backup {
         val archive = PasrJson.decodeFromString<Archive>(plain.decodeToString())
         // Validate and decode all record payloads before writing anything into Pasr.
         val cards = archive.cards.map { saved ->
-            require(uuid.matches(saved.card.id) && saved.photos.keys.all { it in photoSlots })
+            require(saved.card.groupId == null && uuid.matches(saved.card.id) && saved.photos.keys.all { it in photoSlots })
             saved.card to saved.photos.mapValues { decode(it.value) }
         }
         val receipts = archive.receipts.map { saved ->

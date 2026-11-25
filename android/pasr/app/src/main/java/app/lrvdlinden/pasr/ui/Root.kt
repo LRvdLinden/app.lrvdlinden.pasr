@@ -55,6 +55,12 @@ sealed interface Screen {
                       val draft: Card? = null) : Screen
     data class StampJoin(val cardId: String, val code: String? = null, val referralToken: String? = null) : Screen
     data class Import(val card: Card) : Screen
+    data class ShareCard(val id: String) : Screen
+    data class Groups(val cardId: String? = null) : Screen
+    data object TemporaryShares : Screen
+    data class Borrowed(val token: String) : Screen
+    data object ReminderPreferences : Screen
+    data object Birthday : Screen
     data object Settings : Screen
     data object Backup : Screen
     data object Welcome : Screen
@@ -99,6 +105,7 @@ fun Root() {
         LifecycleEventEffect(Lifecycle.Event.ON_START) {
             scope.launch {
                 Catalog.refresh()
+                app.lrvdlinden.pasr.notify.Reminders.check(appContext)
                 app.lrvdlinden.pasr.notify.NearbyStoresAndroid.sync(appContext)
                 DeviceRegistry.registerIfNeeded(appContext)
                 if (Account.isSignedIn) Sync.sync()
@@ -109,7 +116,8 @@ fun Root() {
                 }
             }
         }
-        LaunchedEffect(link) {
+        LaunchedEffect(link, splash, onboarded, locked) {
+            if (splash || !onboarded || locked) return@LaunchedEffect
             val uri = link ?: return@LaunchedEffect
             Incoming.link.value = null
             handleLink(uri, nav)
@@ -192,6 +200,9 @@ private fun CompositionLocalProviders(nav: Nav, snack: SnackbarHostState, conten
 }
 
 private fun handleLink(uri: Uri, nav: Nav) {
+    app.lrvdlinden.pasr.data.TempSharing.token(uri)?.let {
+        nav.home(); nav.push(Screen.Borrowed(it)); return
+    }
     Business.cardId(uri)?.let { id ->
         nav.home(); nav.push(Screen.StampJoin(id, Business.memberCode(uri), uri.getQueryParameter("ref"))); return
     }
@@ -221,6 +232,12 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.Editor -> CardEditorScreen(s)
             is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code, s.referralToken)
             is Screen.Import -> ImportScreen(s.card)
+            is Screen.ShareCard -> ShareCardScreen(s.id)
+            is Screen.Groups -> SharedGroupsScreen(s.cardId)
+            Screen.TemporaryShares -> TemporarySharesScreen()
+            is Screen.Borrowed -> BorrowedCardScreen(s.token)
+            Screen.ReminderPreferences -> ReminderPreferencesScreen()
+            Screen.Birthday -> BirthdayScreen()
             Screen.Settings -> SettingsScreen(onAppearance)
             Screen.Backup -> BackupScreen()
             Screen.Welcome -> Onboarding(onDone = { nav.pop() }, replay = true)

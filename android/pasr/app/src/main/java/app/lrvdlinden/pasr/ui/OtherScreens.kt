@@ -237,6 +237,7 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
         SectionHeader("Meldingen")
         Group {
             Toggle("Herinneringen", reminders, "Cadeaukaarten en codes die verlopen, abonnementen die verlengen") { reminders = it; Prefs.remindersEnabled = it }
+            RowItem(Icons.Outlined.Notifications, "Herinneringsvoorkeuren", "Vervaldatums, tegoed en e-mail") { nav.push(Screen.ReminderPreferences) }
             if (app.lrvdlinden.pasr.notify.Push.available(context)) {
                 Toggle("Nieuws over mijn kaarten", news, "Af en toe een bericht over winkels waarvan je een kaart hebt. Stempels van zaken krijg je altijd.") {
                     news = it; Prefs.setBool("push.news", it)
@@ -302,6 +303,15 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
             RowItem(Icons.Outlined.Storefront, "Winkel aanvragen", "Staat jouw winkel er niet bij? Laat het ons weten") {
                 Incoming.leavingOnPurpose = true; openUrl(context, "https://pasr.nl/support/#winkel")
             }
+        }
+        SectionHeader("Delen")
+        Group {
+            RowItem(null, "Gedeelde Pasr", "Deel kaarten met je gezin of huisgenoten") { nav.push(Screen.Groups()) }
+            RowItem(null, "Tijdelijk gedeeld", "Bekijk en beheer tijdelijke kaarten") { nav.push(Screen.TemporaryShares) }
+        }
+        SectionHeader("Verjaardagsvoordeel")
+        Group {
+            RowItem(null, "Verjaardag", "Krijg een seintje over verjaardagsvoordeel") { nav.push(Screen.Birthday) }
         }
         SectionHeader("Back-up")
         Group {

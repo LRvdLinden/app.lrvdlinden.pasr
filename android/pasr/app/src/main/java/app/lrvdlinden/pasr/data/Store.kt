@@ -136,6 +136,15 @@ object CardStore {
     @Synchronized
     fun replaceAll(list: List<Card>) = persist(list)
 
+    @Synchronized
+    fun discardGroups(allowed: Set<String>) {
+        val removed = _cards.value.filter { it.groupId != null && it.groupId !in allowed }
+        if (removed.isEmpty()) return
+        val ids = removed.map { it.id }.toSet()
+        removed.forEach { card -> card.photos.forEach { photoFile(card.id, it).delete() } }
+        persist(_cards.value.filterNot { it.id in ids })
+    }
+
     /** Naar Recent verwijderd (30 dagen). */
     fun delete(id: String) { get(id)?.let { upsert(it.copy(deletedAt = nowMs()), touch = false) } }
     fun restore(id: String) { get(id)?.let { upsert(it.copy(deletedAt = null)) } }

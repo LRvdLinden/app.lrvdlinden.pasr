@@ -17,7 +17,7 @@ name: Android Pasr
 
 on:
   push:
-    branches: [gedeelde-pasr, main, android/pasr-build-133]
+    branches: [gedeelde-pasr, main, android/pasr-build-134]
     paths: ["android/pasr/**", ".github/workflows/android-pasr.yml"]
   workflow_dispatch:
 
@@ -49,7 +49,7 @@ jobs:
         id: version
         run: |
           NAME=$(grep -m1 'System.getenv("VERSION_NAME")' app/build.gradle.kts | sed -E 's/.*\?: "([^"]+)".*/\1/')
-          CODE=133
+          CODE=134
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
           echo "Versie $NAME ($CODE)"
@@ -186,7 +186,7 @@ jobs:
           FP="$(grep -m1 'SHA-256 digest' /tmp/certs.txt | sed 's/.*: //' | tr 'a-f' 'A-F')"
           rm -f /tmp/certs.txt
           WANT="$(tr -d ': \n' < signing/cert-sha256.txt 2>/dev/null | tr 'a-f' 'A-F' || true)"
-          if [ "${{ github.ref_name }}" = "android/pasr-build-133" ]; then
+          if [ "${{ github.ref_name }}" = "android/pasr-build-134" ]; then
             WANT=A98D8C30C3D6A5C187CB0967D59D70F7E27270EFF727CCE5D99DB6A56FABF3DA
           fi
           if [ -n "$WANT" ] && [ "$FP" != "$WANT" ]; then
@@ -207,7 +207,7 @@ jobs:
         env:
           SRC: dist
           SUB: pasr
-          BUILDS_BRANCH: ${{ github.ref_name == 'android/pasr-build-133' && 'pasr-133-apk' || 'android-builds' }}
+          BUILDS_BRANCH: ${{ github.ref_name == 'android/pasr-build-134' && 'pasr-134-apk' || 'android-builds' }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -238,7 +238,7 @@ jobs:
           retention-days: 90
 
       - name: Release (nieuwste APK voor pasr.nl/download)
-        if: github.ref_name != 'android/pasr-build-133'
+        if: github.ref_name != 'android/pasr-build-134'
         # Mag mislukken (token zonder rechten op releases): de workflow Website pakt dan het artifact Pasr-Android.
         continue-on-error: true
         uses: softprops/action-gh-release@v2
@@ -256,7 +256,7 @@ jobs:
             android/pasr/dist/Pasr-Android-${{ steps.version.outputs.name }}.apk
 
   previews:
-    if: github.ref_name != 'android/pasr-build-133'
+    if: github.ref_name != 'android/pasr-build-134'
     name: Previews (Paparazzi)
     runs-on: ubuntu-24.04
     continue-on-error: true

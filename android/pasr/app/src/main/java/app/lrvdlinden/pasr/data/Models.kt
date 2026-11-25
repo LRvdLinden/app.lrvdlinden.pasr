@@ -114,6 +114,7 @@ data class CardDetails(
 /** Een klantenkaart, cadeaukaart, kortingscode, ticket, abonnement of zakelijke stempelkaart. */
 @Serializable
 data class Card(
+    val groupId: String? = null,
     val id: String = newId(),
     val kindRaw: String = CardKind.LOYALTY.raw,
     val storeName: String = "",

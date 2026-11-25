@@ -55,6 +55,7 @@
                 <data android:host="pasr.nl" />
                 <data android:host="www.pasr.nl" />
                 <data android:pathPrefix="/kaart" />
+                <data android:pathPrefix="/tijdelijk" />
                 <data android:pathPrefix="/zakelijk/kaart" />
             </intent-filter>
             <intent-filter>
