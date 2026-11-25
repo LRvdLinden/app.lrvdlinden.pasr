@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Openingsanimatie zoals in Pasr: drie kaarten komen omhoog en waaieren uit, het groene vinkje van het
+/// Openingsanimatie zoals in Pasr: drie kaarten komen omhoog en waaieren uit, de groene stempel van het
 /// Pasr Zakelijk-icoon springt erop, daarna verschijnt "pasr ZAKELIJK". Kort (± 1,5 s) en wacht nooit op het netwerk.
 struct SplashView: View {
     var onFinish: () -> Void
@@ -39,13 +39,12 @@ struct SplashView: View {
                             .animation(.spring(response: 0.62, dampingFraction: 0.78).delay(Double(index) * 0.08), value: cardsIn)
                             .animation(.spring(response: 0.5, dampingFraction: 0.7), value: fanned)
                     }
-                    // het vinkje van het Zakelijk-icoon: de ondernemer zet de stempel
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 30, weight: .heavy))
-                        .foregroundStyle(.white)
+                    Image("SplashStamp")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 52, height: 52)
                         .frame(width: 66, height: 66)
                         .background(Theme.mint, in: Circle())
-                        .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 3).padding(6))
                         .overlay(Circle().strokeBorder(Self.night, lineWidth: 5))
                         .offset(x: 70, y: 44)
                         .scaleEffect(badge ? 1 : 0.2)

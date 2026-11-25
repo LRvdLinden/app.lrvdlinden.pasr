@@ -11,6 +11,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +31,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -65,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import app.lrvdlinden.pasrzakelijk.R
 import app.lrvdlinden.pasrzakelijk.core.Biometrics
 import app.lrvdlinden.pasrzakelijk.core.L
 import app.lrvdlinden.pasrzakelijk.core.Prefs
@@ -162,7 +164,6 @@ fun SplashScreen(static: Boolean = false, onFinish: () -> Unit = {}) {
                             .alpha(rise),
                     )
                 }
-                // het vinkje van het Zakelijk-icoon: de ondernemer zet de stempel
                 val badgeScale by animateFloatAsState(if (badge) 1f else 0.2f, spring(dampingRatio = 0.6f), label = "badge")
                 Box(
                     Modifier
@@ -172,11 +173,15 @@ fun SplashScreen(static: Boolean = false, onFinish: () -> Unit = {}) {
                         .size(66.dp)
                         .border(5.dp, night, CircleShape)
                         .clip(CircleShape)
-                        .background(Pz.mint)
-                        .padding(8.dp)
-                        .border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape),
+                        .background(Pz.mint),
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(30.dp)) }
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.zakelijk_splash_stamp),
+                        contentDescription = null,
+                        modifier = Modifier.size(52.dp),
+                    )
+                }
             }
             val wm by animateFloatAsState(if (wordmark) 1f else 0f, spring(dampingRatio = 0.8f), label = "wordmark")
             Row(
