@@ -245,6 +245,7 @@
     const txt = (x) => [document.createTextNode(x)];
     box.append(
       kpi("Accounts", num(t.accounts), plus(t.new_7d, "deze week"), "#6A5CFF"),
+      kpi("Zakelijke accounts", s.business_accounts == null ? "–" : num(s.business_accounts), txt("geregistreerde zaken"), "#2ED3A6"),
       kpi("Bevestigd", num(t.confirmed), txt(`${num(t.unconfirmed)} wachten nog`), "#2ED3A6"),
       kpi("Kaarten in accounts", num(t.cards), txt(`${num(t.with_cards)} accounts met kaarten`), "#FF6B57"),
       kpi("Actief", num(t.active_30d), txt("ingelogd, 30 dagen"), "#8A7FFF"),
@@ -259,7 +260,7 @@
   function skeleton() {
     const box = $("kpis");
     if (box.children.length) return;
-    for (let i = 0; i < 10; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
+    for (let i = 0; i < 11; i++) { const k = kpi("……", "000", null, "#262A37"); k.classList.add("skel"); box.append(k); }
   }
 
   const fmtDay = (d, opts) => new Date(d + "T00:00:00Z").toLocaleDateString("nl-NL", { timeZone: "UTC", ...opts });

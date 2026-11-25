@@ -39,6 +39,15 @@ Deno.test("meldingen: nooit persoonsgegevens, wel aantallen", () => {
   ok(message("bot", { accounts: 1, confirmed: 1, bots_hour: 1 }, "<script>").aps.alert.body.includes("verdacht"), "onbekende reden");
 });
 
+Deno.test("nieuwe zakelijke accounts tonen de naam en openen Ondernemers", () => {
+  const counts = { accounts: 0, confirmed: 0, bots_hour: 0 };
+  const m = message("business", counts, "  Koffiebar\n De Hoek  ");
+  ok(m.aps.alert.title === "Nieuw zakelijk Pasr-account", m.aps.alert.title);
+  ok(m.aps.alert.body === "Koffiebar De Hoek heeft een nieuw zakelijk account.", m.aps.alert.body);
+  ok(m.url === "pasrbeheer://businesses", m.url);
+  ok(wants(null, "business") && !wants({ requests: false }, "business"), "voorkeur");
+});
+
 Deno.test("APNs: uitkomst", () => {
   ok(apnsResult(200, "").ok, "200");
   const r = apnsResult(410, "Unregistered");

@@ -73,6 +73,8 @@ struct OverviewView: View {
             }
             LazyVGrid(columns: columns, spacing: 12) {
                 KPITile(title: "Accounts", value: Fmt.n(t.accounts), detail: "+\(Fmt.n(t.new_7d)) deze week", color: Theme.iris)
+                KPITile(title: "Zakelijke accounts", value: stats?.business_accounts.map { Fmt.n($0) } ?? "–",
+                        detail: "geregistreerde zaken", color: Theme.mint)
                 KPITile(title: "Bevestigd", value: Fmt.n(t.confirmed), detail: "\(Fmt.n(t.unconfirmed)) wachten nog", color: Theme.mint)
                 KPITile(title: "Kaarten in accounts", value: Fmt.n(t.cards), detail: "\(Fmt.plural(t.with_cards, "account", "accounts")) met kaarten", color: Theme.coral)
                 KPITile(title: "Actief", value: Fmt.n(t.active_30d), detail: "ingelogd, 30 dagen", color: Theme.iris2)

@@ -118,10 +118,9 @@ export function message(kind: Kind, c: Counts, reason?: unknown) {
     }
     case "business": {
       // reason = naam van de zaak (bedrijfsnaam, geen persoonsgegevens; nooit het e-mailadres)
-      const name = typeof reason === "string" ? reason.replace(/[\r\n]+/g, " ").slice(0, 60) : "";
-      title = "Nieuwe ondernemer";
-      body = name ? `${name} wil Pasr voor ondernemers gebruiken. Keur de aanmelding goed in het beheer.`
-        : "Een zaak wil Pasr voor ondernemers gebruiken. Keur de aanmelding goed in het beheer.";
+      const name = typeof reason === "string" ? reason.replace(/\s+/g, " ").trim().slice(0, 60) : "";
+      title = "Nieuw zakelijk Pasr-account";
+      body = name ? `${name} heeft een nieuw zakelijk account.` : "Er is een nieuw zakelijk account aangemaakt.";
       url = "pasrbeheer://businesses";
       break;
     }

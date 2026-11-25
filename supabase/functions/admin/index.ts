@@ -553,9 +553,17 @@ Deno.serve(async (req) => {
       case "stats": {
         const q = parseRange(body.days, body.offset);
         if (!q) return json({ error: "bad_range" }, 400);
-        const { data, error } = await db.rpc("pasr_admin_stats", { p_days: q.days, p_offset: q.offset });
-        if (error) throw new Error(error.message);
-        return json({ ...(data as Record<string, unknown>), push_ready: apnsConfigured() });
+        const [stats, businesses] = await Promise.all([
+          db.rpc("pasr_admin_stats", { p_days: q.days, p_offset: q.offset }),
+          db.from("pasr_businesses").select("id", { count: "exact", head: true }),
+        ]);
+        if (stats.error) throw new Error(stats.error.message);
+        if (businesses.error) throw new Error(businesses.error.message);
+        return json({
+          ...(stats.data as Record<string, unknown>),
+          business_accounts: businesses.count,
+          push_ready: apnsConfigured(),
+        });
       }
       case "platforms": {
         // Inzichten iOS/Android (apparaten, versies, accounts per platform, Apple en Google Wallet)

@@ -56,6 +56,7 @@ struct Stats: Decodable {
     }
 
     let generated: String?
+    let business_accounts: Int?
     let totals: Totals
     let wallet_total: Int
     let range: Range

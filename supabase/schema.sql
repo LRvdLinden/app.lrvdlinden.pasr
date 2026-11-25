@@ -1936,7 +1936,7 @@ end $$;
 create or replace function public.pasr_business_register(p_name text, p_city text default '', p_website text default null,
                                                          p_note text default null) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare uid uuid := auth.uid(); n text; b public.pasr_businesses; mail text; isnew boolean;
+declare uid uuid := auth.uid(); n text; b public.pasr_businesses; mail text;
 begin
   if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
   select email into mail from auth.users where id = uid and email_confirmed_at is not null;
@@ -1945,14 +1945,12 @@ begin
   if char_length(n) < 2 then raise exception 'bad_name' using errcode = '22023'; end if;
   select * into b from public.pasr_businesses where owner = uid;
   if b.status = 'blocked' then raise exception 'blocked' using errcode = '42501'; end if;
-  isnew := b.id is null;
   insert into public.pasr_businesses as x (owner, name, city, email, website, note)
   values (uid, n, left(trim(coalesce(p_city, '')), 60), mail, nullif(left(trim(coalesce(p_website, '')), 200), ''),
           nullif(left(trim(coalesce(p_note, '')), 300), ''))
   on conflict (owner) do update set name = excluded.name, city = excluded.city, email = excluded.email,
     website = excluded.website, note = excluded.note, updated_at = now()
   returning * into b;
-  if isnew then perform public.pasr_admin_notify('business', jsonb_build_object('name', n)); end if;
   return public.pasr_business_json(b);
 end $$;
 
@@ -2144,6 +2142,19 @@ revoke all on function public.pasr_business_owner_row() from public, anon, authe
 drop trigger if exists pasr_business_owner_row on public.pasr_businesses;
 create trigger pasr_business_owner_row after insert on public.pasr_businesses
   for each row execute function public.pasr_business_owner_row();
+
+-- One push event per inserted business profile, including profiles created by an admin.
+-- Updating a registration via ON CONFLICT does not fire an INSERT trigger.
+create or replace function public.pasr_admin_business_created() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.pasr_admin_notify('business', jsonb_build_object('name', new.name));
+  return new;
+end $$;
+revoke all on function public.pasr_admin_business_created() from public, anon, authenticated;
+drop trigger if exists pasr_admin_business_created on public.pasr_businesses;
+create trigger pasr_admin_business_created after insert on public.pasr_businesses
+  for each row execute function public.pasr_admin_business_created();
 
 -- Rol van de ingelogde gebruiker bij een zaak: 'owner', 'staff' of null.
 create or replace function public.pasr_business_role(p_business uuid) returns text
