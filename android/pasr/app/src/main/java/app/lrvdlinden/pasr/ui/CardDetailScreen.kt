@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AddToHomeScreen
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
@@ -100,8 +101,9 @@ fun CardDetailScreen(id: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val all by CardStore.cards.collectAsState()
-    val card = all.firstOrNull { it.id.equals(id, true) }
+    val card = all.firstOrNull { it.deletedAt == null && it.id.equals(id, true) }
     if (card == null) { LaunchedEffect(Unit) { nav.pop() }; return }
+    val launcher = context.getSystemService(android.content.pm.ShortcutManager::class.java)
     var revealed by remember(id) { mutableStateOf(!card.isLocked) }
     var gwAvailable by remember { mutableStateOf(false) }
     var vipStatus by remember(id) { mutableStateOf<String?>(null) }
@@ -327,6 +329,22 @@ fun CardDetailScreen(id: String) {
 
             SectionHeader("Acties")
             Group {
+                if (launcher?.isRequestPinShortcutSupported == true) {
+                    RowItem(Icons.Outlined.AddToHomeScreen, "Zet op beginscherm", "Open deze kaart rechtstreeks vanuit je beginscherm") {
+                        val intent = Intent(context, app.lrvdlinden.pasr.MainActivity::class.java)
+                            .setAction(Intent.ACTION_VIEW)
+                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            .putExtra("cardId", card.id)
+                        val shortcut = android.content.pm.ShortcutInfo.Builder(context, "card-${card.id}")
+                            .setShortLabel("Pasr-kaart")
+                            .setIcon(android.graphics.drawable.Icon.createWithResource(context, app.lrvdlinden.pasr.R.mipmap.ic_launcher))
+                            .setIntent(intent)
+                            .build()
+                        if (runCatching { launcher.requestPinShortcut(shortcut, null) }.getOrDefault(false).not()) {
+                            scope.launch { snack.showSnackbar("Snelkoppeling toevoegen is niet gelukt.") }
+                        }
+                    }
+                }
                 if (gwAvailable && card.number.isNotEmpty()) {
                     RowItem(Icons.Outlined.AccountBalanceWallet, if (GoogleWallet.hasPass(card)) "Bijwerken in Google Wallet" else "Toevoegen aan Google Wallet",
                         if (gwBusy) "Even geduld…" else "Pas in Google Wallet, werkt vanzelf bij") {

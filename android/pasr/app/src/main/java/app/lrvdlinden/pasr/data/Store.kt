@@ -91,12 +91,14 @@ object Prefs {
 
 /** Alle kaarten, versleuteld in één bestand. Foto's als losse versleutelde bestanden. */
 object CardStore {
+    private lateinit var widgetContext: Context
     private lateinit var file: File
     private lateinit var photoDir: File
     private val _cards = MutableStateFlow<List<Card>>(emptyList())
     val cards: StateFlow<List<Card>> = _cards.asStateFlow()
 
     fun init(context: Context) {
+        widgetContext = context.applicationContext
         file = File(context.filesDir, "cards.enc")
         photoDir = File(context.filesDir, "photos").apply { mkdirs() }
         _cards.value = load()
@@ -114,6 +116,7 @@ object CardStore {
         val tmp = File(file.parentFile, "cards.enc.tmp")
         tmp.writeBytes(Crypto.encrypt(PasrJson.encodeToString(list).toByteArray()))
         tmp.renameTo(file)
+        app.lrvdlinden.pasr.updateCardWidgets(widgetContext)
     }
 
     val visible: List<Card> get() = _cards.value.filter { it.deletedAt == null }

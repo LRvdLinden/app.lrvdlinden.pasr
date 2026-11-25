@@ -48,11 +48,15 @@ sealed interface Screen {
     /** "Laatst gebruikt", alles van één kaart. */
     data class Uses(val id: String) : Screen
     data object Add : Screen
+    class Migrate : Screen {
+        val candidates = mutableStateListOf<Card>()
+    }
     data class Editor(val id: String? = null, val template: StoreTemplate? = null, val kind: CardKind = CardKind.LOYALTY,
                       val draft: Card? = null) : Screen
     data class StampJoin(val cardId: String, val code: String? = null, val referralToken: String? = null) : Screen
     data class Import(val card: Card) : Screen
     data object Settings : Screen
+    data object Backup : Screen
     data object Welcome : Screen
     data object AccountScreen : Screen
     data object Deleted : Screen
@@ -123,13 +127,22 @@ fun Root() {
         LaunchedEffect(openCard) {
             val id = openCard ?: return@LaunchedEffect
             Incoming.cardId.value = null
-            if (CardStore.get(id) != null) { nav.home(); nav.push(Screen.Detail(id)) }
+            if (CardStore.get(id)?.let { it.deletedAt == null } == true) { nav.home(); nav.push(Screen.Detail(id)) }
         }
         val openReceipt by Incoming.receipt.collectAsState()
         LaunchedEffect(openReceipt) {
             val id = openReceipt ?: return@LaunchedEffect
             Incoming.receipt.value = null
             if (app.lrvdlinden.pasr.data.ReceiptStore.get(id) != null) { nav.home(); nav.push(Screen.ReceiptDetail(id)) }
+        }
+        val receiptShortcut by Incoming.receiptShortcut.collectAsState()
+        LaunchedEffect(receiptShortcut, splash, onboarded, locked) {
+            val action = receiptShortcut ?: return@LaunchedEffect
+            if (splash || !onboarded || locked) return@LaunchedEffect
+            Incoming.receiptShortcut.value = null
+            nav.home()
+            nav.push(Screen.Receipts())
+            if (action == "app.lrvdlinden.pasr.SCAN_RECEIPT") ReceiptScans.launch?.invoke(null, null)
         }
         val openStore by Incoming.store.collectAsState()
         LaunchedEffect(openStore) {
@@ -204,10 +217,12 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.Detail -> CardDetailScreen(s.id)
             is Screen.Uses -> RecentUsesScreen(s.id)
             Screen.Add -> AddCardScreen()
+            is Screen.Migrate -> MigrateScreen(s.candidates)
             is Screen.Editor -> CardEditorScreen(s)
             is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code, s.referralToken)
             is Screen.Import -> ImportScreen(s.card)
             Screen.Settings -> SettingsScreen(onAppearance)
+            Screen.Backup -> BackupScreen()
             Screen.Welcome -> Onboarding(onDone = { nav.pop() }, replay = true)
             Screen.AccountScreen -> AccountScreen()
             Screen.Deleted -> DeletedScreen()

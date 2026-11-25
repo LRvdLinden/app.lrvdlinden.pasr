@@ -21,6 +21,7 @@ object Incoming {
     val cardId = MutableStateFlow<String?>(null)
     /** Bonnetje uit een garantieherinnering. */
     val receipt = MutableStateFlow<String?>(null)
+    val receiptShortcut = MutableStateFlow<String?>(null)
     /** Winkel uit een pushbericht: open die kaart, of Kaart toevoegen bij die winkel. */
     val store = MutableStateFlow<String?>(null)
     /** https-link uit een pushbericht die Pasr zelf niet kent: openen in Custom Tabs (na splash en ontgrendelen). */
@@ -55,6 +56,7 @@ class MainActivity : FragmentActivity() {
     fun applyScreenProtection() {
         if (Prefs.lockEnabled || Prefs.bool("screen.block")) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        updateCardWidgets(this)
     }
 
     override fun onResume() {
@@ -74,6 +76,10 @@ class MainActivity : FragmentActivity() {
 
     private fun handle(intent: Intent?) {
         intent ?: return
+        when (intent.action) {
+            "app.lrvdlinden.pasr.RECEIPTS", "app.lrvdlinden.pasr.SCAN_RECEIPT" ->
+                Incoming.receiptShortcut.value = intent.action
+        }
         intent.data?.let { Incoming.link.value = it }
         intent.getStringExtra("cardId")?.let { Incoming.cardId.value = it }
         intent.getStringExtra("receipt")?.let { Incoming.receipt.value = it }

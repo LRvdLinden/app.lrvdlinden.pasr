@@ -303,6 +303,10 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
                 Incoming.leavingOnPurpose = true; openUrl(context, "https://pasr.nl/support/#winkel")
             }
         }
+        SectionHeader("Back-up")
+        Group {
+            RowItem(Icons.Outlined.Restore, "Versleutelde back-up", "Kaarten, foto’s en bonnetjes bewaren of terugzetten") { nav.push(Screen.Backup) }
+        }
         SectionHeader("Over Pasr")
         Group {
             RowItem(Icons.AutoMirrored.Outlined.HelpOutline, "Welkomstscherm opnieuw bekijken") { nav.push(Screen.Welcome) }

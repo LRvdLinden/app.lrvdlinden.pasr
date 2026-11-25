@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="12dp" android:background="#242033">
+    <TextView android:id="@+id/widget_title" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textStyle="bold"
+        android:textSize="16sp" android:paddingBottom="4dp" />
+    <TextView android:id="@+id/widget_first" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:ellipsize="end" android:maxLines="1" android:textColor="#F4ECFF" android:paddingVertical="7dp" />
+    <TextView android:id="@+id/widget_second" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:ellipsize="end" android:maxLines="1" android:textColor="#F4ECFF" android:paddingVertical="7dp" />
+    <TextView android:id="@+id/widget_third" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:ellipsize="end" android:maxLines="1" android:textColor="#F4ECFF" android:paddingVertical="7dp" />
+</LinearLayout>

@@ -24,6 +24,18 @@
         android:theme="@style/Theme.Pasr.Starting">
 
         <receiver android:name=".notify.NearbyGeofenceReceiver" android:exported="false" />
+        <receiver android:name=".FrequentCardsWidget" android:exported="false" android:label="Meest gebruikte Pasr-kaarten">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/pasr_widget_frequent" />
+        </receiver>
+        <receiver android:name=".FavoriteCardsWidget" android:exported="false" android:label="Favoriete Pasr-kaarten">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/pasr_widget_favorites" />
+        </receiver>
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -33,6 +45,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/pasr_shortcuts" />
             <!-- App Links: gedeelde kaarten en stempelkaarten van zaken (assetlinks.json op pasr.nl) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />

@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">Pasr</string>
     <string name="payment_listener_label">Pasr: aankopen vastleggen</string>
+    <string name="shortcut_scan_receipt">Bon scannen</string>
+    <string name="shortcut_receipts">Bonnetjes</string>
 </resources>
