@@ -17,7 +17,7 @@ name: Android Pasr
 
 on:
   push:
-    branches: [gedeelde-pasr, main]
+    branches: [gedeelde-pasr, main, android/pasr-build-133]
     paths: ["android/pasr/**", ".github/workflows/android-pasr.yml"]
   workflow_dispatch:
 
@@ -169,7 +169,7 @@ jobs:
           AAPT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt"
           "$AAPT" dump permissions "$APK" > /tmp/pasr-permissions.txt
           "$AAPT" dump badging "$APK" > /tmp/pasr-badging.txt
-          grep -Fq "package: name='app.lrvdlinden.pasr'" /tmp/pasr-badging.txt
+          grep -Fq "package: name='app.lrvdlinden.pasr' versionCode='${{ steps.version.outputs.code }}'" /tmp/pasr-badging.txt
           grep -Fq "name='android.permission.CAMERA'" /tmp/pasr-permissions.txt
           grep -Fq "name='android.permission.POST_NOTIFICATIONS'" /tmp/pasr-permissions.txt
           grep -Fq "name='android.permission.ACCESS_COARSE_LOCATION'" /tmp/pasr-permissions.txt
@@ -186,6 +186,9 @@ jobs:
           FP="$(grep -m1 'SHA-256 digest' /tmp/certs.txt | sed 's/.*: //' | tr 'a-f' 'A-F')"
           rm -f /tmp/certs.txt
           WANT="$(tr -d ': \n' < signing/cert-sha256.txt 2>/dev/null | tr 'a-f' 'A-F' || true)"
+          if [ "${{ github.ref_name }}" = "android/pasr-build-133" ]; then
+            WANT=A98D8C30C3D6A5C187CB0967D59D70F7E27270EFF727CCE5D99DB6A56FABF3DA
+          fi
           if [ -n "$WANT" ] && [ "$FP" != "$WANT" ]; then
             echo "::error::Deze APK is met een ANDERE sleutel ondertekend dan signing/cert-sha256.txt. Hij zou niet over de vorige versie installeren."
             exit 1
@@ -204,6 +207,7 @@ jobs:
         env:
           SRC: dist
           SUB: pasr
+          BUILDS_BRANCH: ${{ github.ref_name == 'android/pasr-build-133' && 'pasr-133-apk' || 'android-builds' }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -213,13 +217,13 @@ jobs:
           URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           for i in 1 2 3 4; do
             rm -rf "$W"; mkdir -p "$W"; cd "$W"
-            if git clone -q --depth 1 --branch android-builds "$URL" . 2>/dev/null; then :; else
-              git init -q; git checkout -q --orphan android-builds; git remote add origin "$URL"
+            if git clone -q --depth 1 --branch "$BUILDS_BRANCH" "$URL" . 2>/dev/null; then :; else
+              git init -q; git checkout -q --orphan "$BUILDS_BRANCH"; git remote add origin "$URL"
               printf 'Nieuwste Android-builds (APK, versie-info en previews), gemaakt door de Android-workflows. Niet mergen.\n' > README.md
             fi
             rm -rf "$SUB" && mkdir -p "$SUB" && cp -r "$GITHUB_WORKSPACE/android/pasr/$SRC/." "$SUB/"
             git add -A && git commit -q -m "Android-build ${SUB} (${GITHUB_SHA::7})" || { echo "Niets nieuw"; exit 0; }
-            git push -q origin HEAD:android-builds && exit 0
+            git push -q origin "HEAD:$BUILDS_BRANCH" && exit 0
             cd "$GITHUB_WORKSPACE"; sleep 5
           done
           echo "::warning::Kon de branch android-builds niet bijwerken"
@@ -234,6 +238,7 @@ jobs:
           retention-days: 90
 
       - name: Release (nieuwste APK voor pasr.nl/download)
+        if: github.ref_name != 'android/pasr-build-133'
         # Mag mislukken (token zonder rechten op releases): de workflow Website pakt dan het artifact Pasr-Android.
         continue-on-error: true
         uses: softprops/action-gh-release@v2
@@ -251,6 +256,7 @@ jobs:
             android/pasr/dist/Pasr-Android-${{ steps.version.outputs.name }}.apk
 
   previews:
+    if: github.ref_name != 'android/pasr-build-133'
     name: Previews (Paparazzi)
     runs-on: ubuntu-24.04
     continue-on-error: true
