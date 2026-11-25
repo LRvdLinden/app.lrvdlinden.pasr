@@ -31,7 +31,7 @@ Deno.test("ondernemers", () => {
   ok(!cleanBusinessStatus({ id: "x", status: "approved" }).ok, "id");
   ok(!cleanBusinessStatus({ id: "8f1d3c3e-5a7b-4c2d-9e1f-0a1b2c3d4e5f", status: "deleted" }).ok, "status");
   const m = message("business", { accounts: 1, confirmed: 1, bots_hour: 0 }, "Bakkerij\nDe Korf");
-  ok(m.aps.alert.title === "Nieuwe ondernemer" && m.aps.alert.body.startsWith("Bakkerij De Korf ") && m.url === "pasrbeheer://businesses", m.aps.alert.body);
+  ok(m.aps.alert.title === "Nieuw zakelijk Pasr-account" && m.aps.alert.body.startsWith("Bakkerij De Korf ") && m.url === "pasrbeheer://businesses", m.aps.alert.body);
 });
 
 Deno.test("link onder de melding", () => {
