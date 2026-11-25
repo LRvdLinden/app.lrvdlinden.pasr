@@ -87,15 +87,6 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/community.json)
           head -c 500 /tmp/community-result.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Community backend schema failed HTTP $code"; exit 1; }
-      - name: Winkelcatalogus (eenmalige vulling; bestaande winkels in het beheer blijven zoals ze zijn)
-        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/stores.json') != ''
-        run: python3 supabase/catalog/seed.py
-      - name: Cadeaubon-gids (alleen waar de gids nog leeg is; aanpassingen in het beheer blijven staan)
-        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/guides.json') != ''
-        run: python3 supabase/catalog/guides.py
-      - name: Kaartontwerpen van cadeaukaarten (alleen waar de cover nog leeg is; het beheer is leidend)
-        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/covers.json') != ''
-        run: python3 supabase/catalog/covers.py
       - name: Mails, anti-bot hook and Auth settings
         if: steps.check.outputs.skip != '1'
         env:
@@ -309,8 +300,32 @@ jobs:
             code=$(curl -s -o /tmp/l.out -w '%{http_code}' -X POST "$U/admin" -H "Content-Type: application/json" --data @/tmp/l.json)
             rm -f /tmp/l.json
             case "$code" in
-              200) echo "::notice::Admin: login with PASR_ADMIN_USER / PASR_ADMIN_PASSWORD works (user has ${#A_USER} characters, password ${#A_PASS})." ;;
+              200)
+              python3 - <<'PY_STATS'
+          import json, urllib.request, os
+          with open("/tmp/l.out") as file:
+              token = json.load(file)["token"]
+          url = f"https://{os.environ['REF']}.supabase.co/functions/v1/admin"
+          request = urllib.request.Request(url, data=b'{"action":"stats"}', headers={
+              "Content-Type": "application/json", "Authorization": f"Bearer {token}"
+          })
+          with urllib.request.urlopen(request, timeout=30) as response:
+              total = json.load(response).get("business_accounts")
+          if type(total) is not int or total < 0:
+              raise SystemExit("Admin: het aantal zakelijke accounts ontbreekt.")
+          print("::notice::Admin: zakelijke accounttelling gecontroleerd.")
+          PY_STATS
+              ;;
               429) echo "::warning::Admin: login is locked for 15 minutes after too many wrong attempts." ;;
               *) echo "::warning::Admin: login with the GitHub secrets failed (HTTP $code, $(python3 -c 'import json;print(json.load(open("/tmp/l.out")).get("error",""))' 2>/dev/null))." ;;
             esac
           fi
+      - name: Winkelcatalogus (eenmalige vulling; bestaande winkels in het beheer blijven zoals ze zijn)
+        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/stores.json') != ''
+        run: python3 supabase/catalog/seed.py
+      - name: Cadeaubon-gids (alleen waar de gids nog leeg is; aanpassingen in het beheer blijven staan)
+        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/guides.json') != ''
+        run: python3 supabase/catalog/guides.py
+      - name: Kaartontwerpen van cadeaukaarten (alleen waar de cover nog leeg is; het beheer is leidend)
+        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/covers.json') != ''
+        run: python3 supabase/catalog/covers.py
