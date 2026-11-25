@@ -409,8 +409,8 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="{og_image}">
   <meta name="theme-color" content="#F4F3FF">
-  <link rel="icon" type="image/png" href="/assets/pasr-zakelijk-favicon.png">
-  <link rel="apple-touch-icon" href="/assets/pasr-zakelijk-touch-icon.png">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
@@ -558,8 +558,8 @@ def page():
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"MobileApplication","name":"Pasr Zakelijk","operatingSystem":"iOS 17, iPadOS 17, Android 8, webbrowser","applicationCategory":"BusinessApplication","url":"{APP_URL}","description":"Digitale stempelkaart voor je zaak: stempels zetten met je telefoon, klanten sparen in Pasr.","featureList":{feature_list},"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@type":"Organization","name":"Pasr","url":"https://pasr.nl/"}}}}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
   <meta name="theme-color" content="#F4F3FF">
-  <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/assets/pasr-zakelijk-favicon.png">
+  <link rel="apple-touch-icon" href="/assets/pasr-zakelijk-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
