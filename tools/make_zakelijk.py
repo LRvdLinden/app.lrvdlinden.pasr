@@ -387,7 +387,9 @@ def badges(lazy=False):
 
 
 def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_title=None, og_image="https://pasr.nl/og/home.png",
-         extra="", referrer=True):
+         extra="", referrer=True, business_icons=False):
+    favicon = "pasr-zakelijk-favicon.png" if business_icons else "favicon.png"
+    touch_icon = "pasr-zakelijk-touch-icon.png" if business_icons else "apple-touch-icon.png"
     return f'''<!doctype html>
 <html lang="nl">
 <head>
@@ -409,8 +411,8 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="{og_image}">
   <meta name="theme-color" content="#F4F3FF">
-  <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/assets/{favicon}">
+  <link rel="apple-touch-icon" href="/assets/{touch_icon}">
   <link rel="manifest" href="/site.webmanifest">
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
@@ -446,7 +448,8 @@ def app_page(folder, title, desc, og_title, data_page, main, jsqr, app_id, activ
     # this page is regenerated every website deploy and on hourly catalog refreshes.
     dashboard_css = '  <link rel="stylesheet" href="/assets/zakelijk-dashboard-v2.css">\n' if folder == "dashboard" else ""
     dashboard_js = '  <script src="/assets/zakelijk-dashboard-v2.js" defer></script>\n' if folder == "dashboard" else ""
-    page_head = head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title)
+    page_head = head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title,
+                     business_icons=folder == "dashboard")
     if dashboard_css:
         page_head = page_head.replace("</head>", dashboard_css + "</head>")
     return (page_head
