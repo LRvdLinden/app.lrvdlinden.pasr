@@ -85,7 +85,7 @@ fun AddCardScreen() {
                 TopAppBar(
                     title = { Text("Kaart toevoegen") },
                     navigationIcon = { IconButton({ nav.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug") } },
-                    actions = { IconButton({ scanning = true }) { Icon(Icons.Outlined.QrCodeScanner, "QR van een zaak scannen") } },
+                    actions = { if (tab != 4) IconButton({ scanning = true }) { Icon(Icons.Outlined.QrCodeScanner, "QR van een zaak scannen") } },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 )
                 PrimaryScrollableTabRow(tab, containerColor = MaterialTheme.colorScheme.background) {
@@ -143,10 +143,17 @@ private fun StoreGrid(query: String, kind: CardKind) {
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Group(Modifier.padding(bottom = 6.dp)) {
-                RowItem(Icons.Outlined.CreditCard, if (kind == CardKind.TICKET) "Ander ticket" else if (kind == CardKind.VOUCHER) "Andere cadeaukaart" else "Winkel staat er niet bij",
-                    "Maak zelf een kaart met naam, kleur en logo") {
-                    nav.replace(Screen.Editor(kind = kind, draft = app.lrvdlinden.pasr.data.Card(storeName = query.trim(), kindRaw = kind.raw)))
+                RowItem(if (kind == CardKind.TICKET) Icons.Outlined.ConfirmationNumber else Icons.Outlined.CreditCard, if (kind == CardKind.TICKET) "Zelf een ticket toevoegen" else if (kind == CardKind.VOUCHER) "Andere cadeaukaart" else "Winkel staat er niet bij",
+                    if (kind == CardKind.TICKET) "Scan je originele ticket of kies een screenshot" else "Maak zelf een kaart met naam, kleur en logo") {
+                    nav.replace(Screen.Editor(kind = kind, draft = app.lrvdlinden.pasr.data.Card(storeName = query.trim(), kindRaw = kind.raw,
+                        formatRaw = if (kind == CardKind.TICKET) app.lrvdlinden.pasr.data.BarcodeFormat.QR.raw else app.lrvdlinden.pasr.data.BarcodeFormat.CODE128.raw)))
                 }
+            }
+        }
+        if (kind == CardKind.TICKET) item(span = { GridItemSpan(maxLineSpan) }) {
+            Column {
+                Text("Beschikbare tickets", fontWeight = FontWeight.SemiBold)
+                Text("Gebruik alleen de originele, vaste code van je eigen ticket. Voor wisselende codes gebruik je de officiële ticketapp.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         items(list, key = { it.id }) { t -> StoreTile(t) { nav.replace(Screen.Editor(template = t, kind = t.kind)) } }

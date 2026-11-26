@@ -1,0 +1,101 @@
+[
+  {
+    "id": "drakenboot-regular",
+    "name": "Drakenboot – Regular",
+    "domain": "drakenboot.nl",
+    "category": "Evenementen",
+    "card_hex": "#2B2F3A",
+    "format": "qr",
+    "kind": "ticket",
+    "aliases": [
+      "drakenbootfestival",
+      "apeldoorn",
+      "regular"
+    ],
+    "logo": null,
+    "published": true
+  },
+  {
+    "id": "drakenboot-early-bird",
+    "name": "Drakenboot – Early Bird",
+    "domain": "drakenboot.nl",
+    "category": "Evenementen",
+    "card_hex": "#2B2F3A",
+    "format": "qr",
+    "kind": "ticket",
+    "aliases": [
+      "drakenbootfestival",
+      "apeldoorn",
+      "early bird",
+      "earlybird"
+    ],
+    "logo": null,
+    "published": true
+  },
+  {
+    "id": "drakenboot-kids-regular",
+    "name": "Drakenboot – KIDS Regular",
+    "domain": "drakenboot.nl",
+    "category": "Evenementen",
+    "card_hex": "#2B2F3A",
+    "format": "qr",
+    "kind": "ticket",
+    "aliases": [
+      "drakenbootfestival",
+      "apeldoorn",
+      "kids",
+      "kinderticket"
+    ],
+    "logo": null,
+    "published": true
+  },
+  {
+    "id": "drakenboot-kids-early-bird",
+    "name": "Drakenboot – KIDS Early Bird",
+    "domain": "drakenboot.nl",
+    "category": "Evenementen",
+    "card_hex": "#2B2F3A",
+    "format": "qr",
+    "kind": "ticket",
+    "aliases": [
+      "drakenbootfestival",
+      "apeldoorn",
+      "kids",
+      "kinderticket",
+      "early bird"
+    ],
+    "logo": null,
+    "published": true
+  },
+  {
+    "id": "zwarte-cross-ticket",
+    "name": "Zwarte Cross",
+    "domain": "zwartecross.nl",
+    "category": "Evenementen",
+    "card_hex": "#2B2F3A",
+    "format": "qr",
+    "kind": "ticket",
+    "aliases": [
+      "festival",
+      "zwarte cross"
+    ],
+    "logo": null,
+    "published": true
+  },
+  {
+    "id": "concert-at-sea-ticket",
+    "name": "Concert at SEA",
+    "domain": "concertatsea.nl",
+    "category": "Evenementen",
+    "card_hex": "#2B2F3A",
+    "format": "qr",
+    "kind": "ticket",
+    "aliases": [
+      "festival",
+      "concert at sea",
+      "cas"
+    ],
+    "logo": null,
+    "published": true
+  }
+]

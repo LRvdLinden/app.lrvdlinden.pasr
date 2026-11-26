@@ -85,7 +85,7 @@ fun CardEditorScreen(s: Screen.Editor) {
         } ?: Card(kindRaw = s.kind.raw, colorHex = Brand.palette.first())
     }
     var card by remember(s) { mutableStateOf(initial) }
-    var scanning by remember { mutableStateOf(false) }
+    var scanning by remember(s) { mutableStateOf(existing == null && initial.kind == CardKind.TICKET && initial.number.isBlank()) }
     var kindMenu by remember { mutableStateOf(false) }
     var formatMenu by remember { mutableStateOf(false) }
     var dateField by remember { mutableStateOf<String?>(null) }
@@ -112,8 +112,8 @@ fun CardEditorScreen(s: Screen.Editor) {
 
     fun save() {
         val name = card.storeName.trim()
-        if (name.isEmpty()) { scope.launch { snack.showSnackbar("Vul de naam van de winkel in.") }; return }
-        if (card.number.isBlank() && card.kind != CardKind.STAMPS && card.kind != CardKind.TICKET) {
+        if (name.isEmpty()) { scope.launch { snack.showSnackbar(if (card.kind == CardKind.TICKET) "Vul de naam van het evenement in." else "Vul de naam van de winkel in.") }; return }
+        if (card.number.isBlank() && card.kind != CardKind.STAMPS && (card.kind != CardKind.TICKET || existing == null)) {
             scope.launch { snack.showSnackbar("Vul de ${card.kind.codeLabel.lowercase()} in of scan hem.") }; return
         }
         val bal = balanceText.replace(',', '.').toDoubleOrNull()
@@ -150,10 +150,10 @@ fun CardEditorScreen(s: Screen.Editor) {
                     CardKind.choosable(card.kind).forEach { k -> DropdownMenuItem({ Text(k.title) }, { card = card.copy(kindRaw = k.raw); kindMenu = false }) }
                 }
             }
-            Field("Naam van de winkel", card.storeName) { card = card.copy(storeName = it) }
+            Field(if (card.kind == CardKind.TICKET) "Naam van het evenement" else "Naam van de winkel", card.storeName) { card = card.copy(storeName = it) }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Field(card.kind.codeLabel, card.number, Modifier.weight(1f)) {
-                    card = card.copy(number = it, formatRaw = if (existing == null && template == null && card.kind != CardKind.CODE) BarcodeFormat.guess(it).raw else card.formatRaw)
+                    card = card.copy(number = it, formatRaw = if (existing == null && template == null && card.kind != CardKind.CODE && card.kind != CardKind.TICKET) BarcodeFormat.guess(it).raw else card.formatRaw)
                 }
                 IconButton({ scanning = true }) { Icon(Icons.Outlined.QrCodeScanner, "Scannen", tint = MaterialTheme.colorScheme.primary) }
             }
@@ -239,7 +239,7 @@ fun CardEditorScreen(s: Screen.Editor) {
         }
     }
 
-    if (scanning) ScannerOverlay("Scan de barcode van je kaart", onResult = { v, f ->
+    if (scanning) ScannerOverlay(if (card.kind == CardKind.TICKET) "Scan de originele code van je ticket" else "Scan de barcode van je kaart", onResult = { v, f ->
         scanning = false
         card = card.copy(number = v, formatRaw = f.raw)
     }, onClose = { scanning = false })

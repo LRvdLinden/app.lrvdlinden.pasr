@@ -98,8 +98,9 @@ struct StoresView: View {
                 } footer: {
                     if !stores.isEmpty {
                         let vouchers = stores.filter(\.isVoucher).count
+                        let tickets = stores.filter { $0.kind == "ticket" }.count
                         Text(search.isEmpty
-                             ? "\(Fmt.plural(stores.count, "winkel", "winkels")): \(Fmt.plural(stores.count - vouchers, "klantenkaart", "klantenkaarten")), \(Fmt.plural(vouchers, "cadeaukaart", "cadeaukaarten"))."
+                             ? "\(Fmt.plural(stores.count, "winkel", "winkels")): \(Fmt.plural(stores.count - vouchers - tickets, "klantenkaart", "klantenkaarten")), \(Fmt.plural(vouchers, "cadeaukaart", "cadeaukaarten")), \(Fmt.plural(tickets, "ticket", "tickets"))."
                              : "\(shown.count) van \(stores.count) winkels.")
                     }
                 }
@@ -163,7 +164,7 @@ struct StoresView: View {
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(s.name).font(.body.weight(.semibold))
-                Text([s.published ? "Gepubliceerd" : "Concept", s.isVoucher ? "Cadeaukaart" : nil, s.domain, s.category]
+                Text([s.published ? "Gepubliceerd" : "Concept", s.kind == "ticket" ? "Ticket" : s.isVoucher ? "Cadeaukaart" : nil, s.domain, s.category]
                     .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                     .font(.caption).foregroundStyle(s.published ? Theme.mint : Theme.muted)
             }
@@ -404,7 +405,7 @@ struct StoreEditorView: View {
 
     static let categories = ["Supermarkt", "Drogist en beauty", "Warenhuis en wonen", "Mode en schoenen", "Elektronica",
                              "Doe-het-zelf en tuin", "Sport en vrije tijd", "Tanken en reizen", "Eten en drinken",
-                             "Boeken en cadeaus", "Dieren", "Cadeaukaarten", "Overig"]
+                             "Boeken en cadeaus", "Dieren", "Cadeaukaarten", "Evenementen", "Overig"]
     static let formats: [(String, String)] = [("ean13", "EAN-13"), ("ean8", "EAN-8"), ("upcA", "UPC-A"), ("code128", "Code 128"),
                                                ("code39", "Code 39"), ("itf", "ITF"), ("qr", "QR"), ("pdf417", "PDF417"), ("aztec", "Aztec")]
 
@@ -413,6 +414,7 @@ struct StoreEditorView: View {
             Form {
                 Section {
                     CardPreview(hex: draft.hex, logo: draft.logo, name: draft.name, voucher: draft.kind == "voucher",
+                                ticket: draft.kind == "ticket",
                                 cover: draft.kind == "voucher" ? coverImage : nil)
                         .frame(maxWidth: 360)
                         .frame(maxWidth: .infinity)
@@ -437,6 +439,7 @@ struct StoreEditorView: View {
                     Picker("Soort kaart", selection: $draft.kind) {
                         Text("Klantenkaart").tag("loyalty")
                         Text("Cadeaukaart").tag("voucher")
+                        Text("Ticket").tag("ticket")
                     }
                     ColorPicker("Kaartkleur", selection: Binding(get: { Color(hexString: draft.hex) },
                                                                 set: { draft.hex = $0.hexString }), supportsOpacity: false)
@@ -461,7 +464,7 @@ struct StoreEditorView: View {
                     }
                 }
                 if draft.kind == "voucher" { coverSection }
-                guideSection
+                if draft.kind != "ticket" { guideSection }
                 Section {
                     if !draft.requestIDs.isEmpty {
                         Text("Na publiceren worden \(Fmt.plural(draft.requestIDs.count, "aanvraag", "aanvragen")) gesloten als toegevoegd.")
@@ -719,6 +722,7 @@ struct CardPreview: View {
     let logo: String?
     let name: String
     var voucher = false
+    var ticket = false
     /// Kaartontwerp van een cadeaukaart: dan is dat de hele voorkant.
     var cover: CGImage? = nil
 
@@ -750,7 +754,7 @@ struct CardPreview: View {
                 .padding(16)
             }
             .overlay(alignment: .bottomLeading) {
-                Text(voucher ? "CADEAUKAART" : "KLANTENKAART").font(.caption2.weight(.bold)).opacity(0.75).padding(16)
+                Text(ticket ? "TICKET" : voucher ? "CADEAUKAART" : "KLANTENKAART").font(.caption2.weight(.bold)).opacity(0.75).padding(16)
             }
             .foregroundStyle(light ? Color(hex: 0x111216) : .white)
             .shadow(color: .black.opacity(0.4), radius: 14, y: 8)

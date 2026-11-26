@@ -909,7 +909,10 @@
     $("seGHowLabel").textContent = kind === "voucher" ? "Zo wissel je hem in (1 tot 3 zinnen)" : "Zo kom je aan de kaart (1 zin)";
     document.querySelectorAll("#seGuide [data-gkind]").forEach((n) => n.classList.toggle("hidden", n.dataset.gkind !== kind));
   }
-  $("seKind").addEventListener("change", guideVisible);
+  $("seKind").addEventListener("change", () => {
+    if ($("seKind").value === "ticket") { $("seCategory").value = "Evenementen"; $("seFormat").value = "qr"; }
+    guideVisible();
+  });
   /** Gids uit het formulier (alleen de velden van deze soort kaart); leeg = null (wissen). */
   function guideBody() {
     if ($("seKind").value === "ticket") return null;
