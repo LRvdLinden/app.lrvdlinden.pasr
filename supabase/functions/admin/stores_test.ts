@@ -90,3 +90,9 @@ Deno.test("kaartontwerp (cover)", () => {
   ok(!cleanCover("R0lGODlh").ok, "geen gif");
   ok(!cleanCover("/9j/" + "A".repeat(220_000)).ok, "te groot");
 });
+
+
+Deno.test("evenementticket blijft een ticket in de catalogus", () => {
+  const r = cleanStore({ name: "Voorbeeld evenement", domain: "example.com", card_hex: "#123456", category: "Evenementen", kind: "ticket", format: "qr" });
+  ok(r.ok && r.value.kind === "ticket" && r.value.format === "qr" && r.value.category === "Evenementen", JSON.stringify(r));
+});

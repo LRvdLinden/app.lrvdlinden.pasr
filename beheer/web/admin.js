@@ -687,7 +687,7 @@
 
   // ---- winkels: aanvragen, kaart maken, publiceren ----
   const CATEGORIES = ["Supermarkt", "Drogist en beauty", "Warenhuis en wonen", "Mode en schoenen", "Elektronica", "Doe-het-zelf en tuin",
-    "Sport en vrije tijd", "Tanken en reizen", "Eten en drinken", "Boeken en cadeaus", "Dieren", "Cadeaukaarten", "Overig"];
+    "Sport en vrije tijd", "Tanken en reizen", "Eten en drinken", "Boeken en cadeaus", "Dieren", "Cadeaukaarten", "Evenementen", "Overig"];
   const FORMATS = [["ean13", "EAN-13"], ["ean8", "EAN-8"], ["upcA", "UPC-A"], ["code128", "Code 128"], ["code39", "Code 39"], ["itf", "ITF"], ["qr", "QR"], ["pdf417", "PDF417"], ["aztec", "Aztec"]];
   let storeFilter = "open", editing = null;
   CATEGORIES.forEach((c) => $("seCategory").append(Object.assign(el("option", null, c), { value: c })));
@@ -706,7 +706,8 @@
     if (storeFilter === "stores" && rows.length) {
       const vis = rows.filter((r) => !r.classList.contains("hidden"));
       const v = vis.filter((r) => r.dataset.kind === "voucher").length;
-      t.textContent = `${vis.length - v} klantenkaarten en ${v} cadeaukaarten` + (q ? ` gevonden (van ${rows.length})` : "");
+      const tickets = vis.filter((r) => r.dataset.kind === "ticket").length;
+      t.textContent = `${vis.length - v - tickets} klantenkaarten, ${v} cadeaukaarten en ${tickets} tickets` + (q ? ` gevonden (van ${rows.length})` : "");
       t.classList.remove("hidden");
     } else if (q && rows.length) { t.textContent = `${shown} van ${rows.length} gevonden`; t.classList.remove("hidden"); }
     else t.classList.add("hidden");
@@ -842,7 +843,7 @@
   function storeRow(s) {
     const row = el("div", "acc");
     row.dataset.search = fold([s.name, s.id, s.domain, s.category, ...(s.aliases || [])].join(" "));
-    row.dataset.kind = s.kind === "voucher" ? "voucher" : "loyalty";
+    row.dataset.kind = s.kind === "ticket" ? "ticket" : s.kind === "voucher" ? "voucher" : "loyalty";
     const voucherCover = s.kind === "voucher" && s.cover;
     const av = el("div", voucherCover ? "av cover" : "av logo");
     av.style.background = s.card_hex;
@@ -902,15 +903,19 @@
   $("seKind").addEventListener("change", preview);
   /** Gids: bij een cadeaukaart de cadeaubon-gids, bij een klantenkaart de programmagids (zo spaar je, voordelen). */
   function guideVisible() {
-    const kind = $("seKind").value === "voucher" ? "voucher" : "loyalty";
-    $("seGuide").classList.remove("hidden");
+    const kind = $("seKind").value;
+    $("seGuide").classList.toggle("hidden", kind === "ticket");
     $("seGTitle").textContent = kind === "voucher" ? "Cadeaubon-gids" : "Programmagids";
     $("seGHowLabel").textContent = kind === "voucher" ? "Zo wissel je hem in (1 tot 3 zinnen)" : "Zo kom je aan de kaart (1 zin)";
     document.querySelectorAll("#seGuide [data-gkind]").forEach((n) => n.classList.toggle("hidden", n.dataset.gkind !== kind));
   }
-  $("seKind").addEventListener("change", guideVisible);
+  $("seKind").addEventListener("change", () => {
+    if ($("seKind").value === "ticket") { $("seCategory").value = "Evenementen"; $("seFormat").value = "qr"; }
+    guideVisible();
+  });
   /** Gids uit het formulier (alleen de velden van deze soort kaart); leeg = null (wissen). */
   function guideBody() {
+    if ($("seKind").value === "ticket") return null;
     const g = {}, t = (id) => $(id).value.trim(), b = (id) => ($(id).value === "" ? undefined : $(id).value === "true");
     if ($("seKind").value === "voucher") {
       if (t("seGValidity")) g.validity = t("seGValidity");
@@ -937,7 +942,7 @@
     $("sePreviewName").textContent = editing.logo ? "" : ($("seName").value || "Winkel");
     $("sePreviewLogo").classList.toggle("hidden", !editing.logo);
     if (editing.logo) $("sePreviewLogo").src = "data:image/png;base64," + editing.logo;
-    p.querySelector("small").textContent = $("seKind").value === "voucher" ? "Cadeaukaart" : "Klantenkaart";
+    p.querySelector("small").textContent = $("seKind").value === "ticket" ? "Ticket" : $("seKind").value === "voucher" ? "Cadeaukaart" : "Klantenkaart";
     // Kaartontwerp: alleen bij een cadeaukaart; dan is dat de voorkant (zoals in de app en op pasr.nl/kaarten).
     const voucher = $("seKind").value === "voucher";
     $("seCoverRow").classList.toggle("hidden", !voucher);

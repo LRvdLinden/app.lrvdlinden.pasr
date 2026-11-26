@@ -66,13 +66,14 @@ struct AddCardView: View {
 
     /// Bij zoeken: staat de winkel er ook als de andere soort in? Dan wijzen we erop.
     private var otherKindMatch: StoreTemplate? {
-        guard !search.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        guard kind == .loyalty || kind == .voucher, !search.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
         return templates(of: kind == .voucher ? .loyalty : .voucher).first
     }
 
     /// By category (empty ones left out); while searching, one list without headers.
     private var groups: [(String, [StoreTemplate])] {
         let list = templates
+        if kind == .ticket { return list.isEmpty ? [] : [(String(localized: "Beschikbare tickets"), list)] }
         guard search.trimmingCharacters(in: .whitespaces).isEmpty else { return list.isEmpty ? [] : [("", list)] }
         let known = Set(StoreTemplates.categories)
         let rest = list.filter { !known.contains($0.category) }
@@ -86,6 +87,7 @@ struct AddCardView: View {
             Label("Klantenkaart", systemImage: "creditcard").tag(CardKind.loyalty)
             Label("Cadeaukaart", systemImage: "gift").tag(CardKind.voucher)
             Label("Stempelkaart", systemImage: CardKind.stamps.symbol).tag(CardKind.stamps)
+            Label("Ticket", systemImage: CardKind.ticket.symbol).tag(CardKind.ticket)
         }
         .pickerStyle(.segmented)
         .labelStyle(.titleAndIcon)
@@ -95,8 +97,10 @@ struct AddCardView: View {
     /// winkellijst). Twee per rij, zodat ze ook op een smalle iPhone (of het buitenscherm van een iPhone Duo) passen.
     private var otherKinds: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-            ForEach(CardKind.others) { other in
-                Button { path.append(.custom(search, other)) } label: {
+            ForEach(CardKind.others.filter { kind != .ticket || $0 != .ticket }) { other in
+                Button {
+                    if other == .ticket { kind = .ticket } else { path.append(.custom(search, other)) }
+                } label: {
                     Label(other.displayName, systemImage: other.symbol)
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
@@ -151,18 +155,24 @@ struct AddCardView: View {
                         .padding(16)
                         .padding(.bottom, 12)
                 } else {
-                otherKinds
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                scanBanner
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                if kind == .ticket {
+                    Text("Kies een ticketsjabloon of voeg zelf een ticket toe. Gebruik alleen de originele, vaste code van je eigen ticket. Voor wisselende codes gebruik je de officiële ticketapp.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.top, 8)
+                } else {
+                    otherKinds
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                    scanBanner
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                }
                 otherKindHint
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                 LazyVGrid(columns: columns, spacing: 12, pinnedViews: [.sectionHeaders]) {
                     Button { path.append(.custom(search, kind)) } label: {
-                        tile(name: search.isEmpty ? String(localized: kind == .voucher ? "Andere cadeaukaart" : "Andere winkel") : search,
+                        tile(name: kind == .ticket ? String(localized: "Zelf een ticket toevoegen") : search.isEmpty ? String(localized: kind == .voucher ? "Andere cadeaukaart" : "Andere winkel") : search,
                              colorHex: "#2B2F3A", symbol: "plus")
                     }
                     .buttonStyle(.plain)
@@ -192,9 +202,11 @@ struct AddCardView: View {
                 }
                 .padding(16)
 
-                missingStore
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 28)
+                if kind != .ticket {
+                    missingStore
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 28)
+                }
                 }
             }
             .background(Brand.ink.ignoresSafeArea())
@@ -202,7 +214,7 @@ struct AddCardView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .searchable(text: $search, prompt: kind == .stamps ? Text("Zaak of plaats") : Text("Naam van de winkel"))
+            .searchable(text: $search, prompt: kind == .stamps ? Text("Zaak of plaats") : kind == .ticket ? Text("Naam van het evenement") : Text("Naam van de winkel"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
@@ -327,7 +339,7 @@ struct AddCardView: View {
             Text(name)
                 .font(.system(.footnote, design: .rounded).weight(.medium))
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .lineLimit(2)
                 .padding(.horizontal, 2)
         }
         .contentShape(Rectangle())

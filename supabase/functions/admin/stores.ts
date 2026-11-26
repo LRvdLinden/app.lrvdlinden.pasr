@@ -3,10 +3,10 @@
 
 export const CATEGORIES = [
   "Supermarkt", "Drogist en beauty", "Warenhuis en wonen", "Mode en schoenen", "Elektronica", "Doe-het-zelf en tuin",
-  "Sport en vrije tijd", "Tanken en reizen", "Eten en drinken", "Boeken en cadeaus", "Dieren", "Cadeaukaarten", "Overig",
+  "Sport en vrije tijd", "Tanken en reizen", "Eten en drinken", "Boeken en cadeaus", "Dieren", "Cadeaukaarten", "Evenementen", "Overig",
 ] as const;
 export const FORMATS = ["ean13", "ean8", "upcA", "code128", "code39", "itf", "qr", "pdf417", "aztec"] as const;
-export const KINDS_CARD = ["loyalty", "voucher"] as const;
+export const KINDS_CARD = ["loyalty", "voucher", "ticket"] as const;
 
 type J = Record<string, unknown>;
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");

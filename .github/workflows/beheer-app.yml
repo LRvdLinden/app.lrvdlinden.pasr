@@ -33,3 +33,17 @@ jobs:
             -destination "${{ matrix.dest }}" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
             | tee /tmp/build.log | grep -E "error:|warning: .*(deprecated|will never)|BUILD (SUCCEEDED|FAILED)" || true
           grep -q "BUILD SUCCEEDED" /tmp/build.log
+
+  source-zip:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Maak Xcode ZIP
+        run: |
+          git archive --format=zip --output=Pasr-Beheer-Xcode-build19.zip HEAD beheer/apple
+          unzip -tq Pasr-Beheer-Xcode-build19.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pasr-Beheer-Xcode-build19
+          path: Pasr-Beheer-Xcode-build19.zip

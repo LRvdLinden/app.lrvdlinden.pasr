@@ -412,7 +412,7 @@ struct CardEditorView: View {
                 #if os(iOS)
                 if ScannerView.isAvailable {   // niet op de Mac of Vision Pro
                     Button { showScanner = true } label: {
-                        Label("Scan", systemImage: "barcode.viewfinder").frame(maxWidth: .infinity)
+                        Label(draft.kind == .ticket ? "Scan ticket" : "Scan", systemImage: "barcode.viewfinder").frame(maxWidth: .infinity)
                     }
                     .pasrGlassButton()
                 }
