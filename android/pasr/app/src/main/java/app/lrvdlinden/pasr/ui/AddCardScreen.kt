@@ -37,7 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -69,7 +69,7 @@ import app.lrvdlinden.pasr.data.DirectoryCard
 import app.lrvdlinden.pasr.data.StoreTemplate
 import kotlinx.coroutines.delay
 
-private val tabs = listOf("Klantenkaart", "Cadeaukaart", "Stempelkaart", "Overig")
+private val tabs = listOf("Klantenkaart", "Cadeaukaart", "Stempelkaart", "Overig", "Ticket")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,12 +88,12 @@ fun AddCardScreen() {
                     actions = { IconButton({ scanning = true }) { Icon(Icons.Outlined.QrCodeScanner, "QR van een zaak scannen") } },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 )
-                PrimaryTabRow(tab, containerColor = MaterialTheme.colorScheme.background) {
+                PrimaryScrollableTabRow(tab, containerColor = MaterialTheme.colorScheme.background) {
                     tabs.forEachIndexed { i, t -> Tab(tab == i, { tab = i }, text = { Text(t, maxLines = 1) }) }
                 }
                 if (tab != 3) OutlinedTextField(
                     query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                    placeholder = { Text(if (tab == 2) "Zoek op zaak of plaats" else "Zoek een winkel") },
+                    placeholder = { Text(if (tab == 2) "Zoek op zaak of plaats" else if (tab == 4) "Zoek een evenement" else "Zoek een winkel") },
                     leadingIcon = { Icon(Icons.Outlined.Search, null) }, singleLine = true, shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -109,7 +109,8 @@ fun AddCardScreen() {
                 0 -> StoreGrid(query, CardKind.LOYALTY)
                 1 -> StoreGrid(query, CardKind.VOUCHER)
                 2 -> StampDirectory(query)
-                else -> OtherKinds()
+                4 -> StoreGrid(query, CardKind.TICKET)
+                else -> OtherKinds { tab = 4 }
             }
         }
     }
@@ -142,7 +143,7 @@ private fun StoreGrid(query: String, kind: CardKind) {
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Group(Modifier.padding(bottom = 6.dp)) {
-                RowItem(Icons.Outlined.CreditCard, if (kind == CardKind.VOUCHER) "Andere cadeaukaart" else "Winkel staat er niet bij",
+                RowItem(Icons.Outlined.CreditCard, if (kind == CardKind.TICKET) "Ander ticket" else if (kind == CardKind.VOUCHER) "Andere cadeaukaart" else "Winkel staat er niet bij",
                     "Maak zelf een kaart met naam, kleur en logo") {
                     nav.replace(Screen.Editor(kind = kind, draft = app.lrvdlinden.pasr.data.Card(storeName = query.trim(), kindRaw = kind.raw)))
                 }
@@ -150,7 +151,7 @@ private fun StoreGrid(query: String, kind: CardKind) {
         }
         items(list, key = { it.id }) { t -> StoreTile(t) { nav.replace(Screen.Editor(template = t, kind = t.kind)) } }
         if (list.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
-            Text("Geen winkel gevonden. Maak hierboven zelf een kaart.", Modifier.fillMaxWidth().padding(24.dp),
+            Text(if (kind == CardKind.TICKET) "Geen evenement gevonden. Voeg hierboven zelf een ticket toe." else "Geen winkel gevonden. Maak hierboven zelf een kaart.", Modifier.fillMaxWidth().padding(24.dp),
                 textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -223,12 +224,12 @@ private fun StampDirectory(query: String) {
 }
 
 @Composable
-private fun OtherKinds() {
+private fun OtherKinds(onTickets: () -> Unit) {
     val nav = LocalNav.current
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Group {
             RowItem(Icons.Outlined.LocalOffer, "Kortingscode", "Een code voor korting, met einddatum") { nav.replace(Screen.Editor(kind = CardKind.CODE)) }
-            RowItem(Icons.Outlined.ConfirmationNumber, "Ticket", "Concert, museum of evenement") { nav.replace(Screen.Editor(kind = CardKind.TICKET)) }
+            RowItem(Icons.Outlined.ConfirmationNumber, "Ticket", "Zoek een evenement of voeg zelf een ticket toe") { onTickets() }
             RowItem(Icons.Outlined.Sync, "Abonnement", "Sportschool, bibliotheek of lidmaatschap") { nav.replace(Screen.Editor(kind = CardKind.SUBSCRIPTION)) }
             RowItem(Icons.Outlined.CreditCard, "Eigen klantenkaart", "Elke kaart met een barcode of QR-code") { nav.replace(Screen.Editor(kind = CardKind.LOYALTY)) }
         }

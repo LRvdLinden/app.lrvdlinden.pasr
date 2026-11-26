@@ -86,6 +86,7 @@ struct AddCardView: View {
             Label("Klantenkaart", systemImage: "creditcard").tag(CardKind.loyalty)
             Label("Cadeaukaart", systemImage: "gift").tag(CardKind.voucher)
             Label("Stempelkaart", systemImage: CardKind.stamps.symbol).tag(CardKind.stamps)
+            Label("Ticket", systemImage: CardKind.ticket.symbol).tag(CardKind.ticket)
         }
         .pickerStyle(.segmented)
         .labelStyle(.titleAndIcon)
@@ -95,8 +96,10 @@ struct AddCardView: View {
     /// winkellijst). Twee per rij, zodat ze ook op een smalle iPhone (of het buitenscherm van een iPhone Duo) passen.
     private var otherKinds: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-            ForEach(CardKind.others) { other in
-                Button { path.append(.custom(search, other)) } label: {
+            ForEach(CardKind.others.filter { kind != .ticket || $0 != .ticket }) { other in
+                Button {
+                    if other == .ticket { kind = .ticket } else { path.append(.custom(search, other)) }
+                } label: {
                     Label(other.displayName, systemImage: other.symbol)
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
@@ -162,7 +165,7 @@ struct AddCardView: View {
                     .padding(.top, 8)
                 LazyVGrid(columns: columns, spacing: 12, pinnedViews: [.sectionHeaders]) {
                     Button { path.append(.custom(search, kind)) } label: {
-                        tile(name: search.isEmpty ? String(localized: kind == .voucher ? "Andere cadeaukaart" : "Andere winkel") : search,
+                        tile(name: search.isEmpty ? String(localized: kind == .ticket ? "Ander ticket" : kind == .voucher ? "Andere cadeaukaart" : "Andere winkel") : search,
                              colorHex: "#2B2F3A", symbol: "plus")
                     }
                     .buttonStyle(.plain)
@@ -202,7 +205,7 @@ struct AddCardView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .searchable(text: $search, prompt: kind == .stamps ? Text("Zaak of plaats") : Text("Naam van de winkel"))
+            .searchable(text: $search, prompt: kind == .stamps ? Text("Zaak of plaats") : kind == .ticket ? Text("Naam van het evenement") : Text("Naam van de winkel"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer", systemImage: "xmark") { dismiss() } }
             }
