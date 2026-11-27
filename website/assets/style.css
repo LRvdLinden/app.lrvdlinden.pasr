@@ -1169,3 +1169,9 @@ input[type=checkbox], input[type=radio], input[type=range] { accent-color:var(--
 }
 :root[data-theme="dark"] .fv-slim .sl { background: rgba(255,255,255,.07); }
 :root[data-theme="dark"] .fv-slim .lbl { color: #B9B6D6; }
+@media (prefers-color-scheme: dark) {
+:root:not([data-theme="light"]) .fv-src span { color: #FFC2D0; background: rgba(255,255,255,.10); }
+:root:not([data-theme="light"]) .fv-src .s0 { color: #B0123A; background: #fff; }
+}
+:root[data-theme="dark"] .fv-src span { color: #FFC2D0; background: rgba(255,255,255,.10); }
+:root[data-theme="dark"] .fv-src .s0 { color: #B0123A; background: #fff; }

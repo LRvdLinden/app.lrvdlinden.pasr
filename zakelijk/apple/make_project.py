@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 BUILD = "18"
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 
 
 def oid(name):

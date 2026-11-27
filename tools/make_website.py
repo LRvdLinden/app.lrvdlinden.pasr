@@ -991,3 +991,19 @@ if __name__ == "__main__":
                    city="Apeldoorn", color="#7B4B2A", text=None, total=10,
                    reward="1 gratis koffie", logo=None)
     (ROOT / "og" / "zakelijk.png").write_bytes(make_kaart_pages.render_og(demo_og))
+    # Vaste pagina's (support, privacy, Android, account, ...): altijd hetzelfde korte menu als de rest van pasr.nl.
+    import re as _re
+    for _rel, _active in (("support/index.html", "support"), ("privacy/index.html", "privacy"), ("android/index.html", "android"),
+                          ("account/index.html", "account"), ("404.html", ""), ("bevestigen/index.html", ""),
+                          ("afmelden/index.html", "")):
+        _f = ROOT / _rel
+        if not _f.exists():
+            continue
+        _html = _f.read_text(encoding="utf-8")
+        _new = _re.sub(r'<header class="wrap nav[^"]*">.*?</header>', lambda _m: site_nav(_active).strip(), _html, count=1, flags=_re.S)
+        if "catalog-hub.css" not in _new:
+            _new = _re.sub(r'(<link rel="stylesheet" href="/assets/style\.css[^"]*">)',
+                           r'\1\n  <link rel="stylesheet" href="/assets/catalog-hub.css">', _new, count=1)
+        if _new != _html:
+            _f.write_text(_new, encoding="utf-8")
+            print("Menu bijgewerkt:", _rel)

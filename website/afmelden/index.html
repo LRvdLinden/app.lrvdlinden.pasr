@@ -26,6 +26,7 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <script src="/assets/consent.js?v=77ae25ae" defer></script>
   <link rel="stylesheet" href="/assets/style.css?v=932bd56f">
+  <link rel="stylesheet" href="/assets/catalog-hub.css">
   <style>
     .stop { max-width: 640px; margin: 0 auto; padding: 30px 0 100px; text-align: center; }
     .stop h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 6vw, 48px); letter-spacing: -0.04em; line-height: 1.05; margin: 10px 0 14px; }
@@ -36,18 +37,12 @@
   </style>
 </head>
 <body>
-  <header class="wrap nav">
-    <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span></a>
-    <nav aria-label="Hoofdmenu">
-      <ul>
-        <li><a href="/#functies">Functies</a></li>
-        <li><a href="/#delen">Delen</a></li>
-        <li><a href="/#overstappen">Overstappen</a></li>
-        <li><a href="/#faq">Vragen</a></li>
-        <li><a href="/support/">Support</a></li>
-      </ul>
-    </nav>
-  </header>
+  <header class="wrap nav ch-site-nav">
+  <a class="brand" href="/" aria-label="Pasr homepage"><img src="/assets/icon.png" width="36" height="36" alt=""><span>pasr</span></a>
+  <details class="ch-menu"><summary aria-label="Hoofdmenu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg></summary>
+  <nav aria-label="Mobiel hoofdmenu"><ul><li><a href="/kaarten/">Klantenkaarten</a></li><li><a href="/cadeaubon/">Cadeaukaarten</a></li><li><a href="/stempelkaarten/">Stempelkaarten</a></li><li><a href="/kortingsbonnen/">Kortingsbonnen</a></li><li><a href="/saldo-checken/">Saldo checken</a></li><li><a href="/#functies">Functies</a></li><li><a href="/#overstappen">Overstappen</a></li><li><a href="/support/">Support</a></li><li><a href="/zakelijk/" class="ch-business-link">Voor ondernemers</a></li></ul></nav></details>
+  <nav class="ch-desktop-nav" aria-label="Hoofdmenu"><ul><li><a href="/kaarten/">Klantenkaarten</a></li><li><a href="/cadeaubon/">Cadeaukaarten</a></li><li><a href="/stempelkaarten/">Stempelkaarten</a></li><li><a href="/kortingsbonnen/">Kortingsbonnen</a></li><li><a href="/zakelijk/" class="ch-business-link">Voor ondernemers</a></li></ul></nav>
+</header>
   <main class="wrap stop">
     <div id="ask">
       <h1>Herinneringen per e-mail uitzetten?</h1>

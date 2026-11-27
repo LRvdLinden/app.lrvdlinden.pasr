@@ -104,10 +104,10 @@ jobs:
 
       - name: APK bouwen
         env:
-          VERSION_CODE: 130
+          VERSION_CODE: 131
         run: |
           set -o pipefail
-          export VERSION_CODE=130
+          export VERSION_CODE=131
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
 

@@ -21,8 +21,8 @@ android {
         applicationId = "app.lrvdlinden.pasrzakelijk"
         minSdk = 26
         targetSdk = 35
-        versionCode = (System.getenv("VERSION_CODE") ?: "130").toInt()
-        versionName = "1.0.3"
+        versionCode = (System.getenv("VERSION_CODE") ?: "131").toInt()
+        versionName = "1.0.4"
     }
 
     signingConfigs {
