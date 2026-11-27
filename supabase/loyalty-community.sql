@@ -187,3 +187,158 @@ grant execute on function public.pasr_business_community_create(uuid,text,text,i
  public.pasr_business_community_list(uuid),
  public.pasr_business_community_progress(),
  public.pasr_business_community_claim(uuid,uuid,text) to authenticated;
+
+-- ===============================================================================================================
+-- Herziening 27-11-2026 (audit gezamenlijke acties):
+--  * medewerkers zien de acties waaraan hun zaak meedoet en kunnen de beloning bij het scannen uitgeven
+--    (claim stond medewerkers al toe, maar de lijst was alleen voor de eigenaar: uitgeven kon in de praktijk niet);
+--  * de initiatiefnemer kan een actie stoppen, een deelnemer kan uitstappen (voorheen kon dat alleen in het beheer);
+--  * de lijst vertelt wie initiatiefnemer is, welke zaken meedoen en hoeveel beloningen hier zijn uitgegeven;
+--  * bij een scan ziet de kassa direct of de klant een gezamenlijke beloning heeft verdiend;
+--  * de klant ziet bij welke deelnemende zaken hij al was en tot wanneer de actie loopt.
+-- Alles blijft eigen-account-only: een zaak ziet nooit bij welke andere zaken een klant was, alleen het aantal.
+-- ===============================================================================================================
+
+-- Intern: aantal verschillende deelnemende zaken waar een klant binnen de looptijd een stempel kreeg.
+create or replace function public.pasr_business_community_visits(p_campaign uuid,p_user uuid)
+returns integer language sql stable security definer set search_path = '' as $$
+  select count(distinct p.business_id)::integer
+    from public.pasr_business_community_campaigns c
+    join public.pasr_business_community_participants p on p.campaign_id=c.id
+    join public.pasr_business_events e on e.business_id=p.business_id
+    join public.pasr_business_members m on m.id=e.member_id
+   where c.id=p_campaign and m.user_id=p_user and e.kind='stamp'
+     and e.amount>0 and e.undone_at is null
+     and e.at>=greatest(c.starts_at,p.accepted_at) and e.at<=c.ends_at;
+$$;
+
+create or replace function public.pasr_business_community_list(p_business uuid)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+declare v_role text;
+begin
+  v_role := public.pasr_business_role(p_business);
+  if auth.uid() is null or v_role is null then
+    raise exception 'Geen toegang tot de samenwerkingen.' using errcode='42501';
+  end if;
+  return coalesce((select jsonb_agg(jsonb_build_object(
+    'id',c.id,'name',c.name,'reward',c.reward,'required',c.required_businesses,
+    'starts_at',c.starts_at,'ends_at',c.ends_at,'lead_business',b.name,'lead_city',b.city,
+    'is_lead',c.lead_business_id=p_business,
+    'participants',(select count(*) from public.pasr_business_community_participants p where p.campaign_id=c.id),
+    'participant_names',coalesce((select jsonb_agg(pb.name order by p.accepted_at)
+        from public.pasr_business_community_participants p
+        join public.pasr_businesses pb on pb.id=p.business_id where p.campaign_id=c.id),'[]'::jsonb),
+    'joined',exists(select 1 from public.pasr_business_community_participants p
+                    where p.campaign_id=c.id and p.business_id=p_business),
+    'claims_here',(select count(*) from public.pasr_business_community_claims cl
+                   where cl.campaign_id=c.id and cl.issued_at_business=p_business),
+    'can_manage',v_role='owner')
+    order by exists(select 1 from public.pasr_business_community_participants p
+                    where p.campaign_id=c.id and p.business_id=p_business) desc, c.created_at desc)
+    from public.pasr_business_community_campaigns c
+    join public.pasr_businesses b on b.id=c.lead_business_id
+    where c.ends_at>now() and c.cancelled_at is null and b.status='approved'
+      and (v_role='owner' or exists(select 1 from public.pasr_business_community_participants p
+                                    where p.campaign_id=c.id and p.business_id=p_business))), '[]'::jsonb);
+end $$;
+
+-- De initiatiefnemer stopt de actie; klanten zien hem daarna niet meer en er kan niets meer worden uitgegeven.
+create or replace function public.pasr_business_community_cancel(p_business uuid,p_campaign uuid)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null or public.pasr_business_role(p_business) is distinct from 'owner' then
+    raise exception 'Alleen de eigenaar kan een gezamenlijke actie stoppen.' using errcode='42501';
+  end if;
+  update public.pasr_business_community_campaigns set cancelled_at=now()
+   where id=p_campaign and lead_business_id=p_business and cancelled_at is null and ends_at>now();
+  if not found then
+    raise exception 'Alleen de initiatiefnemer kan een lopende actie stoppen.' using errcode='22023';
+  end if;
+  return jsonb_build_object('ok',true,'cancelled',true,'campaign_id',p_campaign);
+end $$;
+
+-- Een deelnemer (niet de initiatiefnemer) stapt uit. Bezoeken bij deze zaak tellen daarna niet meer mee.
+create or replace function public.pasr_business_community_leave(p_business uuid,p_campaign uuid)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null or public.pasr_business_role(p_business) is distinct from 'owner' then
+    raise exception 'Alleen de eigenaar kan namens de zaak uitstappen.' using errcode='42501';
+  end if;
+  if exists(select 1 from public.pasr_business_community_campaigns
+            where id=p_campaign and lead_business_id=p_business) then
+    raise exception 'Je bent initiatiefnemer: stop de actie in plaats van uit te stappen.' using errcode='22023';
+  end if;
+  delete from public.pasr_business_community_participants
+   where campaign_id=p_campaign and business_id=p_business;
+  if not found then
+    raise exception 'Je onderneming neemt niet deel aan deze actie.' using errcode='22023';
+  end if;
+  return jsonb_build_object('ok',true,'joined',false,'campaign_id',p_campaign);
+end $$;
+
+-- Voor de kassa (eigenaar en medewerkers): na het scannen van een lidcode van deze zaak de gezamenlijke acties
+-- waaraan de zaak meedoet, met de voortgang van die klant. Alleen aantallen, geen namen van andere zaken.
+create or replace function public.pasr_business_community_member(p_business uuid,p_member_code text)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+declare v_user uuid;
+begin
+  if auth.uid() is null or public.pasr_business_role(p_business) is null then
+    raise exception 'Je hoort niet bij deze zaak.' using errcode='42501';
+  end if;
+  select m.user_id into v_user
+    from public.pasr_business_members m
+    join public.pasr_business_cards card on card.id=m.business_card_id
+   where m.member_code=upper(trim(coalesce(p_member_code,''))) and card.business_id=p_business;
+  if v_user is null then return '[]'::jsonb; end if;
+  return coalesce((select jsonb_agg(jsonb_build_object(
+    'id',c.id,'name',c.name,'reward',c.reward,'required',c.required_businesses,'ends_at',c.ends_at,
+    'visited',public.pasr_business_community_visits(c.id,v_user),
+    'claimed',exists(select 1 from public.pasr_business_community_claims cl
+                     where cl.campaign_id=c.id and cl.user_id=v_user))
+    order by c.ends_at)
+    from public.pasr_business_community_campaigns c
+    join public.pasr_business_community_participants own on own.campaign_id=c.id and own.business_id=p_business
+   where c.starts_at<=now() and c.ends_at>now() and c.cancelled_at is null), '[]'::jsonb);
+end $$;
+
+-- Klant: eigen voortgang, nu met de deelnemende zaken (openbare namen) en de einddatum.
+create or replace function public.pasr_business_community_progress()
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  if auth.uid() is null then raise exception 'Log in om je winkelstraatacties te zien.' using errcode='28000'; end if;
+  return coalesce((select jsonb_agg(jsonb_build_object(
+    'id',c.id,'name',c.name,'reward',c.reward,'required',c.required_businesses,'ends_at',c.ends_at,
+    'visited',public.pasr_business_community_visits(c.id,auth.uid()),
+    'claimed',exists(select 1 from public.pasr_business_community_claims cl
+                     where cl.campaign_id=c.id and cl.user_id=auth.uid()),
+    'businesses',coalesce((select jsonb_agg(jsonb_build_object(
+        'name',pb.name,'city',pb.city,
+        'visited',exists(select 1 from public.pasr_business_events e
+                         join public.pasr_business_members m on m.id=e.member_id
+                         where e.business_id=p.business_id and m.user_id=auth.uid() and e.kind='stamp'
+                           and e.amount>0 and e.undone_at is null
+                           and e.at>=greatest(c.starts_at,p.accepted_at) and e.at<=c.ends_at))
+        order by pb.name)
+        from public.pasr_business_community_participants p
+        join public.pasr_businesses pb on pb.id=p.business_id
+        where p.campaign_id=c.id),'[]'::jsonb))
+    order by c.ends_at)
+    from public.pasr_business_community_campaigns c
+    where c.ends_at>now() and c.cancelled_at is null
+      and exists(select 1 from public.pasr_business_community_participants p
+        join public.pasr_business_members m on m.user_id=auth.uid()
+        join public.pasr_business_cards card on card.id=m.business_card_id and card.business_id=p.business_id
+        where p.campaign_id=c.id)),'[]'::jsonb);
+end $$;
+
+revoke all on function public.pasr_business_community_visits(uuid,uuid) from public,anon,authenticated;
+revoke all on function public.pasr_business_community_list(uuid),
+ public.pasr_business_community_progress(),
+ public.pasr_business_community_cancel(uuid,uuid),
+ public.pasr_business_community_leave(uuid,uuid),
+ public.pasr_business_community_member(uuid,text) from public,anon,authenticated;
+grant execute on function public.pasr_business_community_list(uuid),
+ public.pasr_business_community_progress(),
+ public.pasr_business_community_cancel(uuid,uuid),
+ public.pasr_business_community_leave(uuid,uuid),
+ public.pasr_business_community_member(uuid,text) to authenticated;
