@@ -105,6 +105,90 @@
 .kpi { flex: 1; background: #15171F; border-radius: 16px; padding: 12px 0 12px 14px; position: relative; overflow: hidden; }
 .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); }
 .kpi small { display: block; font: 600 12px var(--ui); color: #9A98B3; } .kpi b { font: 800 24px var(--ui); font-variant-numeric: tabular-nums; }
+
+/* ---------- 1.0.4: Pasr-stempel, nieuwe schermen ---------- */
+.stamp .grid i.s { border: 0; }
+.stamp .grid i.s svg.seal { width: 100%; height: 100%; padding: 1px; fill: currentColor; stroke: none; fill-rule: evenodd; }
+.tkpill { font: 700 12px var(--ui); padding: 3px 8px; border-radius: 99px; color: #2ED3A6; background: rgba(46, 211, 166, .14); }
+.tkicon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+.tkicon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.full { position: absolute; inset: 0; padding: 70px 24px 40px; color: #fff; display: flex; flex-direction: column; gap: 14px; }
+.full .circ { width: 64px; height: 64px; border-radius: 50%; background: rgba(255, 255, 255, .22); display: grid; place-items: center; }
+.full .circ svg { width: 30px; height: 30px; stroke: #fff; fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.capsule { display: inline-flex; align-self: flex-start; padding: 6px 12px; border-radius: 99px; background: rgba(255, 255, 255, .2); font: 600 17px var(--ui); font-variant-numeric: tabular-nums; }
+.wbtn { height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 17px var(--ui); }
+.wbtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.capsule-st { display: inline-flex; padding: 3px 9px; border-radius: 99px; font: 700 12px var(--ui); }
+.btnp { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 99px; font: 600 14px var(--ui); background: #6A5CFF; color: #fff; }
+.btnb { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 99px; font: 600 14px var(--ui); background: rgba(255, 107, 87, .16); color: #FF6B57; }
+
+/* ---------- Mac (MacBook, macOS 26-achtig, donker) ---------- */
+.is-mac h1 { font-size: calc(var(--u) * 5.4); }
+.is-mac .sub { font-size: calc(var(--u) * 2.3); margin-top: calc(var(--u) * 1.4); }
+.is-mac .eyebrow { font-size: calc(var(--u) * 1.7); margin-bottom: calc(var(--u) * 1.6); }
+.macbook { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; }
+.macbook .lid { position: relative; width: 100%; aspect-ratio: 1280 / 832; border-radius: calc(var(--u) * 1.6) calc(var(--u) * 1.6) calc(var(--u) * .5) calc(var(--u) * .5);
+  background: #0B0B0D; padding: calc(var(--u) * 1.05) calc(var(--u) * 1.05) calc(var(--u) * 1.3);
+  box-shadow: 0 0 0 calc(var(--u) * .18) #3C3E46, 0 calc(var(--u) * 4) calc(var(--u) * 10) rgba(0, 0, 0, .55); }
+.light .macbook .lid { box-shadow: 0 0 0 calc(var(--u) * .18) #B9BAC4, 0 calc(var(--u) * 4) calc(var(--u) * 10) rgba(40, 30, 120, .35); }
+.macbook .mscreen { position: relative; width: 100%; height: 100%; border-radius: calc(var(--u) * .8) calc(var(--u) * .8) 0 0; overflow: hidden; background: #000; }
+.macbook .notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 13%; height: 3.3%; background: #0B0B0D; border-radius: 0 0 calc(var(--u) * .7) calc(var(--u) * .7); z-index: 60; }
+.macbook .base { position: relative; left: -6.5%; width: 113%; height: calc(var(--u) * 1.6); margin-top: calc(var(--u) * -.1);
+  background: linear-gradient(180deg, #D5D6DC 0%, #A9AAB3 45%, #6F7079 100%); border-radius: 0 0 calc(var(--u) * 2.2) calc(var(--u) * 2.2) / 0 0 calc(var(--u) * 1.4) calc(var(--u) * 1.4); }
+.macbook .base::after { content: ""; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 14%; height: 45%; background: linear-gradient(180deg, #9A9BA4, #C4C5CC);
+  border-radius: 0 0 calc(var(--u) * .8) calc(var(--u) * .8); }
+.mui { position: absolute; left: 0; top: 0; width: 1280px; height: 830px; transform-origin: 0 0; transform: scale(var(--k)); font-family: var(--ui); color: #fff; overflow: hidden;
+  background: radial-gradient(55% 60% at 20% 15%, #5B4BE6 0%, transparent 70%), radial-gradient(50% 60% at 90% 90%, #E0614E 0%, transparent 70%), linear-gradient(160deg, #2A2170, #120F2E 60%, #2B1420); }
+.menubar { position: absolute; left: 0; right: 0; top: 0; height: 32px; display: flex; align-items: center; gap: 20px; padding: 0 18px; font: 500 13.5px var(--ui);
+  background: rgba(20, 18, 40, .45); backdrop-filter: blur(20px); z-index: 50; }
+.menubar b { font-weight: 700; }
+.menubar .rt { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+.win { position: absolute; border-radius: 16px; overflow: hidden; background: #1B1C22; box-shadow: 0 0 0 1px rgba(255, 255, 255, .14), 0 30px 80px rgba(0, 0, 0, .55); }
+.win .tb { position: absolute; left: 0; right: 0; top: 0; height: 52px; display: flex; align-items: center; z-index: 5; }
+.lights { display: flex; gap: 8px; position: absolute; left: 18px; top: 19px; z-index: 6; }
+.lights i { width: 13px; height: 13px; border-radius: 50%; background: #FF5F57; } .lights i:nth-child(2) { background: #FEBC2E; } .lights i:nth-child(3) { background: #28C840; }
+.side { position: absolute; left: 8px; top: 8px; bottom: 8px; width: 236px; border-radius: 12px; background: rgba(46, 46, 58, .72); padding: 50px 10px 10px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07); }
+.side .h { font: 700 11px var(--ui); color: rgba(235, 235, 245, .45); margin: 14px 10px 4px; }
+.side .it { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 10px; border-radius: 8px; font: 500 13.5px var(--ui); }
+.side .it svg { width: 17px; height: 17px; stroke: #8B80FF; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.side .it.on { background: rgba(255, 255, 255, .13); }
+.side .it .bd { margin-left: auto; font: 600 11px var(--ui); color: rgba(235, 235, 245, .6); background: rgba(255, 255, 255, .12); padding: 1px 7px; border-radius: 99px; }
+.detail { position: absolute; left: 252px; right: 0; top: 0; bottom: 0; background: #0A0B10; }
+.dtb { position: absolute; left: 0; right: 0; top: 0; height: 52px; display: flex; align-items: center; padding: 0 16px 0 22px; gap: 10px; }
+.dtb .ttl { font: 700 15px var(--ui); }
+.dtb .ttl small { display: block; font: 500 11px var(--ui); color: rgba(235, 235, 245, .5); }
+.dtb .sp { flex: 1; }
+.tbtn { height: 32px; padding: 0 12px; border-radius: 16px; display: flex; align-items: center; gap: 6px; font: 600 13px var(--ui); background: rgba(255, 255, 255, .09);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+.tbtn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tbtn.p { background: #6A5CFF; box-shadow: none; }
+.srch { width: 230px; height: 32px; border-radius: 16px; background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); display: flex; align-items: center;
+  gap: 7px; padding: 0 11px; font: 400 13px var(--ui); color: rgba(235, 235, 245, .45); }
+.srch svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+.dbody { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; padding: 18px 26px; overflow: hidden; }
+.mcard { background: #15171F; border-radius: 14px; padding: 18px; box-shadow: inset 0 0 0 1px #262A37; }
+.mcard h3 { font: 700 15px var(--ui); display: flex; align-items: center; gap: 7px; }
+.mcard h3 svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mform .sec { margin: 16px 6px 6px; font: 600 12px var(--ui); text-transform: none; letter-spacing: 0; color: rgba(235, 235, 245, .55); }
+.mform .grp { border-radius: 12px; background: #1C1D25; }
+.mform .grp .r { min-height: 40px; font-size: 13.5px; padding: 8px 14px; }
+.mform .grp .r small { font-size: 11.5px; }
+.mform .foot { font-size: 11.5px; margin: 6px 6px 0; }
+.mseg { display: inline-flex; padding: 2px; border-radius: 8px; background: rgba(255, 255, 255, .08); }
+.mseg span { padding: 4px 12px; border-radius: 6px; font: 500 12.5px var(--ui); color: rgba(235, 235, 245, .7); }
+.mseg span.on { background: rgba(255, 255, 255, .18); color: #fff; }
+.tgl { width: 34px; height: 20px; border-radius: 10px; background: #34C759; position: relative; flex: none; }
+.tgl::after { content: ""; position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.tgl.off { background: rgba(255, 255, 255, .16); } .tgl.off::after { right: auto; left: 2px; }
+.sheetm { position: absolute; border-radius: 16px; background: #1E1F27; box-shadow: 0 0 0 1px rgba(255, 255, 255, .14), 0 30px 80px rgba(0, 0, 0, .6); overflow: hidden; z-index: 20; }
+.wid { position: absolute; border-radius: 22px; padding: 16px; color: #fff; overflow: hidden;
+  background: linear-gradient(135deg, rgba(106, 92, 255, .10), rgba(255, 107, 87, .05)), rgba(30, 30, 40, .82); backdrop-filter: blur(24px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 16px 40px rgba(0, 0, 0, .35); }
+.wid .wh { display: flex; align-items: center; gap: 6px; font: 700 12px var(--ui); color: #8B80FF; }
+.wid .wh svg { width: 13px; height: 13px; fill: #8B80FF; }
+.wid .wh .b { margin-left: auto; font: 400 11px var(--ui); color: rgba(235, 235, 245, .6); }
+.wid .cap { font: 400 11px var(--ui); color: rgba(235, 235, 245, .6); }
 </style>
 </head>
 <body>
@@ -120,31 +204,46 @@ document.documentElement.style.setProperty("--h", H + "px");
 const U = (W < H ? W : H * 1.25) / 100;
 document.documentElement.style.setProperty("--u", U + "px");
 
-// App-teksten: Nederlands is de ontwikkeltaal, Engels komt uit zakelijk/apple/tools/strings_en.json (door render.cjs ingeladen).
+// App-teksten: Nederlands is de ontwikkeltaal, Engels uit Localizable.xcstrings (app + widgets) en zakelijk/apple/tools/strings_en.json.
 const EN = window.EN || {};
+// Sleutels die in build 21 (nog) geen Engelse vertaling hebben: de Engelse app toont hier Nederlands, dus de beelden ook.
+const NO_EN = new Set(["Acties", "Promotie", "Promotiemateriaal (Licht en Donker)", "Selecteren", "Verwijderd", "Acties en beloningen", "Kortingscoupons"]);
 const missing = new Set();
 function T(nl, ...args) {
   let s = nl;
-  if (LANG === "en") { if (EN[nl] != null) s = EN[nl]; else if (/[A-Za-z]/.test(nl)) missing.add(nl); }
+  if (LANG === "en") { if (EN[nl] != null) s = EN[nl]; else if (/[A-Za-z]/.test(nl) && !NO_EN.has(nl)) missing.add(nl); }
   let i = 0;
-  return s.replace(/%(lld|@)/g, () => String(args[i++]));
+  return s.replace(/%(lld|@)/g, () => String(args[i++])).replace(/%%/g, "%");
 }
-// Marketingteksten per taal
 const M = (nl, en) => (LANG === "en" ? en : nl);
 
 const SVG = (d, extra = "") => `<svg viewBox="0 0 24 24" ${extra}>${d}</svg>`;
 const I = {
   scan: SVG('<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><rect x="8" y="8" width="3" height="3"/><rect x="13" y="8" width="3" height="3"/><rect x="8" y="13" width="3" height="3"/><path d="M13 13h3v3"/>'),
+  tag: SVG('<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.4"/>'),
+  photo: SVG('<rect x="3" y="7" width="15" height="13" rx="2"/><path d="M7 4h12a2 2 0 0 1 2 2v10"/><path d="m3 17 4-4 4 4 3-3 4 4"/>'),
+  more: SVG('<circle cx="5.5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor"/>'),
   stack: SVG('<rect x="3" y="9" width="18" height="11" rx="2"/><path d="M5 6h14M7 3h10"/>'),
   chart: SVG('<path d="M4 4v16h16"/><path d="m7 15 4-5 3 3 5-6"/>'),
+  chartbar: SVG('<path d="M4 20h16M6 20V11M10 20V6M14 20v-7M18 20V9"/>'),
   people: SVG('<circle cx="9" cy="8" r="3.2"/><path d="M3 19c.5-3.2 3-5 6-5s5.5 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.6 0 4.5 1.5 5 4"/>'),
+  people3: SVG('<circle cx="12" cy="7.5" r="2.8"/><circle cx="5" cy="9" r="2.2"/><circle cx="19" cy="9" r="2.2"/><path d="M7 19c.4-3 2.4-5 5-5s4.6 2 5 5M1.5 17c.3-2 1.7-3.4 3.5-3.4M22.5 17c-.3-2-1.7-3.4-3.5-3.4"/>'),
   gear: SVG('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'),
+  house: SVG('<path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/>'),
+  ticket: SVG('<path d="M3 7a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-3a2 2 0 0 0 0-4z"/><path d="M14 5v14" stroke-dasharray="2 2"/>'),
+  barcode: SVG('<path d="M4 5v14M7 5v14M10 5v14M14 5v14M16 5v14M20 5v14"/>'),
+  number: SVG('<path d="M9 3 7 21M17 3l-2 18M4 8h17M3 16h17"/>'),
+  calendar: SVG('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+  pin: SVG('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
   torch: SVG('<path d="M8 3h8v4l-2 3v11h-4V10L8 7z"/><path d="M8 7h8"/>'),
   search: SVG('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', 'style="stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;width:22px;height:22px"'),
   plus: SVG('<path d="M12 5v14M5 12h14"/>'),
   minus: SVG('<path d="M5 12h14"/>'),
   reload: SVG('<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>'),
   check: SVG('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
+  xmark: SVG('<path d="M6 6l12 12M18 6 6 18"/>'),
+  percent: SVG('<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>'),
+  code: SVG('<path d="m8 7-5 5 5 5M16 7l5 5-5 5"/>'),
   gift: SVG('<path d="M3 8h18v4H3zM5 12h14v9H5zM12 8v13M12 8C10 3 6 4 7 7c.5 1 3 1 5 1zM12 8c2-5 6-4 5-1-.5 1-3 1-5 1z"/>'),
   giftf: '<svg viewBox="0 0 24 24"><path d="M3 8h8v4H3zM13 8h8v4h-8zM5 13h6v8H5zM13 13h6v8h-6zM12 8C10 3 6 4 7 7c.5 1 3 1 5 1zM12 8c2-5 6-4 5-1-.5 1-3 1-5 1z"/></svg>',
   plusc: SVG('<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M12 7v10M7 12h10" stroke="#2ED3A6" stroke-width="2.6"/>'),
@@ -167,24 +266,34 @@ const I = {
   shield: SVG('<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>'),
   faceid: SVG('<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.7 1.2 4.3 1.2 6 0"/>', 'style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"'),
   list: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/>'),
+  checklist: SVG('<path d="m4 7 2 2 3-3M4 15l2 2 3-3M12 8h8M12 16h8"/>'),
+  arrowup: SVG('<path d="M7 17 17 7M9 7h8v8"/>'),
 };
+
+// Officiële Pasr-stempel (zelfde contour als PasrStampShape in StampCardView.swift, even-odd)
+const SEAL_D = "M54,4 L43,7 L34,11 L24,18 L14,29 L10,35 L4,49 L2,58 L2,75 L4,85 L8,95 L14,105 L23,115 L31,121 L49,129 L74,130 L85,127 L97,121 L106,114 L116,102 L123,87 L125,79 L125,74 L126,73 L125,53 L118,35 L111,25 L100,15 L90,9 L79,5Z M57,8 L63,11 L70,8 L75,12 L84,12 L90,18 L93,19 L97,18 L100,21 L101,26 L107,29 L110,32 L111,39 L118,45 L117,54 L122,63 L122,66 L119,70 L120,80 L116,85 L116,92 L110,97 L110,103 L108,105 L102,107 L100,110 L100,113 L98,115 L91,115 L84,122 L75,121 L68,125 L57,124 L53,121 L44,122 L39,116 L30,115 L28,113 L27,108 L18,103 L18,97 L11,91 L12,84 L7,78 L9,73 L9,68 L6,64 L6,61 L11,55 L10,46 L15,42 L17,38 L17,32 L25,28 L28,20 L37,19 L42,12 L51,13Z M56,17 L46,20 L38,24 L31,29 L23,38 L16,52 L14,62 L14,71 L18,87 L24,97 L31,105 L46,114 L53,116 L66,117 L81,114 L91,109 L103,98 L108,90 L107,89 L108,86 L111,83 L113,76 L113,67 L114,66 L113,65 L113,56 L107,41 L101,33 L93,26 L80,19 L72,17Z M93,101 L94,103 L91,105 L90,103Z M106,82 L107,85 L103,93 L96,100 L95,98 L101,91 L104,83Z M88,76 L65,107 L62,106 L49,96 L49,93 L53,89 L56,90 L62,95 L64,95 L81,72 L83,72Z M42,56 L47,62 L46,73 L41,78 L38,79 L33,78 L33,86 L31,88 L27,88 L25,86 L25,75 L24,74 L23,60 L27,58 L31,59 L34,56 L38,55Z M34,63 L32,65 L32,70 L33,72 L37,72 L39,70 L39,65 L38,63Z M65,51 L68,55 L69,69 L64,72 L61,71 L57,74 L50,73 L48,70 L48,65 L52,61 L56,59 L60,59 L60,57 L56,57 L51,60 L48,56 L52,52 L57,50Z M60,63 L56,65 L57,68 L60,67 L61,65Z M86,45 L87,48 L85,51 L78,51 L77,52 L87,54 L89,56 L89,62 L82,68 L72,68 L70,65 L74,61 L80,62 L82,60 L73,59 L70,56 L71,49 L77,45 L81,44Z M103,39 L104,40 L104,45 L98,51 L99,62 L96,64 L92,64 L90,54 L90,43 L95,41 L97,43 L101,39Z M87,30 L86,32 L83,32 L79,29 L72,27 L55,27 L43,32 L30,45 L28,44 L28,42 L31,38 L41,29 L49,25 L57,23 L71,23 L83,27Z";
+const SEAL = `<svg class="seal" viewBox="0 0 131 135"><path d="${SEAL_D}"/></svg>`;
 
 const BUS = "Koffiebar De Hoek";
 const qr = (text) => { const q = qrcode(0, "M"); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); };
 
+// iPhone: 6 tabbladen voor de eigenaar → 4 + "Meer" (UITabBarController); iPad: alle 6 bovenin.
+let TABKIND = "iphone";
 function tabbar(on) {
-  const tabs = [["scan", I.scan, "Scannen"], ["cards", I.stack, "Kaarten"], ["overview", I.chart, "Overzicht"], ["staff", I.people, "Medewerkers"], ["settings", I.gear, "Instellingen"]];
-  return `<div class="tabbar">${tabs.map(([k, ic, t]) => `<span class="${k === on ? "on" : ""}">${ic}${T(t)}</span>`).join("")}</div>`;
+  const all = [["scan", I.scan, "Scannen"], ["cards", I.tag, "Acties"], ["promotion", I.photo, "Promotie"], ["overview", I.chart, "Overzicht"], ["staff", I.people, "Medewerkers"], ["settings", I.gear, "Instellingen"]];
+  const tabs = TABKIND === "ipad" ? all : [...all.slice(0, 4), ["more", I.more, "Meer"]];
+  const sel = TABKIND !== "ipad" && (on === "staff" || on === "settings") ? "more" : on;
+  return `<div class="tabbar">${tabs.map(([k, ic, t]) => `<span class="${k === sel ? "on" : ""}">${ic}${T(t)}</span>`).join("")}</div>`;
 }
 
-// StampCardView: kleur, initiaal (geen logo), naam, vakjes (5 per rij tot 10), beloning
+// StampCardView + StampGrid: kleur, initiaal, naam, vakjes; gevulde vakjes = officiële Pasr-stempel in de tekstkleur
 function stampCard({ name, color, total, filled, reward, w = 408 }) {
   const per = total <= 10 ? 5 : total <= 18 ? 6 : 8;
   let cells = "";
   for (let i = 0; i < Math.ceil(total / per) * per; i++) {
     if (i >= total) { cells += "<span></span>"; continue; }
     const last = i === total - 1;
-    if (i < filled) cells += `<i class="f">${last ? I.giftf.replace("<svg", '<svg style="fill:rgba(0,0,0,.75);stroke:none"') : I.check}</i>`;
+    if (i < filled) cells += `<i class="s">${SEAL}</i>`;
     else cells += `<i class="e">${last ? I.gift.replace("<svg", '<svg style="stroke-width:2;opacity:.7"') : ""}</i>`;
   }
   return `<div class="stamp" style="width:${w}px;background:linear-gradient(135deg, ${color}, ${color}d1)">
@@ -192,6 +301,10 @@ function stampCard({ name, color, total, filled, reward, w = 408 }) {
     <div class="grid" style="grid-template-columns:repeat(${per}, 1fr)">${cells}</div>
     <div class="rw">${I.giftf}${reward}</div></div>`;
 }
+
+const EVENT = M("Proeverij najaarsbonen", "Autumn coffee tasting");
+const EVLINE = M("za 13 dec · 19:00–22:00", "Sat 13 Dec · 19:00–22:00");
+const MEMBER = M("Vaste gast", "Regular guest");
 
 // ---------- app-schermen (440 × 956 pt) ----------
 const SCREENS = {
@@ -202,10 +315,11 @@ const SCREENS = {
       <div class="cphone"><div class="in">
         <div class="card" style="background:linear-gradient(135deg,#7B4B2A,#7B4B2Ad1)"><b>${M("Koffiekaart", "Coffee card")}</b><small>${BUS}</small>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:10px">${Array.from({ length: 10 }, (_, i) =>
-            `<i style="aspect-ratio:1;border-radius:50%;${i < 6 ? "background:rgba(255,255,255,.95)" : "border:1px dashed rgba(255,255,255,.6)"}"></i>`).join("")}</div></div>
+            i < 6 ? `<i style="aspect-ratio:1;color:#fff;display:block">${SEAL.replace('class="seal"', 'style="width:100%;height:100%;fill:#fff;fill-rule:evenodd;display:block"')}</i>`
+                  : `<i style="aspect-ratio:1;border-radius:50%;border:1px dashed rgba(255,255,255,.6)"></i>`).join("")}</div></div>
         <div class="qr">${qr("PZ7HKD2M9XQ37Q4K")}</div><div class="code">PZ7H KD2M 9XQ3 7Q4K</div></div></div>
       <div class="dash"></div>
-      <div class="camhint"><span>${T("Richt de camera op de QR-code van je klant")}</span></div></div>
+      <div class="camhint"><span style="font-size:14px">${T("Richt de camera op de QR-code, het ticket of de klantenkaart")}</span></div></div>
     <div class="manual"><div class="f">${T("Of typ de code (PZ…)")}</div><div class="b">${I.search}</div></div>
     ${tabbar("scan")}</div>`,
 
@@ -223,71 +337,62 @@ const SCREENS = {
           <div class="bigbtn" style="margin-top:12px;background:#2ED3A6;color:#00140E">${I.plusc.replace("<svg", '<svg style="color:#00140E"')}${T("%lld stempels toevoegen", 2)}</div></div>
       </div></div></div>`,
 
-  // CardsView: kaarten met status, cijfers en knoppen
+  // CardsView (tabblad Acties): segmenten, stempelkaart met status en knoppen, sectie Tickets
   cards: () => {
-    const block = (c, top) => `<div class="content" style="top:${top}px">${stampCard(c)}
-      <div class="grp" style="margin-top:14px"><div class="r" style="font-size:15px"><span class="t-mint" style="display:flex;align-items:center;gap:6px">${I.checkseal}${T("Online")}</span><span class="sp"></span>
-        <span class="v" style="font-size:15px">${I.people.replace("<svg", '<svg class="ic" style="width:17px"')}${c.m}</span><span class="v" style="font-size:15px">${I.sealo.replace('class="ic"', 'class="ic" style="width:17px"')}${c.s}</span><span class="v" style="font-size:15px">${I.gift.replace("<svg", '<svg class="ic" style="width:17px"')}${c.g}</span></div>
-        <div class="r acc" style="font:600 15px var(--ui)"><span style="display:flex;gap:6px;align-items:center">${I.pencil}${T("Bewerken")}</span><span class="sp"></span><span style="display:flex;gap:6px;align-items:center">${I.qr}${T("QR, link en flyer")}</span></div></div></div>`;
-    return `<div class="app">${status()}<div class="navin"><div class="r"><div class="gl">${I.plus}</div></div></div>
-      <div class="big">${T("Kaarten")}</div>
-      ${block({ name: M("Koffiekaart", "Coffee card"), color: "#7B4B2A", total: 10, filled: 5, reward: M("1 gratis koffie naar keuze", "1 free coffee of your choice"), m: 128, s: 954, g: 71 }, 166)}
-      ${block({ name: M("Lunchkaart", "Lunch card"), color: "#12A77E", total: 8, filled: 4, reward: M("Gratis tosti", "Free toastie"), m: 46, s: 213, g: 19 }, 508)}
+    const g = (ic) => `<div class="gl" style="width:40px;height:40px">${ic}</div>`;
+    const c = { name: M("Koffiekaart", "Coffee card"), color: "#7B4B2A", total: 10, filled: 5, reward: M("1 gratis koffie naar keuze", "1 free coffee of your choice") };
+    const st = (ic, v) => `<span class="v" style="font-size:15px">${ic.replace("<svg", '<svg class="ic" style="width:17px"')}${v}</span>`;
+    return `<div class="app">${status()}
+      <div class="navin" style="justify-content:flex-end;padding-right:16px;gap:8px">
+        <div class="gl" style="width:40px;height:40px;position:relative">${I.people3}<b style="position:absolute;right:-4px;top:-4px;min-width:18px;height:18px;border-radius:9px;background:#FF6B57;font:700 11px var(--ui);display:grid;place-items:center">1</b></div>
+        ${g(I.pin)}${g(I.calendar)}${g(I.ticket)}${g(I.number)}${g(I.plus)}</div>
+      <div class="big">${T("Acties")}</div>
+      <div class="content" style="top:162px">
+        <div class="segs" style="background:#1C1C24"><span class="on">${T("Acties")}</span><span>${T("Verwijderd")}</span></div>
+        <div style="margin-top:18px">${stampCard(c)}</div>
+        <div class="grp" style="margin-top:12px">
+          <div class="r" style="font-size:15px"><span class="t-mint" style="display:flex;align-items:center;gap:6px">${I.checkseal}${T("Online")}</span><span class="sp"></span>
+            ${st(I.people, 128)}${st(I.sealo, 954)}${st(I.gift, 71)}</div>
+          <div class="r acc" style="font:600 14px var(--ui);flex-wrap:wrap;gap:6px 14px"><span style="display:flex;gap:5px;align-items:center">${I.pencil}${T("Bewerken")}</span><span class="sp"></span>
+            <span style="display:flex;gap:5px;align-items:center">${I.qr}${T("QR, link en flyer")}</span>
+            <span style="display:flex;gap:5px;align-items:center">${I.gift.replace("<svg", '<svg class="ic"')}${T("Acties en beloningen")}</span></div></div>
+        <div class="sec" style="margin-top:22px">${T("Tickets")}</div>
+        <div class="grp"><div class="r"><div class="tkicon" style="background:#24346B">${I.ticket}</div>
+          <div class="sp"><b style="font-weight:600">${EVENT}</b><small style="font-size:15px">${EVLINE}</small><small>${T("%lld/%lld aangemeld", 64, 80)}</small></div><span class="tkpill">${T("Online")}</span></div>
+          <div class="r acc">${I.plus.replace("<svg", '<svg class="ic"')}${T("Event aanmaken")}</div></div>
+      </div>
       ${tabbar("cards")}</div>`;
   },
 
-  // CardShareView: QR, link, Link delen, Flyer (A4, PDF)
-  share: () => `<div class="app">${status()}<div class="navin">${T("Overzicht")}</div><div class="dim"></div>
+  // CardShareView: QR, link, Link delen, Flyer, Promotiemateriaal, Knop voor je website
+  share: () => `<div class="app">${status()}<div class="navin">${T("Acties")}</div><div class="dim"></div>
     <div class="sheet"><div class="grab"></div><div class="navin">${M("Koffiekaart", "Coffee card")}<div class="r"><div class="glw acc">${T("Klaar")}</div></div></div>
-      <div class="content" style="top:90px;left:24px;right:24px;text-align:center;display:grid;gap:18px;justify-items:center">
-        <p style="font:400 17px/1.35 var(--ui)">${T("Klanten scannen deze code met hun camera en sparen in Pasr of in de browser.")}</p>
-        <div style="width:292px;padding:16px;background:#fff;border-radius:20px">${qr("https://pasr.nl/zakelijk/kaart/#5f2c8a0e")}</div>
-        <div style="font:400 13px ui-monospace, Menlo, monospace;color:#9A98B3">https://pasr.nl/zakelijk/kaart/#5f2c8a0e</div>
+      <div class="content" style="top:84px;left:24px;right:24px;text-align:center;display:grid;gap:14px;justify-items:center">
+        <p style="font:400 17px/1.35 var(--ui);color:#9A98B3">${T("Klanten scannen deze code met hun camera en sparen in Pasr of in de browser.")}</p>
+        <div style="width:250px;padding:16px;background:#fff;border-radius:20px">${qr("https://pasr.nl/zakelijk/kaart/5f2c8a0e/")}</div>
+        <div style="font:400 13px ui-monospace, Menlo, monospace;color:#9A98B3">https://pasr.nl/zakelijk/kaart/5f2c8a0e/</div>
         <div class="bigbtn" style="width:100%;background:#6A5CFF">${I.share}${T("Link delen")}</div>
         <div class="bigbtn" style="width:100%;background:#2ED3A6;color:#00140E">${I.printer}${T("Flyer (A4, PDF)")}</div>
+        <div class="bigbtn" style="width:100%;background:#2ED3A6;color:#00140E">${I.photo}${T("Promotiemateriaal (Licht en Donker)")}</div>
+        <div class="bigbtn" style="width:100%;background:#1C1F29;color:#fff">${I.code}${T("Knop voor je website")}</div>
         <div style="font:400 13px var(--ui);color:#9A98B3">${T("Print de flyer en zet hem op de toonbank.")}</div></div></div></div>`,
 
-  // OverviewView: grafiekkaart (Homey Insights), KPI's, leden per kaart
-  overview: () => {
-    const vals = [14, 17, 19, 18, 21, 24, 22, 19, 18, 21, 25, 27, 26, 23, 22, 24, 27, 30, 29, 26, 25, 27, 31, 33, 32, 34, 30, 28, 31, 35];
-    const total = vals.reduce((a, b) => a + b, 0);
-    const cw = 330, ch = 190, max = 44, x = (i) => 30 + i * (cw - 30) / (vals.length - 1), y = (v) => 14 + ch - v / max * ch;
-    // catmull-rom → bezier
-    let d = `M${x(0)},${y(vals[0])}`;
-    for (let i = 0; i < vals.length - 1; i++) {
-      const p0 = [x(Math.max(0, i - 1)), y(vals[Math.max(0, i - 1)])], p1 = [x(i), y(vals[i])], p2 = [x(i + 1), y(vals[i + 1])], p3 = [x(Math.min(vals.length - 1, i + 2)), y(vals[Math.min(vals.length - 1, i + 2)])];
-      d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`;
-    }
-    const area = d + ` L${x(vals.length - 1)},${14 + ch} L${x(0)},${14 + ch} Z`;
-    const grid = [0, 10, 20, 30, 40].map((v) => `<line x1="30" x2="${cw}" y1="${y(v)}" y2="${y(v)}" stroke="#3A3C4A" stroke-width=".7" stroke-dasharray="3 3"/><text x="22" y="${y(v) + 4}" fill="#9A98B3" font-size="10" text-anchor="end">${v}</text>`).join("");
-    const months = LANG === "en" ? ["O", "N"] : ["O", "N"];
-    const xl = [[0, "24 " + months[0]], [7, "31 " + months[0]], [14, "7 " + months[1]], [21, "14 " + months[1]], [29, "22 " + months[1]]]
-      .map(([i, t]) => `<text x="${x(i)}" y="${ch + 32}" fill="#9A98B3" font-size="10" text-anchor="middle">${t}</text>`).join("");
-    const sel = 25;
-    const chart = `<svg viewBox="0 0 340 ${ch + 40}" style="width:100%;display:block;overflow:visible;font-family:var(--ui)">
-      <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2ED3A6" stop-opacity=".35"/><stop offset="1" stop-color="#2ED3A6" stop-opacity="0"/></linearGradient></defs>
-      <text x="0" y="4" fill="#9A98B3" font-size="10" font-weight="600">${T("stempels")}</text>
-      ${grid}<line x1="30" x2="30" y1="14" y2="${14 + ch}" stroke="#3A3C4A"/><line x1="30" x2="${cw}" y1="${14 + ch}" y2="${14 + ch}" stroke="#3A3C4A"/>
-      <path d="${area}" fill="url(#g)"/><path d="${d}" fill="none" stroke="#2ED3A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="${x(sel)}" x2="${x(sel)}" y1="14" y2="${14 + ch}" stroke="rgba(154,152,179,.5)"/><circle cx="${x(sel)}" cy="${y(vals[sel])}" r="5" fill="#000" stroke="#2ED3A6" stroke-width="2"/>
-      ${xl}</svg>`;
-    const selDate = LANG === "en" ? "Tuesday 18 November" : "dinsdag 18 november";
-    return `<div class="app">${status()}<div class="big" style="top:66px">${T("Overzicht")}</div>
+  // OverviewView: grafiekkaart (Homey Insights), KPI's
+  overview: () => `<div class="app">${status()}<div class="big" style="top:66px">${T("Overzicht")}</div>
       <div class="content" style="top:122px"><div class="ins" style="display:grid;gap:14px;justify-items:center">
         <b style="font:600 17px var(--ui)">${BUS}</b>
         <span class="pill t-mint">${I.seal.replace('class="ic"', 'class="ic" style="width:15px;height:15px"')}${T("Stempels")}${I.chevd}</span>
         <div style="display:flex;width:100%;align-items:baseline"><div style="flex:1"><div style="font:700 22px var(--ui)">${T("Deze maand")}</div>
-          <div style="font:400 12px var(--ui);color:#9A98B3">${selDate}</div></div>
-          <b style="font:800 30px var(--ui)" class="t-mint">${vals[sel]}</b><span style="font:600 15px var(--ui);color:rgba(46,211,166,.6);margin-left:4px">${T("stempels")}</span></div>
-        ${chart}
+          <div style="font:400 12px var(--ui);color:#9A98B3">${LANG === "en" ? "Tuesday 18 November" : "dinsdag 18 november"}</div></div>
+          <b style="font:800 30px var(--ui)" class="t-mint">${VALS[25]}</b><span style="font:600 15px var(--ui);color:rgba(46,211,166,.6);margin-left:4px">${T("stempels")}</span></div>
+        ${chartSVG(340)}
         <div class="segs" style="width:100%"><span>${T("W")}</span><span class="on">${T("M")}</span><span>${T("K")}</span><span>${T("J")}</span></div>
         <div class="segs" style="width:100%"><span class="on">${T("Deze maand")}</span><span>${T("Vorige maand")}</span></div></div>
-        <div style="display:flex;gap:10px;margin-top:16px"><div class="kpi" style="--c:#2ED3A6"><small>${T("Stempels")}</small><b>${total}</b></div>
+        <div style="display:flex;gap:10px;margin-top:16px"><div class="kpi" style="--c:#2ED3A6"><small>${T("Stempels")}</small><b>${VALS.reduce((a, b) => a + b, 0)}</b></div>
           <div class="kpi" style="--c:#FF6B57"><small>${T("Beloningen")}</small><b>58</b></div><div class="kpi" style="--c:#6A5CFF"><small>${T("Leden")}</small><b>174</b></div></div>
-      </div>${tabbar("overview")}</div>`;
-  },
+      </div>${tabbar("overview")}</div>`,
 
-  // StaffView: team, ingetrokken
+  // StaffView
   staff: () => {
     const row = (ic, color, name, mail, tag) => `<div class="r"><span class="${color}" style="width:26px;display:grid;place-items:center">${ic}</span>
       <div class="sp"><b style="font-weight:600">${name}</b>${mail ? `<small>${mail}</small>` : ""}</div><span class="tag">${T(tag)}</span></div>`;
@@ -304,7 +409,7 @@ const SCREENS = {
       </div>${tabbar("staff")}</div>`;
   },
 
-  // LockView: logo, Face ID-symbool, "Pasr Zakelijk is vergrendeld", knop Ontgrendel met Face ID
+  // LockView
   lock: () => `<div class="app">${status()}
     <div style="position:absolute;left:0;right:0;top:300px;display:grid;justify-items:center;gap:26px">
       <div style="display:flex;align-items:center;gap:13px"><img src="icon.png" style="width:51px;height:51px;border-radius:12px">
@@ -315,33 +420,90 @@ const SCREENS = {
     <div style="position:absolute;left:80px;right:80px;bottom:96px;height:54px;border-radius:27px;background:#6A5CFF;display:flex;align-items:center;justify-content:center;gap:8px;font:600 17px var(--ui)">
       ${I.faceid.replace(/style="[^"]*"/, 'style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"')}${T("Ontgrendel met %@", "Face ID")}</div></div>`,
 
-  // SettingsView: Zaak, Scannen (afkoeltijd, max per scan), Vindbaar in Pasr
-  settings: () => `<div class="app">${status()}<div class="big" style="top:66px">${T("Instellingen")}</div>
-    <div class="content" style="top:122px"><div class="sec">${T("Zaak")}</div><div class="grp">
-      <div class="r"><div class="sp"><b style="font-weight:600">${BUS}</b><small>Utrecht</small><small style="color:#6A5CFF;font-weight:600">${T("Je bent eigenaar")}</small></div></div>
-      <div class="r acc">${I.pencil}${T("Gegevens van de zaak wijzigen")}</div></div>
-      <div class="sec" style="margin-top:24px">${T("Scannen")}</div><div class="grp">
-      <div class="r"><span class="sp">${T("Afkoeltijd")}</span><span class="v">${T("%lld min", 5)}${I.updown}</span></div>
-      <div class="r"><span class="sp">${T("Max. stempels per scan")}</span><span class="v" style="color:#fff">10</span>
-        <span style="display:flex;background:rgba(118,118,128,.24);border-radius:9px;height:32px;width:94px;align-items:center;justify-content:space-around;font:500 22px var(--ui)"><span>−</span><i style="width:1px;height:18px;background:rgba(255,255,255,.2)"></i><span>+</span></span></div></div>
-      <div class="foot">${T("Afkoeltijd: zo lang moet een klant wachten voor de volgende stempel. Bij scannen kies je zelf het aantal stempels, tot het maximum.")}</div>
-      <div class="sec" style="margin-top:24px">${T("Privacy en beveiliging")}</div><div class="grp">
-      <div class="r"><span style="width:29px;height:29px;border-radius:7px;background:#2ED3A6;display:grid;place-items:center">${I.faceid}</span>
-        <span class="sp">${T("Vergrendelen met %@", "Face ID")}</span><span style="width:51px;height:31px;border-radius:16px;background:#34C759;position:relative"><i style="position:absolute;right:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff"></i></span></div></div>
-      <div class="foot">${T("Bij openen en na terugkeer naar de app vraagt Pasr Zakelijk om Face ID, Touch ID of je toegangscode. Handig als de iPad of iPhone aan de kassa ligt.")}</div></div>
-    ${tabbar("settings")}</div>`,
+  // TicketScanSheet: groen "Geldig" aan de deur
+  ticket: () => `<div class="app" style="background:#12A77E">${status()}
+    <div class="full"><div class="circ">${I.check}</div>
+      <div style="font:800 40px var(--ui)">${T("Geldig")}</div>
+      <div style="font:700 20px var(--ui)">${T("Toegang")}</div>
+      <div style="font:600 20px var(--ui)">Sanne de Vries · ${M("Proeverij + bonen", "Tasting + beans")}</div>
+      <div style="display:flex;align-items:center;gap:7px;font:600 15px var(--ui);opacity:.9">${I.ticket.replace("<svg", '<svg style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2"')}${EVENT}</div>
+      <span class="capsule">${T("%lld / %lld binnen", 42, 64)}</span>
+      <div style="flex:1"></div>
+      <div class="wbtn" style="background:rgba(255,255,255,.25)">${T("Volgende scannen")}</div></div></div>`,
+
+  // MemberScanSheet: klantenkaart met barcode, korting die nu geldt, spaarstand
+  member: () => `<div class="app" style="background:#6A5CFF">${status()}
+    <div class="full" style="gap:13px"><div class="circ" style="width:58px;height:58px">${I.percent.replace("<svg", '<svg style="width:26px;height:26px"')}</div>
+      <div style="font:800 40px var(--ui)">${T("%@%% korting", 15)}</div>
+      <div style="font:400 15px var(--ui);opacity:.9">${M("Happy hour", "Happy hour")} · ${T("geldt tot %@", M("vr 17:00", "Fri 17:00"))}</div>
+      <div style="font:600 17px var(--ui)">Daan Jansen · ${MEMBER} · 2604 1187 5530</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.15)">
+        <b style="font:700 15px var(--ui)">${T("Spaarstand")}</b><span style="flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.3);position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:70%;border-radius:3px;background:#fff"></i></span><b style="font:700 15px var(--ui)">7/10</b></div>
+      <div style="font:400 15px var(--ui);opacity:.9">${T("Beloning: %@", M("Gratis gebak bij je koffie", "Free pastry with your coffee"))}</div>
+      <div class="wbtn" style="background:#fff;color:#6A5CFF">${I.check}${T("Bezoek registreren")}</div>
+      <div class="wbtn" style="background:rgba(255,255,255,.18)">${T("Klaar")}</div></div></div>`,
+
+  // BusinessCommunityView (Samenwerkingen): uitnodiging + lopende gezamenlijke actie
+  community: () => `<div class="app">${status()}<div class="navin">${T("Acties")}</div><div class="dim"></div>
+    <div class="sheet"><div class="grab"></div><div class="navin">${T("Samenwerkingen")}<div class="r"><div class="glw acc">${T("Klaar")}</div></div></div>
+      <div class="content" style="top:82px">
+        <div class="sec">${T("Uitnodigingen (%lld)", 1)}</div>
+        <div class="grp"><div class="r" style="display:block;padding:14px 16px">
+          <b style="font:600 17px var(--ui)">${M("Winterwandeling Binnenstad", "Winter walk city centre")}</b>
+          <div style="font:400 15px var(--ui);margin-top:4px">${T("Beloning: %@", M("Gratis warme chocolademelk", "Free hot chocolate"))}</div>
+          <small>${M("1 dec – 31 jan", "1 Dec – 31 Jan")}</small>
+          <small>${T("Organisator: %@", "Boekhandel Van Dam")}</small>
+          <small>${T("Doen mee: %@", M("Bakkerij Smit, Bloemenhuis Iris", "Bakkerij Smit, Bloemenhuis Iris"))}</small>
+          <div style="display:flex;gap:8px;margin-top:10px"><span class="btnp">${T("Accepteren")}</span><span class="btnb">${T("Weigeren")}</span></div></div></div>
+        <div class="foot">${T("Je beslist zelf of je zaak meedoet. Klantgegevens worden niet tussen ondernemingen gedeeld.")}</div>
+        <div class="sec" style="margin-top:22px">${T("Gezamenlijke acties")}</div>
+        <div class="grp"><div class="r" style="display:block;padding:14px 16px">
+          <div style="display:flex;align-items:baseline"><b style="font:600 17px var(--ui);flex:1">${M("Koffieroute Utrecht", "Utrecht coffee route")}</b>
+            <span class="capsule-st" style="background:rgba(46,211,166,.18)">${T("Organisator")}</span></div>
+          <span class="capsule-st" style="margin-top:6px;color:#2ED3A6;background:rgba(46,211,166,.14)">${T("Actief")}</span>
+          <small>${BUS}, Utrecht · ${T("%lld deelnemende zaken", 4)}</small>
+          <div style="font:400 15px var(--ui);margin-top:4px">${T("Beloning: %@", M("Gratis koffie naar keuze", "Free coffee of your choice"))}</div>
+          <small>${T("Bezoek %lld verschillende deelnemende winkels", 3)}</small>
+          <div class="acc" style="font:500 15px var(--ui);margin-top:8px;display:flex;align-items:center;gap:6px">${I.personadd}${T("Zaken uitnodigen")}</div>
+          <div style="font:400 13px var(--ui);color:#34C759;margin-top:6px">✓ ${T("Je onderneming neemt deel")}</div></div></div>
+        <div class="foot">${T("Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.")}</div>
+      </div></div></div>`,
 };
+
+// ---------- grafiek (Homey Insights-stijl) ----------
+const VALS = [14, 17, 19, 18, 21, 24, 22, 19, 18, 21, 25, 27, 26, 23, 22, 24, 27, 30, 29, 26, 25, 27, 31, 33, 32, 34, 30, 28, 31, 35];
+function chartSVG(vw) {
+  const vals = VALS;
+  const cw = vw - 10, ch = 190, max = 44, x = (i) => 30 + i * (cw - 30) / (vals.length - 1), y = (v) => 14 + ch - v / max * ch;
+  let d = `M${x(0)},${y(vals[0])}`;
+  for (let i = 0; i < vals.length - 1; i++) {
+    const p0 = [x(Math.max(0, i - 1)), y(vals[Math.max(0, i - 1)])], p1 = [x(i), y(vals[i])], p2 = [x(i + 1), y(vals[i + 1])], p3 = [x(Math.min(vals.length - 1, i + 2)), y(vals[Math.min(vals.length - 1, i + 2)])];
+    d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`;
+  }
+  const area = d + ` L${x(vals.length - 1)},${14 + ch} L${x(0)},${14 + ch} Z`;
+  const grid = [0, 10, 20, 30, 40].map((v) => `<line x1="30" x2="${cw}" y1="${y(v)}" y2="${y(v)}" stroke="#3A3C4A" stroke-width=".7" stroke-dasharray="3 3"/><text x="22" y="${y(v) + 4}" fill="#9A98B3" font-size="10" text-anchor="end">${v}</text>`).join("");
+  const xl = [[0, "24 O"], [7, "31 O"], [14, "7 N"], [21, "14 N"], [29, "22 N"]]
+    .map(([i, t]) => `<text x="${x(i)}" y="${ch + 32}" fill="#9A98B3" font-size="10" text-anchor="middle">${t}</text>`).join("");
+  const sel = 25;
+  return `<svg viewBox="0 0 ${vw} ${ch + 40}" style="width:100%;display:block;overflow:visible;font-family:var(--ui)">
+    <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2ED3A6" stop-opacity=".35"/><stop offset="1" stop-color="#2ED3A6" stop-opacity="0"/></linearGradient></defs>
+    <text x="0" y="4" fill="#9A98B3" font-size="10" font-weight="600">${T("stempels")}</text>
+    ${grid}<line x1="30" x2="30" y1="14" y2="${14 + ch}" stroke="#3A3C4A"/><line x1="30" x2="${cw}" y1="${14 + ch}" y2="${14 + ch}" stroke="#3A3C4A"/>
+    <path d="${area}" fill="url(#g)"/><path d="${d}" fill="none" stroke="#2ED3A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="${x(sel)}" x2="${x(sel)}" y1="14" y2="${14 + ch}" stroke="rgba(154,152,179,.5)"/><circle cx="${x(sel)}" cy="${y(vals[sel])}" r="5" fill="#000" stroke="#2ED3A6" stroke-width="2"/>
+    ${xl}</svg>`;
+}
 
 // ---------- toestellen ----------
 function device(kind, screen, style = "") {
+  TABKIND = kind;
   if (kind === "ipad") {
-    // iPad: de app in het midden van het grote scherm (zoals de iPad-beelden van Pasr), tabbalk bovenin (iPadOS 26)
     let inner = SCREENS[screen]().replace('<div class="island"></div>', "").replace('<div class="homebar"></div>', "")
       .replace(/<div class="status"[\s\S]*?<\/span><\/div>/, "");
     const st = status().match(/<div class="status"[\s\S]*?<\/span><\/div>/)[0].replace('class="status"', 'class="status" style="padding:4px 28px 0 30px;height:32px;font-size:15px"');
     const tb = inner.match(/<div class="tabbar">[\s\S]*?<\/div>/);
     if (tb) inner = inner.replace(tb[0], "");
-    const top = tb ? tb[0].replace('class="tabbar"', 'class="tabbar" style="left:50%;right:auto;width:620px;transform:translateX(-50%);top:36px;bottom:auto;height:54px"')
+    const top = tb ? tb[0].replace('class="tabbar"', 'class="tabbar" style="left:50%;right:auto;width:780px;transform:translateX(-50%);top:36px;bottom:auto;height:54px"')
       .replace(/<span/g, '<span style="flex-direction:row;gap:7px;font-size:13px;height:46px"') : "";
     const k = 1.42;
     return `<div class="device ipad" style="${style}"><div class="screen"><div class="ui"><div class="app"></div>
@@ -349,6 +511,198 @@ function device(kind, screen, style = "") {
       ${st}${top}<div class="homebar" style="width:300px"></div></div></div></div>`;
   }
   return `<div class="device phone" style="${style}"><div class="screen"><div class="ui">${SCREENS[screen]()}</div></div></div>`;
+}
+
+// ---------- Mac-app (1512 × 945 pt, donker) ----------
+const SIDE = [
+  [null, [["vandaag", I.house, "Vandaag"], ["scannen", I.scan, "Scannen"]]],
+  ["Klantenbinding", [["stempelkaarten", I.stack, "Stempelkaarten"], ["klantenkaarten", I.barcode, "Klantenkaarten"], ["tickets", I.ticket, "Tickets"],
+    ["kortingsbonnen", I.tag, "Kortingsbonnen"], ["actiecodes", I.number, "Actiecodes"], ["gezamenlijkeActies", I.people3, "Gezamenlijke acties"], ["beloningen", I.gift, "Beloningen"]]],
+  ["Groei", [["inzichten", I.chartbar, "Inzichten"], ["marketing", I.calendar, "Marketingkalender"], ["promotiemateriaal", I.photo, "Promotiemateriaal"]]],
+  ["Je zaak", [["vestigingen", I.pin, "Vestigingen"], ["medewerkers", I.people, "Medewerkers"], ["instellingen", I.gear, "Instellingen"]]],
+];
+function sidebar(on) {
+  return `<div class="side">${SIDE.map(([h, rows]) => (h ? `<div class="h">${T(h)}</div>` : "") + rows.map(([k, ic, t]) =>
+    `<div class="it ${k === on ? "on" : ""}">${ic}${T(t)}${k === "gezamenlijkeActies" ? '<span class="bd">1</span>' : ""}</div>`).join("")).join("")}</div>`;
+}
+function menubar() {
+  const items = [M("Archief", "File"), M("Wijzig", "Edit"), M("Weergave", "View"), T("Zaak"), M("Venster", "Window"), M("Help", "Help")];
+  return `<div class="menubar"><svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:#fff"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.7c1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.4-.9-2.4-3.8zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/></svg>
+    <b>Pasr Zakelijk</b>${items.map((t) => `<span>${t}</span>`).join("")}<span class="rt"><span>${M("vr 28 nov", "Fri 28 Nov")}</span><span>9:41</span></span></div>`;
+}
+function toolbar(title, extra = "") {
+  return `<div class="dtb"><div class="ttl">${title}<small>${BUS}</small></div><div class="sp"></div>${extra}
+    <div class="srch">${I.search.replace(/style="[^"]*"/, "")}${T("Zoek in je zaak")}</div>
+    <div class="tbtn p">${I.scan}${T("Scannen")}</div><div class="tbtn">${I.plus}${T("Nieuw")}</div></div>`;
+}
+function macWindow(section, title, body, extra = "") {
+  return `<div class="win" style="left:40px;top:50px;right:40px;bottom:26px"><div class="lights"><i></i><i></i><i></i></div>
+    ${sidebar(section)}<div class="detail">${toolbar(title, extra)}<div class="dbody">${body}</div></div></div>`;
+}
+const fr = (body, extra = "") => `<div class="grp">${body}</div>${extra}`;
+
+const MAC = {
+  // MacTodayPane: cijfers van vandaag, komend event, te doen, snelle acties
+  today: () => {
+    const trend = [18, 22, 19, 27, 24, 30, 34];
+    const bars = trend.map((v, i) => `<i style="flex:1;height:${Math.max(3, 40 * v / 34)}px;border-radius:3px;background:${i === 6 ? "#6A5CFF" : "rgba(106,92,255,.35)"}"></i>`).join("");
+    const metric = (v, t, ic, c) => `<div><div style="display:flex;gap:6px;align-items:center;font:500 14px var(--ui);color:${c}">${ic.replace("<svg", `<svg style="width:15px;height:15px;stroke:${c};fill:none;stroke-width:2"`)}${T(t)}</div>
+      <div style="font:800 34px var(--ui);font-variant-numeric:tabular-nums">${v}</div></div>`;
+    const todo = (ic, c, t, d, date) => `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span style="width:22px;color:${c}">${ic.replace("<svg", `<svg style="width:18px;height:18px;stroke:${c};fill:none;stroke-width:2"`)}</span>
+      <div style="flex:1;min-width:0"><div style="font:500 14px var(--ui)">${t}</div><div style="font:400 12px var(--ui);color:#9A98B3">${d}</div></div>
+      <span style="font:400 12px var(--ui);color:#9A98B3">${date}</span></div>`;
+    return macWindow("vandaag", T("Vandaag"), `<div style="display:grid;gap:18px;max-width:1100px">
+      <div class="mcard"><h3>${T("Vandaag")}</h3><div style="display:flex;gap:34px;align-items:flex-end;margin-top:12px">
+        ${metric(34, "Stempels", I.sealo, "#8B80FF")}${metric(5, "Beloningen", I.gift, "#FF6B57")}${metric(7, "Nieuwe leden", I.personadd, "#2ED3A6")}
+        <div style="flex:1"></div><div style="width:220px"><div style="display:flex;gap:5px;align-items:flex-end;height:40px">${bars}</div>
+        <div style="text-align:right;font:400 12px var(--ui);color:#9A98B3;margin-top:4px">${T("7 dagen")}</div></div></div></div>
+      <div style="display:flex;gap:18px">
+        <div class="mcard" style="flex:1"><h3>${I.ticket}${T("Komend event")}</h3>
+          <div style="font:600 20px var(--ui);margin-top:10px">${EVENT}</div><div style="font:400 14px var(--ui);color:#9A98B3;margin-top:4px">${EVLINE}</div>
+          <div style="display:flex;gap:30px;margin-top:12px;font:400 14px var(--ui)"><span>${T("Aangemeld")} <b style="margin-left:8px">64/80</b></span><span>${T("Binnen")} <b style="margin-left:8px">0</b></span></div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:12px"><div style="width:80%;height:100%;border-radius:3px;background:#6A5CFF"></div></div>
+          <div class="acc" style="font:500 14px var(--ui);margin-top:12px">${T("Naar Tickets")}</div></div>
+        <div class="mcard" style="flex:1"><h3>${I.checklist}${T("Te doen")}</h3><div style="margin-top:6px">
+          ${todo(I.people3, "#8B80FF", M("Winterwandeling Binnenstad", "Winter walk city centre"), T("Uitnodiging van %@", "Boekhandel Van Dam"), "")}
+          ${todo(I.timer, "#FFB547", M("Happy hour", "Happy hour"), T("Kortingsperiode loopt af"), M("30 nov", "30 Nov"))}
+          ${todo(I.pencil.replace('class="ic"', ""), "#9A98B3", M("Lunchkaart", "Lunch card"), T("Concept · stempelkaart"), "")}</div></div></div>
+      <div style="display:flex;gap:12px">
+        <div class="tbtn p" style="height:38px;padding:0 16px;font-size:14px">${I.scan}${T("Scannen")}</div>
+        <div class="tbtn" style="height:38px;padding:0 16px;font-size:14px">${I.stack}${T("Stempelkaarten")}</div>
+        <div class="tbtn" style="height:38px;padding:0 16px;font-size:14px">${I.chartbar}${T("Inzichten")}</div>
+        <div class="tbtn" style="height:38px;padding:0 16px;font-size:14px">${I.photo}${T("Promotiemateriaal")}</div></div></div>`);
+  },
+
+  // Scanner-venster (⇧⌘S) met de uitkomst van een ticketscan
+  scanner: () => {
+    const main = MAC.tickets();
+    const scan = `<div class="win" style="left:690px;top:96px;width:500px;height:610px;z-index:20"><div class="lights"><i></i><i></i><i></i></div>
+      <div style="position:absolute;left:0;right:0;top:0;height:52px;display:grid;place-items:center;font:700 14px var(--ui);background:#202129">${BUS}</div>
+      <div style="position:absolute;left:0;right:0;top:52px;bottom:0;background:#12A77E;padding:28px;display:flex;flex-direction:column;gap:14px">
+        <div class="full" style="position:static;padding:0">
+        <div class="circ">${I.check}</div>
+        <div style="font:800 40px var(--ui)">${T("Geldig")}</div>
+        <div style="font:700 20px var(--ui)">${T("Toegang")}</div>
+        <div style="font:600 20px var(--ui)">Sanne de Vries · ${M("Proeverij + bonen", "Tasting + beans")}</div>
+        <div style="display:flex;align-items:center;gap:7px;font:600 15px var(--ui);opacity:.9">${I.ticket.replace("<svg", '<svg style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2"')}${EVENT}</div>
+        <span class="capsule">${T("%lld / %lld binnen", 42, 64)}</span></div>
+        <div style="flex:1"></div>
+        <div class="wbtn" style="background:rgba(255,255,255,.25)">${T("Volgende scannen")}</div></div></div>`;
+    return main + scan;
+  },
+
+  // Tickets (zelfde lijst als onder Acties op iOS)
+  tickets: () => {
+    const row = (c, n, l, r, st = "Online") => `<div class="r"><div class="tkicon" style="background:${c}">${I.ticket}</div>
+      <div class="sp"><b style="font-weight:600">${n}</b><small style="font-size:13px">${l}</small><small>${r}</small></div><span class="tkpill">${T(st)}</span></div>`;
+    return macWindow("tickets", T("Tickets"), `<div class="mform" style="max-width:820px">
+      <div class="sec">${T("Tickets")}</div>${fr(
+        row("#24346B", EVENT, EVLINE, T("%lld/%lld aangemeld", 64, 80)) +
+        row("#7B4B2A", M("Latte-art workshop", "Latte art workshop"), M("zo 11 jan · 10:00–12:00", "Sun 11 Jan · 10:00–12:00"), T("%lld/%lld aangemeld", 12, 16)) +
+        row("#12A77E", M("Open podium", "Open mic night"), M("vr 23 jan · 20:00–23:00", "Fri 23 Jan · 20:00–23:00"), T("%lld/%lld aangemeld", 31, 120)) +
+        `<div class="r acc">${I.plus.replace("<svg", '<svg class="ic" style="width:16px"')}${T("Event aanmaken")}</div>`)}
+      <div class="foot">${T("Alleen gratis tickets. Klanten melden zich aan via de link of QR-code en krijgen hun ticket in Pasr en Wallet.")}</div></div>`);
+  },
+
+  // Klantenkaarten met de editor (barcode, doelen, kortingsperiodes)
+  member: () => {
+    const list = `<div class="mform" style="max-width:560px"><div class="sec">${T("Klantenkaarten")}</div>${fr(
+      `<div class="r"><div class="tkicon" style="background:#7B4B2A;color:#fff">${I.barcode}</div><div class="sp"><b style="font-weight:600">${MEMBER}</b><small style="font-size:13px">${T("%lld leden", 212)}</small><small style="color:#2ED3A6;font-weight:600">${T("Nu %@%% korting", 15)}</small></div><span class="tkpill">${T("Online")}</span></div>
+       <div class="r acc">${I.plus.replace("<svg", '<svg class="ic" style="width:16px"')}${T("Klantenkaart aanmaken")}</div>`)}
+      <div class="foot">${T("Pasr maakt de kaartnummers zelf (QR, Code 128 of EAN-13). Scannen gaat met Pasr Zakelijk.")}</div></div>`;
+    const tg = (on, t, d) => `<div class="r"><div class="sp">${T(t)}<small>${T(d)}</small></div><span class="tgl ${on ? "" : "off"}"></span></div>`;
+    const per = (t, s) => `<div class="r" style="display:block"><b style="font-weight:600">${t}</b><small>${s}</small></div>`;
+    const sheet = `<div class="sheetm" style="left:440px;top:70px;width:600px;height:740px">
+      <div style="height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font:700 14px var(--ui);border-bottom:1px solid rgba(255,255,255,.08)">
+        <span class="tbtn">${T("Annuleer")}</span>${T("Klantenkaart bewerken")}<span class="tbtn p">${T("Opslaan")}</span></div>
+      <div class="mform" style="padding:0 18px">
+        <div class="sec">${T("Kaart")}</div>${fr(`<div class="r"><span class="sp">${T("Naam")}</span><span class="v">${MEMBER}</span></div>
+          <div class="r"><span class="sp">${T("Kleur")}</span><i style="width:22px;height:22px;border-radius:50%;background:#7B4B2A;box-shadow:0 0 0 2px #fff"></i></div>`)}
+        <div class="sec">${T("Barcode")}</div>${fr(`<div class="r"><span class="mseg"><span>${T("QR-code")}</span><span class="on">${T("Code 128")}</span><span>${T("EAN-13")}</span></span></div>
+          <div class="r"><span class="sp">${T("Nummering")}</span><span class="v" style="font-family:ui-monospace,Menlo,monospace">2604 1187 5530</span></div>`)}
+        <div class="sec">${T("Doel van de kaart · kies er één of meer")}</div>${fr(
+          tg(true, "Lidmaatschap of herkenning", "De klant laat zijn kaart zien; jij ziet wie het is.") +
+          tg(true, "Sparen voor een beloning", "Elke scan telt als bezoek of punten.") +
+          tg(false, "Vaste korting", "Altijd hetzelfde percentage voor leden."))}
+        <div class="sec">${T("Korting in een periode")}</div>${fr(
+          `<div class="r"><span class="mseg"><span class="on">${T("Lijst")}</span><span>${T("Tijdlijn")}</span></span></div>` +
+          per(M("Happy hour", "Happy hour"), M("1 nov – 31 dec · ma, di, wo, do, vr · 15:00–17:00 · 15%", "1 Nov – 31 Dec · Mon, Tue, Wed, Thu, Fri · 15:00–17:00 · 15%")) +
+          per(M("Kerstweek", "Christmas week"), M("22 dec – 28 dec · " + "hele dag" + " · 10%", "22 Dec – 28 Dec · all day · 10%")) +
+          `<div class="r acc">${I.plus.replace("<svg", '<svg class="ic" style="width:16px"')}${T("Periode toevoegen")}</div>`)}
+        <div class="foot">${T("Van–tot, eventueel alleen op bepaalde dagen of uren. Plan meerdere periodes vooruit.")}</div></div></div>`;
+    return macWindow("klantenkaarten", T("Klantenkaarten"), list) + `<div style="position:absolute;inset:0;background:rgba(0,0,0,.25);z-index:15"></div>` + sheet;
+  },
+
+  // Gezamenlijke acties (BusinessCommunityView als paneel)
+  community: () => macWindow("gezamenlijkeActies", T("Gezamenlijke acties"), `<div class="mform" style="max-width:820px">
+      <div class="sec">${T("Uitnodigingen (%lld)", 1)}</div>${fr(`<div class="r" style="display:block;padding:12px 14px">
+        <b style="font:600 15px var(--ui)">${M("Winterwandeling Binnenstad", "Winter walk city centre")}</b>
+        <div style="font:400 13.5px var(--ui);margin-top:3px">${T("Beloning: %@", M("Gratis warme chocolademelk", "Free hot chocolate"))}</div>
+        <small>${M("1 dec – 31 jan", "1 Dec – 31 Jan")} · ${T("Organisator: %@", "Boekhandel Van Dam")}</small>
+        <small>${T("Doen mee: %@", "Bakkerij Smit, Bloemenhuis Iris")}</small>
+        <div style="display:flex;gap:8px;margin-top:10px"><span class="btnp" style="font-size:13px">${T("Accepteren")}</span><span class="btnb" style="font-size:13px">${T("Weigeren")}</span></div></div>`)}
+      <div class="foot">${T("Je beslist zelf of je zaak meedoet. Klantgegevens worden niet tussen ondernemingen gedeeld.")}</div>
+      <div class="sec">${T("Gezamenlijke acties")}</div>${fr(`<div class="r" style="display:block;padding:12px 14px">
+        <div style="display:flex;align-items:baseline"><b style="font:600 15px var(--ui);flex:1">${M("Koffieroute Utrecht", "Utrecht coffee route")}</b><span class="capsule-st" style="background:rgba(46,211,166,.18)">${T("Organisator")}</span></div>
+        <span class="capsule-st" style="margin-top:5px;color:#2ED3A6;background:rgba(46,211,166,.14)">${T("Actief")}</span>
+        <small>${BUS}, Utrecht · ${T("%lld deelnemende zaken", 4)}</small>
+        <small>${M("Bakkerij Smit, Bloemenhuis Iris, Boekhandel Van Dam", "Bakkerij Smit, Bloemenhuis Iris, Boekhandel Van Dam")}</small>
+        <div style="font:400 13.5px var(--ui);margin-top:3px">${T("Beloning: %@", M("Gratis koffie naar keuze", "Free coffee of your choice"))}</div>
+        <small>${T("Bezoek %lld verschillende deelnemende winkels", 3)}</small>
+        <div class="acc" style="font:500 13.5px var(--ui);margin-top:8px;display:flex;align-items:center;gap:6px">${I.personadd.replace('class="ic"', 'style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"')}${T("Zaken uitnodigen")}</div>
+        <div style="font:400 12.5px var(--ui);color:#34C759;margin-top:6px">✓ ${T("Je onderneming neemt deel")}</div></div>`)}
+      <div class="foot">${T("Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.")}</div></div>`),
+
+  // Inzichten (OverviewView)
+  insights: () => macWindow("inzichten", T("Inzichten"), `<div style="display:flex;gap:18px;max-width:1150px">
+      <div class="ins" style="flex:1.6;display:grid;gap:14px;justify-items:center">
+        <b style="font:600 16px var(--ui)">${BUS}</b>
+        <span class="pill t-mint">${I.seal.replace('class="ic"', 'class="ic" style="width:15px;height:15px"')}${T("Stempels")}${I.chevd}</span>
+        <div style="display:flex;width:100%;align-items:baseline"><div style="flex:1"><div style="font:700 20px var(--ui)">${T("Deze maand")}</div>
+          <div style="font:400 12px var(--ui);color:#9A98B3">${LANG === "en" ? "Tuesday 18 November" : "dinsdag 18 november"}</div></div>
+          <b style="font:800 28px var(--ui)" class="t-mint">${VALS[25]}</b><span style="font:600 14px var(--ui);color:rgba(46,211,166,.6);margin-left:4px">${T("stempels")}</span></div>
+        <div style="width:100%;height:330px;display:flex;align-items:center">${chartSVG(620)}</div>
+        <div class="segs" style="width:100%"><span>${T("W")}</span><span class="on">${T("M")}</span><span>${T("K")}</span><span>${T("J")}</span></div></div>
+      <div style="flex:1;display:grid;gap:12px;align-content:start">
+        <div class="kpi" style="--c:#2ED3A6;padding:16px 0 16px 18px"><small>${T("Stempels")}</small><b>${VALS.reduce((a, b) => a + b, 0)}</b></div>
+        <div class="kpi" style="--c:#FF6B57;padding:16px 0 16px 18px"><small>${T("Beloningen")}</small><b>58</b></div>
+        <div class="kpi" style="--c:#6A5CFF;padding:16px 0 16px 18px"><small>${T("Leden")}</small><b>174</b></div></div></div>`),
+
+  // Widgets op het bureaublad: Vandaag (middel), Komend event (klein), Te doen (groot)
+  widgets: () => {
+    const sealI = I.seal.replace('class="ic"', "");
+    const trend = [18, 22, 19, 27, 24, 30, 34];
+    const bars = trend.map((v, i) => `<i style="flex:1;height:${Math.max(3, 34 * v / 34)}px;border-radius:3px;background:${i === 6 ? "#6A5CFF" : "rgba(106,92,255,.35)"}"></i>`).join("");
+    const m = (v, t, ic, c) => `<div style="flex:1">${ic.replace("<svg", `<svg style="width:13px;height:13px;stroke:${c};fill:none;stroke-width:2.2"`)}
+      <div style="font:800 26px var(--ui);font-variant-numeric:tabular-nums">${v}</div><div class="cap">${T(t)}</div></div>`;
+    const today = `<div class="wid" style="left:120px;top:110px;width:338px;height:158px"><div class="wh">${sealI}${T("Vandaag")}<span class="b">${BUS}</span></div>
+      <div style="display:flex;margin-top:6px">${m(34, "Stempels", I.sealo, "#8B80FF")}${m(5, "Beloningen", I.gift, "#FF6B57")}${m(7, "Nieuwe leden", I.personadd, "#2ED3A6")}</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;margin-top:6px"><div style="flex:1;display:flex;gap:4px;align-items:flex-end;height:34px">${bars}</div>
+      <div style="text-align:right">${I.arrowup.replace("<svg", '<svg style="width:12px;height:12px;stroke:#2ED3A6;fill:none;stroke-width:3"')}<div class="cap">${T("7 dagen")}</div></div></div></div>`;
+    const ev = `<div class="wid" style="left:478px;top:110px;width:158px;height:158px"><div class="wh">${I.ticket.replace("<svg", '<svg style="width:13px;height:13px;stroke:#8B80FF;fill:none;stroke-width:2.2"')}${T("Komend event")}</div>
+      <div style="font:700 14px/1.2 var(--ui);margin-top:8px">${EVENT}</div><div class="cap" style="margin-top:3px">${M("za 13 dec 19:00", "Sat 13 Dec 19:00")}</div>
+      <div style="font:800 24px var(--ui);margin-top:8px">64<span style="font:600 13px var(--ui);color:#9A98B3">/80</span></div>
+      <div class="cap">${T("%lld plekken over", 16)}</div></div>`;
+    const td = (ic, c, t, d, date) => `<div style="display:flex;align-items:center;gap:9px;padding:6px 0">
+      <span>${ic.replace("<svg", `<svg style="width:16px;height:16px;stroke:${c};fill:none;stroke-width:2"`)}</span>
+      <div style="flex:1;min-width:0"><div style="font:600 13px var(--ui)">${t}</div><div class="cap">${d}</div></div><span class="cap">${date}</span></div>`;
+    const todo = `<div class="wid" style="left:120px;top:288px;width:338px;height:354px"><div class="wh">${I.checklist.replace("<svg", '<svg style="width:13px;height:13px;stroke:#8B80FF;fill:none;stroke-width:2.4"')}${T("Te doen")}<span class="b">${BUS}</span></div>
+      <div style="margin-top:6px">${td(I.people3, "#8B80FF", M("Winterwandeling Binnenstad", "Winter walk city centre"), T("Uitnodiging van %@", "Boekhandel Van Dam"), "")}
+      ${td(I.timer, "#FFB547", "Happy hour", T("Kortingsperiode loopt af"), M("30 nov", "30 Nov"))}
+      ${td(I.timer, "#FFB547", M("WELKOM10", "WELKOM10"), T("Actiecode loopt af"), M("2 dec", "2 Dec"))}
+      ${td(I.pencil.replace('class="ic"', ""), "#9A98B3", M("Lunchkaart", "Lunch card"), T("Concept · stempelkaart"), "")}
+      ${td(I.pencil.replace('class="ic"', ""), "#9A98B3", M("Latte-art workshop", "Latte art workshop"), T("Concept · event"), M("11 jan", "11 Jan"))}</div></div>`;
+    const small = `<div class="win" style="left:720px;top:150px;width:720px;height:600px;transform:scale(.98)"><div class="lights"><i></i><i></i><i></i></div>
+      <div style="position:absolute;inset:0;transform:scale(.55);transform-origin:0 0;width:1309px;height:1091px">${""}</div></div>`;
+    return today + ev + todo + `<div style="position:absolute;left:680px;top:96px;right:40px;bottom:60px">${MAC.todayMini()}</div>`;
+  },
+  todayMini: () => `<div class="win" style="inset:0"><div class="lights"><i></i><i></i><i></i></div><div style="position:absolute;inset:0;transform-origin:0 0;transform:scale(.62);width:161%;height:161%">
+    ${MAC.today().replace('<div class="win" style="left:40px;top:50px;right:40px;bottom:26px">', '<div style="position:absolute;inset:0">').replace(/<div class="lights">[\s\S]*?<\/div>/, "")}</div></div>`,
+};
+
+function macScreen(screen) {
+  return `<div class="macbook" style="__STYLE__"><div class="lid"><div class="mscreen"><div class="notch"></div><div class="mui">${menubar()}${MAC[screen]()}</div></div></div><div class="base"></div></div>`;
 }
 
 // ---------- marketing-scènes (zelfde opbouw en achtergronden als Pasr) ----------
@@ -360,13 +714,36 @@ const SCENES = {
         sub: M("Beloning inwisselen of ongedaan maken met één tik.", "Redeem a reward or undo with one tap."), screen: "result" },
   z3: { bg: "iris", eyebrow: M("Je eigen stempelkaart", "Your own stamp card"), title: M("In de stijl <em>van je zaak</em>", "In the style <em>of your business</em>"),
         sub: M("Logo en kleuren komen van je website.", "Logo and colours come from your website."), screen: "cards" },
-  z4: { bg: "dark", eyebrow: M("QR-code en flyer", "QR code and flyer"), title: M("Klanten sparen <em>in Pasr</em>", "Customers collect <em>in Pasr</em>"),
-        sub: M("Deel de link of zet de A4-flyer op de toonbank.", "Share the link or put the A4 flyer on your counter."), screen: "share" },
+  z4: { bg: "dark", eyebrow: M("QR-code, flyer en knop", "QR code, flyer and button"), title: M("Klanten sparen <em>in Pasr</em>", "Customers collect <em>in Pasr</em>"),
+        sub: M("Deel de link, zet de flyer op de toonbank of de knop op je website.", "Share the link, put the flyer on your counter or the button on your website."), screen: "share" },
   z5: { bg: "light", eyebrow: M("Overzicht", "Overview"), title: M("Zie hoe je klanten <em>sparen</em>", "See how your customers <em>collect</em>"),
         sub: M("Stempels, beloningen en nieuwe leden per dag.", "Stamps, rewards and new members per day."), screen: "overview" },
   z6: { bg: "dark", eyebrow: M("Medewerkers", "Staff"), title: M("Je team <em>stempelt mee</em>", "Your team <em>stamps too</em>"),
         sub: M("Nodig uit met een link. Zij zien alleen de scanner.", "Invite with a link. They only see the scanner."), screen: "staff" },
   z7: { bg: "iris", eyebrow: M("Veilig stempelen", "Safe stamping"), title: M("Alleen jij <em>zet stempels</em>", "Only you <em>add stamps</em>"), sub: null, screen: "lock", feats: true },
+  z8: { bg: "light", eyebrow: M("Tickets", "Tickets"), title: M("Gratis events, <em>scannen aan de deur</em>", "Free events, <em>scan at the door</em>"),
+        sub: M("Klanten krijgen hun ticket in Pasr en Wallet.", "Customers get their ticket in Pasr and Wallet."), screen: "ticket" },
+  z9: { bg: "iris", eyebrow: M("Klantenkaart", "Loyalty card"), title: M("Je eigen kaart <em>met barcode</em>", "Your own card <em>with a barcode</em>"),
+        sub: M("Met korting in de periodes die jij kiest.", "With discounts in the periods you choose."), screen: "member" },
+  z10: { bg: "dark", eyebrow: M("Gezamenlijke acties", "Joint campaigns"), title: M("Samen sparen <em>in je buurt</em>", "Collect together <em>in your area</em>"),
+        sub: M("Nodig andere zaken uit. Klantgegevens blijven van jou.", "Invite other businesses. Customer data stays yours."), screen: "community" },
+};
+// Mac: 7 scènes (2880 × 1800)
+const MSCENES = {
+  m1: { bg: "dark", eyebrow: M("Pasr Zakelijk voor Mac", "Pasr Zakelijk for Mac"), title: M("Je hele zaak <em>op de Mac</em>", "Your whole business <em>on the Mac</em>"),
+        sub: M("Vandaag in één oogopslag: cijfers, je volgende event en wat er te doen is.", "Today at a glance: numbers, your next event and what needs doing."), screen: "today", icon: true },
+  m2: { bg: "light", eyebrow: M("Scannen", "Scanning"), title: M("Scannen <em>in een eigen venster</em>", "Scan <em>in its own window</em>"),
+        sub: M("Met de camera, je iPhone of een USB-barcodescanner.", "With the camera, your iPhone or a USB barcode scanner."), screen: "scanner" },
+  m3: { bg: "iris", eyebrow: M("Tickets", "Tickets"), title: M("Gratis events <em>met tickets</em>", "Free events <em>with tickets</em>"),
+        sub: M("Aanmeldingen, plekken en wie er binnen is.", "Registrations, spots and who is inside."), screen: "tickets" },
+  m4: { bg: "dark", eyebrow: M("Klantenkaart", "Loyalty card"), title: M("Barcode <em>en kortingsperiodes</em>", "Barcode <em>and discount periods</em>"),
+        sub: M("Plan korting vooruit, op de dagen en uren die jij kiest.", "Plan discounts ahead, on the days and hours you choose."), screen: "member" },
+  m5: { bg: "light", eyebrow: M("Gezamenlijke acties", "Joint campaigns"), title: M("Samen sparen <em>op uitnodiging</em>", "Collect together <em>by invitation</em>"),
+        sub: M("Jij nodigt zaken uit; zij beslissen zelf of ze meedoen.", "You invite businesses; they decide whether to take part."), screen: "community" },
+  m6: { bg: "iris", eyebrow: M("Inzichten", "Insights"), title: M("Zie hoe je klanten <em>sparen</em>", "See how your customers <em>collect</em>"),
+        sub: M("Stempels, beloningen en nieuwe leden per dag.", "Stamps, rewards and new members per day."), screen: "insights" },
+  m7: { bg: "dark", eyebrow: M("Widgets", "Widgets"), title: M("Je cijfers <em>op je bureaublad</em>", "Your numbers <em>on your desktop</em>"),
+        sub: M("Vandaag, Komend event en Te doen. Ook op iPhone en iPad.", "Today, Upcoming event and To do. Also on iPhone and iPad."), screen: "widgets" },
 };
 
 function marketing(sc, kind) {
@@ -387,25 +764,32 @@ function marketing(sc, kind) {
   return html + "</div>";
 }
 
+function macMarketing(sc) {
+  let html = `<div class="canvas ${sc.bg} is-mac">`;
+  html += `<div class="head" style="top:5.5%"><div class="eyebrow">${sc.icon ? brandEyebrow(sc.eyebrow) : "<i></i>" + sc.eyebrow}</div><h1>${sc.title}</h1>${sc.sub ? `<p class="sub">${sc.sub}</p>` : ""}</div>`;
+  html += macScreen(sc.screen).replace("__STYLE__", "top:26%;width:calc(var(--u) * 80)");
+  return html + "</div>";
+}
+
 // ---------- productpagina-beelden (header en zoekresultaten) ----------
 function promo() {
-  const wide = W / H > 1.6, ratio = W / H;
+  const ratio = W / H;
   let html = `<div class="canvas dark">`;
   const logoBlock = `<div class="promo-logo"><img src="icon.png"><span>pasr</span><span class="zk">ZAKELIJK</span></div>`;
+  const title = M("Klantenbinding <em>voor je zaak</em>", "Customer loyalty <em>for your business</em>");
   if (ratio > 1.3) {
     const tw = ratio > 2 ? 40 : ratio > 1.7 ? 44 : 46;
     html += `<div style="position:absolute;left:7%;top:50%;transform:translateY(-50%);width:${tw}%;z-index:3">${logoBlock}
-      <h1 style="margin-top:calc(var(--u)*3.5);font-size:calc(var(--u)*${ratio > 2 ? 6.2 : ratio > 1.7 ? 6.4 : 5.4})">${M("Digitale stempelkaarten <em>voor je zaak</em>", "Digital stamp cards <em>for your business</em>")}</h1>
-      <p class="sub" style="font-size:calc(var(--u)*2.4)">${M("Scan de kaart van je klant en zet een stempel. Voor iPhone en iPad.", "Scan your customer's card and add a stamp. For iPhone and iPad.")}</p>
-      <div style="display:flex;gap:calc(var(--u)*1.4);margin-top:calc(var(--u)*3.5);flex-wrap:wrap"><span class="badge">${M("Medewerkers", "Staff")}</span><span class="badge">${M("Afkoeltijd", "Cooldown")}</span><span class="badge">${M("Logboek", "Log")}</span></div></div>`;
-    // twee telefoons rechts: scanner en resultaat
+      <h1 style="margin-top:calc(var(--u)*3.5);font-size:calc(var(--u)*${ratio > 2 ? 6.2 : ratio > 1.7 ? 6.4 : 5.4})">${title}</h1>
+      <p class="sub" style="font-size:calc(var(--u)*2.4)">${M("Stempelkaarten, klantenkaarten en tickets. Voor iPhone, iPad en Mac.", "Stamp cards, loyalty cards and tickets. For iPhone, iPad and Mac.")}</p>
+      <div style="display:flex;gap:calc(var(--u)*1.4);margin-top:calc(var(--u)*3.5);flex-wrap:wrap"><span class="badge">${M("Tickets", "Tickets")}</span><span class="badge">${M("Klantenkaarten", "Loyalty cards")}</span><span class="badge">${M("Gezamenlijke acties", "Joint campaigns")}</span></div></div>`;
     const sc = ratio > 2 ? 0.27 : 0.32;
     const ph = (screen, left, top, rot) => device("iphone", screen, `left:${left}%;top:${top}%;width:calc(var(--u)*78);transform-origin:50% 0;transform:translateX(-50%) rotate(${rot}deg) scale(${sc})`);
     html += ph("scan", ratio > 2 ? 64 : 66, ratio > 2 ? 9 : 11, -5);
     html += ph("result", ratio > 2 ? 84 : 86, ratio > 2 ? 14 : 17, 5);
   } else {
     html += `<div class="head" style="top:7%"><div style="display:flex;justify-content:center">${logoBlock}</div>
-      <h1 style="margin-top:calc(var(--u)*4)">${M("Digitale stempelkaarten <em>voor je zaak</em>", "Digital stamp cards <em>for your business</em>")}</h1></div>`;
+      <h1 style="margin-top:calc(var(--u)*4)">${title}</h1></div>`;
     html += device("iphone", "scan", "top:36%;width:calc(var(--u)*78);left:30%;transform-origin:50% 0;transform:translateX(-50%) rotate(-5deg) scale(.52)");
     html += device("iphone", "result", "top:40%;width:calc(var(--u)*78);left:70%;transform-origin:50% 0;transform:translateX(-50%) rotate(5deg) scale(.52)");
   }
@@ -413,12 +797,15 @@ function promo() {
 }
 
 const root = document.getElementById("root");
-root.innerHTML = KIND === "promo" ? promo() : marketing(SCENES[SCENE], KIND);
+root.innerHTML = KIND === "promo" ? promo() : KIND === "mac" ? macMarketing(MSCENES[SCENE]) : marketing(SCENES[SCENE], KIND);
 if (missing.size) console.error("Geen Engelse tekst voor: " + [...missing].join(" | "));
 requestAnimationFrame(() => {
   document.querySelectorAll(".screen").forEach((s) => {
     const ui = s.querySelector(".ui");
     ui.style.setProperty("--k", s.clientWidth / (s.closest(".ipad") ? 1032 : 440));
+  });
+  document.querySelectorAll(".mscreen").forEach((s) => {
+    const k = s.clientWidth / 1280; const m = s.querySelector(".mui"); m.style.setProperty("--k", k); m.style.height = (s.clientHeight / k) + "px";
   });
   document.fonts.ready.then(() => { document.body.dataset.ready = "1"; });
 });
