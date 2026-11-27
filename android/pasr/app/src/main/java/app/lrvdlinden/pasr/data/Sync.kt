@@ -72,24 +72,29 @@ object Sync {
 
     suspend fun sync() {
         val user = Account.session.value?.userID ?: return
-        if (mutex.isLocked) return
         mutex.withLock {
+            if (Account.session.value?.userID != user) return
             running.value = true
             try {
                 val started = nowMs()
                 val pushed = lastSync(user) ?: 0L
                 val changes = JSONArray()
-                CardStore.cards.value.filter { it.changedAt > pushed }.forEach { changes.put(row(it)) }
+                CardStore.cards.value.filter { it.groupId == null && it.changedAt > pushed }.forEach { changes.put(row(it)) }
                 val body = JSONObject().put("changes", changes).put("since", Prefs.string(sinceKey(user)) ?: JSONObject.NULL)
                 val result = Api.rpc("pasr_sync", body) as? JSONObject ?: return
+                if (Account.session.value?.userID != user) return
                 apply(result.optJSONArray("cards") ?: JSONArray())
                 result.str("now")?.let { Prefs.setString(sinceKey(user), it) }
                 Prefs.setLong(pushedKey(user), started)
+                syncGroups(user)
+                Birthday.sync()
                 lastError.value = null
                 val countryKey = "sync.country.$user"
                 if (!Prefs.bool(countryKey)) Account.deviceCountry?.let { c ->
                     runCatching { Api.rpc("pasr_set_country", JSONObject().put("p_country", c)) }.onSuccess { Prefs.setBool(countryKey, true) }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: PasrError) {
                 lastError.value = e.message
             } catch (e: Exception) {
@@ -97,6 +102,45 @@ object Sync {
             } finally {
                 running.value = false
             }
+        }
+    }
+
+    private fun groupKey(user: String, group: String) = "sync.group.$user.$group"
+
+    fun discardGroups(user: String) {
+        CardStore.discardGroups(emptySet())
+        Prefs.p.edit().apply {
+            Prefs.p.all.keys.filter { it.removePrefix("since.").startsWith("sync.group.$user.") }.forEach { remove(it) }
+        }.apply()
+    }
+
+    private suspend fun syncGroups(user: String) {
+        val groups = SharedGroups.overview().optJSONArray("groups")?.objects()
+            ?.mapNotNull { it.str("id")?.lowercase() }?.toSet().orEmpty()
+        if (Account.session.value?.userID != user) return
+        CardStore.discardGroups(groups)
+        Prefs.p.edit().apply {
+            Prefs.p.all.keys.filter { it.removePrefix("since.").startsWith("sync.group.$user.") && it.substringAfterLast('.') !in groups }
+                .forEach { remove(it) }
+        }.apply()
+        for (group in groups) {
+            val key = groupKey(user, group)
+            val started = nowMs()
+            val pending = CardStore.cards.value.filter { it.groupId == group && it.changedAt > Prefs.long(key) }
+                .sortedBy { it.changedAt }
+            val batches = pending.chunked(100).ifEmpty { listOf(emptyList()) }
+            for (batch in batches) {
+                if (Account.session.value?.userID != user) return
+                val body = JSONObject().put("p_group", group)
+                    .put("changes", JSONArray().apply { batch.forEach { put(row(it)) } })
+                    .put("since", Prefs.string("since.$key") ?: JSONObject.NULL)
+                val result = Api.rpc("pasr_group_sync", body) as? JSONObject
+                    ?: throw PasrError("Gedeelde kaarten synchroniseren is mislukt.")
+                if (Account.session.value?.userID != user) return
+                apply(result.optJSONArray("cards") ?: JSONArray(), group)
+                result.str("now")?.let { Prefs.setString("since.$key", it) }
+            }
+            Prefs.setLong(key, started)
         }
     }
 
@@ -144,26 +188,28 @@ object Sync {
         }
     }
 
-    private fun apply(rows: JSONArray) {
+    @Synchronized
+    private fun apply(rows: JSONArray, group: String? = null) {
         val byId = CardStore.cards.value.associateBy { it.id.uppercase() }.toMutableMap()
         var changed = false
         for (row in rows.objects()) {
             val id = row.str("id")?.uppercase() ?: continue
             val stamp = parseIso(row.str("updated_at")) ?: continue
             val local = byId[id]
+            if (local != null && local.groupId != group) continue
             if (local != null && local.changedAt >= stamp) continue
             if (row.optBoolean("deleted")) {
                 if (local != null && local.deletedAt == null) { byId[id] = local.copy(deletedAt = stamp); changed = true }
                 continue
             }
             val f = row.optJSONObject("card") ?: continue
-            byId[id] = fill(local ?: Card(id = id), f).copy(deletedAt = null, updatedAt = stamp)
+            byId[id] = fill(local ?: Card(id = id, groupId = group), f).copy(deletedAt = null, updatedAt = stamp)
             changed = true
         }
         if (changed) CardStore.replaceAll(byId.values.toList())
     }
 
-    private fun fill(card: Card, f: JSONObject): Card {
+    internal fun fill(card: Card, f: JSONObject): Card {
         var c = card.copy(
             storeName = f.str("storeName") ?: card.storeName,
             number = f.optString("number", card.number),

@@ -123,6 +123,8 @@ struct BusinessDetailView: View {
                     }
                 }
 
+                BusinessOffersSection(businessID: business.id, businessName: business.name)
+
                 if let staff = detail?.staff {
                     Section("Medewerkers") {
                         ForEach(staff) { m in
@@ -268,5 +270,115 @@ struct BusinessDetailView: View {
             await load()
             onChanged()
         } catch { self.error = error.localizedDescription }
+    }
+}
+
+// MARK: - Acties (kortingsbonnen, actiecodes, gezamenlijke acties, vestigingen), zoals in beheer.pasr.nl
+
+struct BusinessOffers: Decodable {
+    struct Coupon: Decodable, Identifiable {
+        let id: String; let title: String; let discount_type: String; let discount_value: Double
+        let ends_at: String; let `public`: Bool?; let deleted_at: String?; let claims: Int?; let redeemed: Int?
+    }
+    struct PromoCode: Decodable, Identifiable {
+        let id: String; let code: String; let title: String; let discount_type: String; let discount_value: Double
+        let ends_at: String; let max_uses: Int; let used_count: Int; let active: Bool; let deleted_at: String?
+    }
+    struct Campaign: Decodable, Identifiable {
+        let id: String; let name: String; let reward: String; let lead: Bool; let required_businesses: Int
+        let ends_at: String; let cancelled_at: String?; let participants: Int?; let claims: Int?
+    }
+    struct Location: Decodable, Identifiable { let id: String; let name: String; let address: String?; let active: Bool }
+    let coupons: [Coupon]?
+    let promo_codes: [PromoCode]?
+    let campaigns: [Campaign]?
+    let locations: [Location]?
+    let referrals: Int?
+    let programs: Int?
+}
+
+struct BusinessOffersSection: View {
+    let businessID: String
+    let businessName: String
+    @EnvironmentObject private var session: Session
+    @State private var offers: BusinessOffers?
+    @State private var error: String?
+    @State private var pending: (kind: String, id: String, title: String)?
+
+    private static let iso: ISO8601DateFormatter = { let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f }()
+    private func date(_ s: String?) -> Date? {
+        guard let s else { return nil }
+        return Self.iso.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+    }
+    private func ended(_ s: String) -> Bool { (date(s) ?? .distantFuture) < .now }
+    private func day(_ s: String) -> String { date(s)?.formatted(date: .abbreviated, time: .omitted) ?? "—" }
+    private func disc(_ type: String, _ v: Double) -> String {
+        type == "percent" ? "\(Int(v))%" : v.formatted(.currency(code: "EUR"))
+    }
+
+    var body: some View {
+        Section {
+            if let error { Text(error).foregroundStyle(.red) }
+            if let o = offers {
+                Text("\(o.coupons?.count ?? 0) kortingsbonnen · \(o.promo_codes?.count ?? 0) actiecodes · \(o.campaigns?.count ?? 0) gezamenlijke acties · \(o.locations?.count ?? 0) vestigingen · \(o.programs ?? 0) kaarten met beloningen · \(o.referrals ?? 0) vrienden aangebracht")
+                    .font(.caption).foregroundStyle(.secondary)
+                ForEach(o.coupons ?? []) { c in
+                    let off = c.deleted_at != nil || ended(c.ends_at)
+                    row("Bon: \(c.title) · \(disc(c.discount_type, c.discount_value))\(c.public == true ? " · voor iedereen" : "")",
+                        "\(c.deleted_at != nil ? "verwijderd" : off ? "verlopen" : "actief") · t/m \(day(c.ends_at)) · \(c.claims ?? 0) opgehaald, \(c.redeemed ?? 0) gebruikt",
+                        off ? nil : ("coupon", c.id, "Kortingsbon uitzetten"))
+                }
+                ForEach(o.promo_codes ?? []) { p in
+                    let off = p.deleted_at != nil || !p.active || ended(p.ends_at)
+                    row("Code \(p.code) · \(p.title) · \(disc(p.discount_type, p.discount_value))",
+                        "\(p.deleted_at != nil ? "verwijderd" : !p.active ? "gepauzeerd" : off ? "verlopen" : "actief") · t/m \(day(p.ends_at)) · \(p.used_count)/\(p.max_uses) gebruikt",
+                        off ? nil : ("promo_code", p.id, "Actiecode pauzeren"))
+                }
+                ForEach(o.campaigns ?? []) { m in
+                    let off = m.cancelled_at != nil || ended(m.ends_at)
+                    row("Samen: \(m.name) · \(m.reward)",
+                        "\(m.lead ? "organisator" : "deelnemer") · \(m.cancelled_at != nil ? "geannuleerd" : off ? "afgelopen" : "actief") · \(m.participants ?? 0)/\(m.required_businesses) zaken · \(m.claims ?? 0) beloningen",
+                        off || !m.lead ? nil : ("campaign", m.id, "Gezamenlijke actie annuleren"))
+                }
+                ForEach(o.locations ?? []) { l in
+                    row("Vestiging: \(l.name)", (l.address.flatMap { $0.isEmpty ? nil : $0 } ?? "geen adres") + (l.active ? "" : " · inactief"), nil)
+                }
+            } else if error == nil {
+                ProgressView()
+            }
+        } header: { Text("Acties") }
+        .task { await load() }
+        .confirmationDialog(pending?.title ?? "", isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }), titleVisibility: .visible) {
+            Button("Uitzetten", role: .destructive) {
+                if let p = pending { Task { await disable(p.kind, p.id) } }
+            }
+        } message: {
+            Text("Werkt daarna niet meer in Pasr bij \(businessName). De historie blijft bewaard.")
+        }
+    }
+
+    private func row(_ title: String, _ sub: String, _ action: (String, String, String)?) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline.weight(.semibold)).lineLimit(2)
+                Text(sub).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if let action {
+                Button("Uitzetten", role: .destructive) { pending = (action.0, action.1, action.2) }
+                    .buttonStyle(.bordered).controlSize(.small)
+            }
+        }
+    }
+
+    private func load() async {
+        do { offers = try await session.call("business_offers", ["id": businessID], as: BusinessOffers.self); error = nil }
+        catch is CancellationError {}
+        catch { self.error = error.localizedDescription }
+    }
+
+    private func disable(_ kind: String, _ id: String) async {
+        do { try await session.call("business_offer_disable", ["kind": kind, "id": id]); await load() }
+        catch { self.error = error.localizedDescription }
     }
 }

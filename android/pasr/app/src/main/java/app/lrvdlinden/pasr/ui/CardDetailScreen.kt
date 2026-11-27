@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AddToHomeScreen
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
@@ -89,7 +90,6 @@ import app.lrvdlinden.pasr.data.Catalog
 import app.lrvdlinden.pasr.data.GoogleWallet
 import app.lrvdlinden.pasr.data.PasrError
 import app.lrvdlinden.pasr.data.Prefs
-import app.lrvdlinden.pasr.data.Share
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,8 +100,9 @@ fun CardDetailScreen(id: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val all by CardStore.cards.collectAsState()
-    val card = all.firstOrNull { it.id.equals(id, true) }
+    val card = all.firstOrNull { it.deletedAt == null && it.id.equals(id, true) }
     if (card == null) { LaunchedEffect(Unit) { nav.pop() }; return }
+    val launcher = context.getSystemService(android.content.pm.ShortcutManager::class.java)
     var revealed by remember(id) { mutableStateOf(!card.isLocked) }
     var gwAvailable by remember { mutableStateOf(false) }
     var vipStatus by remember(id) { mutableStateOf<String?>(null) }
@@ -181,6 +182,10 @@ fun CardDetailScreen(id: String) {
                 navigationIcon = { IconButton({ nav.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
+                if (revealed && card.number.isNotEmpty()) {
+                    IconButton({ nav.push(Screen.ShareCard(card.id)) }) { Icon(Icons.Outlined.Share, "Delen") }
+                }
+
                     IconButton({ CardStore.upsert(card.copy(isFavorite = !card.isFavorite)) }) {
                         Icon(if (card.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder, "Favoriet")
                     }
@@ -327,6 +332,22 @@ fun CardDetailScreen(id: String) {
 
             SectionHeader("Acties")
             Group {
+                if (launcher?.isRequestPinShortcutSupported == true) {
+                    RowItem(Icons.Outlined.AddToHomeScreen, "Zet op beginscherm", "Open deze kaart rechtstreeks vanuit je beginscherm") {
+                        val intent = Intent(context, app.lrvdlinden.pasr.MainActivity::class.java)
+                            .setAction(Intent.ACTION_VIEW)
+                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            .putExtra("cardId", card.id)
+                        val shortcut = android.content.pm.ShortcutInfo.Builder(context, "card-${card.id}")
+                            .setShortLabel("Pasr-kaart")
+                            .setIcon(android.graphics.drawable.Icon.createWithResource(context, app.lrvdlinden.pasr.R.mipmap.ic_launcher))
+                            .setIntent(intent)
+                            .build()
+                        if (runCatching { launcher.requestPinShortcut(shortcut, null) }.getOrDefault(false).not()) {
+                            scope.launch { snack.showSnackbar("Snelkoppeling toevoegen is niet gelukt.") }
+                        }
+                    }
+                }
                 if (gwAvailable && card.number.isNotEmpty()) {
                     RowItem(Icons.Outlined.AccountBalanceWallet, if (GoogleWallet.hasPass(card)) "Bijwerken in Google Wallet" else "Toevoegen aan Google Wallet",
                         if (gwBusy) "Even geduld…" else "Pas in Google Wallet, werkt vanzelf bij") {
@@ -342,12 +363,13 @@ fun CardDetailScreen(id: String) {
                         }
                     }
                 }
-                RowItem(Icons.Outlined.Share, "Delen", if (card.isBusinessStamps) "Deel de link van de zaak (niet je eigen code)" else "Via WhatsApp, mail of andere apps") {
-                    val link = Share.link(card)
-                    val text = if (card.isBusinessStamps) "Spaar ook stempels bij ${card.storeName} met Pasr: $link"
-                        else "Mijn ${card.kind.title.lowercase()} van ${card.storeName} in Pasr: $link"
-                    Incoming.leavingOnPurpose = true
-                    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Kaart delen"))
+                if (revealed && card.number.isNotEmpty()) {
+                    RowItem(Icons.Outlined.Share, "Delen", "Deel een kopie, tijdelijk of via Gedeelde Pasr") {
+                        nav.push(Screen.ShareCard(card.id))
+                    }
+                }
+                app.lrvdlinden.pasr.data.Birthday.perk(card)?.let { perk ->
+                    RowItem(null, "Verjaardagsvoordeel", perk)
                 }
                 if (card.number.isNotEmpty() && revealed) RowItem(Icons.Outlined.ContentCopy, "Nummer kopiëren") {
                     copy(context, card.number); scope.launch { snack.showSnackbar("Gekopieerd") }

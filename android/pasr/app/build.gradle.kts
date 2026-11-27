@@ -20,7 +20,7 @@ android {
         applicationId = "app.lrvdlinden.pasr"
         minSdk = 26
         targetSdk = 35
-        versionCode = (System.getenv("VERSION_CODE") ?: "135").toInt()
+        versionCode = (System.getenv("VERSION_CODE") ?: "136").toInt()
         versionName = System.getenv("VERSION_NAME") ?: "1.0.5"
         // Alleen telefoon-processors (ARM): de tekstherkenning en barcodescanner hebben per processor eigen native code;
         // x86 (emulators, enkele Chromebooks) zou de APK ruim twee keer zo groot maken

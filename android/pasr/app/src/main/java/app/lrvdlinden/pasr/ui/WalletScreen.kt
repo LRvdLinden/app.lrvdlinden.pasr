@@ -83,6 +83,14 @@ fun WalletScreen() {
     var filter by remember { mutableStateOf(Filter.ALL) }
     var order by remember { mutableStateOf(Prefs.order) }
     var orderMenu by remember { mutableStateOf(false) }
+    val walletContext = androidx.compose.ui.platform.LocalContext.current
+    var here by remember { mutableStateOf<android.location.Location?>(null) }
+    var locationTick by remember { mutableStateOf(0) }
+    val locationPermission = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { locationTick++ }
+    LaunchedEffect(order, locationTick, all.size) {
+        here = if (order == CardOrder.NEARBY) lastKnownLocation(walletContext) else null
+    }
     var refreshing by remember { mutableStateOf(false) }
     val visible = all.filter { it.deletedAt == null }
     val q = Catalog.fold(query.trim())
@@ -95,7 +103,7 @@ fun WalletScreen() {
             Filter.STAMPS -> c.kind == CardKind.STAMPS
             Filter.OTHER -> c.kind in CardKind.others
         }
-    }.ordered(order)
+    }.ordered(order, here)
     val favorites = if (filter == Filter.ALL && q.isEmpty()) cards.filter { it.isFavorite } else emptyList()
     // de zoekbalk vindt ook bonnetjes (winkel, bedrag of datum)
     val receipts by app.lrvdlinden.pasr.data.ReceiptStore.receipts.collectAsState()
@@ -120,6 +128,11 @@ fun WalletScreen() {
                             CardOrder.entries.forEach { o ->
                                 DropdownMenuItem({ Text((if (o == order) "✓ " else "") + o.title) }, {
                                     order = o; Prefs.order = o; orderMenu = false
+                                    if (o == CardOrder.NEARBY && lastKnownLocation(walletContext) == null) {
+                                        app.lrvdlinden.pasr.Incoming.leavingOnPurpose = true
+                                        locationPermission.launch(arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                                            android.Manifest.permission.ACCESS_FINE_LOCATION))
+                                    }
                                 })
                             }
                         }
@@ -232,3 +245,20 @@ private fun EmptyWallet(onAdd: () -> Unit) {
 
 @Composable
 fun Modifier.horizontalScrollCompat(): Modifier = this.then(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()))
+
+
+/** Laatst bekende locatie van het toestel (alleen voor de volgorde In de buurt; blijft op het toestel). */
+@android.annotation.SuppressLint("MissingPermission")
+internal fun lastKnownLocation(context: android.content.Context): android.location.Location? {
+    val fine = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
+        android.content.pm.PackageManager.PERMISSION_GRANTED
+    val coarse = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) ==
+        android.content.pm.PackageManager.PERMISSION_GRANTED
+    if (!fine && !coarse) return null
+    val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as? android.location.LocationManager ?: return null
+    return runCatching {
+        lm.getProviders(true).mapNotNull { lm.getLastKnownLocation(it) }
+            .filter { System.currentTimeMillis() - it.time < 6 * 3_600_000L }
+            .maxByOrNull { it.time }
+    }.getOrNull()
+}

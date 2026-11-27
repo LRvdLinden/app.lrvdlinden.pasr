@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="scan_receipt" android:shortcutShortLabel="@string/shortcut_scan_receipt"
+        android:icon="@mipmap/ic_launcher">
+        <intent android:action="app.lrvdlinden.pasr.SCAN_RECEIPT" android:targetPackage="app.lrvdlinden.pasr"
+            android:targetClass="app.lrvdlinden.pasr.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="receipts" android:shortcutShortLabel="@string/shortcut_receipts"
+        android:icon="@mipmap/ic_launcher">
+        <intent android:action="app.lrvdlinden.pasr.RECEIPTS" android:targetPackage="app.lrvdlinden.pasr"
+            android:targetClass="app.lrvdlinden.pasr.MainActivity" />
+    </shortcut>
+</shortcuts>

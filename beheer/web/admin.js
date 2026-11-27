@@ -1373,7 +1373,61 @@
       log.append(r);
     }
     box.prepend(ownerBox(z, () => { box.remove(); toggleBizDetail(row, b, btn); loadBusinesses(); }));
-    box.append(set, stats, staff, log);
+    box.append(set, stats, offersBox(b), staff, log);
+  }
+
+  /** Acties van de zaak: kortingsbonnen, actiecodes, gezamenlijke acties, vestigingen. Alleen aantallen, geen klantgegevens. */
+  function offersBox(b) {
+    const box = el("div", "biz-offers");
+    box.append(el("h3", null, "Acties"), el("p", "muted", "Laden…"));
+    const day = (v) => v ? new Date(v).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" }) : "—";
+    const disc = (x) => x.discount_type === "percent" ? `${num(x.discount_value)}%` : `€ ${Number(x.discount_value).toFixed(2).replace(".", ",")}`;
+    const stopBtn = (kind, x, label, what) => {
+      const k = el("button", "btn sm danger", label); k.type = "button";
+      k.addEventListener("click", async () => {
+        if (!(await ask(`${label}?`, `${what} van ${b.name} werkt daarna niet meer in Pasr. De historie blijft bewaard.`, label))) return;
+        k.disabled = true;
+        try { await api("business_offer_disable", { kind, id: x.id }); toast(`${b.name}: ${what.toLowerCase()} uitgezet`); load(); }
+        catch (err) { toast(err.message); k.disabled = false; }
+      });
+      return k;
+    };
+    const line = (main, sub, btnEl) => { const r = el("div", "biz-line"); r.append(el("span", null, main), el("span", "muted sm", sub)); if (btnEl) r.append(btnEl); return r; };
+    async function load() {
+      let d;
+      try { d = await api("business_offers", { id: b.id }); }
+      catch (err) { box.replaceChildren(el("h3", null, "Acties"), el("p", "err", err.message)); return; }
+      const now = Date.now();
+      box.replaceChildren(el("h3", null, "Acties"),
+        el("p", "muted sm", `${(d.coupons || []).length} kortingsbonnen · ${(d.promo_codes || []).length} actiecodes · ${(d.campaigns || []).length} gezamenlijke acties · ${(d.locations || []).length} vestigingen · ${num(d.programs)} kaarten met beloningen · ${num(d.referrals)} vrienden aangebracht`));
+      if ((d.coupons || []).length) box.append(el("h4", null, "Kortingsbonnen"));
+      for (const x of d.coupons || []) {
+        const off = x.deleted_at || new Date(x.ends_at).getTime() < now;
+        box.append(line(`${x.title} · ${disc(x)}${x.public ? " · voor iedereen" : ""}`,
+          `${x.deleted_at ? "verwijderd" : off ? "verlopen" : "actief"} · t/m ${day(x.ends_at)} · ${num(x.claims)} opgehaald, ${num(x.redeemed)} gebruikt`,
+          off ? null : stopBtn("coupon", x, "Uitzetten", "Deze kortingsbon")));
+      }
+      if ((d.promo_codes || []).length) box.append(el("h4", null, "Actiecodes"));
+      for (const x of d.promo_codes || []) {
+        const off = x.deleted_at || !x.active || new Date(x.ends_at).getTime() < now;
+        box.append(line(`${x.code} · ${x.title} · ${disc(x)}`,
+          `${x.deleted_at ? "verwijderd" : !x.active ? "gepauzeerd" : off ? "verlopen" : "actief"} · t/m ${day(x.ends_at)} · ${num(x.used_count)}/${num(x.max_uses)} gebruikt`,
+          off ? null : stopBtn("promo_code", x, "Pauzeren", "Deze actiecode")));
+      }
+      if ((d.campaigns || []).length) box.append(el("h4", null, "Gezamenlijke acties"));
+      for (const x of d.campaigns || []) {
+        const off = x.cancelled_at || new Date(x.ends_at).getTime() < now;
+        box.append(line(`${x.name} · ${x.reward}`,
+          `${x.lead ? "organisator" : "deelnemer"} · ${x.cancelled_at ? "geannuleerd" : off ? "afgelopen" : "actief"} · ${num(x.participants)}/${num(x.required_businesses)} zaken · ${num(x.claims)} beloningen`,
+          off || !x.lead ? null : stopBtn("campaign", x, "Annuleren", "Deze gezamenlijke actie")));
+      }
+      if ((d.locations || []).length) box.append(el("h4", null, "Vestigingen"));
+      for (const x of d.locations || []) box.append(line(x.name, `${x.address || "geen adres"}${x.active ? "" : " · inactief"}`));
+      if (!(d.coupons || []).length && !(d.promo_codes || []).length && !(d.campaigns || []).length && !(d.locations || []).length)
+        box.append(el("p", "muted", "Nog geen acties."));
+    }
+    load();
+    return box;
   }
 
   /** Eigenaar: wie het is, of de open eigenaarslink (kopiëren, QR, opnieuw versturen). */
