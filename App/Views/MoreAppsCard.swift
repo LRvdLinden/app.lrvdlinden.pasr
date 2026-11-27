@@ -6,7 +6,7 @@ import AppKit
 #endif
 
 // Kaart "Meer apps van de ontwikkelaar" (overgenomen uit Homey-Store-ios, HomeyAppStore/Views/Components/MoreAppsCard.swift),
-// in de huisstijl van lrvdlinden.app. Zelfde bestand in Pasr en PasrBeheer.
+// in de huisstijl van lrvdlinden.app; zonder "lrvdlinden.app" onder de knop (zoals Pasr Zakelijk).
 
 /// LRvdLinden house style (from lrvdlinden.app): accent blue, ink, surface, line
 /// and muted text, each with its dark-mode value.
@@ -81,17 +81,11 @@ struct MoreAppsCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                VStack(spacing: 4) {
-                    Text(text.action)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(LRBrand.onAccent)
-                        .padding(.horizontal, 14).padding(.vertical, 6)
-                        .background(LRBrand.accent, in: Capsule())
-                    Text("lrvdlinden.app")
-                        .font(.caption2)
-                        .foregroundStyle(LRBrand.muted)
-                        .lineLimit(1)
-                }
+                Text(text.action)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(LRBrand.onAccent)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .background(LRBrand.accent, in: Capsule())
             }
             .padding(16)
             .background(LRBrand.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
