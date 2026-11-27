@@ -39,7 +39,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -98,7 +100,8 @@ fun TicketFace(
     val brand = hexColor(card.colorHex)
     val ink = info.textHex?.let { hexColor(it) } ?: onCard(card.colorHex)
     val label = info.labelHex?.let { hexColor(it) } ?: ink.copy(alpha = 0.72f)
-    val description = listOfNotNull(info.title, "ticket", info.type, info.note, info.dateText, info.timeText?.let { "toegang $it" }, info.place)
+    val description = listOfNotNull(info.title, "ticket", info.type, info.note, info.dateText, info.timeText?.let { "toegang $it" }, info.place,
+        info.holder, when (info.status) { "cancelled" -> "geannuleerd"; "checked_in", "used" -> "gebruikt"; "waitlist" -> "wachtlijst"; else -> null })
         .joinToString(", ")
     if (!full) {
         TicketFront(card, info, logo, brand, ink, label, compact, modifier.semantics { contentDescription = description })
@@ -139,13 +142,17 @@ private fun TicketFront(card: Card, info: TicketInfo, logo: android.graphics.Bit
             Text(info.title, color = ink, fontWeight = FontWeight.Black,
                 fontSize = if (compact) 14.sp else (w.value * 0.07f).coerceIn(16f, 26f).sp,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
-            TypePill(info, ink, small = true, modifier = Modifier.padding(top = if (compact) 3.dp else 5.dp))
+            Row(Modifier.padding(top = if (compact) 3.dp else 5.dp), horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                TypePill(info, ink, small = true)
+                StatusBadge(info, small = true)
+            }
             Spacer(Modifier.weight(1f))
             // strookje onder de perforatie: datum, toegang, locatie
             Row(Modifier.fillMaxWidth().height(h * stubFraction), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)) {
                 info.dateText?.let { TicketField("DATUM", it, ink, label, small = true, tiny = compact) }
-                info.timeText?.let { TicketField("TOEGANG", it, ink, label, small = true, tiny = compact) }
+                info.timeText?.let { TicketField(timeLabel(info), it, ink, label, small = true, tiny = compact) }
                 if (!compact) info.place?.let {
                     TicketField("LOCATIE", it, ink, label, small = true, modifier = Modifier.weight(1f, fill = false))
                 }
@@ -171,6 +178,7 @@ private fun TicketFull(card: Card, info: TicketInfo, logo: android.graphics.Bitm
     val waveH = 18.dp
     val notchAt = headPx + with(density) { (waveH * 0.45f).toPx() }
     val shape = remember(notchAt) { TicketShape(20.dp, { notchAt }) }
+    val used = info.status == "checked_in" || info.status == "used"
     Column(modifier.fillMaxWidth().shadow(10.dp, shape).clip(shape)) {
         Column(
             Modifier.fillMaxWidth().background(brand).onSizeChanged { headPx = it.height.toFloat() }
@@ -181,12 +189,17 @@ private fun TicketFull(card: Card, info: TicketInfo, logo: android.graphics.Bitm
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(info.title, color = ink, fontWeight = FontWeight.Black, fontSize = 30.sp, lineHeight = 34.sp, maxLines = 2,
                     overflow = TextOverflow.Ellipsis)
-                TypePill(info, ink, small = false)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TypePill(info, ink, small = false)
+                    StatusBadge(info, small = false)
+                }
             }
             if (info.dateText != null || info.timeText != null) Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 info.dateText?.let { TicketField("DATUM", it, ink, label) }
-                info.timeText?.let { TicketField("TOEGANG", it, ink, label) }
+                info.timeText?.let { TicketField(timeLabel(info), it, ink, label) }
+                info.doorsText?.let { TicketField("DEUREN", it, ink, label) }
             }
+            info.holder?.let { TicketField("NAAM", it, ink, label) }
             if (info.place != null || info.seat != null) Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 info.place?.let { TicketField("LOCATIE", it, ink, label, modifier = Modifier.weight(1f, fill = false)) }
                 info.seat?.let { TicketField("PLAATS", it, ink, label) }
@@ -216,16 +229,23 @@ private fun TicketFull(card: Card, info: TicketInfo, logo: android.graphics.Bitm
         ) {
             Box(Modifier.widthIn(max = 230.dp).fillMaxWidth()) {
                 when {
+                    info.status == "cancelled" -> Notice("Geannuleerd door de organisator", paperInk, Icons.Outlined.ConfirmationNumber, null)
+                    info.status == "waitlist" -> Notice("Je staat op de wachtlijst", paperInk, Icons.Outlined.ConfirmationNumber, null)
                     !revealed -> Notice("Afgeschermd", paperInk, Icons.Filled.Lock, onReveal)
                     card.number.isEmpty() -> Notice("Geen code", paperInk, Icons.Outlined.ConfirmationNumber, null)
-                    else -> Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White)
+                    else -> Box(contentAlignment = Alignment.Center) { Column(
+                        Modifier.fillMaxWidth().alpha(if (used) 0.35f else 1f).clip(RoundedCornerShape(14.dp)).background(Color.White)
                             .border(1.dp, Color.Black.copy(alpha = 0.08f), RoundedCornerShape(14.dp)).padding(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         BarcodeImage(card.number, card.format, Modifier.fillMaxWidth())
                         Text(card.number, color = Color(0xB3111216), fontFamily = FontFamily.Monospace, fontSize = 12.sp,
                             maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                    }
+                    // al gescand: code blijft zichtbaar, maar duidelijk als gebruikt
+                    if (used) Text("GEBRUIKT", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp,
+                        modifier = Modifier.rotate(-12f).clip(RoundedCornerShape(50)).background(Color(0xFF5B6170))
+                            .padding(horizontal = 10.dp, vertical = 4.dp))
                     }
                 }
             }
@@ -238,7 +258,10 @@ private fun TicketFull(card: Card, info: TicketInfo, logo: android.graphics.Bitm
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     info.routeTarget?.let { target ->
                         TicketButton("Route", Icons.Filled.Map, brand, onCard(card.colorHex), Modifier.weight(1f)) {
-                            val geo = Uri.parse("geo:0,0?q=" + Uri.encode(target))
+                            val lat = info.latitude
+                            val lng = info.longitude
+                            val geo = if (lat != null && lng != null) Uri.parse("geo:$lat,$lng?q=$lat,$lng(" + Uri.encode(target) + ")")
+                                else Uri.parse("geo:0,0?q=" + Uri.encode(target))
                             val ok = runCatching {
                                 context.startActivity(Intent(Intent.ACTION_VIEW, geo).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                             }.isSuccess
@@ -279,6 +302,23 @@ private fun TicketHeader(card: Card, info: TicketInfo, logo: android.graphics.Bi
             Text("TICKET", color = label, fontWeight = FontWeight.SemiBold, fontSize = if (small) 8.sp else 10.sp, letterSpacing = 0.6.sp)
         }
     }
+}
+
+/** "TIJD" bij een ticket van een zaak (begin – eind), anders "TOEGANG". */
+private fun timeLabel(info: TicketInfo) = if (info.isBusiness) "TIJD" else "TOEGANG"
+
+/** Geannuleerd, gebruikt of wachtlijst (ticket van een zaak), duidelijk in beeld. */
+@Composable
+private fun StatusBadge(info: TicketInfo, small: Boolean) {
+    val (text, color) = when (info.status) {
+        "cancelled" -> "GEANNULEERD" to Color(0xFFD64535)
+        "checked_in", "used" -> "GEBRUIKT" to Color(0xFF5B6170)
+        "waitlist" -> "WACHTLIJST" to Color(0xFFC98A12)
+        else -> return
+    }
+    Text(text, color = Color.White, fontWeight = FontWeight.Black, fontSize = if (small) 9.sp else 12.sp, letterSpacing = 0.6.sp,
+        maxLines = 1, modifier = Modifier.clip(RoundedCornerShape(50)).background(color)
+            .padding(horizontal = if (small) 6.dp else 10.dp, vertical = if (small) 2.dp else 4.dp))
 }
 
 @Composable

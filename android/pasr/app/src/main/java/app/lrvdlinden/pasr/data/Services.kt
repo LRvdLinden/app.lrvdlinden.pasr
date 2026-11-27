@@ -90,6 +90,18 @@ object GoogleWallet {
     /** Maakt of werkt het object bij; geeft de "Opslaan in Google Wallet"-link. */
     suspend fun saveLink(card: Card): String {
         val keyName = "gw.key.${card.id.lowercase()}"
+        val d = card.details
+        // ticket of klantenkaart van een zaak: de server maakt de pas uit zijn eigen gegevens (kind + id, ingelogd)
+        if (d.isServerItem) {
+            val kind = if (d.isEventTicket) "event_ticket" else "member_card"
+            val id = (if (d.isEventTicket) d.ticketId else d.memberId) ?: throw PasrError("Deze kaart kan niet in Google Wallet.")
+            val body = JSONObject().put("action", "save").put("kind", kind).put("id", id)
+            Prefs.string(keyName)?.let { body.put("key", it) }
+            val r = Api.function("google-wallet", body, signedIn = true)
+            val url = r.str("url") ?: throw PasrError("Google Wallet is nu niet beschikbaar. Probeer het later opnieuw.")
+            r.str("key")?.let { Prefs.setString(keyName, it) }
+            return url
+        }
         val body = JSONObject().put("action", "save").put("card", cardJson(card))
         Prefs.string(keyName)?.let { body.put("key", it) }
         val r = Api.function("google-wallet", body)

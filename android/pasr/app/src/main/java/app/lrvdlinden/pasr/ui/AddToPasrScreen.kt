@@ -47,11 +47,14 @@ import org.json.JSONObject
 /**
  * "Voeg toe aan Pasr": https://pasr.nl/add/<soort>/<id> (App Link) of pasr://add/<soort>/<id> (terugvalpagina).
  * k = stempelkaart van een zaak, c = kortingsbon, a = actiecode (uuid), t = ticket, g = cadeaukaart, s = winkelkaart
- * (id uit de catalogus). Zelfde gedrag als AddToPasrSheet op iOS.
+ * (id uit de catalogus), e = aanmelden voor een event, m = klantenkaart van een zaak, t/<uuid>?c=<code> = ticket koppelen.
+ * Zelfde gedrag als AddToPasrSheet op iOS.
  */
-data class AddLink(val kind: Char, val id: String) {
+data class AddLink(val kind: Char, val id: String, val code: String? = null) {
     val isOffer get() = kind == 'c' || kind == 'a'
-    val isCatalog get() = kind == 't' || kind == 'g' || kind == 's'
+    /** Ticket van een zaak koppelen (/add/t/<ticket-uuid>?c=<code>) in plaats van een ticket uit de catalogus. */
+    val isTicketClaim get() = kind == 't' && code != null && UUID.matches(id)
+    val isCatalog get() = (kind == 't' && !isTicketClaim) || kind == 'g' || kind == 's'
 
     companion object {
         private val ID = Regex("^[A-Za-z0-9][A-Za-z0-9-]{0,63}$")
@@ -68,9 +71,14 @@ data class AddLink(val kind: Char, val id: String) {
                 uri.scheme == "pasr" && host == "add" -> Unit
                 else -> return null
             }
-            if (parts.size != 2 || parts[0].length != 1 || parts[0][0] !in "kcatgs" || !ID.matches(parts[1])) return null
+            if (parts.size != 2 || parts[0].length != 1 || parts[0][0] !in "kcatgsem" || !ID.matches(parts[1])) return null
             val kind = parts[0][0]
-            if (kind in "kca") return if (UUID.matches(parts[1])) AddLink(kind, parts[1].lowercase()) else null
+            // e = aanmelden voor een event van een zaak, m = klantenkaart met barcode van een zaak (sinds versionCode 141)
+            if (kind in "kcaem") return if (UUID.matches(parts[1])) AddLink(kind, parts[1].lowercase()) else null
+            if (kind == 't' && UUID.matches(parts[1])) {
+                val code = runCatching { uri.getQueryParameter("c") ?: uri.getQueryParameter("code") }.getOrNull()?.trim()
+                if (code != null && Regex("^[A-Za-z0-9-]{8,80}$").matches(code)) return AddLink(kind, parts[1].lowercase(), code)
+            }
             return AddLink(kind, parts[1])
         }
     }

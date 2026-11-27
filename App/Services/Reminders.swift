@@ -215,6 +215,32 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
         didSet { if pendingReceiptID != nil { NotificationCenter.default.post(name: .pasrOpenReceipt, object: nil) } }
     }
 
+    /// Pushmelding over een ticket of klantenkaart van een zaak (event_reminder, event_changed, event_cancelled,
+    /// waitlist_promoted, member_discount_started): RootView ververst en opent het ticket of de kaart.
+    struct BusinessPush: Equatable {
+        static let types: Set<String> = ["event_reminder", "event_changed", "event_cancelled", "waitlist_promoted", "member_discount_started"]
+        var type: String
+        var eventID: String?
+        var ticketID: String?
+        var cardID: String?
+
+        init?(_ info: [AnyHashable: Any]) {
+            guard let type = (info["type"] as? String) ?? (info["kind"] as? String), Self.types.contains(type) else { return nil }
+            self.type = type
+            func id(_ keys: String...) -> String? {
+                for k in keys { if let v = info[k] as? String, UUID(uuidString: v) != nil { return v.lowercased() } }
+                return nil
+            }
+            eventID = id("event_id", "eventId")
+            ticketID = id("ticket_id", "ticketId")
+            cardID = id("card_id", "cardId", "member_card_id")
+        }
+    }
+
+    @MainActor static var pendingBusiness: BusinessPush? {
+        didSet { if pendingBusiness != nil { NotificationCenter.default.post(name: .pasrOpenBusinessPush, object: nil) } }
+    }
+
     func activate() {
         UNUserNotificationCenter.current().delegate = self
         PurchaseCapture.registerCategories()
@@ -247,6 +273,14 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
             }
             return
         }
+        // ticket of klantenkaart van een zaak
+        if let push = BusinessPush(info) {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { Self.pendingBusiness = push }
+                completionHandler()
+            }
+            return
+        }
         let cardID = (info["cardID"] as? String).flatMap(UUID.init)
         let kind = info["kind"] as? String
         let storeID = kind == "store" ? info["store"] as? String : nil
@@ -267,12 +301,21 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     /// Also show them while Pasr is open.
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // ticket gewijzigd/geannuleerd of nieuwe korting terwijl Pasr open is: meteen bijwerken
+        if BusinessPush(notification.request.content.userInfo) != nil {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    Task { await BusinessPasses.refreshAll(in: PasrStore.app.mainContext, force: true) }
+                }
+            }
+        }
         completionHandler([.banner, .list, .sound])
     }
 }
 
 extension Notification.Name {
     static let pasrOpenCard = Notification.Name("pasrOpenCard")
+    static let pasrOpenBusinessPush = Notification.Name("pasrOpenBusinessPush")
     static let pasrOpenStore = Notification.Name("pasrOpenStore")
     static let pasrOpenNews = Notification.Name("pasrOpenNews")
     static let pasrOpenReceipt = Notification.Name("pasrOpenReceipt")

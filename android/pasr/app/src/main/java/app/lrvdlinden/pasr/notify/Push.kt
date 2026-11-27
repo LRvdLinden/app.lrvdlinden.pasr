@@ -2,6 +2,7 @@ package app.lrvdlinden.pasr.notify
 
 import android.content.Context
 import app.lrvdlinden.pasr.data.Business
+import app.lrvdlinden.pasr.data.BusinessPasses
 import app.lrvdlinden.pasr.data.CardStore
 import app.lrvdlinden.pasr.data.DeviceRegistry
 import app.lrvdlinden.pasr.data.GoogleWallet
@@ -53,7 +54,29 @@ class PasrMessagingService : FirebaseMessagingService() {
         val d = message.data
         val title = d["title"] ?: message.notification?.title ?: "Pasr"
         val body = d["body"] ?: message.notification?.body ?: return
-        when (d["kind"]) {
+        when (d["type"] ?: d["kind"]) {
+            // ticket of klantenkaart van een zaak: eerst verversen (status, korting), dan melden; een tik opent dat ticket
+            // of die kaart, anders het event (aanmelden/wachtlijst) of de kaart (toevoegen)
+            "event_reminder", "event_changed", "event_cancelled", "waitlist_promoted", "member_discount_started" -> {
+                val type = d["type"] ?: d["kind"]
+                val uuid = Regex("^[0-9a-fA-F-]{36}$")
+                val event = d["event_id"]?.takeIf { uuid.matches(it) }?.lowercase()
+                val ticket = d["ticket_id"]?.takeIf { uuid.matches(it) }?.lowercase()
+                val memberCard = (d["card_id"] ?: d["member_card_id"])?.takeIf { uuid.matches(it) }?.lowercase()
+                scope.launch {
+                    runCatching { BusinessPasses.refreshAll(force = true).forEach { GoogleWallet.updateIfSaved(it) } }
+                    val card = if (type == "member_discount_started") BusinessPasses.memberCardFor(memberCard)
+                        else BusinessPasses.ticketCard(event, ticket)
+                    val url = when {
+                        card != null -> null
+                        type == "member_discount_started" && memberCard != null -> "https://pasr.nl/add/m/$memberCard"
+                        event != null -> "https://pasr.nl/add/e/$event"
+                        else -> null
+                    }
+                    Reminders.notify(applicationContext, "biz-$type-${ticket ?: event ?: memberCard ?: title}",
+                        Reminders.CHANNEL_NEWS, title, body, card?.id, url = url)
+                }
+            }
             "retention" -> {
                 Reminders.notify(applicationContext, "retention-" + title,
                     Reminders.CHANNEL_STAMPS, title, body, null)

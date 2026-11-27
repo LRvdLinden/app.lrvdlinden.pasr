@@ -37,7 +37,11 @@ extension Card {
     /// Groepeersleutel van een ticket met datum; nil voor andere kaarten (die staan altijd los).
     /// Tijdelijk gedeelde tickets blijven los: die hebben hun eigen einde en regels.
     var ticketGroupKey: String? {
-        guard kind == .ticket, deletedAt == nil, !isTemporary, let date = details.eventDate else { return nil }
+        guard kind == .ticket, deletedAt == nil, !isTemporary else { return nil }
+        // ticket van een zaak: group_key = event_id (alle tickets van hetzelfde event naast elkaar)
+        let d = details
+        if d.isEventTicket, let event = d.eventId { return "event:" + event.lowercased() }
+        guard let date = d.eventDate else { return nil }
         let event = Card.normalizedEventKey(storeName)
         guard !event.isEmpty else { return nil }
         let day = Calendar.current.dateComponents([.year, .month, .day], from: date)

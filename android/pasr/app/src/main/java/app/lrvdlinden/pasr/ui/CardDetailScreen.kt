@@ -148,6 +148,7 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
         UsePrompts.cardOpened()
         CardStore.upsert(card.opened(), touch = false)
         gwAvailable = GoogleWallet.isAvailable()
+        if (card.details.isServerItem) app.lrvdlinden.pasr.data.BusinessPasses.refreshAll()
         if (card.isBusinessStamps) {
             Business.refresh(card)?.let { GoogleWallet.updateIfSaved(it) }
             val code = card.details.memberCode
@@ -186,14 +187,14 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
                 navigationIcon = { IconButton({ nav.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
-                if (revealed && card.number.isNotEmpty()) {
+                if (revealed && card.number.isNotEmpty() && !card.details.isServerItem) {
                     IconButton({ nav.push(Screen.ShareCard(card.id)) }) { Icon(Icons.Outlined.Share, "Delen") }
                 }
 
                     IconButton({ CardStore.upsert(card.copy(isFavorite = !card.isFavorite)) }) {
                         Icon(if (card.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder, "Favoriet")
                     }
-                    if (!card.isBusinessStamps) IconButton({ nav.push(Screen.Editor(id = card.id)) }) { Icon(Icons.Outlined.Edit, "Wijzigen") }
+                    if (!card.isBusinessStamps && !card.details.isServerItem) IconButton({ nav.push(Screen.Editor(id = card.id)) }) { Icon(Icons.Outlined.Edit, "Wijzigen") }
                 },
             )
         },
@@ -236,6 +237,10 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
                 }
             }
             }
+
+            // ticket of klantenkaart van een zaak (Pasr Zakelijk)
+            if (card.details.isEventTicket) EventTicketSection(card)
+            if (card.details.isMemberCard) MemberCardSection(card) { confirmDelete = true }
 
             if (card.kind == CardKind.STAMPS) {
                 SectionHeader("Stempels")
@@ -360,7 +365,7 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
                         }
                     }
                 }
-                if (gwAvailable && card.number.isNotEmpty()) {
+                if (gwAvailable && card.number.isNotEmpty() && !card.details.ticketCancelled) {
                     RowItem(Icons.Outlined.AccountBalanceWallet, if (GoogleWallet.hasPass(card)) "Bijwerken in Google Wallet" else "Toevoegen aan Google Wallet",
                         if (gwBusy) "Even geduld…" else "Pas in Google Wallet, werkt vanzelf bij") {
                         if (gwBusy) return@RowItem
@@ -375,7 +380,7 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
                         }
                     }
                 }
-                if (revealed && card.number.isNotEmpty()) {
+                if (revealed && card.number.isNotEmpty() && !card.details.isServerItem) {
                     RowItem(Icons.Outlined.Share, "Delen", "Deel een kopie, tijdelijk of via Gedeelde Pasr") {
                         nav.push(Screen.ShareCard(card.id))
                     }
@@ -405,7 +410,12 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
         confirmButton = {
             TextButton({
                 confirmDelete = false
-                scope.launch { GoogleWallet.removeIfSaved(card) }
+                // los van dit scherm (dat sluit meteen): ticket of klantenkaart van een zaak niet opnieuw ophalen en een
+                // klantenkaart ook bij de zaak opzeggen
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    if (card.details.isServerItem) app.lrvdlinden.pasr.data.BusinessPasses.didDelete(card)
+                    else GoogleWallet.removeIfSaved(card)
+                }
                 CardStore.delete(card.id)
                 nav.pop()
             }) { Text("Verwijderen", color = MaterialTheme.colorScheme.error) }
