@@ -12,15 +12,15 @@ typografie (Bricolage Grotesque en Figtree) en toestellen, met het icoon van Pas
 | `metadata/review_information/` | `notes.txt` (Engels, voor App Review › Notes), `notes-nl.txt` (Nederlandse kopie, niet uploaden), contact en demo-account (alleen TODO's, nooit echte wachtwoorden) |
 | `metadata/privacy/` | Privacytekst NL en EN |
 | `app-info.md` | Algemene informatie, leeftijd, privacylabel en toegankelijkheid |
-| `screenshots/<taal>/<toestel>/` | 7 screenshots per toestel en taal |
+| `screenshots/<taal>/<toestel>/` | 10 screenshots per iPhone/iPad-toestel en taal; `mac/`: 7 Mac-screenshots (2880 × 1800) |
 | `marketing/<taal>/` | Productpagina-beelden: header 5244×2950 en 3840×1646, zoekresultaten 5244×2950, 3840×2560 en 1920×1280 |
 | `app-icoon-1024.png` | Het app-icoon (1024×1024, zonder transparantie) |
-| `source/` | Bron: `scenes.html`, `render.cjs`, `flatten.py`, `base.css` en `status.js` (overgenomen van Pasr), fonts, icoon |
+| `source/` | Bron: `scenes.html`, `render.cjs`, `flatten.py`, `base.css` en `status.js` (overgenomen van Pasr), `strings_en_all.json` (Engelse app-teksten), fonts, icoon |
 
 ## Talen van de beelden
 
 De app is **Nederlands en Engels** (`Localizable.xcstrings`), dus de beelden zijn er in **nl-NL** en **en-US**. In de Engelse beelden
-staan de echte Engelse teksten van de app (uit `zakelijk/apple/tools/strings_en.json`).
+staan de echte Engelse teksten van de app (uit `Localizable.xcstrings` van app en widgets en `zakelijk/apple/tools/strings_en.json`, samengevoegd in `source/strings_en_all.json`).
 
 ## Screenshots
 
@@ -31,12 +31,17 @@ staan de echte Engelse teksten van de app (uit `zakelijk/apple/tools/strings_en.
 | `iphone-6.3` | iPhone 6,3" | 1206 × 2622 |
 | `iphone-6.1` | iPhone 6,1" | 1179 × 2556 |
 | `ipad-13` | iPad 13" (verplicht, de app werkt op de iPad) | 2064 × 2752 |
+| `mac` | Mac (verplicht voor het macOS-platform) | 2880 × 1800 |
 
-Volgorde: 01 scannen · 02 aantal stempels kiezen · 03 eigen stempelkaarten · 04 QR-code en flyer · 05 overzicht (grafiek) ·
-06 medewerkers · 07 veilig stempelen (afkoeltijd, ongedaan maken, Face ID, logboek).
+Volgorde iPhone/iPad: 01 scannen · 02 aantal stempels kiezen · 03 tabblad Acties · 04 QR-code, flyer en knop voor je website · 05 overzicht (grafiek) ·
+06 medewerkers · 07 veilig stempelen (afkoeltijd, ongedaan maken, Face ID, logboek) · 08 tickets aan de deur · 09 klantenkaart met korting ·
+10 gezamenlijke acties.
+
+Volgorde Mac: 01 Vandaag · 02 scanvenster · 03 tickets · 04 klantenkaart met kortingsperiodes · 05 gezamenlijke acties · 06 inzichten ·
+07 widgets op het bureaublad.
 
 De schermen zijn **nagebouwd in HTML** op basis van de SwiftUI-code (er was geen Xcode/simulator), met neutrale voorbeelddata
-(Koffiebar De Hoek, voorbeeld.nl-adressen). Geen Apple Watch-, Mac- of Apple TV-screenshots: de app bestaat alleen voor iPhone en iPad.
+(Koffiebar De Hoek, voorbeeld.nl-adressen). De Mac-schermen zijn nagebouwd uit `zakelijk/apple/Mac/` in een getekende MacBook. Geen Apple Watch- of Apple TV-screenshots.
 
 Opnieuw maken (vanuit de root van de repo):
 

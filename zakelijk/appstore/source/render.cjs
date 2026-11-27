@@ -1,7 +1,6 @@
-// Maakt alle App Store-afbeeldingen van Pasr Zakelijk (nl-NL en en-US):
-//   node zakelijk/appstore/source/render.cjs <uitvoermap>
-// Daarna: python3 zakelijk/appstore/source/flatten.py <uitvoermap>   (RGB zonder alfakanaal)
-// Zelfde opzet als appstore/source/render.cjs van Pasr. Engelse app-teksten komen uit zakelijk/apple/tools/strings_en.json.
+// Voorstel 1.0.4: maakt alle App Store-afbeeldingen van Pasr Zakelijk (nl-NL en en-US), inclusief Mac.
+//   node render.cjs <uitvoermap>      (ONLY=<deel van pad> om te filteren)
+// Daarna: python3 flatten.py <uitvoermap>
 const { chromium } = require("playwright");
 const { pathToFileURL } = require("node:url");
 const path = require("node:path");
@@ -10,10 +9,12 @@ const fs = require("node:fs");
 const here = __dirname;
 const out = process.argv[2] || path.join(here, "..", "out");
 const page = pathToFileURL(path.join(here, "scenes.html")).href;
-const EN = JSON.parse(fs.readFileSync(path.join(here, "..", "..", "apple", "tools", "strings_en.json"), "utf8"));
+const EN = JSON.parse(fs.readFileSync(path.join(here, "strings_en_all.json"), "utf8"));
 const only = process.env.ONLY;
 
-const scenes = [["z1", "scannen"], ["z2", "stempels"], ["z3", "kaarten"], ["z4", "qr-flyer"], ["z5", "overzicht"], ["z6", "medewerkers"], ["z7", "veilig"]];
+const scenes = [["z1", "scannen"], ["z2", "stempels"], ["z3", "acties"], ["z4", "qr-flyer-knop"], ["z5", "overzicht"], ["z6", "medewerkers"], ["z7", "veilig"],
+  ["z8", "tickets"], ["z9", "klantenkaart"], ["z10", "gezamenlijke-acties"]];
+const macScenes = [["m1", "vandaag"], ["m2", "scannen"], ["m3", "tickets"], ["m4", "klantenkaart"], ["m5", "gezamenlijke-acties"], ["m6", "inzichten"], ["m7", "widgets"]];
 const devices = [
   ["iphone-6.9", 1320, 2868, "iphone"],
   ["iphone-6.5", 1284, 2778, "iphone"],
@@ -27,6 +28,7 @@ for (const [loc, l] of [["nl-NL", "nl"], ["en-US", "en"]]) {
   for (const [dev, w, h, k] of devices) {
     scenes.forEach(([s, name], i) => jobs.push({ file: path.join("screenshots", loc, dev, `${String(i + 1).padStart(2, "0")}_${name}_${w}x${h}.png`), w, h, s, k, l }));
   }
+  macScenes.forEach(([s, name], i) => jobs.push({ file: path.join("screenshots", loc, "mac", `${String(i + 1).padStart(2, "0")}_${name}_2880x1800.png`), w: 2880, h: 1800, s, k: "mac", l }));
   for (const [name, w, h] of promos) jobs.push({ file: path.join("marketing", loc, `${name}_${w}x${h}.png`), w, h, s: "", k: "promo", l });
 }
 
