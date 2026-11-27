@@ -15,7 +15,10 @@ RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
 RewriteRule ^ / [L,R=301]
 
 # "Voeg toe aan Pasr": /add/<soort>/<id> toont de terugvalpagina (het adres blijft staan; met Pasr opent de app de link)
-RewriteRule ^add/([kcatgs])/([A-Za-z0-9][A-Za-z0-9-]{0,63})/?$ /toevoegen/index.html [L]
+# Aanmelden voor een gratis event (/add/e/<event-id>) heeft een eigen pagina; /add/m/ (klantenkaart van een zaak) en
+# /add/t/<ticket>?c=<code> (gratis eventticket) gebruiken de terugvalpagina (de query blijft staan)
+RewriteRule ^add/e/([0-9A-Fa-f-]{36})/?$ /aanmelden/index.html [L]
+RewriteRule ^add/([kcatgsm])/([A-Za-z0-9][A-Za-z0-9-]{0,63})/?$ /toevoegen/index.html [L]
 RewriteRule ^add/?$ /toevoegen/ [R=302,L]
 
 DirectoryIndex index.html

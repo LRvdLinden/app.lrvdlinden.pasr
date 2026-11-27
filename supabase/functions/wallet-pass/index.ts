@@ -17,12 +17,18 @@
 //   PASS_CERT_P12        the pass certificate + private key as .p12, base64
 //   PASS_CERT_PASSWORD   password of that .p12
 //   PASR_PUBLISHABLE_KEY the app's publishable key (only the Pasr app may ask for passes)
+//
+// Tickets en klantenkaart met barcode (27-11-2026, docs/tickets-klantenkaart.md): de app stuurt dan alleen
+// {kind: "event_ticket" | "member_card", id, token?} met de JWT van de gebruiker (Authorization: Bearer …), of bij een
+// ticket {kind: "event_ticket", id, code} (de code uit de mail is het bewijs). De functie haalt de gegevens zelf uit de
+// database (pasr_tk_pass_data) en maakt een eventTicket- of storeCard-pas. De database seint bij een wijziging
+// ({action:"business", code:"ET:<ticket>" | "MC:<lid>"}), zoals bij een stempel.
 import forge from "npm:node-forge@1.3.1";
 import { zipSync, strToU8 } from "npm:fflate@0.8.2";
 import { ICONS } from "./icons.ts";
 import {
-  applePassToken, businessStand, type Card, isSerial, isToken, open, route, type Route, sameText, seal, stampFields,
-  stored, tagFor, ticketPass, tokenHash,
+  applePassToken, businessStand, type Card, isSerial, isToken, memberPass, open, route, type Route, sameText, seal, serverCard,
+  serverCode, stampFields, stored, tagFor, ticketPass, tokenHash,
 } from "./passkit.ts";
 
 const WWDR_URL = "https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer";
@@ -78,6 +84,23 @@ Deno.serve(async (req) => {
   const recent = (hits.get(ip) ?? []).filter((t) => now - t < 600_000);
   if (recent.length >= (card?.action === "update" ? 60 : 30)) return json({ error: "rate_limited" }, 429);
   hits.set(ip, [...recent, now]);
+
+  // Ticket of klantenkaart met barcode: de pas komt uit de database, niet uit wat de app stuurt.
+  if (card?.kind === "event_ticket" || card?.kind === "member_card") {
+    const ask = card as unknown as { kind: "event_ticket" | "member_card"; id?: unknown; code?: unknown; token?: unknown; push?: unknown };
+    if (!isSerial(ask.id) || !dbReady()) return json({ error: "bad_request" }, 400);
+    const id = String(ask.id).toLowerCase();
+    try {
+      const data = await rest("rpc/pasr_tk_pass_data", { method: "POST", body: JSON.stringify({ p_kind: ask.kind, p_id: id }) });
+      const built = serverCard(ask.kind, data);
+      if (!built) return json({ error: "not_found" }, 404);
+      if (!(await mayHave(ask.kind, id, ask.code, built.number, req.headers.get("Authorization")))) return json({ error: "forbidden" }, 403);
+      card = { ...built, token: typeof ask.token === "string" ? ask.token : undefined, push: ask.push === true };
+    } catch (e) {
+      console.error("wallet-pass server card:", (e as Error).message);
+      return json({ error: "unavailable" }, 503);
+    }
+  }
 
   const stampCard = card?.kind === "stamps";
   if (!card?.id || !isSerial(card.id) || !card?.name || (!card?.number && !stampCard) || String(card.number ?? "").length > 200) {
@@ -185,7 +208,15 @@ async function webService(req: Request, r: Route): Promise<Response> {
   const since = Date.parse(req.headers.get("If-Modified-Since") ?? "");
   const updated = Date.parse(row.updated_at);
   if (since && updated && Math.floor(updated / 1000) <= Math.floor(since / 1000)) return new Response(null, { status: 304 });
-  const card = await open<Card>(row.data, token.toLowerCase());
+  let card = await open<Card>(row.data, token.toLowerCase());
+  if (card.serverKind && card.serverId) {
+    try {
+      const fresh = serverCard(card.serverKind, await rest("rpc/pasr_tk_pass_data", {
+        method: "POST", body: JSON.stringify({ p_kind: card.serverKind, p_id: card.serverId }),
+      }));
+      if (fresh) card = { ...fresh, id: card.id };
+    } catch { /* geen verbinding: de laatst bekende pas */ }
+  }
   if (card.kind === "stamps" && card.issuer === "business" && card.memberCode) {
     const stand = await memberStand(card.memberCode);
     if (stand) {
@@ -214,7 +245,7 @@ async function passRow(serial: string): Promise<PassRow | null> {
 /** De kaart (zonder token) versleuteld bewaren; updated_at = nu, zodat Wallet hem als gewijzigd ziet. */
 async function savePass(card: Card, token: string) {
   const member = card.kind === "stamps" && card.issuer === "business" && typeof card.memberCode === "string"
-    ? card.memberCode.slice(0, 120) : null;
+    ? card.memberCode.slice(0, 120) : serverCode(card);
   await rest("pasr_wallet_passes", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
@@ -223,6 +254,30 @@ async function savePass(card: Card, token: string) {
       member_code: member, updated_at: new Date().toISOString(),
     }),
   });
+}
+
+/** Mag deze aanvrager de pas van dit ticket of lidmaatschap hebben? Met de ticketcode (uit de mail), of met de JWT van
+ *  de gebruiker: dan moet het ticket of lidmaatschap in zijn eigen lijst staan (pasr_my_event_tickets / _member_cards). */
+async function mayHave(kind: string, id: string, code: unknown, real: string, auth: string | null): Promise<boolean> {
+  if (kind === "event_ticket" && typeof code === "string" && code) {
+    return sameText(code.trim().toUpperCase(), real.toUpperCase());
+  }
+  const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("PASR_PUBLISHABLE_KEY");
+  const jwt = /^Bearer\s+([A-Za-z0-9._-]{20,4096})$/.exec((auth ?? "").trim())?.[1];
+  if (!url || !key || !jwt) return false;
+  const fn = kind === "event_ticket" ? "pasr_my_event_tickets" : "pasr_my_member_cards";
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/${fn}`, {
+      method: "POST", body: "{}", signal: AbortSignal.timeout(10000),
+      headers: { apikey: key, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+    });
+    if (!res.ok) { await res.body?.cancel(); return false; }
+    const rows = await res.json() as Record<string, unknown>[];
+    const field = kind === "event_ticket" ? "ticket_id" : "member_id";
+    return Array.isArray(rows) && rows.some((r) => String(r?.[field] ?? "").toLowerCase() === id);
+  } catch {
+    return false;
+  }
 }
 
 /** Een zaak zette een stempel: de passen met die klantcode als gewijzigd markeren en inseinen. */
@@ -485,7 +540,8 @@ async function buildPass(card: Card, ws: { url: string; token: string } | null =
   }
 
   // ticket: een echte eventTicket-pas (merkkleur, logo, evenementvelden, gegroepeerd per evenement)
-  const final = kind === "ticket" ? ticketPass(pass, card) : pass;
+  // klantenkaart met barcode: korting, lidnummer en spaarstand
+  const final = kind === "ticket" ? ticketPass(pass, card) : kind === "member" ? memberPass(pass, card) : pass;
   const files: Record<string, Uint8Array> = {
     "pass.json": strToU8(JSON.stringify(final)),
     "icon.png": await asset("icon.png"),

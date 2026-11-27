@@ -51,6 +51,19 @@ export type Card = {
   token?: string;             // authenticationToken van de pas (1.0.3); zonder token: een pas zonder webservice
   push?: boolean;             // na het maken de andere apparaten met deze pas inseinen
   action?: string;            // "update": alleen bewaren en inseinen, geen pas terug
+  // tickets en klantenkaart met barcode (27-11-2026): de server maakt de pas uit de database (zie serverCard)
+  serverKind?: "event_ticket" | "member_card";
+  serverId?: string;          // ticket-id of lidmaatschap-id
+  groupExact?: boolean;       // groupingIdentifier = group (de event-id), zonder voorvoegsel
+  holder?: string;            // naam op het ticket (nooit geboortedatum)
+  ticketIndex?: number;
+  ticketOf?: number;
+  voided?: boolean;           // afgelast of afgemeld: grijs in Wallet
+  memberName?: string;
+  memberSince?: string;
+  discountNow?: { percent?: number | string; label?: string; until?: string | null } | null;
+  nextDiscount?: { percent?: number | string; label?: string; starts_at?: string } | null;
+  saving?: { count?: number; target?: number; reward?: string; unit?: string; can_redeem?: boolean } | null;
 };
 
 /** Wat de app stuurt, ontdaan van wat niet in de bewaarde pas hoort. */
@@ -259,6 +272,7 @@ export function ticketPass(pass: Record<string, unknown>, card: Card): Record<st
   }
   if (doors) secondary.push({ key: "doors", label: "TOEGANG", value: ends ? `${doors} – ${ends}` : `vanaf ${doors}` });
   const auxiliary: Record<string, unknown>[] = [];
+  if (card.holder) auxiliary.push({ key: "holder", label: "NAAM", value: clean(card.holder, 60) });
   if (place) auxiliary.push({ key: "venue", label: "LOCATIE", value: place });
   if (card.seat) auxiliary.push({ key: "seat", label: "PLAATS", value: clean(card.seat, 40) });
   if (note) auxiliary.push({ key: "note", label: /\bjaar\b/i.test(note) ? "LEEFTIJD" : "LET OP", value: note });
@@ -277,7 +291,11 @@ export function ticketPass(pass: Record<string, unknown>, card: Card): Record<st
     auxiliaryFields: auxiliary,
     backFields: [...extraBack, ...back],
   };
-  out.groupingIdentifier = ticketGroup(card);
+  out.groupingIdentifier = card.groupExact && clean(card.group, 80) ? clean(card.group, 80) : ticketGroup(card);
+  if (card.ticketIndex && card.ticketOf && card.ticketOf > 1) {
+    (out.eventTicket as Record<string, unknown[]>).backFields.unshift({ key: "count", label: "Ticket", value: `${card.ticketIndex} van ${card.ticketOf}` });
+  }
+  if (card.voided) out.voided = true;
   out.description = `${title}${type ? " – " + type : ""} (Pasr)`;
   if (!card.logo) out.logoText = brand || title;
 
@@ -298,4 +316,102 @@ export function ticketPass(pass: Record<string, unknown>, card: Card): Record<st
     out.expirationDate = `${after.getUTCFullYear()}-${pad(after.getUTCMonth() + 1)}-${pad(after.getUTCDate())}T06:00:00${amsterdamOffset(after.getUTCFullYear(), after.getUTCMonth() + 1, after.getUTCDate())}`;
   }
   return out;
+}
+
+// ---- tickets en klantenkaart met barcode uit de database (27-11-2026, docs/tickets-klantenkaart.md) ----
+
+/** Datum (YYYY-MM-DD) en tijd (HH:MM) in Nederlandse tijd. */
+export function amsterdam(iso: unknown): { date: string; time: string } | null {
+  const d = new Date(String(iso ?? ""));
+  if (isNaN(d.getTime())) return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(d).map((p) => [p.type, p.value]));
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+}
+
+const pngLogo = (v: unknown) => (typeof v === "string" && /^iVBORw0KGgo[A-Za-z0-9+/]+=*$/.test(v) && v.length < 280_000 ? v : undefined);
+
+/** Ticket (pasr_tk_pass_data, kind event_ticket) als Card voor een eventTicket-pas: QR = de code, groep = event-id. */
+export function eventTicketCard(d: Record<string, unknown>): Card {
+  const start = amsterdam(d.starts_at), end = amsterdam(d.ends_at), doors = amsterdam(d.doors_at ?? d.starts_at);
+  return {
+    id: String(d.ticket_id), name: clean(d.event_name, 60) || "Ticket", number: String(d.code ?? ""), format: "qr",
+    colorHex: hexOk(d.color as string) ?? "#6A5CFF", kind: "ticket", event: clean(d.event_name, 60), brand: clean(d.business_name, 30),
+    ticketType: clean(d.ticket_type, 30) || "Toegang", date: start?.date, endDate: end && start && end.date !== start.date ? end.date : undefined,
+    doors: doors?.time, ends: end?.time, venue: clean(d.address, 60), address: clean(d.address, 120),
+    group: String(d.event_id ?? ""), groupExact: true, holder: clean(d.holder_name, 60) || undefined,
+    ticketIndex: Number(d.index) || undefined, ticketOf: Number(d.of) || undefined, logo: pngLogo(d.business_logo),
+    voided: d.status === "cancelled" || d.event_status === "cancelled",
+    serverKind: "event_ticket", serverId: String(d.ticket_id),
+  };
+}
+
+/** Lidmaatschap (pasr_tk_pass_data, kind member_card) als Card voor een storeCard. EAN-13 kent Wallet niet: dan
+ *  Code 128 met hetzelfde nummer (walletFormat doet dat). */
+export function memberCardCard(d: Record<string, unknown>): Card {
+  return {
+    id: String(d.member_id), name: clean(d.name, 40) || "Klantenkaart", number: String(d.number ?? ""),
+    format: d.barcode_type === "qr" ? "qr" : d.barcode_type === "ean13" ? "ean13" : "code128",
+    colorHex: hexOk(d.color as string) ?? "#6A5CFF", kind: "member", brand: clean(d.business_name, 40), logo: pngLogo(d.logo),
+    memberName: clean(d.member_name, 60) || undefined, memberSince: typeof d.member_since === "string" ? d.member_since : undefined,
+    discountNow: (d.discount_now ?? null) as Card["discountNow"], nextDiscount: (d.next_discount ?? null) as Card["nextDiscount"],
+    saving: (d.saving ?? null) as Card["saving"], voided: d.active === false,
+    serverKind: "member_card", serverId: String(d.member_id),
+  };
+}
+
+const percentText = (v: unknown) => {
+  const n = Number(v);
+  return isFinite(n) && n > 0 ? `${n.toLocaleString("nl-NL", { maximumFractionDigits: 2 })}%` : "";
+};
+const shortDate = (iso: unknown) => {
+  const d = new Date(String(iso ?? ""));
+  return isNaN(d.getTime()) ? "" : new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short" }).format(d);
+};
+
+/** Velden van de klantenkaart met barcode: korting die nu geldt (rechtsboven), lidnummer, naam, spaarstand. */
+export function memberPass(pass: Record<string, unknown>, card: Card): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...pass };
+  const store = { ...((pass.storeCard ?? {}) as Record<string, unknown>) };
+  const now = card.discountNow, next = card.nextDiscount, s = card.saving;
+  const p = percentText(now?.percent);
+  const header: Record<string, unknown>[] = [p
+    ? { key: "discount", label: "KORTING", value: p, changeMessage: "Nu %@ korting" }
+    : { key: "brand", label: " ", value: "pasr" }];
+  const secondary: Record<string, unknown>[] = [{ key: "number", label: "LIDNUMMER", value: card.number }];
+  if (card.memberName) secondary.push({ key: "member", label: "LID", value: clean(card.memberName, 40) });
+  const aux: Record<string, unknown>[] = [];
+  if (s && typeof s.target === "number") {
+    aux.push({ key: "saving", label: s.unit === "points" ? "PUNTEN" : "SPAARSTAND", value: `${Math.max(0, Number(s.count) || 0)}/${s.target}`,
+      changeMessage: "Spaarstand nu %@" });
+  }
+  if (p) aux.push({ key: "now", label: clean(now?.label, 30).toUpperCase() || "KORTING", value: now?.until ? `t/m ${shortDate(now.until)}` : "altijd" });
+  else if (next && percentText(next.percent)) aux.push({ key: "next", label: "VOLGENDE KORTING", value: `${percentText(next.percent)} vanaf ${shortDate(next.starts_at)}` });
+  const back: Record<string, unknown>[] = [];
+  if (s?.reward) back.push({ key: "reward", label: "Beloning", value: `${clean(s.reward, 80)} bij ${s.target} ${s.unit === "points" ? "punten" : "bezoeken"}` });
+  if (next && percentText(next.percent)) back.push({ key: "nextback", label: "Volgende korting", value: `${clean(next.label, 40) || percentText(next.percent) + " korting"} vanaf ${shortDate(next.starts_at)}` });
+  if (card.memberSince) back.push({ key: "since", label: "Lid sinds", value: shortDate(card.memberSince) });
+  back.push({ key: "how", label: "Zo werkt het", value: "Laat deze kaart scannen bij de kassa. De zaak ziet dan je korting en spaarstand; deze pas werkt vanzelf bij." });
+  back.push({ key: "pasr", label: "Pasr", value: "Deze pas komt uit Pasr, de gratis app voor je klantenkaarten. pasr.nl" });
+  out.storeCard = { ...store, headerFields: header, primaryFields: [], secondaryFields: secondary, auxiliaryFields: aux, backFields: back };
+  out.description = `${clean(card.name, 40)} (Pasr)`;
+  if (!card.logo) out.logoText = clean(card.brand, 30) || clean(card.name, 30);
+  if (card.voided) out.voided = true;
+  return out;
+}
+
+/** Pas uit de database bouwen (kind + id in het verzoek). */
+export function serverCard(kind: unknown, data: unknown): Card | null {
+  if (!data || typeof data !== "object") return null;
+  const d = data as Record<string, unknown>;
+  if (kind === "event_ticket" && d.kind === "event_ticket" && typeof d.code === "string" && d.code) return eventTicketCard(d);
+  if (kind === "member_card" && d.kind === "member_card" && typeof d.number === "string" && d.number) return memberCardCard(d);
+  return null;
+}
+
+/** Sleutel in pasr_wallet_passes.member_code waarmee de database een pas laat bijwerken: "ET:<ticket>" of "MC:<lid>". */
+export function serverCode(card: Card): string | null {
+  if (!card.serverKind || !card.serverId || !/^[0-9a-f-]{36}$/i.test(card.serverId)) return null;
+  return `${card.serverKind === "event_ticket" ? "ET" : "MC"}:${card.serverId.toLowerCase()}`;
 }
