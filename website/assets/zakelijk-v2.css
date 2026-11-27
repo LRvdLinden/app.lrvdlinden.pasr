@@ -127,10 +127,7 @@
 .zc-btn:hover { background: #4A3CE0; color: #fff; }
 .zc-pill { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; border-radius: 999px; border: 2px solid var(--iris);
   color: var(--iris-deep); background: transparent; font-weight: 800; font-size: 16px; text-decoration: none; box-sizing: border-box; }
-.zn-store { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 16px; border-radius: 12px; background: #17162A; color: #fff; text-decoration: none;
-  font-weight: 700; font-size: 16px; outline: 1px solid rgba(255,255,255,.12); }
-.zn-store svg { width: 20px; height: 20px; flex: none; }
-.zn-store:hover { background: #2A2840; color: #fff; }
+.zn-hero-badges { margin-top: 16px; gap: 12px; }
 .zn-login { margin: 14px 0 0; font-size: 15px; color: var(--ink-2); }
 .zn-hero-panel { min-width: 0; background: var(--zn-panel); border-radius: 28px; padding: 18px; box-sizing: border-box; }
 

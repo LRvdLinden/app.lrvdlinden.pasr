@@ -594,7 +594,7 @@ def page():
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-itunes-app" content="app-id=6829229123">
   <title>Klantenkaarten-app voor iPhone, Android en Apple Watch | Pasr</title>
-  <meta name="description" content="Al je klantenkaarten, cadeaukaarten, kortingscodes en tickets in één app op iPhone, iPad, Apple Watch en Android. Gratis, zonder reclame, met een cadeaubon-gids en tegoed-herinneringen.">
+  <meta name="description" content="Al je klantenkaarten, cadeaukaarten, kortingscodes en tickets in één app voor iPhone, iPad, Apple Watch en Android. Gratis, zonder reclame.">
   <meta name="keywords" content="klantenkaarten app, klantenkaart app iPhone, klantenkaarten app Android, Klarna klantenkaarten overzetten, alternatief voor Klarna klantenkaarten, Supercards alternatief, klantenkaarten Apple Watch, cadeaukaarten app, bonuskaart op telefoon, wallet app Nederland, gratis klantenkaarten app">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="author" content="Pasr">
@@ -615,13 +615,13 @@ def page():
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Pasr op een telefoon met een stapel klantenkaarten, naast de tekst: Al je klantenkaarten in één app, voor iPhone, iPad, Apple Watch en Android">
+  <meta property="og:image:alt" content="Pasr: klantenkaarten, cadeaukaarten en tickets in één app. Een cadeaukaart, een klantenkaart met barcode en een ticket naast het app-icoon van Pasr">
   <meta property="og:locale" content="nl_NL">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Pasr: al je pasjes. Zonder gedoe.">
   <meta name="twitter:description" content="{N_LOYALTY} klantenkaarten en {N_VOUCHER} cadeaukaarten op iPhone, iPad, Apple Watch en Android. Gratis en zonder reclame.">
   <meta name="twitter:image" content="https://pasr.nl/og/home.png">
-  <meta name="twitter:image:alt" content="Pasr op een telefoon met een stapel klantenkaarten, naast de tekst: Al je klantenkaarten in één app, voor iPhone, iPad, Apple Watch en Android">
+  <meta name="twitter:image:alt" content="Pasr: klantenkaarten, cadeaukaarten en tickets in één app. Een cadeaukaart, een klantenkaart met barcode en een ticket naast het app-icoon van Pasr">
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
