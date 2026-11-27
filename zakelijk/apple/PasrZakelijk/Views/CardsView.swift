@@ -1,7 +1,6 @@
 import SwiftUI
 import PhotosUI
 import CoreImage.CIFilterBuiltins
-import SafariServices
 
 /// Kaarten van de zaak (eigenaar): maken, bewerken, publiceren, delen en flyer.
 struct CardsView: View {
@@ -189,7 +188,7 @@ struct CardsView: View {
                 CardShareView(business: business, card: card).trackModal()
             }
             .sheet(item: $promoting) { card in
-                PromoBrowser(card: card).ignoresSafeArea()
+                PromoBrowser(card: card)
             }
             .sheet(item: $program) { card in
                 LoyaltyProgramView(card: card).trackModal()
@@ -385,7 +384,7 @@ struct CardsView: View {
 }
 
 /// Vensters voor tickets en klantenkaarten (apart, zodat de body van CardsView klein blijft voor de type-checker).
-private struct TKSheets: ViewModifier {
+struct TKSheets: ViewModifier {
     let business: Business
     @Binding var newEvent: Bool
     @Binding var openedEvent: TicketEvent?
@@ -506,7 +505,7 @@ struct CardEditorView: View {
                 }
             }
             .navigationTitle(isNew ? "Nieuwe kaart" : "Kaart bewerken")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -678,11 +677,11 @@ struct CardShareView: View {
             }
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle(Text(verbatim: card.name))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
             .task { flyer = Flyer.makePDF(business: business, card: card) }
             .sheet(isPresented: $showPromotionalMaterials) {
-                PromoBrowser(card: card).ignoresSafeArea()
+                PromoBrowser(card: card)
             }
             .sheet(isPresented: $showWebsiteBadge) {
                 WebsiteBadgeView(card: card)
@@ -768,17 +767,11 @@ private struct FlyerPage: View {
 }
 
     
-/// Dezelfde live kaartgebonden generator als pasr.nl/zakelijk/dashboard.
-/// SFSafariViewController ondersteunt voorvertoningen en het opslaan van PNG/ZIP.
-private struct PromoBrowser: UIViewControllerRepresentable {
+/// Dezelfde live kaartgebonden generator als pasr.nl/zakelijk/dashboard (Safari in de app op iOS, WebKit-venster op de Mac).
+private struct PromoBrowser: View {
     let card: BusinessCard
 
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        let url = URL(string: "https://pasr.nl/zakelijk/flyer/#" + card.id)!
-        let browser = SFSafariViewController(url: url)
-        browser.preferredControlTintColor = UIColor(red: 0.42, green: 0.36, blue: 1, alpha: 1)
-        return browser
+    var body: some View {
+        InAppBrowser(url: URL(string: "https://pasr.nl/zakelijk/flyer/#" + card.id)!)
     }
-
-    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }

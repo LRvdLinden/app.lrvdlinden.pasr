@@ -1,0 +1,454 @@
+{
+  "sourceLanguage": "nl",
+  "strings": {
+    "%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@"
+          }
+        }
+      }
+    },
+    "%lld plekken over": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld spots left"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld plekken over"
+          }
+        }
+      }
+    },
+    "7 dagen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 days"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 dagen"
+          }
+        }
+      }
+    },
+    "Aangemeld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registered"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aangemeld"
+          }
+        }
+      }
+    },
+    "Beloningen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewards"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloningen"
+          }
+        }
+      }
+    },
+    "Binnen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checked in"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binnen"
+          }
+        }
+      }
+    },
+    "Geen komende events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No upcoming events"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen komende events"
+          }
+        }
+      }
+    },
+    "Geen uitnodigingen, concepten of aflopende acties.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No invitations, drafts or expiring promotions."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen uitnodigingen, concepten of aflopende acties."
+          }
+        }
+      }
+    },
+    "Je eerstvolgende event met het aantal aanmeldingen en wie er binnen is.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your next event with the number of registrations and who has checked in."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je eerstvolgende event met het aantal aanmeldingen en wie er binnen is."
+          }
+        }
+      }
+    },
+    "Kies een zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies een zaak"
+          }
+        }
+      }
+    },
+    "Komend event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming event"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komend event"
+          }
+        }
+      }
+    },
+    "Log in en open de app; daarna zie je hier je cijfers.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in and open the app; your numbers will then appear here."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in en open de app; daarna zie je hier je cijfers."
+          }
+        }
+      }
+    },
+    "Maak een gratis event in de app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a free event in the app."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak een gratis event in de app."
+          }
+        }
+      }
+    },
+    "Meer dan vorige week": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More than last week"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meer dan vorige week"
+          }
+        }
+      }
+    },
+    "Minder dan vorige week": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Less than last week"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minder dan vorige week"
+          }
+        }
+      }
+    },
+    "Niets te doen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to do"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niets te doen"
+          }
+        }
+      }
+    },
+    "Nieuwe leden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New members"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe leden"
+          }
+        }
+      }
+    },
+    "Nu bezig": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Happening now"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu bezig"
+          }
+        }
+      }
+    },
+    "Open Pasr Zakelijk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Pasr Zakelijk"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Pasr Zakelijk"
+          }
+        }
+      }
+    },
+    "Stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempels"
+          }
+        }
+      }
+    },
+    "Stempels, beloningen en nieuwe leden van vandaag, met de trend van deze week.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's stamps, rewards and new members, with this week's trend."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempels, beloningen en nieuwe leden van vandaag, met de trend van deze week."
+          }
+        }
+      }
+    },
+    "Te doen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To do"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te doen"
+          }
+        }
+      }
+    },
+    "Uitnodigingen voor gezamenlijke acties, concepten en codes of kortingsperiodes die bijna aflopen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitations to joint promotions, drafts, and codes or discount periods that are about to end."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodigingen voor gezamenlijke acties, concepten en codes of kortingsperiodes die bijna aflopen."
+          }
+        }
+      }
+    },
+    "Vandaag": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vandaag"
+          }
+        }
+      }
+    },
+    "Welke zaak deze widget laat zien.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which business this widget shows."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welke zaak deze widget laat zien."
+          }
+        }
+      }
+    },
+    "Zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaak"
+          }
+        }
+      }
+    },
+    "en nog %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "and %lld more"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en nog %lld"
+          }
+        }
+      }
+    },
+    "stempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stamps"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stempels"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -82,8 +82,8 @@ struct BusinessMarketingView: View {
                 if let message { Section { Text(message).font(.subheadline) } }
             }
             .navigationTitle("Marketingkalender")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
+            .inlineTitle()
+            .toolbar { ToolbarItem(placement: .confirmationAction) { DoneButton() } }
             .task { await reload() }
             .refreshable { await reload() }
         }

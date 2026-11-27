@@ -158,8 +158,8 @@ struct InviteStaffView: View {
                         TextField("Naam", text: $name).textContentType(.name)
                         TextField("E-mailadres (optioneel)", text: $email)
                             .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
+                            .keyboard(.email)
+                            .capitalization(.never)
                             .autocorrectionDisabled()
                     } footer: {
                         Text("Je medewerker maakt een gratis Pasr-account (of logt in) en accepteert de uitnodiging. Medewerkers kunnen alleen scannen.")
@@ -168,7 +168,7 @@ struct InviteStaffView: View {
                 }
             }
             .navigationTitle("Medewerker uitnodigen")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(invite == nil ? "Annuleer" : "Klaar") { dismiss() } }
                 if invite == nil {

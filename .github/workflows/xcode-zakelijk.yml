@@ -24,18 +24,28 @@ jobs:
           grep -q 'BUILD = "21"' zakelijk/apple/make_project.py
           grep -q 'VERSION = "1.0.4"' zakelijk/apple/make_project.py
           grep -q 'CURRENT_PROJECT_VERSION = "21"' zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj
+          # de ZIP bevat ook de native Mac-app en de widgets (iOS en macOS)
+          grep -q 'PasrZakelijkMac' zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj
+          grep -q 'PasrZakelijkWidgets' zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj
+          test -f zakelijk/apple/PasrZakelijk.xcodeproj/xcshareddata/xcschemes/PasrZakelijkMac.xcscheme
+          test -d zakelijk/apple/Mac && test -d zakelijk/apple/Widgets && test -d zakelijk/apple/Shared
           work="$(mktemp -d)"
           mkdir -p "$work/Pasr-Zakelijk-1.0.4-build21" dist
           cp -a zakelijk/apple/. "$work/Pasr-Zakelijk-1.0.4-build21/"
           cat > "$work/Pasr-Zakelijk-1.0.4-build21/OPEN-IN-XCODE.md" <<'INFO'
           # Pasr Zakelijk 1.0.4 (build 21)
           Open PasrZakelijk.xcodeproj in Xcode.
-          Selecteer de PasrZakelijk scheme, configureer je Apple Developer Team
-          en Signing & Capabilities. Kies Product > Archive en verzend via
+          Scheme PasrZakelijk: iPhone en iPad (met widgets).
+          Scheme PasrZakelijkMac: native Mac-app (macOS 14+, met widgets),
+          zelfde bundle-id app.lrvdlinden.pasrzakelijk (universal purchase).
+          Configureer je Apple Developer Team en Signing & Capabilities
+          (app group group.app.lrvdlinden.pasrzakelijk bij app en widgets).
+          Kies per scheme Product > Archive en verzend via
           Organizer > Distribute App > App Store Connect.
           Inclusief alle Swift-code, iconen, assets, projectinstellingen en
           gezamenlijke acties met uitnodigingen, gratis tickets voor events en
-          klantenkaarten met barcode (scannen aan de deur en aan de kassa).
+          klantenkaarten met barcode (scannen aan de deur en aan de kassa),
+          widgets (Vandaag, Komend event, Te doen) en de native Mac-app.
           INFO
           (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.4-build21.zip" Pasr-Zakelijk-1.0.4-build21)
           unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.4-build21.zip
@@ -54,6 +64,6 @@ jobs:
           set -euo pipefail
           TAG="xcode-zakelijk-1.0.4-21"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Zakelijk 1.0.4 (build 21) – Xcode-project" --notes "Volledig Xcode-bronproject met gratis tickets (events maken, aanmeldingen, scannen aan de deur) en klantenkaarten met barcode (QR, Code 128, EAN-13; korting, sparen en kortingsperiodes bij het scannen). Open de .xcodeproj in Xcode, Archive en upload zelf naar App Store Connect."
+            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Zakelijk 1.0.4 (build 21) – Xcode-project" --notes "Volledig Xcode-bronproject met gratis tickets (events maken, aanmeldingen, scannen aan de deur) en klantenkaarten met barcode (QR, Code 128, EAN-13; korting, sparen en kortingsperiodes bij het scannen), widgets voor iOS en macOS en de native Mac-app (scheme PasrZakelijkMac). Open de .xcodeproj in Xcode, Archive en upload zelf naar App Store Connect."
           fi
           gh release upload "$TAG" dist/Pasr-Zakelijk-Xcode-1.0.4-build21.zip --clobber

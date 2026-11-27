@@ -38,9 +38,9 @@ struct RegisterBusinessView: View {
                     TextField("Plaats", text: $city)
                         .textContentType(.addressCity)
                     TextField("Website (bijv. jouwzaak.nl)", text: $website)
-                        .keyboardType(.URL)
+                        .keyboard(.url)
                         .textContentType(.URL)
-                        .textInputAutocapitalization(.never)
+                        .capitalization(.never)
                         .autocorrectionDisabled()
                 } header: {
                     Text("Zaak")
@@ -90,7 +90,7 @@ struct RegisterBusinessView: View {
             .overlay { if brandBusy { ProgressView().controlSize(.large) } }
             .alert("Uitnodiging", isPresented: $showInvite) {
                 TextField("Code", text: $inviteCode)
-                    .textInputAutocapitalization(.never)
+                    .capitalization(.never)
                 Button("Verder") {
                     let code = inviteCode.trimmingCharacters(in: .whitespacesAndNewlines)
                     if let url = URL(string: code), url.scheme != nil { store.handle(url: url) } else if !code.isEmpty { store.pendingInvite = code }
@@ -198,7 +198,7 @@ struct PendingView: View {
             .background(Theme.bg.ignoresSafeArea())
             .toolbar {
                 BusinessPicker()
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     Menu {
                         Button("Uitloggen", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
                             Task { await Account.shared.signOut() }

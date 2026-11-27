@@ -449,6 +449,22 @@
         }
       }
     },
+    "7 dagen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 days"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 dagen"
+          }
+        }
+      }
+    },
     "Aangemeld": {
       "localizations": {
         "en": {
@@ -685,6 +701,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Actie stoppen?"
+          }
+        }
+      }
+    },
+    "Actiecode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promo code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actiecode"
+          }
+        }
+      }
+    },
+    "Actiecode loopt af": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promo code ends soon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actiecode loopt af"
+          }
+        }
+      }
+    },
+    "Actiecodes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promo codes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actiecodes"
           }
         }
       }
@@ -1745,6 +1809,54 @@
         }
       }
     },
+    "Concept · event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft · event"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concept · event"
+          }
+        }
+      }
+    },
+    "Concept · klantenkaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft · loyalty card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concept · klantenkaart"
+          }
+        }
+      }
+    },
+    "Concept · stempelkaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft · stamp card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concept · stempelkaart"
+          }
+        }
+      }
+    },
     "DIGITALE STEMPELKAART": {
       "localizations": {
         "en": {
@@ -2705,6 +2817,22 @@
         }
       }
     },
+    "Een actie of beloning wordt altijd ingesteld op een bestaande stempelkaart.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A promotion or reward is always set up on an existing stamp card."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een actie of beloning wordt altijd ingesteld op een bestaande stempelkaart."
+          }
+        }
+      }
+    },
     "Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat.": {
       "localizations": {
         "en": {
@@ -3201,6 +3329,22 @@
         }
       }
     },
+    "Geen komende events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No upcoming events"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen komende events"
+          }
+        }
+      }
+    },
     "Geen korting in deze maand": {
       "localizations": {
         "en": {
@@ -3293,6 +3437,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gegevens van je zaak"
+          }
+        }
+      }
+    },
+    "Gegevens verversen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh data"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegevens verversen"
           }
         }
       }
@@ -3437,6 +3597,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gezamenlijke beloning controleren en uitgeven"
+          }
+        }
+      }
+    },
+    "Groei": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groei"
           }
         }
       }
@@ -3757,6 +3933,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inwisselen: %@"
+          }
+        }
+      }
+    },
+    "Inzichten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insights"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inzichten"
           }
         }
       }
@@ -4161,6 +4353,22 @@
         }
       }
     },
+    "Je zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je zaak"
+          }
+        }
+      }
+    },
     "Je zaak doet niet meer mee aan deze gezamenlijke actie.": {
       "localizations": {
         "en": {
@@ -4349,6 +4557,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kaarten"
+          }
+        }
+      }
+    },
+    "Kies de stempelkaart voor de actie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the stamp card for the promotion"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies de stempelkaart voor de actie"
           }
         }
       }
@@ -4577,6 +4801,22 @@
         }
       }
     },
+    "Klantenbinding": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customer loyalty"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klantenbinding"
+          }
+        }
+      }
+    },
     "Klantenkaart aanmaken": {
       "localizations": {
         "en": {
@@ -4753,6 +4993,22 @@
         }
       }
     },
+    "Komend event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming event"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komend event"
+          }
+        }
+      }
+    },
     "Komende events": {
       "localizations": {
         "en": {
@@ -4849,6 +5105,54 @@
         }
       }
     },
+    "Kortingsbonnen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discount coupons"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kortingsbonnen"
+          }
+        }
+      }
+    },
+    "Kortingscoupon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discount coupon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kortingscoupon"
+          }
+        }
+      }
+    },
+    "Kortingscoupon loopt af": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discount coupon ends soon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kortingscoupon loopt af"
+          }
+        }
+      }
+    },
     "Kortingsperiode": {
       "localizations": {
         "en": {
@@ -4877,6 +5181,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kortingsperiode %@%% bij %@"
+          }
+        }
+      }
+    },
+    "Kortingsperiode loopt af": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discount period ends soon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kortingsperiode loopt af"
           }
         }
       }
@@ -5137,6 +5457,22 @@
         }
       }
     },
+    "Log in in het hoofdvenster van Pasr Zakelijk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in in the main window of Pasr Zakelijk."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in in het hoofdvenster van Pasr Zakelijk."
+          }
+        }
+      }
+    },
     "Log in met je Pasr-account. Ben je medewerker? Gebruik het account waarmee je de uitnodiging accepteert.": {
       "localizations": {
         "en": {
@@ -5357,6 +5693,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mail opnieuw sturen"
+          }
+        }
+      }
+    },
+    "Marketingkalender": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marketing calendar"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marketingkalender"
           }
         }
       }
@@ -5793,6 +6145,22 @@
         }
       }
     },
+    "Naar Tickets": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to Tickets"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naar Tickets"
+          }
+        }
+      }
+    },
     "Naar inloggen": {
       "localizations": {
         "en": {
@@ -5921,6 +6289,54 @@
         }
       }
     },
+    "Niets te doen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to do"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niets te doen"
+          }
+        }
+      }
+    },
+    "Nieuw": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw"
+          }
+        }
+      }
+    },
+    "Nieuw aanmaken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create new"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw aanmaken"
+          }
+        }
+      }
+    },
     "Nieuw event": {
       "localizations": {
         "en": {
@@ -5949,6 +6365,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieuw lid"
+          }
+        }
+      }
+    },
+    "Nieuw venster": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New window"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw venster"
           }
         }
       }
@@ -6013,6 +6445,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieuwe leden"
+          }
+        }
+      }
+    },
+    "Nieuwe stempelkaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New stamp card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe stempelkaart"
           }
         }
       }
@@ -6529,6 +6977,22 @@
         }
       }
     },
+    "Open in browser": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in browser"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in browser"
+          }
+        }
+      }
+    },
     "Open voor zaken in dezelfde plaats": {
       "localizations": {
         "en": {
@@ -6769,6 +7233,22 @@
         }
       }
     },
+    "PNG-afbeeldingen en ZIP-bestanden bewaar je via het bewaarvenster, standaard in Downloads.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PNG images and ZIP files with the save dialog, in Downloads by default."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PNG-afbeeldingen en ZIP-bestanden bewaar je via het bewaarvenster, standaard in Downloads."
+          }
+        }
+      }
+    },
     "Pasr Zakelijk is vergrendeld": {
       "localizations": {
         "en": {
@@ -6961,6 +7441,22 @@
         }
       }
     },
+    "Plak code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plak code"
+          }
+        }
+      }
+    },
     "Plak de link of de code uit de uitnodiging.": {
       "localizations": {
         "en": {
@@ -7053,6 +7549,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Privacyverklaring"
+          }
+        }
+      }
+    },
+    "Promotiemateriaal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promotional material"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promotiemateriaal"
           }
         }
       }
@@ -7357,6 +7869,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scannen"
+          }
+        }
+      }
+    },
+    "Scannen (⇧⌘S)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan (⇧⌘S)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scannen (⇧⌘S)"
           }
         }
       }
@@ -7681,6 +8209,38 @@
         }
       }
     },
+    "Stempelkaart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp card"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempelkaart"
+          }
+        }
+      }
+    },
+    "Stempelkaarten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp cards"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stempelkaarten"
+          }
+        }
+      }
+    },
     "Stempels": {
       "localizations": {
         "en": {
@@ -7757,6 +8317,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Support"
+          }
+        }
+      }
+    },
+    "Te doen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To do"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te doen"
           }
         }
       }
@@ -8177,6 +8753,22 @@
         }
       }
     },
+    "Uitnodiging van %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation from %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging van %@"
+          }
+        }
+      }
+    },
     "Uitnodiging verstuurd naar %@": {
       "localizations": {
         "en": {
@@ -8317,6 +8909,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Van"
+          }
+        }
+      }
+    },
+    "Vandaag": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vandaag"
           }
         }
       }
@@ -8465,6 +9073,22 @@
         }
       }
     },
+    "Ververs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ververs"
+          }
+        }
+      }
+    },
     "Verversen": {
       "localizations": {
         "en": {
@@ -8509,6 +9133,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verwijderen uit actie"
+          }
+        }
+      }
+    },
+    "Vestigingen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locations"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vestigingen"
           }
         }
       }
@@ -9217,6 +9857,22 @@
         }
       }
     },
+    "Zelfgekozen actiecode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom promo code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zelfgekozen actiecode"
+          }
+        }
+      }
+    },
     "Zet deze code op je website": {
       "localizations": {
         "en": {
@@ -9293,6 +9949,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zoek code"
+          }
+        }
+      }
+    },
+    "Zoek in je zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search your business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek in je zaak"
           }
         }
       }

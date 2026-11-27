@@ -92,8 +92,8 @@ struct WelcomeView: View {
                 }
                 TextField("E-mailadres", text: $email)
                     .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
+                    .keyboard(.email)
+                    .capitalization(.never)
                     .autocorrectionDisabled()
                     .focused($focus, equals: .email)
                     .submitLabel(mode == .forgot ? .send : .next)

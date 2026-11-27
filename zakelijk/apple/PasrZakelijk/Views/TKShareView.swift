@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Delen van een event of klantenkaart: QR-code, link en de knop "Voeg toe aan Pasr" voor de website.
 struct TKShareView: View {
@@ -56,7 +58,7 @@ struct TKShareView: View {
             }
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle(Text(verbatim: title))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
             .sheet(isPresented: $badge) {
                 WebsiteBadgeView(url: url, name: title, intro: badgeIntro)

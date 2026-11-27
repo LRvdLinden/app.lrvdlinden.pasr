@@ -97,7 +97,7 @@ struct EventEditorView: View {
                 actions
             }
             .navigationTitle(isNew ? Text("Nieuw event") : Text("Event bewerken"))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -202,8 +202,8 @@ struct EventEditorView: View {
         Section {
             TKColorRow(color: $event.color)
             TextField("Header-afbeelding (link, optioneel)", text: Binding(get: { event.headerURL ?? "" }, set: { event.headerURL = $0 }))
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
+                .keyboard(.url)
+                .capitalization(.never)
                 .autocorrectionDisabled()
         } header: {
             Text("Branding")
@@ -267,7 +267,7 @@ private struct TicketTypeRow: View {
         HStack {
             TextField("Naam (bijv. Toegang)", text: $type.name)
             TextField("Plekken", value: $type.capacity, format: .number)
-                .keyboardType(.numberPad)
+                .keyboard(.number)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 90)
         }
@@ -322,7 +322,7 @@ struct EventDetailView: View {
             .background(Theme.bg.ignoresSafeArea())
             .searchable(text: $search, prompt: Text("Zoek op naam of e-mail"))
             .navigationTitle(Text(verbatim: event.name))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .refreshable { await load() }
             .task { await load() }
             .toolbar {

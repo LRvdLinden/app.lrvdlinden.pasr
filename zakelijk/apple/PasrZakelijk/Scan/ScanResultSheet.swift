@@ -82,10 +82,10 @@ struct ScanResultSheet: View {
             }
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle(Text(verbatim: "…" + result.suffix))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .barLeading) {
                     Button {
                         Task { await reload() }
                     } label: { Image(systemName: "arrow.clockwise") }

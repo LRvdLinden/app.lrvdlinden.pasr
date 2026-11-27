@@ -10,7 +10,7 @@ enum Geocoder {
         request.naturalLanguageQuery = query
         request.resultTypes = [.address, .pointOfInterest]
         guard let item = try? await MKLocalSearch(request: request).start().mapItems.first else { return nil }
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             return (item.location as CLLocation?)?.coordinate
         } else {
             return item.placemark.coordinate

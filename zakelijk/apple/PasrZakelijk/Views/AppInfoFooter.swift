@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Onderaan Instellingen: icoon, "Versie: 1.0.0 (2)" en "© <jaar> Pasr Zakelijk".
 struct AppInfoFooter: View {

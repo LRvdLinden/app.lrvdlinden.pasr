@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// "Knop voor je website": de knop "Voeg toe aan Pasr" voor een stempelkaart van de zaak. Kies zwart, wit of
 /// nachtblauw en groot of compact; deel de HTML-code, de link (https://pasr.nl/add/k/<id>) of de QR-code.
@@ -121,7 +123,7 @@ struct WebsiteBadgeView: View {
             }
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle(Text("Knop voor je website"))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
             .onChange(of: theme) { _, _ in copied = nil }
             .onChange(of: size) { _, _ in copied = nil }

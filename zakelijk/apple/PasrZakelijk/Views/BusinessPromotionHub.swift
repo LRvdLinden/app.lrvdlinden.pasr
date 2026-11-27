@@ -1,7 +1,11 @@
 import SwiftUI
 import WebKit
-import Photos
 import UniformTypeIdentifiers
+#if os(iOS)
+import Photos
+#else
+import AppKit
+#endif
 
 /// Centraal promotiemateriaal voor stempelkaarten, coupons en actiecodes.
 struct BusinessPromotionHub: View {
@@ -40,8 +44,13 @@ struct BusinessPromotionHub: View {
                     }
                 }
                 Section {
+                    #if os(macOS)
+                    Label("PNG-afbeeldingen en ZIP-bestanden bewaar je via het bewaarvenster, standaard in Downloads.", systemImage: "square.and.arrow.down")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    #else
                     Label("PNG-afbeeldingen worden opgeslagen in Foto’s. Een ZIP kun je via de bestandskiezer bewaren in Downloads.", systemImage: "square.and.arrow.down")
                         .font(.footnote).foregroundStyle(.secondary)
+                    #endif
                 }
             }
             .navigationTitle("Promotiemateriaal")
@@ -114,17 +123,23 @@ struct PromoNativePreview: View {
     var body: some View {
         PromoWebContainer(product: product)
             .navigationTitle(product.title)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .background(Theme.bg)
     }
 }
 
-private struct PromoWebContainer: UIViewRepresentable {
+#if os(iOS)
+private typealias PromoRepresentable = UIViewRepresentable
+#else
+private typealias PromoRepresentable = NSViewRepresentable
+#endif
+
+private struct PromoWebContainer: PromoRepresentable {
     let product: PromoProduct
 
     func makeCoordinator() -> Coordinator { Coordinator(product: product) }
 
-    func makeUIView(context: Context) -> WKWebView {
+    private func makeBrowser(_ context: Context) -> WKWebView {
         let content = WKUserContentController()
         content.add(context.coordinator, name: "pasrExport")
         let config = WKWebViewConfiguration()
@@ -132,13 +147,21 @@ private struct PromoWebContainer: UIViewRepresentable {
         let browser = WKWebView(frame: .zero, configuration: config)
         context.coordinator.browser = browser
         browser.navigationDelegate = context.coordinator
+        #if os(iOS)
         browser.isOpaque = false
         browser.backgroundColor = UIColor.systemBackground
+        #endif
         browser.load(URLRequest(url: URL(string: "https://pasr.nl/zakelijk/flyer/")!))
         return browser
     }
 
+    #if os(iOS)
+    func makeUIView(context: Context) -> WKWebView { makeBrowser(context) }
     func updateUIView(_ uiView: WKWebView, context: Context) {}
+    #else
+    func makeNSView(context: Context) -> WKWebView { makeBrowser(context) }
+    func updateNSView(_ nsView: WKWebView, context: Context) {}
+    #endif
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         let product: PromoProduct
@@ -188,6 +211,7 @@ private struct PromoWebContainer: UIViewRepresentable {
                 guard expectedBytes > 0, received.count == expectedBytes else { return }
                 let bytes = received, filename = outputName, type = mime
                 received = Data();expectedBytes = 0
+                #if os(iOS)
                 if type == "image/png" {
                     PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
                         guard status == .authorized || status == .limited,
@@ -207,6 +231,19 @@ private struct PromoWebContainer: UIViewRepresentable {
                         top?.present(picker, animated: true)
                     }
                 }
+                #else
+                // Mac: PNG of ZIP bewaren waar je wilt (standaard Downloads), via het bewaarvenster
+                DispatchQueue.main.async {
+                    let panel = NSSavePanel()
+                    panel.nameFieldStringValue = filename
+                    panel.allowedContentTypes = [type == "image/png" ? UTType.png : UTType.zip]
+                    panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+                    panel.begin { response in
+                        guard response == .OK, let url = panel.url else { return }
+                        try? bytes.write(to: url, options: .atomic)
+                    }
+                }
+                #endif
             default: break
             }
         }

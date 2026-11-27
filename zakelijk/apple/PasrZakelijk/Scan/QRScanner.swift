@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import VisionKit
 import AVFoundation
@@ -82,3 +83,4 @@ enum Torch {
         device.unlockForConfiguration()
     }
 }
+#endif

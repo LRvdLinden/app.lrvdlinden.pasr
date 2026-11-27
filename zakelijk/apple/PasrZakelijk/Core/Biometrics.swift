@@ -14,7 +14,9 @@ enum Biometrics {
         switch context.biometryType {
         case .faceID: return "Face ID"
         case .touchID: return "Touch ID"
+        #if os(iOS)
         case .opticID: return "Optic ID"
+        #endif
         default: return String(localized: "toegangscode")
         }
     }
@@ -24,8 +26,14 @@ enum Biometrics {
         _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
         switch context.biometryType {
         case .touchID: return "touchid"
+        #if os(iOS)
         case .opticID: return "opticid"
+        #endif
+        #if os(macOS)
+        default: return "lock.fill"
+        #else
         default: return "faceid"
+        #endif
         }
     }
 

@@ -1,6 +1,7 @@
 name: Zakelijk-app
 
-# Checks that the app Pasr Zakelijk (zakelijk/apple) builds for iPhone/iPad (simulator), without signing.
+# Checks that the app Pasr Zakelijk (zakelijk/apple) builds for iPhone/iPad (simulator) and natively for macOS
+# (both with their widgets), without signing.
 # Runs on every push that changes zakelijk/, or by hand.
 on:
   push:
@@ -38,3 +39,17 @@ jobs:
           done
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" "$APP/Info.plist"
           ls "$APP" | grep -E "PrivacyInfo|lproj" || true
+          test -d "$APP/PlugIns/PasrZakelijkWidgets.appex"
+
+  build-mac:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (macOS)
+        working-directory: zakelijk/apple
+        run: |
+          set -o pipefail
+          xcodebuild build -project PasrZakelijk.xcodeproj -scheme PasrZakelijkMac -configuration Debug \
+            -destination "platform=macOS" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            | tee /tmp/build-mac.log | grep -E "error:|warning: .*(deprecated|will never)|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" /tmp/build-mac.log

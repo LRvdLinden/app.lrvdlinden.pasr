@@ -135,8 +135,8 @@ struct BusinessCommunityView: View {
                 }
             }
             .navigationTitle("Samenwerkingen")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
+            .inlineTitle()
+            .toolbar { ToolbarItem(placement: .confirmationAction) { DoneButton() } }
             .navigationDestination(item: $managing) { campaign in
                 CommunityInviteManagerView(business: business, campaign: campaign)
             }
@@ -317,7 +317,7 @@ struct BusinessCommunityView: View {
                     TextField("Lidcode bij de kassa (PZ…)", text: Binding(
                         get: { memberCodes[row.id] ?? "" },
                         set: { memberCodes[row.id] = $0 }))
-                        .textInputAutocapitalization(.characters)
+                        .capitalization(.characters)
                         .autocorrectionDisabled()
                     Button("Gezamenlijke beloning controleren en uitgeven") {
                         Task { await claim(row.id) }

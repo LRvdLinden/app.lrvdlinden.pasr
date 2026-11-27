@@ -119,9 +119,9 @@ struct LoyaltyProgramView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Acties en beloningen")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar { ToolbarItem(placement: .confirmationAction) {
-                Button("Klaar") { dismiss() }
+                DoneButton()
             } }
             .alert("Vrienden uitnodigen", isPresented: $info) {
                 Button("Begrepen", role: .cancel) {}

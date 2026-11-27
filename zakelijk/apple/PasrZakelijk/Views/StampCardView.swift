@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Logo van de server (base64, PNG/JPEG) als afbeelding.
 enum LogoImage {
@@ -15,9 +17,20 @@ enum LogoImage {
         let maxSide: CGFloat = 256
         let scale = min(maxSide / max(image.size.width, 1), maxSide / max(image.size.height, 1), 1)
         let size = CGSize(width: max(1, (image.size.width * scale).rounded()), height: max(1, (image.size.height * scale).rounded()))
+        #if os(iOS)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         let small = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+        #else
+        guard let source = image.cgImageValue,
+              let ctx = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        ctx.interpolationQuality = .high
+        ctx.draw(source, in: CGRect(origin: .zero, size: size))
+        guard let scaled = ctx.makeImage() else { return nil }
+        let small = NSImage(cgImage: scaled)
+        #endif
         if let png = small.pngData(), png.count <= 150_000 { return png.base64EncodedString() }
         for q in [0.85, 0.7, 0.5] {
             if let jpg = small.jpegData(compressionQuality: q), jpg.count <= 150_000 { return jpg.base64EncodedString() }

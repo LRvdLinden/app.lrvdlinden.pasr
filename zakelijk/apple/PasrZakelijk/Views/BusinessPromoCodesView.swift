@@ -29,14 +29,14 @@ struct BusinessPromoCodesView: View {
                     Text("De klant noemt de actiecode aan de kassa. Deze code is herbruikbaar tot de ingestelde limiet en is geen persoonlijke kortingsbon.")
                         .font(.footnote).foregroundStyle(.secondary)
                     TextField("Code (bijv. HERFST20)", text: $code)
-                        .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                        .capitalization(.characters).autocorrectionDisabled()
                     TextField("Naam actie", text: $title)
                     Picker("Korting", selection: $kind) {
                         Text("Percentage (%)").tag("percent")
                         Text("Vast bedrag (€)").tag("amount")
                     }
-                    TextField("Korting", text: $value).keyboardType(.decimalPad)
-                    TextField("Minimale besteding (€)", text: $minimum).keyboardType(.decimalPad)
+                    TextField("Korting", text: $value).keyboard(.decimal)
+                    TextField("Minimale besteding (€)", text: $minimum).keyboard(.decimal)
                     DatePicker("Startdatum", selection: $start, displayedComponents: .date)
                     DatePicker("Einddatum", selection: $end, in: start..., displayedComponents: .date)
                     Stepper("Maximaal \(maxUses) keer gebruiken", value: $maxUses, in: 1...100000)
@@ -73,7 +73,7 @@ struct BusinessPromoCodesView: View {
                 }
                 Section("Controleren en verzilveren") {
                     TextField("Persoonlijke PA-code uit Pasr", text: $verifyCode)
-                        .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                        .capitalization(.characters).autocorrectionDisabled()
                     Button("Controleer actiecode") { Task { await check() } }
                         .disabled(busy || verifyCode.isEmpty)
                     Button("Gebruik één keer registreren") { Task { await redeem() } }
@@ -84,9 +84,9 @@ struct BusinessPromoCodesView: View {
                 if let message { Section { Text(message) } }
             }
             .navigationTitle("Actiecodes")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar { ToolbarItem(placement: .confirmationAction) {
-                Button("Klaar") { dismiss() }
+                DoneButton()
             } }
             .confirmationDialog("Actiecode verwijderen?", isPresented: Binding(
                 get: { removeID != nil }, set: { if !$0 { removeID = nil } }), titleVisibility: .visible) {
