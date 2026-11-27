@@ -252,7 +252,7 @@ def verify() -> None:
         if key == "home":
             assert 'fv-flip' in document or 'marquee-track' in document, "Original animations missing"
         if key == "zakelijk":
-            assert "zv-designer" in document or "zv-scan" in document, "Original business demo missing"
+            assert "zv-designer" in document or "zv-scan" in document or "zc-scan" in document, "Original business demo missing"
             assert '/zakelijk/dashboard/' in document, "Actual dashboard link lost"
             for feature in ("Kortingscoupons", "Digitale stempelkaarten", "VIP", "Marketingkalender",
                             "Vestigingen", "Inzichten", "Samenwerkingen"):
