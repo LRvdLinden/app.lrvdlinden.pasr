@@ -110,6 +110,14 @@ fun BenefitsScreen() {
                                 progress = { (visited.toFloat() / needed).coerceIn(0f, 1f) },
                                 modifier = Modifier.fillMaxWidth())
                             Text("Beloning: " + campaign.optString("reward"))
+                            campaign.optJSONArray("businesses")?.takeIf { it.length() > 0 }?.let { list ->
+                                Text("Doen mee: " + (0 until list.length()).mapNotNull { list.optJSONObject(it) }
+                                    .joinToString(", ") { (if (it.optBoolean("visited")) "✓ " else "") + it.optString("name") })
+                            }
+                            runCatching {
+                                java.time.OffsetDateTime.parse(campaign.optString("ends_at")).format(
+                                    java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.forLanguageTag("nl-NL")))
+                            }.getOrNull()?.let { Text("Loopt tot $it") }
                             if (campaign.optBoolean("claimed")) Text("✓ Beloning al uitgegeven")
                             else if (visited >= needed) Text(
                                 "Beloning beschikbaar. Laat je lidcode bij een deelnemende zaak scannen.",

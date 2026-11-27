@@ -1321,6 +1321,7 @@
         '<div class="zk-actions zd-scanbtns"><button class="zk-btn mint" id="sStamp" type="button"' + (cool ? " disabled" : "") + ">" + ICON.stamp + '<span id="sStampTxt">Stempel erbij</span></button>' +
         '<button class="zk-btn coral" id="sRedeem" type="button"' + (full ? "" : " disabled") + ">" + ICON.gift + "Beloning inwisselen</button></div>" +
         '<div id="pz2Milestones" class="pz2-milestones" aria-live="polite"></div>' +
+        '<div id="pz2Community" class="pz2-milestones" aria-live="polite"></div>' +
         (m.can_undo_event_id ? '<p class="zd-undo"><button class="zk-btn ghost sm" type="button" id="sUndo">' + ICON.undo + 'Ongedaan maken <span id="sUndoLeft"></span></button></p>' : "") +
         '<p class="zd-help">' + esc(m.card.business || "") + " · klant …" + esc(m.member_code_suffix || String(m.member_code || "").slice(-4)) + (m.rewards_redeemed ? " · " + m.rewards_redeemed + "× beloning gehad" : "") + "</p></div>";
       function setAmt(n) {
@@ -1375,6 +1376,33 @@
                   {p_code:m.member_code,p_stamps:Number(btn.dataset.milestone)},true);
                 result(fresh);toast("Tussentijdse beloning uitgegeven");
               } catch(e){btn.disabled=false;toast(nice(e));}
+            });
+          });
+        }).catch(function(){});
+      }
+      // gezamenlijke winkelstraatacties van deze zaak met de voortgang van deze klant (eigenaar en medewerkers)
+      var zaakId = m.business_id || (opts.zaak && opts.zaak.id);
+      if (m.member_code && zaakId) {
+        rpc("pasr_business_community_member",{p_business:zaakId,p_member_code:m.member_code},true).then(function(list){
+          var el = $("#pz2Community",root);
+          if(!el || !Array.isArray(list) || !list.length) return;
+          el.innerHTML = '<h3>Gezamenlijke acties</h3>' + list.map(function(c){
+            var ready = !c.claimed && Number(c.visited) >= Number(c.required);
+            return '<div class="pz2-milestone"><span><b>'+esc(c.name)+'</b> · '+esc(c.reward)+'<br><small>'+
+              (c.claimed?'Al uitgegeven':esc(Math.min(Number(c.visited)||0,Number(c.required)||0))+' van '+esc(c.required)+' winkels bezocht')+'</small></span>' +
+              '<button class="zk-btn ghost sm" data-community="'+esc(c.id)+'"'+(ready?'':' disabled')+'>' +
+              (c.claimed?'Uitgegeven':(ready?'Uitgeven':'Nog niet'))+'</button></div>';
+          }).join("");
+          el.querySelectorAll("button:not([disabled])").forEach(function(btn){
+            btn.addEventListener("click",async function(){
+              if(!confirm("Gezamenlijke beloning uitgeven? Dit kan maar één keer per klant.")) return;
+              btn.disabled=true;
+              try {
+                var r=await rpc("pasr_business_community_claim",
+                  {p_campaign:btn.dataset.community,p_business:zaakId,p_member_code:m.member_code},true);
+                btn.textContent="Uitgegeven";
+                setMsg($("#sMsg", root), "Gezamenlijke beloning uitgegeven: "+(r.reward||"beloning"), true);
+              } catch(e){btn.disabled=false;setMsg($("#sMsg", root), nice(e));}
             });
           });
         }).catch(function(){});

@@ -15,6 +15,9 @@ struct PasrBenefitsView: View {
         let visited: Int
         let required: Int
         let claimed: Bool
+        let endsAt: Date?
+        /// Deelnemende zaken (openbare namen) en of je daar binnen de actie al een stempel kreeg.
+        let businesses: [(name: String, visited: Bool)]
         init?(_ row: [String: Any]) {
             guard let id = row["id"] as? String, let name = row["name"] as? String else { return nil }
             self.id = id; self.name = name
@@ -22,6 +25,15 @@ struct PasrBenefitsView: View {
             visited = (row["visited"] as? NSNumber)?.intValue ?? 0
             required = (row["required"] as? NSNumber)?.intValue ?? 0
             claimed = row["claimed"] as? Bool ?? false
+            if let raw = row["ends_at"] as? String {
+                let f = ISO8601DateFormatter()
+                f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                endsAt = f.date(from: raw) ?? ISO8601DateFormatter().date(from: raw)
+            } else { endsAt = nil }
+            businesses = (row["businesses"] as? [[String: Any]] ?? []).compactMap { b -> (name: String, visited: Bool)? in
+                guard let name = b["name"] as? String else { return nil }
+                return (name: name, visited: b["visited"] as? Bool ?? false)
+            }
         }
     }
     @MainActor private func loadCommunity() async {
@@ -99,6 +111,14 @@ struct PasrBenefitsView: View {
                                              total: Double(max(1, item.required)))
                                 Text("Beloning: \(item.reward)")
                                     .font(.caption).foregroundStyle(.secondary)
+                                if !item.businesses.isEmpty {
+                                    Text("Doen mee: " + item.businesses.map { ($0.visited ? "✓ " : "") + $0.name }.joined(separator: ", "))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                if let end = item.endsAt {
+                                    Text("Loopt tot \(end.formatted(date: .long, time: .omitted))")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                                 if item.claimed {
                                     Label("Beloning al uitgegeven", systemImage: "checkmark.circle.fill")
                                         .font(.caption).foregroundStyle(.green)

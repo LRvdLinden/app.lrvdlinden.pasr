@@ -107,6 +107,16 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
     var locationMenu by remember { mutableStateOf(false) }
     val maxAmount = (result.maxPerScan ?: business.maxPerScan).coerceIn(1, 30)
     var milestones by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    // gezamenlijke winkelstraatacties van deze zaak met de voortgang van de gescande klant
+    var community by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var confirmCommunity by remember { mutableStateOf<JSONObject?>(null) }
+    suspend fun loadCommunity() {
+        community = try {
+            val r = Account.rpc("pasr_business_community_member", JSONObject()
+                .put("p_business", business.id).put("p_member_code", result.code)) as? JSONArray
+            (0 until (r?.length() ?: 0)).mapNotNull { r?.optJSONObject(it) }
+        } catch (_: Exception) { emptyList() }
+    }
 
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     LaunchedEffect(business.id) {
@@ -124,6 +134,7 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
             val r = Account.rpc("pasr_business_reward_progress", JSONObject().put("p_code", result.code)) as? JSONArray
             (0 until (r?.length() ?: 0)).mapNotNull { r?.optJSONObject(it) }
         } catch (_: Exception) { emptyList() }
+        loadCommunity()
     }
 
     fun reload(quiet: Boolean = false) {
@@ -280,6 +291,28 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
                     }
                 }
             }
+            if (community.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Pz.card).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Gezamenlijke acties", fontWeight = FontWeight.Bold, color = Pz.text)
+                    community.forEach { item ->
+                        val visited = item.optInt("visited")
+                        val needed = item.optInt("required")
+                        val claimed = item.optBoolean("claimed")
+                        val available = !claimed && visited >= needed
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(item.optString("name"), color = Pz.text, fontWeight = FontWeight.Bold)
+                                Text(item.optString("reward"), color = Pz.text)
+                                Text(if (claimed) "Al uitgegeven" else "${minOf(visited, needed)} van $needed winkels bezocht", color = Pz.muted)
+                            }
+                            TextButton(enabled = available && !busy, onClick = { confirmCommunity = item }) {
+                                Text(if (claimed) "Uitgegeven" else if (available) "Uitgeven" else "Nog niet")
+                            }
+                        }
+                    }
+                }
+            }
             val undoID = result.undoEventID
             if (undoID != null && undoUntil > now) {
                 OutlinedButton(
@@ -293,6 +326,28 @@ fun ScanResultContent(business: Business, initial: ScanResult, onDismiss: () -> 
             }
             Spacer(Modifier.size(12.dp))
         }
+    }
+    confirmCommunity?.let { item ->
+        ConfirmDialog(
+            "Gezamenlijke beloning uitgeven?",
+            "Een gezamenlijke beloning kan maar één keer per klant worden uitgegeven.",
+            "Uitgeven: " + item.optString("reward"),
+            onConfirm = {
+                busy = true; error = null; done = null
+                scope.launch {
+                    try {
+                        Account.rpc("pasr_business_community_claim", JSONObject()
+                            .put("p_campaign", item.optString("id")).put("p_business", business.id)
+                            .put("p_member_code", result.code))
+                        done = "Gezamenlijke beloning uitgegeven: " + item.optString("reward")
+                        haptics.success()
+                        loadCommunity()
+                    } catch (e: Exception) { error = e.message; haptics.error() }
+                    busy = false
+                }
+            },
+            onDismiss = { confirmCommunity = null },
+        )
     }
     if (confirmRedeem) {
         ConfirmDialog(

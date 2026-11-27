@@ -141,8 +141,10 @@ fun ProgramDialog(card: BusinessCard, onClose: () -> Unit) {
                 option("Marketingkalender", marketing) { marketing = it }
                 if (marketing) OutlinedTextField(campaignName, { campaignName = it },
                     label = { Text("Naam campagne") }, modifier = Modifier.fillMaxWidth())
-                option("Gezamenlijke winkelstraatactie", community) { community = it }
+                option("Interesse in gezamenlijke actie", community) { community = it }
                 if (community) OutlinedTextField(communityName, { communityName = it }, label = { Text("Naam gezamenlijke actie") }, modifier = Modifier.fillMaxWidth())
+                Text("Dit is alleen een voorkeur. Een echte gezamenlijke actie start je via Acties › Samenwerken; andere zaken doen daar zelf mee.",
+                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                 if (message.isNotEmpty()) Text(message)
             }
         },

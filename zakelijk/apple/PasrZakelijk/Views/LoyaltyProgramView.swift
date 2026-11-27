@@ -95,9 +95,11 @@ struct LoyaltyProgramView: View {
                 Section {
                     Toggle("Marketingkalender", isOn: $marketingOn)
                     if marketingOn { TextField("Campagnenaam", text: $marketingName) }
-                    Toggle("Gezamenlijke winkelstraatactie", isOn: $communityOn)
+                    Toggle("Interesse in gezamenlijke actie", isOn: $communityOn)
                     if communityOn { TextField("Naam gezamenlijke actie", text: $communityName) }
-                } header: { Label("Marketing en samenwerking", systemImage: "calendar") }
+                } header: { Label("Marketing en samenwerking", systemImage: "calendar") } footer: {
+                    Text("Dit is alleen een voorkeur. Een echte gezamenlijke actie start je via Acties › Samenwerkingen; andere zaken doen daar zelf mee.")
+                }
                 if let message {
                     Section { Text(message).font(.subheadline) }
                 }
