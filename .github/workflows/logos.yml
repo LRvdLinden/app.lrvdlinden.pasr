@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: logos
@@ -46,6 +47,8 @@ jobs:
         run: python tools/fetch_logos.py --tickets ${{ inputs.all && '--all' || '' }}
       - name: Commit logos
         if: ${{ inputs.debug == '' || inputs.debug == null }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
@@ -55,3 +58,7 @@ jobs:
           git commit -m "Winkellogo's bijgewerkt"
           git pull --rebase -q
           git push
+          # Een push met GITHUB_TOKEN start geen andere workflows: zet tickets meteen in het beheer via de Backend-workflow.
+          if ${{ inputs.tickets == true }}; then
+            gh workflow run backend.yml --ref main -R "${{ github.repository }}" && echo "::notice::Backend gestart: logo's en kleuren van tickets gaan naar het beheer."
+          fi
