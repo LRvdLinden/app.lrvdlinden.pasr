@@ -373,11 +373,18 @@ struct EventDetailView: View {
             if registrations.isEmpty {
                 Text("Nog geen aanmeldingen").foregroundStyle(.secondary)
             }
-            ForEach(filtered) { r in RegistrationRow(registration: r) }
+            ForEach(filtered) { r in
+                RegistrationRow(registration: r)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if let id = r.registrationID, r.status != "cancelled" {
+                            Button("Afmelden", role: .destructive) { Task { await cancelRegistration(id) } }
+                        }
+                    }
+            }
         } header: {
             Text("Aanmeldingen")
         } footer: {
-            Text("Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code.")
+            Text("Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code. Veeg naar links om iemand af te melden.")
         }
     }
 
@@ -387,6 +394,15 @@ struct EventDetailView: View {
             registrations = try await TKAPI.registrations(business: business.id, event: event.id)
             csv = EventCSV.write(event: event, rows: registrations)
             error = nil
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func cancelRegistration(_ id: String) async {
+        do {
+            try await TKAPI.cancelRegistration(business: business.id, registration: id)
+            await load()
         } catch {
             self.error = error.localizedDescription
         }

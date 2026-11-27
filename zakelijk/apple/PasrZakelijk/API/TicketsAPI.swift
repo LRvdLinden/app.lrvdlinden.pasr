@@ -195,6 +195,8 @@ struct TicketEvent: Identifiable, Hashable {
 
 struct EventRegistration: Identifiable, Hashable {
     var id: String
+    /// Id van de aanmelding op de server (voor afmelden).
+    var registrationID: String?
     var ticketID: String
     var firstName: String
     var lastName: String
@@ -207,7 +209,8 @@ struct EventRegistration: Identifiable, Hashable {
 
     init(json j: JSONObject, index: Int) {
         ticketID = j.string("ticket_id") ?? ""
-        id = (j.string("registration_id") ?? "r\(index)") + "-" + ticketID
+        registrationID = j.string("registration_id")
+        id = (registrationID ?? "r\(index)") + "-" + ticketID
         firstName = j.string("first_name") ?? ""
         lastName = j.string("last_name") ?? ""
         email = j.string("email") ?? ""
@@ -503,6 +506,10 @@ enum TKAPI {
 
     static func cancelEvent(business: String, event: String, message: String) async throws {
         _ = try await account.rpc("pasr_business_event_cancel", ["p_business": business, "p_event": event, "p_message": message])
+    }
+
+    static func cancelRegistration(business: String, registration: String) async throws {
+        _ = try await account.rpc("pasr_business_event_registration_cancel", ["p_business": business, "p_registration": registration])
     }
 
     static func scanTicket(business: String, code: String, event: String?) async throws -> TicketScan {

@@ -197,7 +197,7 @@ struct APIError: LocalizedError {
             text = mapped   // oudere functies: de code staat in message ("not_found", "bad_name", …)
         } else if let k = ["invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner",
                        "card_not_found", "already_member", "invalid_code", "event_full", "signup_closed", "invalid_input",
-                       "event_cancelled", "event_not_found"].first(where: has),
+                       "event_cancelled", "event_not_found", "barcode_type_locked", "business_not_approved"].first(where: has),
                   let mapped = hintText(k, details: details, message: "") {
             text = mapped   // gezamenlijke acties: code ergens in de melding
         } else if code == "P0002" {
@@ -287,6 +287,10 @@ struct APIError: LocalizedError {
             return String(localized: "Dit event is geannuleerd.")
         case "event_not_found":
             return String(localized: "Dit event bestaat niet (meer).")
+        case "barcode_type_locked":
+            return String(localized: "Het soort barcode kan niet meer veranderen zodra de kaart leden heeft.")
+        case "business_not_approved":
+            return String(localized: "Je zaak is nog niet goedgekeurd. Online zetten kan pas daarna.")
         default:
             return nil
         }

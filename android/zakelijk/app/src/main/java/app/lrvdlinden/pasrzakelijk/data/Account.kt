@@ -205,7 +205,7 @@ object ApiErrors {
     /** Foutcodes van de gezamenlijke acties (uitnodigingen), ook als ze midden in de melding staan. */
     private val communityCodes = listOf("invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner",
         // tickets en klantenkaarten
-        "card_not_found", "already_member", "invalid_code", "event_full", "signup_closed", "invalid_input", "event_cancelled", "event_not_found")
+        "card_not_found", "already_member", "invalid_code", "event_full", "signup_closed", "invalid_input", "event_cancelled", "event_not_found", "barcode_type_locked", "business_not_approved")
 
     fun from(status: Int, code: String, message: String, hint: String = "", details: String = ""): ApiError {
         hintText(hint, details)?.let { return ApiError(it, status) }
@@ -271,6 +271,8 @@ object ApiErrors {
         "invalid_input" -> L("Niet alle velden kloppen. Controleer naam, datum, tijden en plekken.")
         "event_cancelled" -> L("Dit event is geannuleerd.")
         "event_not_found" -> L("Dit event bestaat niet (meer).")
+        "barcode_type_locked" -> L("Het soort barcode kan niet meer veranderen zodra de kaart leden heeft.")
+        "business_not_approved" -> L("Je zaak is nog niet goedgekeurd. Online zetten kan pas daarna.")
         else -> null
     }
 }

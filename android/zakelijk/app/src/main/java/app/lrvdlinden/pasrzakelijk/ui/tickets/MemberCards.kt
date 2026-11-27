@@ -195,9 +195,9 @@ fun MemberCardEditorSheet(business: Business, initial: MemberCard, onDismiss: ()
                 }
             }
             SectionHeader(L("Barcode"))
-            PillSegments(listOf("qr" to L("QR-code"), "code128" to L("Code 128"), "ean13" to L("EAN-13")), card.barcodeType) {
+            PillSegments(listOf("qr" to L("QR-code"), "code128" to L("Code 128"), "ean13" to L("EAN-13")), card.barcodeType, onSelect = {
                 card = card.copy(barcodeType = it)
-            }
+            })
             Spacer(Modifier.height(8.dp))
             if (card.barcodeType != "ean13") {
                 PzField(card.prefix, { card = card.copy(prefix = it.take(8)) }, L("Voorvoegsel kaartnummer (bijv. KS-)"),
@@ -216,9 +216,9 @@ fun MemberCardEditorSheet(business: Business, initial: MemberCard, onDismiss: ()
                 }
                 if (g.savingEnabled) {
                     Column(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PillSegments(listOf("visits" to L("Bezoeken"), "points" to L("Punten")), g.savingUnit) {
+                        PillSegments(listOf("visits" to L("Bezoeken"), "points" to L("Punten")), g.savingUnit, onSelect = {
                             card = card.copy(goals = g.copy(savingUnit = it))
-                        }
+                        })
                     }
                     StepperLine(if (g.savingUnit == "points") L("Beloning na (punten)") else L("Beloning na (bezoeken)"), g.savingTarget, 2..10_000,
                         if (g.savingTarget >= 50) 10 else 1) { card = card.copy(goals = g.copy(savingTarget = it)) }
@@ -235,7 +235,7 @@ fun MemberCardEditorSheet(business: Business, initial: MemberCard, onDismiss: ()
                 }
             }
             SectionHeader(L("Korting in een periode"))
-            PillSegments(listOf(false to L("Lijst"), true to L("Tijdlijn")), timeline) { timeline = it }
+            PillSegments(listOf(false to L("Lijst"), true to L("Tijdlijn")), timeline, onSelect = { timeline = it })
             Spacer(Modifier.height(8.dp))
             if (timeline) PeriodTimeline(g.periods)
             else Group {

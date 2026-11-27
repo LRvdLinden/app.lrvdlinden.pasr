@@ -4,7 +4,7 @@ package app.lrvdlinden.pasrzakelijk.core
 // Niet met de hand wijzigen.
 
 internal object EnStrings {
-    val map: Map<String, String> = HashMap<String, String>(1186).apply {
+    val map: Map<String, String> = HashMap<String, String>(1192).apply {
         part0(this)
         part1(this)
         part2(this)
@@ -70,6 +70,8 @@ internal object EnStrings {
         m["Afgemeld"] = "Cancelled"
         m["Afkoeltijd"] = "Cooldown"
         m["Afkoeltijd: zo lang moet een klant wachten voor de volgende stempel. Bij scannen kies je zelf het aantal stempels, tot het maximum."] = "Cooldown: how long a customer has to wait for the next stamp. When scanning you choose the number of stamps yourself, up to the maximum."
+        m["Afmelden"] = "Cancel registration"
+        m["Afmelden?"] = "Cancel registration?"
         m["Al gebruikt"] = "Already used"
         m["Al gebruikt om %@"] = "Already used at %@"
         m["Alle events"] = "All events"
@@ -94,11 +96,11 @@ internal object EnStrings {
         m["Beloning inwisselen"] = "Redeem reward"
         m["Beloning inwisselen?"] = "Redeem reward?"
         m["Beloning na (bezoeken)"] = "Reward after (visits)"
-        m["Beloning na (punten)"] = "Reward after (points)"
-        m["Beloning uitgegeven: %@. Een tweede inwisseling is niet mogelijk."] = "Reward issued: %@. It cannot be redeemed a second time."
     }
 
     private fun part1(m: HashMap<String, String>) {
+        m["Beloning na (punten)"] = "Reward after (points)"
+        m["Beloning uitgegeven: %@. Een tweede inwisseling is niet mogelijk."] = "Reward issued: %@. It cannot be redeemed a second time."
         m["Beloning: %@"] = "Reward: %@"
         m["Beloningen"] = "Rewards"
         m["Bericht aan de aanmeldingen"] = "Message to registrants"
@@ -177,11 +179,11 @@ internal object EnStrings {
         m["Dit jaar"] = "This year"
         m["Dit kwartaal"] = "This quarter"
         m["Dit logo is te groot of geen afbeelding. Kies een kleinere afbeelding."] = "This logo is too large or not an image. Choose a smaller image."
-        m["Dit mag je niet (meer) bij deze zaak. Vraag de eigenaar."] = "You're not (or no longer) allowed to do this for this business. Ask the owner."
-        m["Dit ticket is niet bekend."] = "This ticket is not known."
     }
 
     private fun part2(m: HashMap<String, String>) {
+        m["Dit mag je niet (meer) bij deze zaak. Vraag de eigenaar."] = "You're not (or no longer) allowed to do this for this business. Ask the owner."
+        m["Dit ticket is niet bekend."] = "This ticket is not known."
         m["Doe mee met onze gezamenlijke Pasr-actie \"%@\"."] = "Join our joint Pasr campaign \"%@\"."
         m["Doel van de kaart · kies er één of meer"] = "Purpose of the card · choose one or more"
         m["Doen mee: %@"] = "Taking part: %@"
@@ -238,6 +240,7 @@ internal object EnStrings {
         m["Gezamenlijke beloning controleren en uitgeven"] = "Check and issue joint reward"
         m["Groot"] = "Large"
         m["Header-afbeelding (link, optioneel)"] = "Header image (link, optional)"
+        m["Het soort barcode kan niet meer veranderen zodra de kaart leden heeft."] = "The barcode type can no longer change once the card has members."
         m["Hier komt elke stempel en inwisseling te staan."] = "Every stamp and redemption will appear here."
         m["Houd een medewerker ingedrukt of tik op ⋮ om in te trekken. Wie is ingetrokken, kan direct geen stempels meer zetten."] = "Long-press a staff member or tap ⋮ to revoke. Anyone revoked can no longer add stamps right away."
         m["Huisstijl ophalen…"] = "Fetching brand style…"
@@ -259,12 +262,12 @@ internal object EnStrings {
         m["Is de kaart vol, dan wissel je de beloning in met één tik."] = "When the card is full, redeem the reward with one tap."
         m["J"] = "Y"
         m["Jaar"] = "Year"
-        m["Je Pasr-account wordt verwijderd, ook in de app Pasr. Ben je eigenaar, dan verdwijnen je zaak, kaarten en leden ook. Dit kan niet ongedaan worden gemaakt."] = "Your Pasr account will be deleted, also in the Pasr app. If you're an owner, your business, cards and members are deleted too. This can't be undone."
-        m["Je accepteert met %@."] = "You're accepting with %@."
-        m["Je beloning"] = "Your reward"
     }
 
     private fun part3(m: HashMap<String, String>) {
+        m["Je Pasr-account wordt verwijderd, ook in de app Pasr. Ben je eigenaar, dan verdwijnen je zaak, kaarten en leden ook. Dit kan niet ongedaan worden gemaakt."] = "Your Pasr account will be deleted, also in the Pasr app. If you're an owner, your business, cards and members are deleted too. This can't be undone."
+        m["Je accepteert met %@."] = "You're accepting with %@."
+        m["Je beloning"] = "Your reward"
         m["Je bent eigenaar"] = "You're the owner"
         m["Je bent medewerker"] = "You're a staff member"
         m["Je bent niet ingelogd."] = "You're not signed in."
@@ -342,12 +345,12 @@ internal object EnStrings {
         m["Lid: %@"] = "Member: %@"
         m["Lidcode bij de kassa (PZ…)"] = "Member code at the till (PZ…)"
         m["Lidmaatschap of herkenning"] = "Membership or recognition"
-        m["Lijst"] = "List"
-        m["Link"] = "Link"
-        m["Link delen"] = "Share link"
     }
 
     private fun part4(m: HashMap<String, String>) {
+        m["Lijst"] = "List"
+        m["Link"] = "Link"
+        m["Link delen"] = "Share link"
         m["Link gekopieerd."] = "Link copied."
         m["Locatie gevonden"] = "Location found"
         m["Log in met je Pasr-account. Ben je medewerker? Gebruik het account waarmee je de uitnodiging accepteert."] = "Sign in with your Pasr account. Staff member? Use the account you accept the invitation with."
@@ -425,12 +428,12 @@ internal object EnStrings {
         m["Nog niets gebeurd"] = "Nothing has happened yet"
         m["Nu %@%% korting"] = "Now %@%% off"
         m["Nummering"] = "Numbering"
-        m["OK"] = "OK"
-        m["Of typ de code (PZ…)"] = "Or type the code (PZ…)"
-        m["Offline halen (concept)"] = "Take offline (draft)"
     }
 
     private fun part5(m: HashMap<String, String>) {
+        m["OK"] = "OK"
+        m["Of typ de code (PZ…)"] = "Or type the code (PZ…)"
+        m["Offline halen (concept)"] = "Take offline (draft)"
         m["Omschrijving"] = "Description"
         m["Ongedaan gemaakt"] = "Undone"
         m["Ongedaan maken"] = "Undo"
@@ -508,12 +511,12 @@ internal object EnStrings {
         m["Sparen voor een beloning"] = "Save for a reward"
         m["Standaard het logo en de kleur van je zaak."] = "By default the logo and colour of your business."
         m["Status per zaak"] = "Status per business"
-        m["Stel eerst een schermvergrendeling of vingerafdruk in op dit toestel."] = "First set up a screen lock or fingerprint on this device."
-        m["Stempel erbij, beloning inwisselen of ongedaan maken."] = "Add a stamp, redeem a reward or undo."
-        m["Stempel gezet"] = "Stamp added"
     }
 
     private fun part6(m: HashMap<String, String>) {
+        m["Stel eerst een schermvergrendeling of vingerafdruk in op dit toestel."] = "First set up a screen lock or fingerprint on this device."
+        m["Stempel erbij, beloning inwisselen of ongedaan maken."] = "Add a stamp, redeem a reward or undo."
+        m["Stempel gezet"] = "Stamp added"
         m["Stempel toevoegen"] = "Add stamp"
         m["Stempels"] = "Stamps"
         m["Stempels, beloningen en nieuwe leden per dag, en wie wat deed."] = "Stamps, rewards and new members per day, and who did what."
@@ -591,12 +594,12 @@ internal object EnStrings {
         m["Wat is nieuw"] = "What's new"
         m["Wat voor zaak is het? (optioneel)"] = "What kind of business is it? (optional)"
         m["We hebben je een mail gestuurd. Tik op de knop in die mail om je e-mailadres te bevestigen en log daarna hier in."] = "We've sent you an email. Tap the button in that email to confirm your email address, then sign in here."
-        m["Website (bijv. jouwzaak.nl)"] = "Website (e.g. yourbusiness.com)"
-        m["Week"] = "Week"
-        m["Weekdagen"] = "Weekdays"
     }
 
     private fun part7(m: HashMap<String, String>) {
+        m["Website (bijv. jouwzaak.nl)"] = "Website (e.g. yourbusiness.com)"
+        m["Week"] = "Week"
+        m["Weekdagen"] = "Weekdays"
         m["Weergave"] = "Appearance"
         m["Weigeren"] = "Decline"
         m["Werk je bij een zaak? Open de uitnodigingslink die je van de eigenaar kreeg, of plak de code hier."] = "Do you work at a business? Open the invitation link you got from the owner, or paste the code here."

@@ -254,6 +254,7 @@ fun EventDetailSheet(business: Business, initial: TicketEvent, onDismiss: () -> 
     var cancelMessage by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var tick by remember { mutableStateOf(0) }
+    var unregister by remember { mutableStateOf<Pair<String, String>?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(tick) {
@@ -282,7 +283,7 @@ fun EventDetailSheet(business: Business, initial: TicketEvent, onDismiss: () -> 
             if (filtered.isNotEmpty()) Group {
                 filtered.forEachIndexed { i, r ->
                     if (i > 0) GroupDivider()
-                    RegistrationLine(r)
+                    RegistrationLine(r) { id -> unregister = r.fullName to id }
                 }
             }
             SectionFooter(L("Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code."))
@@ -293,6 +294,13 @@ fun EventDetailSheet(business: Business, initial: TicketEvent, onDismiss: () -> 
     if (sharing) TkShareSheet(event.name, event.addUrl,
         L("Klanten scannen deze code of openen de link en melden zich gratis aan. Hun ticket komt in Pasr en Wallet."),
         L("Klanten melden zich met één tik aan voor je event in Pasr. Zonder Pasr opent pasr.nl.")) { sharing = false }
+    unregister?.let { (name, id) ->
+        app.lrvdlinden.pasrzakelijk.ui.ConfirmDialog(L("Afmelden?"), name, L("Afmelden"), destructive = true, onConfirm = {
+            scope.launch {
+                try { TkApi.cancelRegistration(business.id, id); tick++ } catch (e: Exception) { error = e.message }
+            }
+        }, onDismiss = { unregister = null })
+    }
     if (askCancel) {
         AlertDialog(
             onDismissRequest = { askCancel = false },
@@ -347,7 +355,7 @@ private fun StatTile(title: String, value: String, color: Color, modifier: Modif
 }
 
 @Composable
-private fun RegistrationLine(r: EventRegistration) {
+private fun RegistrationLine(r: EventRegistration, onCancel: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(r.fullName, color = Pz.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
@@ -361,6 +369,11 @@ private fun RegistrationLine(r: EventRegistration) {
         Text(r.email, color = Pz.muted, fontSize = 13.sp)
         Text(listOfNotNull(r.birthDate?.let { TkText.dateNumeric(it) }, r.ticketType.takeIf { it.isNotBlank() }).joinToString(" · "),
             color = Pz.muted, fontSize = 13.sp)
+        val id = r.registrationId
+        if (id != null && r.status != "cancelled") {
+            Text(L("Afmelden"), color = Pz.coral, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable { onCancel(id) }.padding(top = 4.dp))
+        }
     }
 }
 

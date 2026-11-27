@@ -126,6 +126,8 @@ data class TicketEvent(
 
 data class EventRegistration(
     val key: String,
+    /** Id van de aanmelding op de server (voor afmelden). */
+    val registrationId: String?,
     val ticketId: String,
     val firstName: String,
     val lastName: String,
@@ -142,7 +144,7 @@ data class EventRegistration(
         fun from(j: J, index: Int): EventRegistration {
             val ticket = j.string("ticket_id") ?: ""
             return EventRegistration(
-                key = (j.string("registration_id") ?: "r$index") + "-" + ticket, ticketId = ticket,
+                key = (j.string("registration_id") ?: "r$index") + "-" + ticket, registrationId = j.string("registration_id"), ticketId = ticket,
                 firstName = j.string("first_name") ?: "", lastName = j.string("last_name") ?: "", email = j.string("email") ?: "",
                 birthDate = TkFormat.parseDay(j.string("birth_date")), ticketType = j.string("ticket_type") ?: "",
                 status = (j.string("status") ?: "registered").lowercase(), createdAt = j.date("created_at"), checkedInAt = j.date("checked_in_at"),
@@ -391,6 +393,10 @@ object TkApi {
 
     suspend fun cancelEvent(business: String, event: String, message: String) {
         Account.rpc("pasr_business_event_cancel", obj("p_business" to business, "p_event" to event, "p_message" to message))
+    }
+
+    suspend fun cancelRegistration(business: String, registration: String) {
+        Account.rpc("pasr_business_event_registration_cancel", obj("p_business" to business, "p_registration" to registration))
     }
 
     suspend fun scanTicket(business: String, code: String, event: String?): TicketScan =

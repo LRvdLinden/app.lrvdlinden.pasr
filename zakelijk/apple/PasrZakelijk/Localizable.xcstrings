@@ -849,6 +849,38 @@
         }
       }
     },
+    "Afmelden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel registration"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afmelden"
+          }
+        }
+      }
+    },
+    "Afmelden?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel registration?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afmelden?"
+          }
+        }
+      }
+    },
     "Al gebruikt": {
       "localizations": {
         "en": {
@@ -3105,6 +3137,22 @@
         }
       }
     },
+    "Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code. Veeg naar links om iemand af te melden.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only you see date of birth and email; they are not on the ticket or in the QR code. Swipe left to cancel someone's registration."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code. Veeg naar links om iemand af te melden."
+          }
+        }
+      }
+    },
     "Geef Pasr Zakelijk toegang tot de camera in Instellingen, of typ de code van de klant hieronder.": {
       "localizations": {
         "en": {
@@ -3421,6 +3469,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Header-afbeelding (link, optioneel)"
+          }
+        }
+      }
+    },
+    "Het soort barcode kan niet meer veranderen zodra de kaart leden heeft.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The barcode type can no longer change once the card has members."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het soort barcode kan niet meer veranderen zodra de kaart leden heeft."
           }
         }
       }
