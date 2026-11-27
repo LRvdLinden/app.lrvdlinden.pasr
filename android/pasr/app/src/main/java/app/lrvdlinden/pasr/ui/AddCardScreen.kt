@@ -85,7 +85,10 @@ fun AddCardScreen() {
                 TopAppBar(
                     title = { Text("Kaart toevoegen") },
                     navigationIcon = { IconButton({ nav.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Terug") } },
-                    actions = { if (tab != 4) IconButton({ scanning = true }) { Icon(Icons.Outlined.QrCodeScanner, "QR van een zaak scannen") } },
+                    actions = {
+                        androidx.compose.material3.TextButton({ nav.push(Screen.Migrate()) }) { Text("Importeer") }
+                        if (tab != 4) IconButton({ scanning = true }) { Icon(Icons.Outlined.QrCodeScanner, "QR van een zaak scannen") }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 )
                 PrimaryScrollableTabRow(tab, containerColor = MaterialTheme.colorScheme.background) {

@@ -91,12 +91,14 @@ object Prefs {
 
 /** Alle kaarten, versleuteld in één bestand. Foto's als losse versleutelde bestanden. */
 object CardStore {
+    private lateinit var widgetContext: Context
     private lateinit var file: File
     private lateinit var photoDir: File
     private val _cards = MutableStateFlow<List<Card>>(emptyList())
     val cards: StateFlow<List<Card>> = _cards.asStateFlow()
 
     fun init(context: Context) {
+        widgetContext = context.applicationContext
         file = File(context.filesDir, "cards.enc")
         photoDir = File(context.filesDir, "photos").apply { mkdirs() }
         _cards.value = load()
@@ -114,6 +116,8 @@ object CardStore {
         val tmp = File(file.parentFile, "cards.enc.tmp")
         tmp.writeBytes(Crypto.encrypt(PasrJson.encodeToString(list).toByteArray()))
         tmp.renameTo(file)
+        app.lrvdlinden.pasr.updateCardWidgets(widgetContext)
+        app.lrvdlinden.pasr.QuickAccess.updateShortcuts(widgetContext)
     }
 
     val visible: List<Card> get() = _cards.value.filter { it.deletedAt == null }
@@ -132,6 +136,15 @@ object CardStore {
 
     @Synchronized
     fun replaceAll(list: List<Card>) = persist(list)
+
+    @Synchronized
+    fun discardGroups(allowed: Set<String>) {
+        val removed = _cards.value.filter { it.groupId != null && it.groupId !in allowed }
+        if (removed.isEmpty()) return
+        val ids = removed.map { it.id }.toSet()
+        removed.forEach { card -> card.photos.forEach { photoFile(card.id, it).delete() } }
+        persist(_cards.value.filterNot { it.id in ids })
+    }
 
     /** Naar Recent verwijderd (30 dagen). */
     fun delete(id: String) { get(id)?.let { upsert(it.copy(deletedAt = nowMs()), touch = false) } }

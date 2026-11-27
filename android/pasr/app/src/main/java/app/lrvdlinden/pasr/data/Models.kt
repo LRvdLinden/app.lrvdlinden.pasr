@@ -114,6 +114,7 @@ data class CardDetails(
 /** Een klantenkaart, cadeaukaart, kortingscode, ticket, abonnement of zakelijke stempelkaart. */
 @Serializable
 data class Card(
+    val groupId: String? = null,
     val id: String = newId(),
     val kindRaw: String = CardKind.LOYALTY.raw,
     val storeName: String = "",
@@ -257,7 +258,7 @@ data class Card(
 }
 
 enum class CardOrder(val raw: String, val title: String) {
-    AZ("az", "A tot Z"), USED("used", "Meest gebruikt bovenaan");
+    AZ("az", "A tot Z"), USED("used", "Meest gebruikt bovenaan"), NEARBY("nearby", "In de buurt bovenaan");
 
     companion object { fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: AZ }
 }
@@ -270,9 +271,30 @@ fun List<Card>.alphabetical(): List<Card> = sortedWith { a, b ->
     if (o != 0) o else a.number.compareTo(b.number)
 }
 
-fun List<Card>.ordered(order: CardOrder): List<Card> {
+/**
+ * Volgorde zoals op de iPhone. In de buurt: kaarten met een bewaarde winkelplek binnen 2 km van [here] bovenaan
+ * (dichtstbij eerst), daarna A tot Z. Zonder locatie (geen toestemming) blijft het A tot Z.
+ */
+fun List<Card>.ordered(order: CardOrder, here: android.location.Location? = null): List<Card> {
     val az = alphabetical()
     if (order == CardOrder.AZ) return az
+    if (order == CardOrder.NEARBY) {
+        here ?: return az
+        fun dist(c: Card): Float? = c.places.minOfOrNull { p ->
+            val r = FloatArray(1)
+            android.location.Location.distanceBetween(here.latitude, here.longitude, p.latitude, p.longitude, r)
+            r[0]
+        }?.takeIf { it <= 2_000f }
+        return az.withIndex().sortedWith { a, b ->
+            val x = dist(a.value); val y = dist(b.value)
+            when {
+                x != null && y != null -> x.compareTo(y)
+                x != null -> -1
+                y != null -> 1
+                else -> a.index.compareTo(b.index)
+            }
+        }.map { it.value }
+    }
     return az.withIndex().sortedWith { a, b ->
         val x = Card.score(a.value); val y = Card.score(b.value)
         if (abs(x - y) < 0.0001) a.index.compareTo(b.index) else y.compareTo(x)

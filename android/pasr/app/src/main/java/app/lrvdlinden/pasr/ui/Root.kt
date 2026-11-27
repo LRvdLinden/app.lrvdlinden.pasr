@@ -48,14 +48,25 @@ sealed interface Screen {
     /** "Laatst gebruikt", alles van één kaart. */
     data class Uses(val id: String) : Screen
     data object Add : Screen
+    class Migrate : Screen {
+        val candidates = mutableStateListOf<Card>()
+    }
     data class Editor(val id: String? = null, val template: StoreTemplate? = null, val kind: CardKind = CardKind.LOYALTY,
                       val draft: Card? = null) : Screen
     data class StampJoin(val cardId: String, val code: String? = null, val referralToken: String? = null) : Screen
     data class Import(val card: Card) : Screen
+    data class ShareCard(val id: String) : Screen
+    data class Groups(val cardId: String? = null) : Screen
+    data object TemporaryShares : Screen
+    data class Borrowed(val token: String) : Screen
+    data object ReminderPreferences : Screen
+    data object Birthday : Screen
     data object Settings : Screen
+    data object Backup : Screen
     data object Welcome : Screen
     data object AccountScreen : Screen
     data object Deleted : Screen
+    data object StoreRequest : Screen
     /** Bonnetjes: alle bonnen (met een zoekterm), één bon, en controleren of wijzigen. */
     data class Receipts(val query: String = "") : Screen
     data class ReceiptDetail(val id: String) : Screen
@@ -95,6 +106,7 @@ fun Root() {
         LifecycleEventEffect(Lifecycle.Event.ON_START) {
             scope.launch {
                 Catalog.refresh()
+                app.lrvdlinden.pasr.notify.Reminders.check(appContext)
                 app.lrvdlinden.pasr.notify.NearbyStoresAndroid.sync(appContext)
                 DeviceRegistry.registerIfNeeded(appContext)
                 if (Account.isSignedIn) Sync.sync()
@@ -105,7 +117,8 @@ fun Root() {
                 }
             }
         }
-        LaunchedEffect(link) {
+        LaunchedEffect(link, splash, onboarded, locked) {
+            if (splash || !onboarded || locked) return@LaunchedEffect
             val uri = link ?: return@LaunchedEffect
             Incoming.link.value = null
             handleLink(uri, nav)
@@ -123,13 +136,22 @@ fun Root() {
         LaunchedEffect(openCard) {
             val id = openCard ?: return@LaunchedEffect
             Incoming.cardId.value = null
-            if (CardStore.get(id) != null) { nav.home(); nav.push(Screen.Detail(id)) }
+            if (CardStore.get(id)?.let { it.deletedAt == null } == true) { nav.home(); nav.push(Screen.Detail(id)) }
         }
         val openReceipt by Incoming.receipt.collectAsState()
         LaunchedEffect(openReceipt) {
             val id = openReceipt ?: return@LaunchedEffect
             Incoming.receipt.value = null
             if (app.lrvdlinden.pasr.data.ReceiptStore.get(id) != null) { nav.home(); nav.push(Screen.ReceiptDetail(id)) }
+        }
+        val receiptShortcut by Incoming.receiptShortcut.collectAsState()
+        LaunchedEffect(receiptShortcut, splash, onboarded, locked) {
+            val action = receiptShortcut ?: return@LaunchedEffect
+            if (splash || !onboarded || locked) return@LaunchedEffect
+            Incoming.receiptShortcut.value = null
+            nav.home()
+            nav.push(Screen.Receipts())
+            if (action == "app.lrvdlinden.pasr.SCAN_RECEIPT") ReceiptScans.launch?.invoke(null, null)
         }
         val openStore by Incoming.store.collectAsState()
         LaunchedEffect(openStore) {
@@ -179,6 +201,9 @@ private fun CompositionLocalProviders(nav: Nav, snack: SnackbarHostState, conten
 }
 
 private fun handleLink(uri: Uri, nav: Nav) {
+    app.lrvdlinden.pasr.data.TempSharing.token(uri)?.let {
+        nav.home(); nav.push(Screen.Borrowed(it)); return
+    }
     Business.cardId(uri)?.let { id ->
         nav.home(); nav.push(Screen.StampJoin(id, Business.memberCode(uri), uri.getQueryParameter("ref"))); return
     }
@@ -204,13 +229,22 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.Detail -> CardDetailScreen(s.id)
             is Screen.Uses -> RecentUsesScreen(s.id)
             Screen.Add -> AddCardScreen()
+            is Screen.Migrate -> MigrateScreen(s.candidates)
             is Screen.Editor -> CardEditorScreen(s)
             is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code, s.referralToken)
             is Screen.Import -> ImportScreen(s.card)
+            is Screen.ShareCard -> ShareCardScreen(s.id)
+            is Screen.Groups -> SharedGroupsScreen(s.cardId)
+            Screen.TemporaryShares -> TemporarySharesScreen()
+            is Screen.Borrowed -> BorrowedCardScreen(s.token)
+            Screen.ReminderPreferences -> ReminderPreferencesScreen()
+            Screen.Birthday -> BirthdayScreen()
             Screen.Settings -> SettingsScreen(onAppearance)
+            Screen.Backup -> BackupScreen()
             Screen.Welcome -> Onboarding(onDone = { nav.pop() }, replay = true)
             Screen.AccountScreen -> AccountScreen()
             Screen.Deleted -> DeletedScreen()
+            Screen.StoreRequest -> StoreRequestScreen()
             is Screen.Receipts -> ReceiptsScreen(s.query)
             is Screen.ReceiptDetail -> ReceiptDetailScreen(s.id)
             is Screen.ReceiptReview -> ReceiptReviewScreen(s.cardId, s.useId, s.receiptId)

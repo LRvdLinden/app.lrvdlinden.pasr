@@ -237,6 +237,7 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
         SectionHeader("Meldingen")
         Group {
             Toggle("Herinneringen", reminders, "Cadeaukaarten en codes die verlopen, abonnementen die verlengen") { reminders = it; Prefs.remindersEnabled = it }
+            RowItem(Icons.Outlined.Notifications, "Herinneringsvoorkeuren", "Vervaldatums, tegoed en e-mail") { nav.push(Screen.ReminderPreferences) }
             if (app.lrvdlinden.pasr.notify.Push.available(context)) {
                 Toggle("Nieuws over mijn kaarten", news, "Af en toe een bericht over winkels waarvan je een kaart hebt. Stempels van zaken krijg je altijd.") {
                     news = it; Prefs.setBool("push.news", it)
@@ -298,10 +299,37 @@ fun SettingsScreen(onAppearance: (String) -> Unit) {
         }
         SectionHeader("Kaarten")
         Group {
+            RowItem(Icons.Outlined.Storefront, "Pasr-kaart in Snelle instellingen",
+                "Veeg omlaag en tik op de tegel: je favoriete of meest gebruikte kaart staat meteen klaar. Ook widgets en snelkoppelingen (lang drukken op het Pasr-icoon).") {
+                if (Build.VERSION.SDK_INT >= 33) {
+                    val sbm = context.getSystemService(android.app.StatusBarManager::class.java)
+                    runCatching {
+                        sbm.requestAddTileService(android.content.ComponentName(context, app.lrvdlinden.pasr.CardTileService::class.java),
+                            "Pasr-kaart", android.graphics.drawable.Icon.createWithResource(context, app.lrvdlinden.pasr.R.drawable.ic_stat_card),
+                            context.mainExecutor) { }
+                    }
+                } else {
+                    android.widget.Toast.makeText(context, "Veeg twee keer omlaag, tik op het potlood en sleep de tegel Pasr-kaart erbij.",
+                        android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
             RowItem(Icons.Outlined.Restore, "Recent verwijderd", "${CardStore.recentlyDeleted.size} kaart(en), 30 dagen terug te zetten") { nav.push(Screen.Deleted) }
             RowItem(Icons.Outlined.Storefront, "Winkel aanvragen", "Staat jouw winkel er niet bij? Laat het ons weten") {
-                Incoming.leavingOnPurpose = true; openUrl(context, "https://pasr.nl/support/#winkel")
+                nav.push(Screen.StoreRequest)
             }
+        }
+        SectionHeader("Delen")
+        Group {
+            RowItem(null, "Gedeelde Pasr", "Deel kaarten met je gezin of huisgenoten") { nav.push(Screen.Groups()) }
+            RowItem(null, "Tijdelijk gedeeld", "Bekijk en beheer tijdelijke kaarten") { nav.push(Screen.TemporaryShares) }
+        }
+        SectionHeader("Verjaardagsvoordeel")
+        Group {
+            RowItem(null, "Verjaardag", "Krijg een seintje over verjaardagsvoordeel") { nav.push(Screen.Birthday) }
+        }
+        SectionHeader("Back-up")
+        Group {
+            RowItem(Icons.Outlined.Restore, "Versleutelde back-up", "Kaarten, foto’s en bonnetjes bewaren of terugzetten") { nav.push(Screen.Backup) }
         }
         SectionHeader("Over Pasr")
         Group {

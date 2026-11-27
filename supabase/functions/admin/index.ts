@@ -881,6 +881,20 @@ Deno.serve(async (req) => {
         if (!data) return json({ error: "not_found" }, 404);
         return json(data);
       }
+      case "business_offers": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_business_offers", { p_business: body.id });
+        if (error) throw new Error(error.message);
+        return json(data ?? {});
+      }
+      case "business_offer_disable": {
+        const kind = String(body.kind ?? "");
+        if (!["coupon", "promo_code", "campaign"].includes(kind) || !isUuid(body.id)) return json({ error: "bad_request" }, 400);
+        const { error } = await db.rpc("pasr_admin_business_offer_disable", { p_kind: kind, p_id: body.id });
+        if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
+        await audit("business_offer_disable", ipHash, `${kind} ${body.id}`);
+        return json({ ok: true });
+      }
       case "business_settings": {
         const v = cleanBusinessSettings(body);
         if (!v.ok) return json({ error: v.error }, 400);

@@ -18,6 +18,8 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.lrvdlinden.pasr.MainActivity
 import app.lrvdlinden.pasr.R
+import app.lrvdlinden.pasr.data.Birthday
+import app.lrvdlinden.pasr.data.ReminderPreferences
 import app.lrvdlinden.pasr.data.Business
 import app.lrvdlinden.pasr.data.Card
 import app.lrvdlinden.pasr.data.CardKind
@@ -59,6 +61,10 @@ object Reminders {
             })
         }
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "pasr-reminders-hourly", ExistingPeriodicWorkPolicy.KEEP,
+            PeriodicWorkRequestBuilder<LocalReminderWorker>(1, TimeUnit.HOURS).build(),
+        )
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "pasr-daily", ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<DailyWorker>(12, TimeUnit.HOURS).build(),
         )
@@ -96,19 +102,35 @@ object Reminders {
 
     /** Wat er vandaag te melden is; elke melding hoogstens één keer (sleutel in de instellingen). */
     fun check(context: Context) {
-        if (!Prefs.remindersEnabled) return
-        for (c in CardStore.visible) {
-            val name = c.storeName.ifBlank { c.kind.title }
-            if (c.kind.hasExpiry) c.expiresAt?.let { e ->
-                val d = daysUntil(e)
-                val what = if (c.kind == CardKind.VOUCHER) "Je cadeaukaart van $name" else "Je kortingscode van $name"
-                when (d) {
-                    7L -> once(context, "exp7-${c.id}-$e", what, "$what verloopt over 7 dagen.", c)
-                    0L -> once(context, "exp0-${c.id}-$e", what, "$what verloopt vandaag. Gebruik hem nog!", c)
+        if (!Prefs.remindersEnabled || !canNotify(context)) return
+        val localTime = java.time.LocalTime.now()
+        if (ReminderPreferences.channel != "mail") {
+            Birthday.notifyIfDue(context)
+            if (localTime.hour >= 10 && ReminderPreferences.balance) notifyBalance(context)
+            if (ReminderPreferences.expiry && localTime >= java.time.LocalTime.of(9, 30)) {
+                for (card in CardStore.visible) {
+                    val name = card.storeName.ifBlank { card.kind.title }
+                    if (card.kind.hasExpiry) card.expiresAt?.let { expiry ->
+                        val days = daysUntil(expiry)
+                        val code = card.kind == CardKind.CODE
+                        val subject = if (code) "Kortingscode $name" else name
+                        val balance = card.balance?.takeIf { card.kind == CardKind.VOUCHER }
+                            ?.let { money(it, card.currencyCode) }
+                        when (days) {
+                            7L -> once(context, "exp7-${card.id}-$expiry", "$subject verloopt over een week",
+                                balance?.let { "Je hebt nog $it tegoed. Gebruik je kaart op tijd." }
+                                    ?: if (code) "Gebruik je code op tijd." else "Gebruik je kaart op tijd.", card)
+                            0L -> once(context, "exp0-${card.id}-$expiry", "$subject verloopt vandaag",
+                                balance?.let { "Laatste dag om je $it te gebruiken." }
+                                    ?: if (code) "Laatste dag om je code te gebruiken." else "Laatste dag om je kaart te gebruiken.", card)
+                        }
+                    }
+                    if (card.kind == CardKind.SUBSCRIPTION) card.details.renewsAt?.let { renews ->
+                        if (daysUntil(renews) == 2L) once(context, "renew-${card.id}-$renews", "$name verlengt over 2 dagen",
+                            card.details.cost?.let { "Je betaalt dan ${money(it, card.currencyCode)}. Opzeggen? Doe het op tijd." }
+                                ?: "Opzeggen? Doe het op tijd.", card)
+                    }
                 }
-            }
-            if (c.kind == CardKind.SUBSCRIPTION) c.details.renewsAt?.let { r ->
-                if (daysUntil(r) == 2L) once(context, "renew-${c.id}-$r", "Abonnement $name", "Je abonnement bij $name verlengt over 2 dagen.", c)
             }
         }
         // bonnetjes: een maand voordat de garantie afloopt (en tot een week erna nog, als de telefoon uit stond)
@@ -127,6 +149,38 @@ object Reminders {
         }
     }
 
+    private fun money(amount: Double, currency: String?): String =
+        java.text.NumberFormat.getCurrencyInstance(java.util.Locale("nl", "NL")).apply {
+            currency?.let { runCatching { this.currency = java.util.Currency.getInstance(it) } }
+        }.format(amount)
+
+    private fun notifyBalance(context: Context) {
+        val date = LocalDate.now()
+        val due = when (ReminderPreferences.interval) {
+            "week" -> date.dayOfWeek == java.time.DayOfWeek.SATURDAY
+            "quarter" -> date.dayOfMonth == 1 && (date.monthValue - 1) % 3 == 0
+            else -> date.dayOfMonth == 1
+        }
+        if (!due) return
+        val cards = CardStore.visible.filter { it.kind == CardKind.VOUCHER && !it.isExpired && (it.balance ?: 0.0) > 0.0 }
+        val first = cards.firstOrNull() ?: return
+        val key = "note.balance.$date"
+        if (Prefs.bool(key)) return
+        val currencies = cards.map { it.currencyCode ?: "EUR" }.distinct()
+        val title = when {
+            cards.size == 1 -> "Je hebt nog ${money(first.balance ?: 0.0, first.currencyCode)} bij ${first.storeName}"
+            currencies.size == 1 -> "Je hebt nog ${money(cards.sumOf { it.balance ?: 0.0 }, currencies.single())} tegoed op ${cards.size} cadeaukaarten"
+            else -> "Je hebt nog tegoed op ${cards.size} cadeaukaarten"
+        }
+        val body = if (cards.size == 1) "Vergeet je cadeaukaart niet." else {
+            val top = cards.sortedByDescending { it.balance }.take(3)
+                .joinToString(", ") { "${it.storeName} ${money(it.balance ?: 0.0, it.currencyCode)}" }
+            top + if (cards.size > 3) " en ${cards.size - 3} meer" else ""
+        }
+        notify(context, key, CHANNEL, title, body, first.id.takeIf { cards.size == 1 })
+        Prefs.setBool(key, true)
+    }
+
     private fun once(context: Context, key: String, title: String, text: String, card: Card) {
         val k = "note.$key"
         if (Prefs.bool(k)) return
@@ -141,9 +195,15 @@ object Reminders {
     }
 }
 
-class DailyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+class LocalReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         Reminders.check(applicationContext)
+        return Result.success()
+    }
+}
+
+class DailyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
         val before = CardStore.visible.filter { it.isBusinessStamps }.associate { it.id to it.details.stampsFull }
         for (c in Business.refreshAll(force = true)) {
             // met push meldt de server het al (stempel erbij of vol); anders een lokale melding

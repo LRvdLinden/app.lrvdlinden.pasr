@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">Pasr</string>
     <string name="payment_listener_label">Pasr: record purchases</string>
+    <string name="shortcut_scan_receipt">Scan receipt</string>
+    <string name="shortcut_receipts">Receipts</string>
 </resources>

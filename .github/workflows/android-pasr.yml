@@ -49,7 +49,7 @@ jobs:
         id: version
         run: |
           NAME=$(grep -m1 'System.getenv("VERSION_NAME")' app/build.gradle.kts | sed -E 's/.*\?: "([^"]+)".*/\1/')
-          CODE=135
+          CODE=136
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
           echo "Versie $NAME ($CODE)"
@@ -169,7 +169,7 @@ jobs:
           AAPT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt"
           "$AAPT" dump permissions "$APK" > /tmp/pasr-permissions.txt
           "$AAPT" dump badging "$APK" > /tmp/pasr-badging.txt
-          grep -Fq "package: name='app.lrvdlinden.pasr'" /tmp/pasr-badging.txt
+          grep -Fq "package: name='app.lrvdlinden.pasr' versionCode='${{ steps.version.outputs.code }}'" /tmp/pasr-badging.txt
           grep -Fq "name='android.permission.CAMERA'" /tmp/pasr-permissions.txt
           grep -Fq "name='android.permission.POST_NOTIFICATIONS'" /tmp/pasr-permissions.txt
           grep -Fq "name='android.permission.ACCESS_COARSE_LOCATION'" /tmp/pasr-permissions.txt
@@ -204,6 +204,7 @@ jobs:
         env:
           SRC: dist
           SUB: pasr
+          BUILDS_BRANCH: android-builds
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -213,13 +214,13 @@ jobs:
           URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           for i in 1 2 3 4; do
             rm -rf "$W"; mkdir -p "$W"; cd "$W"
-            if git clone -q --depth 1 --branch android-builds "$URL" . 2>/dev/null; then :; else
-              git init -q; git checkout -q --orphan android-builds; git remote add origin "$URL"
+            if git clone -q --depth 1 --branch "$BUILDS_BRANCH" "$URL" . 2>/dev/null; then :; else
+              git init -q; git checkout -q --orphan "$BUILDS_BRANCH"; git remote add origin "$URL"
               printf 'Nieuwste Android-builds (APK, versie-info en previews), gemaakt door de Android-workflows. Niet mergen.\n' > README.md
             fi
             rm -rf "$SUB" && mkdir -p "$SUB" && cp -r "$GITHUB_WORKSPACE/android/pasr/$SRC/." "$SUB/"
             git add -A && git commit -q -m "Android-build ${SUB} (${GITHUB_SHA::7})" || { echo "Niets nieuw"; exit 0; }
-            git push -q origin HEAD:android-builds && exit 0
+            git push -q origin "HEAD:$BUILDS_BRANCH" && exit 0
             cd "$GITHUB_WORKSPACE"; sleep 5
           done
           echo "::warning::Kon de branch android-builds niet bijwerken"
