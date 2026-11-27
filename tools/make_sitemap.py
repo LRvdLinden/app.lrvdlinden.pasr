@@ -9,14 +9,18 @@ from xml.sax.saxutils import escape
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "website")
 entries = []
+seen = set()
 for f in sorted(glob.glob(os.path.join(ROOT, "**", "index.html"), recursive=True)):
+    if os.path.relpath(f, ROOT).split(os.sep)[0] == "test":   # preview-kopieën (/test/) dragen de canonical van de echte pagina
+        continue
     t = open(f, encoding="utf-8").read()
-    robots = re.search(r'<meta name="robots" content="([^"]*)"', t)
-    if robots and "noindex" in robots.group(1):
+    # alle robots-tags tellen: de preview zet een tweede noindex onder de originele index-tag
+    if any("noindex" in r for r in re.findall(r'<meta name="robots" content="([^"]*)"', t)):
         continue
     can = re.search(r'<link rel="canonical" href="([^"]+)"', t)
-    if not can:
+    if not can or html.unescape(can.group(1)) in seen:
         continue
+    seen.add(html.unescape(can.group(1)))
     rel = os.path.relpath(f, os.path.join(ROOT, ".."))
     try:
         day = subprocess.run(["git", "log", "-1", "--format=%cs", "--", rel], cwd=os.path.join(ROOT, ".."),

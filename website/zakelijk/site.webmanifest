@@ -1,0 +1,14 @@
+{
+  "name": "Pasr Zakelijk",
+  "short_name": "Pasr Zakelijk",
+  "lang": "nl-NL",
+  "start_url": "/zakelijk/",
+  "scope": "/zakelijk/",
+  "display": "browser",
+  "background_color": "#F4F3FF",
+  "theme_color": "#F4F3FF",
+  "icons": [
+    { "src": "/assets/pasr-zakelijk-icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/pasr-zakelijk-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

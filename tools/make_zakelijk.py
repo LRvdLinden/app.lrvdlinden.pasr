@@ -352,7 +352,7 @@ def header(active=""):
     li = "".join(f'<li class="zk-l"><a href="{h}">{t}</a></li>' for _, h, t in links)
     cur = ' aria-current="page"' if active == "dashboard" else ""
     return f'''  <header class="wrap nav zk-nav">
-    <a class="brand" href="/zakelijk/" aria-label="Pasr Zakelijk"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span><em class="zk-tag">Zakelijk</em></a>
+    <a class="brand" href="/zakelijk/" aria-label="Pasr Zakelijk"><img src="/assets/pasr-zakelijk-touch-icon.png" alt="" width="36" height="36"><span>pasr</span><em class="zk-tag">Zakelijk</em></a>
     <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/zakelijk/dashboard/"{cur}>Inloggen</a></li><li><a href="/zakelijk/dashboard/#account">Gratis aanmelden</a></li><li><a href="/">Pasr voor klanten</a></li><li><a href="/support/">Support</a></li></ul></nav></details>
     <nav class="zk-desktop-actions" aria-label="Hoofdmenu">
       <ul>
@@ -391,10 +391,23 @@ def badges(lazy=False):
             '<span><small>Download for</small>Android</span></a>')
 
 
-def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_title=None, og_image="https://pasr.nl/og/home.png",
-         extra="", referrer=True, business_icons=False):
+OG_ZAKELIJK = "https://pasr.nl/og/zakelijk.png"
+OG_ZAKELIJK_ALT = ("Pasr Zakelijk: Alles om klanten terug te laten komen. Een stempelkaart, een klantenkaart met korting "
+                   "en een ticket naast het app-icoon van Pasr Zakelijk")
+OG_HOME = "https://pasr.nl/og/home.png"
+OG_HOME_ALT = "Pasr: klantenkaarten, cadeaukaarten en tickets in één app. Een cadeaukaart, een klantenkaart met barcode en een ticket naast het app-icoon van Pasr"
+ZK_MANIFEST = "/zakelijk/site.webmanifest"     # naam en icoon van Pasr Zakelijk (niet die van Pasr voor klanten)
+
+
+def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_title=None, og_image=None,
+         extra="", referrer=True, business_icons=True):
+    """Kop van de /zakelijk-app-pagina's. business_icons=True: favicon, apple-touch-icon, manifest en og:image van
+    Pasr Zakelijk; False alleen voor de kaartpagina van de klant (/zakelijk/kaart/), die bij de app Pasr hoort."""
     favicon = "pasr-zakelijk-favicon.png" if business_icons else "favicon.png"
     touch_icon = "pasr-zakelijk-touch-icon.png" if business_icons else "apple-touch-icon.png"
+    manifest = ZK_MANIFEST if business_icons else "/site.webmanifest"
+    og_image = og_image or (OG_ZAKELIJK if business_icons else OG_HOME)
+    og_alt = OG_ZAKELIJK_ALT if og_image == OG_ZAKELIJK else OG_HOME_ALT
     return f'''<!doctype html>
 <html lang="nl">
 <head>
@@ -410,15 +423,18 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
   <meta property="og:title" content="{og_title or title}">
   <meta property="og:description" content="{desc}">
   <meta property="og:image" content="{og_image}">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{og_alt}">
   <meta property="og:locale" content="nl_NL">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="{og_image}">
+  <meta name="twitter:image:alt" content="{og_alt}">
   <meta name="theme-color" content="#F4F3FF">
   <link rel="icon" type="image/png" href="/assets/{favicon}">
   <link rel="apple-touch-icon" href="/assets/{touch_icon}">
-  <link rel="manifest" href="/site.webmanifest">
+  <link rel="manifest" href="{manifest}">
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/zakelijk.css">
@@ -457,7 +473,7 @@ def app_page(folder, title, desc, og_title, data_page, main, jsqr, app_id, activ
     # "Knop voor je website" (Voeg toe aan Pasr): losse laag bovenop het dashboard
     dashboard_js = '  <script src="/assets/zakelijk-badge.js" defer></script>\n' if folder == "dashboard" else ""
     page_head = head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title,
-                     business_icons=folder == "dashboard")
+                     business_icons=folder != "kaart")
     if dashboard_css:
         page_head = page_head.replace("</head>", dashboard_css + "</head>")
     return (page_head
@@ -523,22 +539,30 @@ def web_section():
 def page():
     """De landingspagina pasr.nl/zakelijk: het brede platform (ontwerp D)."""
     faq_ld = ",".join('{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (json.dumps(q, ensure_ascii=False), json.dumps(a, ensure_ascii=False)) for q, a in FAQ)
-    title = "Pasr Zakelijk: gratis klantenbinding, tickets en stempelkaarten | Pasr"
-    og_title = "Pasr Zakelijk: gratis klantenbinding, tickets en stempelkaarten"
-    desc = ("Gratis voor ondernemers: stempelkaarten, klantenkaarten met korting, tickets voor gratis events, kortingsbonnen "
-            "en actiecodes. Scannen met je telefoon, klanten bewaren alles in Pasr of Wallet.")
-    # og:image blijft de bestaande deelafbeelding (tools/make_website.py maakt /og/zakelijk.png); de alt-tekst beschrijft die.
-    og_alt = "Twee digitale stempelkaarten van een koffiebar en een bakkerij, naast de tekst: Gratis digitale stempelkaart voor je zaak"
+    title = "Gratis stempelkaart, klantenkaart en tickets | Pasr Zakelijk"
+    og_title = "Pasr Zakelijk: alles om klanten terug te laten komen"
+    desc = ("Gratis voor ondernemers: stempelkaarten, klantenkaarten met korting, tickets, kortingsbonnen en actiecodes. "
+            "Scan met je telefoon; klanten sparen in Pasr of Wallet.")
+    og_alt = OG_ZAKELIJK_ALT
     features = ["Stempelkaarten met tussentijdse beloningen", "Klantenkaart met barcode (QR, Code 128 of EAN-13) en korting",
                 "Gratis tickets voor events met wachtlijst en scannen aan de deur", "Kortingsbonnen", "Actiecodes met limiet en einddatum",
                 "Gezamenlijke acties met andere zaken", "Knop Voeg toe aan Pasr voor je eigen website", "Eén scanner voor alles",
-                "Medewerkers en vestigingen", "Inzichten en marketingkalender", "Apple Wallet en Google Wallet"]
-    app_ld = json.dumps({"@context": "https://schema.org", "@type": "MobileApplication", "name": "Pasr Zakelijk",
-                         "operatingSystem": "iOS 17, iPadOS 17, Android 8, webbrowser", "applicationCategory": "BusinessApplication",
-                         "url": APP_URL, "description": "Gratis klantenbinding voor je zaak: stempelkaarten, klantenkaarten, tickets voor gratis events, "
-                         "kortingsbonnen, actiecodes en acties met andere zaken. Scannen met je telefoon; klanten bewaren alles in Pasr of Wallet.",
-                         "featureList": features, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
-                         "publisher": {"@type": "Organization", "name": "Pasr", "url": "https://pasr.nl/"}}, ensure_ascii=False)
+                "Medewerkers en vestigingen", "Inzichten en marketingkalender", "Apple Wallet en Google Wallet",
+                "Apps voor iPhone, iPad, Mac en Android, en een dashboard in de browser"]
+    # SoftwareApplication (iOS/iPadOS, Mac-app en Android-APK) + Organization; FAQPage staat er los onder (de vragen staan zichtbaar op de pagina)
+    app_ld = json.dumps({"@context": "https://schema.org", "@graph": [
+        {"@type": "Organization", "@id": "https://pasr.nl/#org", "name": "Pasr", "url": "https://pasr.nl/",
+         "logo": "https://pasr.nl/assets/icon-512.png", "email": "support@pasr.nl",
+         "sameAs": [f"https://apps.apple.com/nl/app/pasr-klantenkaarten/id{PASR_APP_ID}", APP_URL]},
+        {"@type": "SoftwareApplication", "@id": "https://pasr.nl/zakelijk/#app", "name": "Pasr Zakelijk",
+         "operatingSystem": "iOS 17, iPadOS 17, macOS 14, Android 8", "applicationCategory": "BusinessApplication",
+         "inLanguage": "nl-NL", "url": "https://pasr.nl/zakelijk/", "image": "https://pasr.nl/assets/pasr-zakelijk-icon-512.png",
+         "screenshot": OG_ZAKELIJK,
+         "description": "Gratis klantenbinding voor je zaak: stempelkaarten, klantenkaarten, tickets voor gratis events, "
+                        "kortingsbonnen, actiecodes en acties met andere zaken. Scannen met je telefoon; klanten bewaren alles in Pasr of Wallet.",
+         "featureList": features, "downloadUrl": [APP_URL, "https://pasr.nl/zakelijk/download/"], "installUrl": APP_URL,
+         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+         "publisher": {"@id": "https://pasr.nl/#org"}}]}, ensure_ascii=False)
     keywords = ("klantenbinding, digitale stempelkaart, klantenkaart maken, klantenkaart met barcode, gratis tickets event, "
                 "ticketscanner, kortingsbon maken, actiecode, loyaliteitsprogramma, stempelkaart zonder kassakoppeling, Pasr Zakelijk")
     return f'''<!doctype html>
@@ -558,7 +582,7 @@ def page():
   <meta property="og:url" content="https://pasr.nl/zakelijk/">
   <meta property="og:title" content="{og_title}">
   <meta property="og:description" content="{desc}">
-  <meta property="og:image" content="https://pasr.nl/og/zakelijk.png">
+  <meta property="og:image" content="{OG_ZAKELIJK}">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -567,7 +591,7 @@ def page():
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{og_title}">
   <meta name="twitter:description" content="{desc}">
-  <meta name="twitter:image" content="https://pasr.nl/og/zakelijk.png">
+  <meta name="twitter:image" content="{OG_ZAKELIJK}">
   <meta name="twitter:image:alt" content="{og_alt}">
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{{"@type":"ListItem","position":1,"name":"Pasr","item":"https://pasr.nl/"}},{{"@type":"ListItem","position":2,"name":"Pasr Zakelijk","item":"https://pasr.nl/zakelijk/"}}]}}</script>
   <script type="application/ld+json">{app_ld}</script>
@@ -575,7 +599,7 @@ def page():
   <meta name="theme-color" content="#F4F3FF">
   <link rel="icon" type="image/png" href="/assets/pasr-zakelijk-favicon.png">
   <link rel="apple-touch-icon" href="/assets/pasr-zakelijk-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
+  <link rel="manifest" href="{ZK_MANIFEST}">
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/zakelijk.css">
@@ -588,11 +612,11 @@ def page():
 {header()}
 
   <main class="zk-home zc-home zn-home">
-{zv.hero(APP_URL)}
+{zv.hero(badges())}
 {zv.products()}
 {zv.add_button()}
 {zv.scanner()}
-{zv.dashboard('<img src="/assets/icon.png" alt="">')}
+{zv.dashboard('<img src="/assets/pasr-zakelijk-touch-icon.png" alt="">')}
 {zv.wallet()}
 {zv.steps()}
 {zv.faq(FAQ, anchor)}
@@ -620,6 +644,26 @@ def patch_download():
     new = re.sub(r'  <header class="wrap nav[^"]*">.*?</header>', header(), html, count=1, flags=re.S)
     if 'zakelijk.css' not in new:
         new = re.sub(r'(<link rel="stylesheet" href="/assets/style\.css[^"]*">)', r'\1\n  <link rel="stylesheet" href="/assets/zakelijk.css">\n  <link rel="stylesheet" href="/assets/catalog-hub.css">', new, count=1)
+    # Pasr Zakelijk, niet Pasr voor klanten: app-icoon in de kaart, favicon, apple-touch-icon, manifest en deelafbeelding
+    new = re.sub(r'<img class="apk-icon" src="[^"]*"', '<img class="apk-icon" src="/assets/pasr-zakelijk-touch-icon.png"', new)
+    new = re.sub(r'<link rel="icon" type="image/png" href="/assets/[^"]*">', '<link rel="icon" type="image/png" href="/assets/pasr-zakelijk-favicon.png">', new)
+    new = re.sub(r'<link rel="apple-touch-icon" href="/assets/[^"]*">', '<link rel="apple-touch-icon" href="/assets/pasr-zakelijk-touch-icon.png">', new)
+    new = new.replace('<link rel="manifest" href="/site.webmanifest">', f'<link rel="manifest" href="{ZK_MANIFEST}">')
+    new = re.sub(r'(<meta (?:property="og:image"|name="twitter:image") content=")[^"]*(">)', rf'\g<1>{OG_ZAKELIJK}\g<2>', new)
+    new = re.sub(r'<meta property="og:image:alt" content="[^"]*">', f'<meta property="og:image:alt" content="{OG_ZAKELIJK_ALT}">', new)
+    if 'name="twitter:title"' not in new:
+        og_t = re.search(r'<meta property="og:title" content="([^"]*)">', new)
+        og_d = re.search(r'<meta property="og:description" content="([^"]*)">', new)
+        if og_t and og_d:
+            new = new.replace(f'<meta name="twitter:image" content="{OG_ZAKELIJK}">',
+                              f'<meta name="twitter:title" content="{og_t.group(1)}">\n  <meta name="twitter:description" content="{og_d.group(1)}">\n'
+                              f'  <meta name="twitter:image" content="{OG_ZAKELIJK}">\n  <meta name="twitter:image:alt" content="{OG_ZAKELIJK_ALT}">', 1)
+    zk_img = '"image":"https://pasr.nl/assets/pasr-zakelijk-icon-512.png",'
+    new = re.sub(r'(?:' + re.escape(zk_img) + r')+', '', new)    # idempotent: eerst weghalen, dan precies één keer zetten
+    new = new.replace('"url":"https://pasr.nl/zakelijk/download/","downloadUrl"',
+                      '"url":"https://pasr.nl/zakelijk/download/",' + zk_img + '"downloadUrl"', 1)
+    if "/assets/catalog-hub.css" not in new:     # zonder dit staat het mobiele menu (details/summary) ook op de desktop
+        new = re.sub(r'(<link rel="stylesheet" href="/assets/zakelijk\.css[^"]*">)', r'\1\n  <link rel="stylesheet" href="/assets/catalog-hub.css">', new, count=1)
     if "/assets/account-config.js" not in new:   # knop Inloggen wordt Dashboard als je al bent ingelogd
         new = new.replace("</body>", '  <script src="/assets/account-config.js"></script>\n  <script src="/assets/zakelijk.js"></script>\n</body>', 1)
     if new != html:

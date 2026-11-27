@@ -23,11 +23,6 @@ GIFT = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 I_TICKET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a2.5 2.5 0 0 0 0 5V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4.5a2.5 2.5 0 0 0 0-5zM9 5v14" stroke-dasharray="2 2.2"/></svg>'
 I_MAP = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 4 3 6.2v13.6l6-2.2 6 2.2 6-2.2V4l-6 2.2zm0 2.1 6 2.2v9.6l-6-2.2z"/></svg>'
 I_INFO = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>'
-I_APPLE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.6-1-2.6-4zM14 5.6c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/></svg>'
-I_ANDROID = ('<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#2ED3A6"><path d="M6.2 9.3a5.8 5.8 0 0 1 11.6 0z"/>'
-             '<path d="M6.2 10h11.6v7.6a1.4 1.4 0 0 1-1.4 1.4H7.6a1.4 1.4 0 0 1-1.4-1.4z"/><rect x="3.4" y="10" width="2.1" height="6.6" rx="1.05"/>'
-             '<rect x="18.5" y="10" width="2.1" height="6.6" rx="1.05"/><rect x="8.4" y="17.6" width="2.1" height="4.4" rx="1.05"/>'
-             '<rect x="13.5" y="17.6" width="2.1" height="4.4" rx="1.05"/></g></svg>')
 
 SIGNUP = "/zakelijk/dashboard/#account"
 LOGIN = "/zakelijk/dashboard/"
@@ -153,13 +148,8 @@ def usp():
     return '<div class="zc-usp"><ul class="wrap">' + "".join(f"<li>{TICK}{t}</li>" for t in items) + "</ul></div>"
 
 
-def store_buttons(app_url):
-    return (f'<a class="zn-store" href="{app_url}" rel="noopener" aria-label="Pasr Zakelijk in de App Store">{I_APPLE}<span>App Store</span></a>'
-            '<a class="zn-store" href="/zakelijk/download/" aria-label="Pasr Zakelijk voor Android downloaden">'
-            f'{I_ANDROID}<span>Android</span></a>')
-
-
-def hero(app_url):
+def hero(badges_html):
+    """badges_html: de officiële App Store-badge (NL) en Android-badge van pasr.nl, uit make_zakelijk.badges()."""
     stage = (
         f'<div class="zn-h zn-h-member zc-ol"><div class="zn-tilt" style="--r:-8deg">{member_card()}</div></div>'
         f'<div class="zn-h zn-h-ticket zc-or" style="animation-delay:-2s"><div class="zn-tilt" style="--r:6deg">{ticket(scan=True)}</div></div>'
@@ -180,8 +170,8 @@ def hero(app_url):
         <div class="enter" style="--d:1">{_ul(checks, "var(--ink)")}</div>
         <div class="zn-actions enter" style="--d:2">
           <a class="zc-btn" href="{SIGNUP}" data-zk-signup>Gratis aanmelden</a>
-          {store_buttons(app_url)}
         </div>
+        <div class="actions zn-hero-badges enter" style="--d:2">{badges_html}</div>
         <p class="zn-login enter" style="--d:3">Al een account? <a href="{LOGIN}" data-zk-login>Log in op het dashboard</a></p>
       </div>
       <div class="zn-hero-panel enter-stage">{fit(stage, 600, 560, "zn-stage")}</div>
