@@ -184,6 +184,13 @@ struct EventEditorView: View {
         Section {
             ForEach($event.ticketTypes) { $type in
                 TicketTypeRow(type: $type)
+                    .macContextMenu {
+                        if event.ticketTypes.count > 1 {
+                            Button("Soort verwijderen", systemImage: "trash", role: .destructive) {
+                                event.ticketTypes.removeAll { $0.id == type.id }
+                            }
+                        }
+                    }
             }
             .onDelete { idx in
                 if event.ticketTypes.count > 1 { event.ticketTypes.remove(atOffsets: idx) }
@@ -324,6 +331,7 @@ struct EventDetailView: View {
             .navigationTitle(Text(verbatim: event.name))
             .inlineTitle()
             .refreshable { await load() }
+            .macRefreshButton { await load() }
             .task { await load() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } }
@@ -334,12 +342,13 @@ struct EventDetailView: View {
                 }
             }
             .sheet(isPresented: $editing, onDismiss: { Task { await load() } }) {
-                EventEditorView(business: business, event: event)
+                EventEditorView(business: business, event: event).macSheetFrame()
             }
             .sheet(isPresented: $sharing) {
                 TKShareView(title: event.name, url: event.addURL,
                             intro: "Klanten scannen deze code of openen de link en melden zich gratis aan. Hun ticket komt in Pasr en Wallet.",
                             badgeIntro: "Klanten melden zich met één tik aan voor je event in Pasr. Zonder Pasr opent pasr.nl.")
+                    .macSheetFrame()
             }
             .alert("Event annuleren?", isPresented: $askCancel) {
                 TextField("Bericht aan de aanmeldingen", text: $cancelMessage)
@@ -380,11 +389,20 @@ struct EventDetailView: View {
                             Button("Afmelden", role: .destructive) { Task { await cancelRegistration(id) } }
                         }
                     }
+                    .macContextMenu {
+                        if let id = r.registrationID, r.status != "cancelled" {
+                            Button("Afmelden", systemImage: "person.badge.minus", role: .destructive) {
+                                Task { await cancelRegistration(id) }
+                            }
+                        }
+                    }
             }
         } header: {
             Text("Aanmeldingen")
         } footer: {
-            Text("Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code. Veeg naar links om iemand af te melden.")
+            AppPlatform.isMac
+                ? Text("Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code. Klik met de rechtermuisknop op een aanmelding om iemand af te melden.")
+                : Text("Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code. Veeg naar links om iemand af te melden.")
         }
     }
 

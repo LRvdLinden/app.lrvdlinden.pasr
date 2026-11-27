@@ -30,6 +30,12 @@ struct MemberCardsSection: View {
                             .buttonStyle(.borderless)
                     }
                 }
+                .macContextMenu {
+                    Button("Bewerken", systemImage: "pencil") { onEdit(card) }
+                    if card.isPublished {
+                        Button("Delen: link, QR en knop voor je website", systemImage: "qrcode") { onShare(card) }
+                    }
+                }
             }
             Button("Klantenkaart aanmaken", systemImage: "plus") { onCreate() }
             if let error { Text(error).font(.footnote).foregroundStyle(Theme.coral) }
@@ -155,6 +161,7 @@ struct MemberCardEditorView: View {
                 } onDelete: {
                     card.goals.periods.removeAll { $0.id == p.id }
                 }
+                .macSheetFrame(minWidth: 480, minHeight: 520)
             }
             .confirmationDialog("Klantenkaart archiveren?", isPresented: $confirmArchive, titleVisibility: .visible) {
                 Button("Archiveren", role: .destructive) { Task { await save("archived") } }
@@ -222,6 +229,12 @@ struct MemberCardEditorView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .macContextMenu {
+                        Button("Bewerken", systemImage: "pencil") { period = p }
+                        Button("Periode verwijderen", systemImage: "trash", role: .destructive) {
+                            card.goals.periods.removeAll { $0.id == p.id }
+                        }
+                    }
                 }
                 .onDelete { card.goals.periods.remove(atOffsets: $0) }
             }

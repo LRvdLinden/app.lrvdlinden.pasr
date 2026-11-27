@@ -62,6 +62,7 @@ struct TKShareView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
             .sheet(isPresented: $badge) {
                 WebsiteBadgeView(url: url, name: title, intro: badgeIntro)
+                    .macSheetFrame()
             }
         }
     }

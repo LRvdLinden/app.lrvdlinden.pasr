@@ -17,7 +17,11 @@ enum Biometrics {
         #if os(iOS)
         case .opticID: return "Optic ID"
         #endif
+        #if os(macOS)
+        default: return String(localized: "wachtwoord")
+        #else
         default: return String(localized: "toegangscode")
+        #endif
         }
     }
 

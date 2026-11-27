@@ -71,6 +71,7 @@ struct BusinessLocationsView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { DoneButton() } }
             .task { await load() }
             .refreshable { await load() }
+            .macRefreshButton { await load() }
         }
     }
     private func resetForm() {

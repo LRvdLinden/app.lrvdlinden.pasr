@@ -4,6 +4,9 @@ import SwiftUI
 /// Alleen de eigenaar mag instellingen wijzigen. Campagnes vereisen server-side verwerking voor automatische uitvoering.
 struct LoyaltyProgramView: View {
     let card: BusinessCard
+    /// Mac (Beloningen in de zijbalk): alle stempelkaarten, zodat je bovenin een andere kaart kiest.
+    var cards: [BusinessCard] = []
+    var onSelect: ((String) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var rewardsOn = false
     @State private var rewardsText = ""
@@ -36,7 +39,13 @@ struct LoyaltyProgramView: View {
         NavigationStack {
             Form {
                 Section {
-                    LabeledContent("Stempelkaart", value: card.name)
+                    if cards.count > 1, let onSelect {
+                        Picker("Stempelkaart", selection: Binding(get: { card.id }, set: { onSelect($0) })) {
+                            ForEach(cards) { c in Text(verbatim: c.name).tag(c.id) }
+                        }
+                    } else {
+                        LabeledContent("Stempelkaart", value: card.name)
+                    }
                 }
                 Section {
                     Toggle("Meerdere beloningen", isOn: $rewardsOn)
@@ -98,7 +107,9 @@ struct LoyaltyProgramView: View {
                     Toggle("Interesse in gezamenlijke actie", isOn: $communityOn)
                     if communityOn { TextField("Naam gezamenlijke actie", text: $communityName) }
                 } header: { Label("Marketing en samenwerking", systemImage: "calendar") } footer: {
-                    Text("Dit is alleen een voorkeur. Een echte gezamenlijke actie start je via Acties › Samenwerkingen; andere zaken doen daar zelf mee.")
+                    AppPlatform.isMac
+                        ? Text("Dit is alleen een voorkeur. Een echte gezamenlijke actie start je via Gezamenlijke acties in de zijbalk; andere zaken doen daar zelf mee.")
+                        : Text("Dit is alleen een voorkeur. Een echte gezamenlijke actie start je via Acties › Samenwerkingen; andere zaken doen daar zelf mee.")
                 }
                 if let message {
                     Section { Text(message).font(.subheadline) }

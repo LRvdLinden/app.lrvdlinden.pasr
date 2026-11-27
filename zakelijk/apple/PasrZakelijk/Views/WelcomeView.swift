@@ -160,7 +160,9 @@ struct WelcomeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Image(systemName: "envelope.badge").font(.largeTitle).foregroundStyle(Theme.mint)
                 Text("Check je mail").font(.title2.weight(.bold))
-                Text("We hebben je een mail gestuurd. Tik op de knop in die mail om je e-mailadres te bevestigen en log daarna hier in.")
+                (AppPlatform.isMac
+                    ? Text("We hebben je een mail gestuurd. Klik op de knop in die mail om je e-mailadres te bevestigen en log daarna hier in.")
+                    : Text("We hebben je een mail gestuurd. Tik op de knop in die mail om je e-mailadres te bevestigen en log daarna hier in."))
                     .foregroundStyle(.secondary)
                 if let info { Text(info).font(.subheadline).foregroundStyle(Theme.mint) }
                 if let message { Text(message).font(.subheadline).foregroundStyle(Theme.coral) }

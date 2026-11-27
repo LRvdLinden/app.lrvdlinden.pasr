@@ -21,7 +21,7 @@ struct StaffView: View {
                 }
                 Section {
                     ForEach(active) { member in
-                        row(member)
+                        row(member, revocable: member.role != .owner)
                             .swipeActions {
                                 if member.role != .owner {
                                     Button("Intrekken", role: .destructive) { revoking = member }
@@ -40,7 +40,9 @@ struct StaffView: View {
                 } header: {
                     Text("Team")
                 } footer: {
-                    Text("Veeg naar links om iemand in te trekken. Wie is ingetrokken, kan direct geen stempels meer zetten.")
+                    AppPlatform.isMac
+                        ? Text("Klik op Intrekken (of klik met de rechtermuisknop op iemand) om de toegang in te trekken. Wie is ingetrokken, kan direct geen stempels meer zetten.")
+                        : Text("Veeg naar links om iemand in te trekken. Wie is ingetrokken, kan direct geen stempels meer zetten.")
                 }
                 if !revoked.isEmpty {
                     Section("Ingetrokken") {
@@ -56,6 +58,7 @@ struct StaffView: View {
                 }
             }
             .refreshable { await load() }
+            .macRefreshButton { await load() }
             .task { await load() }
             .overlay { if !loaded && error == nil { ProgressView() } }
             .sensoryFeedback(.success, trigger: revokedTick)
@@ -74,7 +77,7 @@ struct StaffView: View {
         }
     }
 
-    private func row(_ m: StaffMember) -> some View {
+    private func row(_ m: StaffMember, revocable: Bool = false) -> some View {
         HStack(spacing: 12) {
             Image(systemName: m.role == .owner ? "crown.fill" : (m.pending ? "envelope" : "person.fill"))
                 .foregroundStyle(m.role == .owner ? Theme.amber : Theme.mint)
@@ -93,8 +96,14 @@ struct StaffView: View {
             }
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
+            // op de Mac bestaat vegen niet: een zichtbare knop in de rij
+            if AppPlatform.isMac && revocable {
+                Button("Intrekken", role: .destructive) { revoking = m }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+            }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: AppPlatform.isMac ? .contain : .combine)
     }
 
     private func load() async {
