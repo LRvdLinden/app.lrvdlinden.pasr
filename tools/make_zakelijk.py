@@ -17,6 +17,8 @@ import re
 import unicodedata
 from pathlib import Path
 
+import zakelijk_v2 as zv
+
 ROOT = Path(__file__).resolve().parent.parent / "website"
 ZK = ROOT / "zakelijk"
 
@@ -335,6 +337,8 @@ FAQ = [
     ("Welke gegevens van mijn klanten zie ik?", "Alleen de laatste tekens van hun anonieme klantcode, hun stempels en beloningen. Pasr vraagt je klanten geen naam, e-mailadres of telefoonnummer."),
     ("Hoe lang duurt het aanmelden?", "Een account maken en je zaak aanmelden kost een paar minuten. We keuren elke zaak met de hand goed, meestal binnen een werkdag. In de tussentijd ontwerp je je kaart al."),
     ("Kan ik meerdere zaken beheren?", "Met één Pasr-account ben je eigenaar van één zaak, met tot 5 stempelkaarten. Daarnaast kun je medewerker zijn bij andere zaken. In het dashboard en in de app wissel je bovenin van zaak."),
+    ("Hoe werken kortingsbonnen en actiecodes?", "Een kortingsbon (procent of bedrag) haalt je klant op in Pasr; die krijgt een persoonlijke code die jij aan de kassa scant, één keer per klant. Een actiecode, zoals HERFST20, noemt de klant aan de kassa; jij kiest de limiet en de einddatum. Pauzeren, aanpassen of verwijderen kan altijd; wat al gebruikt is blijft in de historie."),
+    ("Kan ik meerdere vestigingen beheren?", "Ja. Voeg je vestigingen toe in het dashboard of de app; bij het scannen kies je de vestiging, zodat je per filiaal ziet waar gestempeld is."),
     ("Op welke apparaten werkt Pasr Zakelijk?", "De app Pasr Zakelijk werkt op iPhone en iPad met iOS 17 of nieuwer en op Android 8 of nieuwer (download op pasr.nl/zakelijk/download). Het dashboard en de scanner werken in elke moderne browser."),
 ]
 
@@ -342,13 +346,14 @@ FAQ = [
 # ---------------------------------------------------------------------------------------------------- kop en voet
 def header(active=""):
     """Kop van alle /zakelijk-pagina's: Inloggen en Aanmelden altijd zichtbaar, ook op een telefoon."""
-    links = [("functies", "/zakelijk/#functies", "Functies"), ("werkt", "/zakelijk/#zo-werkt-het", "Zo werkt het"),
-             ("faq", "/zakelijk/#faq", "Vragen"), ("klanten", "/", "Pasr voor klanten")]
+    links = [("maken", "/zakelijk/#maken", "Wat kun je maken"), ("terug", "/zakelijk/#terugkomen", "Klanten binden"),
+             ("functies", "/zakelijk/#functies", "Aan de toonbank"), ("faq", "/zakelijk/#faq", "Vragen"),
+             ("klanten", "/", "Pasr voor klanten")]
     li = "".join(f'<li class="zk-l"><a href="{h}">{t}</a></li>' for _, h, t in links)
     cur = ' aria-current="page"' if active == "dashboard" else ""
     return f'''  <header class="wrap nav zk-nav">
     <a class="brand" href="/zakelijk/" aria-label="Pasr Zakelijk"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span><em class="zk-tag">Zakelijk</em></a>
-    <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/support/">Support</a></li></ul></nav></details>
+    <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/support/">Support</a></li><li><a href="/zakelijk/dashboard/">Inloggen</a></li></ul></nav></details>
     <nav class="zk-desktop-actions" aria-label="Hoofdmenu">
       <ul>
         {li}
@@ -568,85 +573,30 @@ def page():
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/zakelijk.css">
   <link rel="stylesheet" href="/assets/catalog-hub.css">
+  <link rel="stylesheet" href="/assets/zakelijk-v2.css">
   <script>document.documentElement.classList.add('js')</script>
 </head>
 <body data-page="zk-home">
+{zv.usp()}
 {header()}
 
-  <main class="zk-home">
-    <div class="wrap hero zk-hero2 ch-zakelijk-hero" id="top">
-      <div>
-        <span class="zk-kicker enter" style="--d:0">Pasr Zakelijk · gratis voor ondernemers</span>
-        <h1 class="enter" style="--d:0"><span>Je stempelkaart.</span> <span>Digitaal, in een minuut.</span></h1>
-        <p class="lead enter" style="--d:1">Maak gratis een digitale stempelkaart met het logo en de kleur van je zaak. Klanten sparen in Pasr of in hun browser, jij zet de stempels met je telefoon. Zonder papier en zonder kassakoppeling.</p>
-        <div class="actions enter" style="--d:2">
-          <a class="btn btn-primary" href="/zakelijk/dashboard/#account">Gratis aanmelden</a>
-          <a class="btn btn-ghost" href="/zakelijk/dashboard/">Inloggen</a>
-        </div>
-        <div class="actions zk-badges enter" style="--d:3" aria-label="De app Pasr Zakelijk">
-          {badges()}
-        </div>
-        <ul class="platforms enter" style="--d:3" aria-label="Werkt op">
-          <li><b>iPhone en iPad</b> iOS 17+</li>
-          <li><b>Android</b> 8+</li>
-          <li><b>Browser</b> dashboard en scanner</li>
-        </ul>
-      </div>
-      <div class="stage enter-stage zk-stage">
-{hero_phone()}
-      </div>
-    </div>
-
-    <section class="wrap" id="zo-werkt-het" aria-labelledby="werkt-title">
-      <div class="section-head">
-        <h2 id="werkt-title">Zo werkt het</h2>
-        <p>Van aanmelden tot de eerste stempel: meestal ben je dezelfde dag klaar.</p>
-      </div>
-      <ol class="steps">{steps_html}</ol>
-    </section>
-
-    <div class="wrap">
-      <section class="why" id="waarom" aria-labelledby="why-title">
-        <div class="section-head">
-          <h2 id="why-title">Papier raakt kwijt. Pasr niet.</h2>
-          <p>Een papieren stempelkaart is makkelijk, maar je klant vergeet hem, en je weet nooit wat hij oplevert.</p>
-        </div>
-        <div class="compare">
-          <div class="compare-head">Papieren stempelkaart</div>
-          <div class="compare-head" style="color:#fff">Pasr Zakelijk</div>
-{compare}
-        </div>
-{feature_table()}
-      </section>
-    </div>
-
-    <section class="wrap" id="functies" aria-labelledby="functies-title">
-      <div class="section-head">
-        <h2 id="functies-title">Alles wat je aan de toonbank nodig hebt</h2>
-        <p>Gemaakt voor de koffiebar, de bakker, de kapper en de lunchroom: snel bij de kassa, en niets wat je niet nodig hebt.</p>
-      </div>
-      <div class="features">
-{features}
-      </div>
-    </section>
-
-{web_section()}
+  <main class="zk-home zv-home">
+{zv.hero(badges(), DEMO)}
+{zv.steps()}
+{zv.products()}
+{zv.retention()}
+{zv.counter()}
+{zv.banners()}
+{zv.dark_band()}
 
     <section class="wrap" id="faq" aria-labelledby="faq-title">
-      <div class="section-head"><h2 id="faq-title">Vragen</h2></div>
+      <div class="zv-heading"><h2 id="faq-title">Vragen</h2><span class="zv-underline" style="background:var(--iris)"></span></div>
       <div class="faq">
 {faq}
       </div>
     </section>
 
-    <section class="wrap cta" id="download" aria-labelledby="cta-title">
-      <h2 id="cta-title">Klaar voor je eerste stempel?</h2>
-      <p>Pasr Zakelijk is gratis: in de App Store voor iPhone en iPad, als download voor Android, en in je browser.</p>
-      <div class="actions">
-        {badges(lazy=True)}
-      </div>
-      <p class="zk-cta-web"><a class="btn btn-primary" href="/zakelijk/dashboard/#account">Gratis aanmelden</a> <a class="btn btn-ghost" href="/zakelijk/dashboard/">Inloggen</a></p>
-    </section>
+{zv.closer(badges(lazy=True))}
   </main>
 
 {FOOTER}
