@@ -49,9 +49,10 @@ struct CardsView: View {
     }
 
     private var active: [Item] {
-        business.cards.map { Item(id: $0.id, kind: "card", title: $0.name) }
-            + offers.compactMap { item($0, kind: "coupon") }
-            + codes.compactMap { item($0, kind: "code") }
+        let cards = business.cards.map { Item(id: $0.id, kind: "card", title: $0.name) }
+        // op de Mac hebben kortingscoupons en actiecodes een eigen onderdeel in de zijbalk
+        if AppPlatform.isMac { return cards }
+        return cards + offers.compactMap { item($0, kind: "coupon") } + codes.compactMap { item($0, kind: "code") }
     }
 
     var body: some View {
@@ -59,9 +60,11 @@ struct CardsView: View {
             List {
                 Section {
                     Picker("Acties", selection: $showingTrash) {
-                        Text("Acties").tag(false)
+                        (AppPlatform.isMac ? Text("Stempelkaarten") : Text("Acties")).tag(false)
                         Text("Verwijderd").tag(true)
-                    }.pickerStyle(.segmented)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                     let visible = showingTrash ? trash : active
                     if !visible.isEmpty {
                         Button(selecting ? "Selectie sluiten" : "Selecteren") {
@@ -97,8 +100,9 @@ struct CardsView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
-            .navigationTitle("Acties")
+            .navigationTitle(AppPlatform.isMac ? Text("Stempelkaarten") : Text("Acties"))
             .refreshable { await store.load(); await loadOffers(); tkReload += 1 }
+            .macRefreshButton { await store.load(); await loadOffers() }
             .task(id: business.id) { marked.removeAll(); await loadOffers() }
             .onChange(of: showingTrash) { _, _ in
                 marked.removeAll()
@@ -107,8 +111,9 @@ struct CardsView: View {
             }
             .onChange(of: coupons) { _, open in if !open { Task { await loadOffers() } } }
             // melding of uitnodigingslink voor een gezamenlijke actie: Samenwerkingen openen (pas na splash en slot)
+            // (op de Mac opent het hoofdvenster daarvoor Gezamenlijke acties in de zijbalk)
             .onChange(of: modals.locked ? nil : router.focus, initial: true) { _, focus in
-                if focus != nil { community = true }
+                if focus != nil && !AppPlatform.isMac { community = true }
             }
             .onChange(of: community) { _, open in
                 guard !open else { return }
@@ -128,6 +133,17 @@ struct CardsView: View {
             }
             .toolbar {
                 BusinessPicker()
+                // op de Mac staan deze onderdelen in de zijbalk en zit Nieuw in de werkbalk van het venster
+                if !AppPlatform.isMac {
+                    iosToolbar
+                }
+            }
+            .modifier(CardsDialogs(view: self))
+            .modifier(CardsSheets(view: self))
+        }
+    }
+
+    @ToolbarContentBuilder private var iosToolbar: some ToolbarContent {
                 ToolbarItem(placement: .primaryAction) {
                     Button { community = true } label: {
                         Image(systemName: router.inviteCount > 0 ? "person.3.fill" : "person.3")
@@ -153,7 +169,24 @@ struct CardsView: View {
                     Button { showingCreateChoices = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel(Text("Nieuw aanmaken"))
                 }
-            }
+    }
+}
+
+/// Keuzevragen van CardsView (apart, zodat de body klein blijft voor de type-checker).
+private struct CardsDialogs: ViewModifier {
+    let view: CardsView
+    func body(content: Content) -> some View { view.dialogs(content) }
+}
+
+/// Sheets van CardsView (apart, zodat de body klein blijft voor de type-checker).
+private struct CardsSheets: ViewModifier {
+    let view: CardsView
+    func body(content: Content) -> some View { view.sheets(content) }
+}
+
+extension CardsView {
+    func dialogs<V: View>(_ content: V) -> some View {
+        content
             .confirmationDialog("Wat wil je aanmaken?", isPresented: $showingCreateChoices, titleVisibility: .visible) {
                 Button("Stempelkaart", systemImage: "rectangle.stack.badge.plus") {
                     editing = BusinessCard()
@@ -181,6 +214,10 @@ struct CardsView: View {
             } message: {
                 Text("Een actie of beloning wordt altijd ingesteld op een bestaande stempelkaart.")
             }
+    }
+
+    func sheets<V: View>(_ content: V) -> some View {
+        content
             .sheet(item: $editing) { card in
                 CardEditorView(business: business, card: card).trackModal()
             }
@@ -188,7 +225,7 @@ struct CardsView: View {
                 CardShareView(business: business, card: card).trackModal()
             }
             .sheet(item: $promoting) { card in
-                PromoBrowser(card: card)
+                PromoBrowser(card: card).macSheetFrame()
             }
             .sheet(item: $program) { card in
                 LoyaltyProgramView(card: card).trackModal()
@@ -210,9 +247,10 @@ struct CardsView: View {
             }
             .modifier(TKSheets(business: business, newEvent: $newEvent, openedEvent: $openedEvent, newMemberCard: $newMemberCard,
                                editingMember: $editingMember, sharingMember: $sharingMember, reload: $tkReload))
-        }
     }
+}
 
+extension CardsView {
     @ViewBuilder private var activeRows: some View {
         if business.cards.isEmpty {
             ContentUnavailableView {
@@ -220,8 +258,13 @@ struct CardsView: View {
             } description: {
                 Text("Maak je eerste stempelkaart: kies een naam, kleur, aantal stempels en beloning.")
             } actions: {
-                Button("Nieuw aanmaken") { showingCreateChoices = true }
-                    .buttonStyle(.borderedProminent)
+                if AppPlatform.isMac {
+                    Button("Stempelkaart maken") { editing = BusinessCard() }
+                        .buttonStyle(.borderedProminent)
+                } else {
+                    Button("Nieuw aanmaken") { showingCreateChoices = true }
+                        .buttonStyle(.borderedProminent)
+                }
             }
             .listRowBackground(Color.clear)
         }
@@ -258,6 +301,11 @@ struct CardsView: View {
                 .font(.subheadline.weight(.semibold))
             }
         }
+        // op de Mac hebben tickets, klantenkaarten, kortingscoupons en actiecodes een eigen onderdeel in de zijbalk
+        if !AppPlatform.isMac { otherSections }
+    }
+
+    @ViewBuilder private var otherSections: some View {
         TicketEventsSection(business: business, reload: tkReload, onCreate: { newEvent = true }, onOpen: { openedEvent = $0 })
         MemberCardsSection(business: business, reload: tkReload, onCreate: { newMemberCard = true },
                            onEdit: { editingMember = $0 }, onShare: { sharingMember = $0 })
@@ -326,6 +374,11 @@ struct CardsView: View {
                     }
                     content
                 }.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) { view.requestRemoval([item]) } label: {
+                        Label(view.showingTrash ? "Definitief verwijderen" : "Verwijderen", systemImage: "trash")
+                    }.disabled(view.busy)
+                }
+                .macContextMenu {
                     Button(role: .destructive) { view.requestRemoval([item]) } label: {
                         Label(view.showingTrash ? "Definitief verwijderen" : "Verwijderen", systemImage: "trash")
                     }.disabled(view.busy)
@@ -681,10 +734,10 @@ struct CardShareView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
             .task { flyer = Flyer.makePDF(business: business, card: card) }
             .sheet(isPresented: $showPromotionalMaterials) {
-                PromoBrowser(card: card)
+                PromoBrowser(card: card).macSheetFrame()
             }
             .sheet(isPresented: $showWebsiteBadge) {
-                WebsiteBadgeView(card: card)
+                WebsiteBadgeView(card: card).macSheetFrame()
             }
         }
     }

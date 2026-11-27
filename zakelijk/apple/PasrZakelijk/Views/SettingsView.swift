@@ -50,7 +50,8 @@ struct SettingsView: View {
                         SettingsLabel("Weergave", symbol: "circle.lefthalf.filled", color: .gray)
                     }
                 } footer: {
-                    Text("Automatisch volgt de instelling van je iPhone of iPad.")
+                    AppPlatform.isMac ? Text("Automatisch volgt de instelling van je Mac.")
+                        : Text("Automatisch volgt de instelling van je iPhone of iPad.")
                 }
                 Section("Hulp") {
                     Link(destination: URL(string: "https://pasr.nl/support/")!) {
@@ -190,7 +191,9 @@ struct SettingsView: View {
         } header: {
             Text("Privacy en beveiliging")
         } footer: {
-            Text("Bij openen en na terugkeer naar de app vraagt Pasr Zakelijk om Face ID, Touch ID of je toegangscode. Handig als de iPad of iPhone aan de kassa ligt.")
+            AppPlatform.isMac
+                ? Text("Bij openen en nadat de app verborgen is geweest, vraagt Pasr Zakelijk om Touch ID of het wachtwoord van je Mac. Handig als de Mac aan de kassa staat.")
+                : Text("Bij openen en na terugkeer naar de app vraagt Pasr Zakelijk om Face ID, Touch ID of je toegangscode. Handig als de iPad of iPhone aan de kassa ligt.")
         }
     }
 

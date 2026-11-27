@@ -64,6 +64,15 @@ final class UIPasteboard {
 }
 #endif
 
+/// Welk platform deze build is (voor teksten en kleine verschillen in gedeelde schermen).
+enum AppPlatform {
+    #if os(macOS)
+    static let isMac = true
+    #else
+    static let isMac = false
+    #endif
+}
+
 /// Soort toetsenbord voor een tekstveld (alleen iOS; op de Mac is er één toetsenbord).
 enum KeyboardKind {
     case email, url, number, decimal
@@ -115,8 +124,62 @@ extension View {
         #if os(macOS)
         frame(minWidth: minWidth, idealWidth: max(minWidth, 600), minHeight: minHeight, idealHeight: max(minHeight, 720))
             .formStyle(.grouped)
+            // een sheet is nooit een paneel: anders erft hij "ingebed" van het paneel eronder en mist hij Klaar
+            .environment(\.isEmbeddedPane, false)
         #else
         self
+        #endif
+    }
+
+    /// Alle formulieren gegroepeerd op de Mac (zoals Systeeminstellingen): secties als kaarten, label links en
+    /// het veld rechts in dezelfde rij, een leesbare breedte en scrollen binnen het paneel. De standaard Mac-stijl
+    /// (`.columns`) zet labels in een kolom links die wordt afgesneden en scrolt niet. Op iOS doet dit niets.
+    /// Wordt bovenaan elk venster en elke sheet gezet; de stijl geldt via de omgeving voor elke Form daaronder.
+    @ViewBuilder func pasrFormStyle() -> some View {
+        #if os(macOS)
+        formStyle(.grouped)
+        #else
+        self
+        #endif
+    }
+
+    /// Contextmenu (rechtermuisknop) alleen op de Mac, als alternatief voor een veegactie op iOS.
+    func macContextMenu<Items: View>(@ViewBuilder _ items: () -> Items) -> some View {
+        modifier(MacContextMenu(items: items()))
+    }
+
+    /// Op de Mac bestaat trekken-om-te-verversen niet: dan een Ververs-knop (⌘R) in de werkbalk. Op iOS niets.
+    func macRefreshButton(_ action: @escaping @MainActor () async -> Void) -> some View {
+        modifier(MacRefreshButton(action: action))
+    }
+}
+
+private struct MacContextMenu<Items: View>: ViewModifier {
+    let items: Items
+
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        content.contextMenu { items }
+        #else
+        content
+        #endif
+    }
+}
+
+private struct MacRefreshButton: ViewModifier {
+    let action: @MainActor () async -> Void
+
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        content.toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { Task { await action() } } label: { Label("Ververs", systemImage: "arrow.clockwise") }
+                    .keyboardShortcut("r", modifiers: .command)
+                    .help(Text("Ververs"))
+            }
+        }
+        #else
+        content
         #endif
     }
 }

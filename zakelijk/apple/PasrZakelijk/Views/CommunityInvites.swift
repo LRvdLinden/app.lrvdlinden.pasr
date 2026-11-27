@@ -230,6 +230,7 @@ struct CommunityInviteManagerView: View {
         .inlineTitle()
         .task { await loadInvites() }
         .refreshable { await loadInvites() }
+        .macRefreshButton { await loadInvites() }
         .task(id: query) {
             try? await Task.sleep(for: .milliseconds(400))
             guard !Task.isCancelled else { return }

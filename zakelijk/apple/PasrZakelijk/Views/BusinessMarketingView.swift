@@ -86,6 +86,7 @@ struct BusinessMarketingView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { DoneButton() } }
             .task { await reload() }
             .refreshable { await reload() }
+            .macRefreshButton { await reload() }
         }
     }
     @MainActor private func reload() async {

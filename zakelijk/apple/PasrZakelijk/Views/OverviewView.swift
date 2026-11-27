@@ -153,9 +153,10 @@ struct OverviewView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
-            .navigationTitle("Overzicht")
+            .navigationTitle(AppPlatform.isMac ? Text("Inzichten") : Text("Overzicht"))
             .toolbar { BusinessPicker() }
             .refreshable { await load() }
+            .macRefreshButton { await load() }
             .task(id: days) { await load() }
             .onChange(of: showPrevious) { _, _ in selected = nil }
             .onChange(of: metric) { _, _ in selected = nil }
@@ -206,6 +207,8 @@ struct OverviewView: View {
                 .padding(.horizontal, 14).padding(.vertical, 8)
                 .background(Theme.insightsPill, in: Capsule())
             }
+            .menuIndicator(.hidden)
+            .fixedSize()
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(periodTitle).font(.title2.weight(.bold))
@@ -232,7 +235,7 @@ struct OverviewView: View {
                 InsightsChart(points: points, unit: metric.unit, color: metric.color,
                               xFormat: days >= 365 ? .dateTime.month(.narrow) : .dateTime.day().month(.narrow),
                               selected: $selected)
-                if loading && stats.isEmpty { ProgressView() }
+                if loading && points.isEmpty { ProgressView().controlSize(.small) }
                 if !loading && points.allSatisfy({ $0.value == 0 }) {
                     Text("Nog geen gegevens in deze periode").font(.footnote).foregroundStyle(.secondary)
                 }

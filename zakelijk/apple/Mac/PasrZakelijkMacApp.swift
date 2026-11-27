@@ -148,11 +148,12 @@ struct MacSettingsWindow: View {
             if account.isSignedIn, let business = store.current {
                 SettingsView(business: business)
                     .environment(\.isEmbeddedPane, true)
+                    .pasrFormStyle()
             } else {
                 MacPlaceholder(text: "Log in in het hoofdvenster van Pasr Zakelijk.")
             }
         }
-        .frame(width: 560, height: 680)
+        .frame(minWidth: 560, idealWidth: 620, minHeight: 600, idealHeight: 720)
     }
 }
 
@@ -197,6 +198,8 @@ struct MacShell<Content: View>: View {
             }
         }
         .background(Theme.bg)
+        // alle formulieren in dit venster (en de sheets erboven) gegroepeerd, zie pasrFormStyle()
+        .pasrFormStyle()
         .onChange(of: locked, initial: true) { _, hidden in
             ModalTracker.shared.locked = hidden
             openPendingLink()

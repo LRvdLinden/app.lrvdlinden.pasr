@@ -21,6 +21,10 @@ struct MacMainView: View {
         } detail: {
             detail
                 .environment(\.isEmbeddedPane, true)
+                .pasrFormStyle()
+                // het paneel past zich aan het venster aan en duwt nooit de zijbalk of de vensterknoppen weg
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                .clipped()
                 .id(selection)
         }
         .searchable(text: $search, isPresented: $searching, placement: .toolbar, prompt: Text("Zoek in je zaak"))
@@ -126,7 +130,7 @@ private struct MacSidebar: View {
                     row(.tickets)
                     row(.kortingsbonnen)
                     row(.actiecodes)
-                    row(.gezamenlijkeActies).badge(inviteCount)
+                    row(.gezamenlijkeActies, badge: inviteCount)
                     row(.beloningen)
                 }
                 Section("Groei") {
@@ -149,8 +153,12 @@ private struct MacSidebar: View {
         .listStyle(.sidebar)
     }
 
-    private func row(_ section: ZakelijkSection) -> some View {
-        Label(section.title, systemImage: section.symbol).tag(section)
+    /// De tag moet als laatste: `.badge(…)` ná `.tag(…)` maakt de rij onselecteerbaar op de Mac (klikken op
+    /// Gezamenlijke acties deed daardoor niets en de zijbalk liet geen selectie zien).
+    private func row(_ section: ZakelijkSection, badge: Int = 0) -> some View {
+        Label(section.title, systemImage: section.symbol)
+            .badge(badge)
+            .tag(section)
     }
 }
 

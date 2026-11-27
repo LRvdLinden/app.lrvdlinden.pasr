@@ -27,6 +27,8 @@ struct BusinessCommunityView: View {
     @State private var confirmLeave: Campaign?
     @State private var confirmDecline: MyInvite?
     @State private var managing: Campaign?
+    /// Mac: de aangeklikte actie (detailweergave met alle mogelijkheden).
+    @State private var opened: Campaign?
     @State private var scrollTarget: String?
     @State private var router = CommunityRouter.shared
 
@@ -140,14 +142,29 @@ struct BusinessCommunityView: View {
             .navigationDestination(item: $managing) { campaign in
                 CommunityInviteManagerView(business: business, campaign: campaign)
             }
+            .modifier(detailDestination)
             .task { await load(); await applyFocus() }
             .refreshable { await load() }
+            .macRefreshButton { await load() }
             .onChange(of: router.focus) { _, focus in
                 guard focus != nil else { return }
                 Task { await load(); await applyFocus() }
             }
             .onChange(of: managing) { _, now in if now == nil { Task { await load() } } }
         }
+    }
+
+    /// Mac: een actie aanklikken opent de detailweergave (op iOS staan alle knoppen in de rij zelf).
+    private var detailDestination: CommunityDetailDestination {
+        CommunityDetailDestination(
+            business: business, opened: $opened, rows: $rows, memberCodes: $memberCodes, busy: $busy,
+            message: $message, failed: $failed,
+            actions: CommunityActions(
+                join: { id in Task { await join(id) } },
+                claim: { id in Task { await claim(id) } },
+                stop: { row in confirmCancel = row },
+                leave: { row in confirmLeave = row },
+                reload: { await load() }))
     }
 
     /// Bevestigingsvragen apart van de rest, zodat de compiler de body snel genoeg kan controleren.
@@ -179,9 +196,16 @@ struct BusinessCommunityView: View {
 
     @ViewBuilder private var formContent: some View {
         invitesSection
-        createSection
-        campaignsSection
-        messageSection
+        if AppPlatform.isMac {
+            // Mac: eerst de acties (klikbaar), daarna een nieuwe actie starten
+            messageSection
+            campaignsSection
+            createSection
+        } else {
+            createSection
+            campaignsSection
+            messageSection
+        }
     }
 
     @ViewBuilder private var invitesSection: some View {
@@ -224,12 +248,50 @@ struct BusinessCommunityView: View {
                 (isOwner ? Text("Nog geen gezamenlijke acties") : Text("Je zaak doet nog niet mee aan een gezamenlijke actie"))
                     .foregroundStyle(.secondary)
             }
-            ForEach(rows) { row in campaignRow(row).id(row.id) }
+            ForEach(rows) { row in
+                if AppPlatform.isMac {
+                    macCampaignRow(row).id(row.id)
+                } else {
+                    campaignRow(row).id(row.id)
+                }
+            }
         } header: {
             isOwner ? Text("Gezamenlijke acties") : Text("Acties van je zaak")
         } footer: {
-            Text("Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.")
+            AppPlatform.isMac
+                ? Text("Klik op een actie om hem te openen: zaken uitnodigen, status per zaak, beloning uitgeven, stoppen of uitstappen. Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.")
+                : Text("Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.")
         }
+    }
+
+    /// Mac: compacte rij die de detailweergave opent, met de acties ook onder de rechtermuisknop.
+    @ViewBuilder private func macCampaignRow(_ row: Campaign) -> some View {
+        Button { opened = row } label: {
+            HStack(spacing: 12) {
+                CommunityCampaignSummary(campaign: row)
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Openen", systemImage: "arrow.up.forward.square") { opened = row }
+            if isOwner && row.isOrganizer && (row.state == .waiting || row.state == .active) {
+                Button("Zaken uitnodigen", systemImage: "person.badge.plus") { managing = row }
+            }
+            if isOwner && !row.isParticipant && row.openSameCity && (row.state == .waiting || row.state == .active) {
+                Button("Meedoen", systemImage: "person.crop.circle.badge.checkmark") { Task { await join(row.id) } }
+            }
+            if isOwner && row.isParticipant && (row.state == .waiting || row.state == .active) {
+                Divider()
+                if row.isOrganizer {
+                    Button("Actie stoppen", systemImage: "stop.circle", role: .destructive) { confirmCancel = row }
+                } else {
+                    Button("Uitstappen", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { confirmLeave = row }
+                }
+            }
+        }
+        .disabled(busy)
     }
 
     @ViewBuilder private var messageSection: some View {
@@ -264,6 +326,10 @@ struct BusinessCommunityView: View {
             .disabled(busy)
         }
         .padding(.vertical, 2)
+        .macContextMenu {
+            Button("Accepteren", systemImage: "checkmark.circle") { Task { await respond(invite, accept: true) } }
+            Button("Weigeren", systemImage: "xmark.circle", role: .destructive) { confirmDecline = invite }
+        }
     }
 
     @ViewBuilder private func campaignRow(_ row: Campaign) -> some View {
@@ -366,6 +432,8 @@ struct BusinessCommunityView: View {
         do {
             let r = try await Account.shared.rpc("pasr_business_community_list", ["p_business": business.id])
             rows = (r as? [[String: Any]] ?? []).compactMap(Campaign.init)
+            // Mac: geen detailweergave van een actie die niet meer bestaat
+            if let o = opened, !rows.contains(where: { $0.id == o.id }) { opened = nil }
         } catch { show(error.localizedDescription, error: true) }
         if isOwner {
             // een oudere server kent deze functie nog niet: dan gewoon geen uitnodigingen

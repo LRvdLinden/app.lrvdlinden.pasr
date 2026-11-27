@@ -241,39 +241,27 @@ struct MacTicketsPane: View {
     }
 }
 
-/// Beloningen: kies een stempelkaart en stel acties en beloningen in (LoyaltyProgramView).
+/// Beloningen: één gegroepeerd formulier (LoyaltyProgramView) met bovenin de keuze van de stempelkaart.
+/// (Eerder een smalle tweede lijst ernaast, die half over de inhoud viel.)
 struct MacRewardsPane: View {
     let business: Business
     @State private var cardID: String?
 
+    private var card: BusinessCard? {
+        business.cards.first { $0.id == cardID } ?? business.cards.first
+    }
+
     var body: some View {
-        if business.cards.isEmpty {
+        if let card {
+            LoyaltyProgramView(card: card, cards: business.cards, onSelect: { cardID = $0 })
+                .id(card.id)
+        } else {
             ContentUnavailableView {
                 Label("Nog geen stempelkaart", systemImage: "rectangle.stack.badge.plus")
             } description: {
                 Text("Een actie of beloning wordt altijd ingesteld op een bestaande stempelkaart.")
             }
-        } else {
-            HSplitView {
-                List(business.cards, selection: $cardID) { card in
-                    Label { Text(verbatim: card.name) } icon: {
-                        Circle().fill(Color(hex: card.color)).frame(width: 12, height: 12)
-                    }
-                    .tag(card.id)
-                }
-                .frame(minWidth: 180, idealWidth: 220, maxWidth: 280)
-                Group {
-                    if let card = business.cards.first(where: { $0.id == cardID }) {
-                        LoyaltyProgramView(card: card).id(card.id)
-                    } else {
-                        Text("Kies de stempelkaart voor de actie").foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-                .frame(minWidth: 420)
-            }
             .navigationTitle("Beloningen")
-            .onAppear { if cardID == nil { cardID = business.cards.first?.id } }
         }
     }
 }

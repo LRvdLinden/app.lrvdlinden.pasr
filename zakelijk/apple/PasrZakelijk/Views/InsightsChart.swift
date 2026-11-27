@@ -61,7 +61,7 @@ struct InsightsChart: View {
                 .overlay(alignment: .leading) { Rectangle().fill(Theme.insightsGrid).frame(width: 1) }
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.insightsGrid).frame(height: 1) }
         }
-        .chartXSelection(value: $selectedDate)
+        .modifier(ChartSelection(points: points, selectedDate: $selectedDate))
         .onChange(of: selectedDate) { _, date in
             guard let date else { selected = nil; return }
             selected = points.min { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) }
@@ -71,7 +71,38 @@ struct InsightsChart: View {
     }
 }
 
-/// Pil-segmenten zoals Homey.
+/// Selectie in de grafiek. iOS: vinger over de grafiek. Mac: met de muis eroverheen bewegen; buiten de grafiek
+/// verdwijnt de selectielijn weer (met chartXSelection bleef op de Mac een losse verticale lijn staan).
+private struct ChartSelection: ViewModifier {
+    let points: [MetricPoint]
+    @Binding var selectedDate: Date?
+
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        content.chartOverlay { proxy in
+            GeometryReader { geo in
+                Rectangle().fill(.clear).contentShape(Rectangle())
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case .active(let location):
+                            guard let frame = proxy.plotFrame else { selectedDate = nil; return }
+                            let x = location.x - geo[frame].origin.x
+                            guard x >= 0, x <= geo[frame].width else { selectedDate = nil; return }
+                            selectedDate = proxy.value(atX: x, as: Date.self)
+                        case .ended:
+                            selectedDate = nil
+                        }
+                    }
+            }
+        }
+        #else
+        content.chartXSelection(value: $selectedDate)
+        #endif
+    }
+}
+
+/// Pil-segmenten zoals Homey. Op de Mac een gewone gesegmenteerde knop (de pillen werden daar grote knoppen met
+/// kleine tekst).
 struct PillSegments<T: Hashable>: View {
     let items: [(T, LocalizedStringKey)]
     @Binding var selection: T
@@ -79,6 +110,25 @@ struct PillSegments<T: Hashable>: View {
     var spoken: [T: LocalizedStringKey] = [:]
 
     var body: some View {
+        #if os(macOS)
+        Picker(selection: $selection) {
+            ForEach(items, id: \.0) { item in
+                Text(item.1)
+                    .accessibilityLabel(Text(spoken[item.0] ?? item.1))
+                    .tag(item.0)
+            }
+        } label: {
+            EmptyView()
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .frame(maxWidth: .infinity)
+        #else
+        pills
+        #endif
+    }
+
+    private var pills: some View {
         HStack(spacing: 4) {
             ForEach(items, id: \.0) { item in
                 Button { selection = item.0 } label: {
