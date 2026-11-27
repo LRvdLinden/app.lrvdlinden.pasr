@@ -28,8 +28,47 @@ struct CardDetails: Codable, Equatable, Hashable {
     /// Kaart van de zaak (pasr_business_cards.id) en de code die de zaak scant (pasr_business_members.member_code).
     var businessCardId: String?
     var memberCode: String?
+    // Gratis ticket van een zaak (Pasr Zakelijk, pasr_my_event_tickets; issuer "event"). De server is de bron:
+    // Pasr zet deze velden bij elke verversing opnieuw. Geboortedatum en e-mail staan hier nooit in.
+    var eventId: String?
+    var ticketId: String?
+    /// "registered", "checked_in"/"used", "waitlist" of "cancelled".
+    var ticketStatus: String?
+    var holderName: String?
+    var ticketTypeName: String?
+    var eventEnd: Date?
+    var doorsAt: Date?
+    var address: String?
+    var latitude: Double?
+    var longitude: Double?
+    var headerURL: String?
+    var businessName: String?
+    /// Waar het logo vandaan kwam (adres van de server), zodat Pasr het pas opnieuw ophaalt als het verandert.
+    var logoSource: String?
+    // Klantenkaart met barcode van een zaak (pasr_my_member_cards; issuer "member").
+    var memberId: String?
+    var memberCardId: String?
+    var discountNow: MemberDiscount?
+    var nextDiscount: MemberDiscount?
+    var savingCount: Int?
+    var savingTarget: Int?
+    var savingReward: String?
+    var savingCanRedeem: Bool?
+    /// Melding bij een nieuwe kortingsperiode (pasr_member_card_notify).
+    var memberNotify: Bool?
 
     var isEmpty: Bool { self == CardDetails() }
+
+    /// Ticket voor een event van een zaak (van de server, niet zelf toegevoegd).
+    var isEventTicket: Bool { issuer == "event" && ticketId != nil }
+    /// Klantenkaart met barcode van een zaak.
+    var isMemberCard: Bool { issuer == "member" && memberId != nil }
+    /// Komt van de server (ticket of klantenkaart van een zaak): niet via de kaartsynchronisatie, niet zelf wijzigen.
+    var isServerItem: Bool { isEventTicket || isMemberCard }
+
+    var ticketCancelled: Bool { ticketStatus == "cancelled" }
+    var ticketUsed: Bool { ticketStatus == "checked_in" || ticketStatus == "used" }
+    var ticketWaitlist: Bool { ticketStatus == "waitlist" }
 
     enum Period: String, CaseIterable, Identifiable {
         case week, month, quarter, year
@@ -98,6 +137,54 @@ struct CardDetails: Codable, Equatable, Hashable {
         issuer = d["issuer"] as? String
         businessCardId = d["businessCardId"] as? String
         memberCode = d["memberCode"] as? String
+    }
+}
+
+/// Korting op een klantenkaart van een zaak: nu (`until` = t/m) of de volgende (`startsAt`).
+struct MemberDiscount: Codable, Equatable, Hashable {
+    var percent: Double?
+    var label: String?
+    var until: Date?
+    var startsAt: Date?
+
+    /// Uit de server-JSON ({percent, label, until} of {percent, label, starts_at}); nil als er niets bruikbaars in staat.
+    init?(json: Any?) {
+        guard let d = json as? [String: Any] else { return nil }
+        percent = (d["percent"] as? NSNumber)?.doubleValue ?? (d["percent"] as? String).flatMap(Double.init)
+        label = (d["label"] as? String).flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : String($0.prefix(80)) }
+        until = MemberDiscount.date(d["until"] ?? d["ends_on"] ?? d["ends_at"])
+        startsAt = MemberDiscount.date(d["starts_at"] ?? d["starts_on"])
+        if percent == nil && label == nil { return nil }
+    }
+
+    /// "15%" (zonder ",0").
+    var percentText: String? {
+        guard let percent else { return nil }
+        return percent.rounded() == percent ? "\(Int(percent))%" : String(format: "%.1f%%", percent)
+    }
+
+    /// Server-datum: ISO 8601 / Postgres ("2026-12-19T16:00:00Z", "2026-12-19 16:00:00.123+00") of alleen "YYYY-MM-DD"
+    /// (dan 12:00 Nederlandse tijd, zodat de dag in elke tijdzone klopt).
+    static func date(_ value: Any?) -> Date? {
+        guard var s = (value as? String)?.trimmingCharacters(in: .whitespaces), s.count >= 10 else { return nil }
+        if s.count == 10 {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.timeZone = TimeZone(identifier: "Europe/Amsterdam")
+            f.dateFormat = "yyyy-MM-dd HH:mm"
+            return f.date(from: s + " 12:00")
+        }
+        s = s.replacingOccurrences(of: " ", with: "T")
+        // fractie weg
+        if let dot = s.firstIndex(of: ".") {
+            let rest = s[s.index(after: dot)...]
+            let tz = rest.firstIndex { !$0.isNumber } ?? rest.endIndex
+            s = String(s[..<dot]) + String(rest[tz...])
+        }
+        // "+00" → "+00:00"
+        if let r = s.range(of: "[+-][0-9]{2}$", options: .regularExpression) { s.replaceSubrange(r, with: s[r] + ":00") }
+        if s.count == 19 { s += "Z" }
+        return ISO8601DateFormatter().date(from: s)
     }
 }
 

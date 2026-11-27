@@ -35,7 +35,8 @@ enum CardSync {
         let all = (try? context.fetch(FetchDescriptor<Card>())) ?? []
         let pushed = lastSync(for: user) ?? .distantPast
         // alleen privékaarten; kaarten in een gedeelde Pasr gaan via GroupService
-        let changes = rows(all.filter { $0.groupID == nil && !$0.isTemporary && changedAt($0) > pushed })
+        // tickets en klantenkaarten van een zaak niet: die haalt elk apparaat zelf op (BusinessPasses)
+        let changes = rows(all.filter { $0.groupID == nil && !$0.isTemporary && changedAt($0) > pushed && !$0.details.isServerItem })
         let since = UserDefaults.standard.string(forKey: sinceKey(user))
         var body: [String: Any] = ["changes": changes]
         if let since { body["since"] = since } else { body["since"] = NSNull() }

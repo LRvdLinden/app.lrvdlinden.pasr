@@ -73,6 +73,15 @@ struct TicketInfo: Equatable, Hashable {
     var start: Date?
     /// Rauwe velden voor de Wallet-pas.
     var event: TicketEvent?
+    /// Ticket van een zaak (Pasr Zakelijk): naam van de houder, status en de plek op de kaart.
+    var holder: String?
+    var status: String?
+    var doorsText: String?
+    var isBusiness = false
+    /// Headerafbeelding van het event (https), achter de kop van het hoge ticket.
+    var header: URL?
+    var latitude: Double?
+    var longitude: Double?
 
     /// "Zwitsalpark, Apeldoorn"
     var place: String? {
@@ -82,6 +91,12 @@ struct TicketInfo: Equatable, Hashable {
 
     /// Kaarten-app met de route naar het evenement (adres, anders locatie en plaats).
     var routeURL: URL? {
+        if let latitude, let longitude {
+            var c = URLComponents(string: "https://maps.apple.com/")
+            c?.queryItems = [URLQueryItem(name: "daddr", value: "\(latitude),\(longitude)")]
+            if let a = address { c?.queryItems?.append(URLQueryItem(name: "q", value: a)) }
+            return c?.url
+        }
         guard let target = (address?.isEmpty == false ? address : place) else { return nil }
         var c = URLComponents(string: "https://maps.apple.com/")
         c?.queryItems = [URLQueryItem(name: "daddr", value: target)]
@@ -106,9 +121,37 @@ struct TicketInfo: Equatable, Hashable {
         return "pasr-event-" + (slug.isEmpty ? "ticket" : slug)
     }
 
+    /// Ticket van een zaak (pasr_my_event_tickets): alles komt van de server, niets uit de catalogus.
+    static func business(name: String, details d: CardDetails) -> TicketInfo {
+        var info = TicketInfo(brand: d.businessName ?? name, title: name, type: d.ticketTypeName,
+                              groupKey: "pasr-event-" + (d.eventId ?? d.ticketId ?? "ticket"))
+        info.holder = d.holderName
+        info.status = d.ticketStatus
+        info.address = d.address
+        info.latitude = d.latitude
+        info.longitude = d.longitude
+        info.start = d.eventDate
+        if let start = d.eventDate {
+            info.dateText = start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year())
+            var time = start.formatted(date: .omitted, time: .shortened)
+            if let end = d.eventEnd, end > start {
+                time += " – " + (Calendar.current.isDate(end, inSameDayAs: start)
+                                 ? end.formatted(date: .omitted, time: .shortened)
+                                 : end.formatted(.dateTime.day().month(.abbreviated).hour().minute()))
+            }
+            info.timeText = time
+        }
+        info.doorsText = d.doorsAt?.formatted(date: .omitted, time: .shortened)
+        info.venue = d.address
+        info.isBusiness = true
+        info.header = d.headerURL.flatMap(URL.init(string:))
+        return info
+    }
+
     /// Het ticket van een kaart: sjabloon uit de catalogus (op id) plus de eigen gegevens van de kaart.
     static func resolve(name: String, templateID: String?, details: CardDetails, website: String? = nil,
                         event given: TicketEvent? = nil) -> TicketInfo {
+        if details.isEventTicket { return business(name: name, details: details) }
         let event = given ?? RemoteStores.event(for: templateID)
         let parts = split(name.isEmpty ? String(localized: "Ticket") : name)
         let title = event?.event ?? parts.title

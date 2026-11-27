@@ -33,6 +33,14 @@ data class TicketInfo(
     val groupKey: String,
     /** Eerste dag, voor sorteren. */
     val start: LocalDate? = null,
+    /** Ticket van een zaak (Pasr Zakelijk): houder, status, deuren, plek op de kaart en headerafbeelding. */
+    val holder: String? = null,
+    val status: String? = null,
+    val doorsText: String? = null,
+    val isBusiness: Boolean = false,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val header: String? = null,
 ) {
     /** "Zwitsalpark, Apeldoorn" */
     val place: String? get() = listOfNotNull(venue, city).filter { it.isNotBlank() }.joinToString(", ").ifBlank { null }
@@ -73,8 +81,42 @@ data class TicketInfo(
             else -> "${DAY.format(first)} – ${DAY.format(last)}"
         }
 
+        private val WHEN = DateTimeFormatter.ofPattern("EEE d MMM yyyy", NL)
+        private val TIME = DateTimeFormatter.ofPattern("HH:mm", NL)
+
+        /** Ticket van een zaak (pasr_my_event_tickets): alles van de server, niets uit de catalogus. */
+        fun business(card: Card): TicketInfo {
+            val d = card.details
+            val zone = ZoneId.systemDefault()
+            val start = d.eventDate?.let { Instant.ofEpochMilli(it).atZone(zone) }
+            val end = d.eventEnd?.let { Instant.ofEpochMilli(it).atZone(zone) }
+            var time = start?.let { TIME.format(it) }
+            if (start != null && end != null && end.isAfter(start)) {
+                time += " – " + if (end.toLocalDate() == start.toLocalDate()) TIME.format(end) else DateTimeFormatter.ofPattern("d MMM HH:mm", NL).format(end)
+            }
+            return TicketInfo(
+                brand = d.businessName ?: card.storeName,
+                title = card.storeName.ifBlank { "Ticket" },
+                type = d.ticketTypeName,
+                dateText = start?.let { WHEN.format(it) },
+                timeText = time,
+                venue = d.address,
+                address = d.address,
+                groupKey = "pasr-event-" + (d.eventId ?: d.ticketId ?: "ticket"),
+                start = start?.toLocalDate(),
+                holder = d.holderName,
+                status = d.ticketStatus,
+                doorsText = d.doorsAt?.let { TIME.format(Instant.ofEpochMilli(it).atZone(zone)) },
+                isBusiness = true,
+                latitude = d.latitude,
+                longitude = d.longitude,
+                header = d.headerURL,
+            )
+        }
+
         /** Het ticket van een kaart, met de gids van het sjabloon (null = geen sjabloon of geen evenementgegevens). */
         fun resolve(card: Card, guide: JSONObject?): TicketInfo {
+            if (card.details.isEventTicket) return business(card)
             val (nameTitle, nameType) = split(card.storeName.ifBlank { "Ticket" })
             val event = guide?.text("event", 60)
             val title = event ?: nameTitle

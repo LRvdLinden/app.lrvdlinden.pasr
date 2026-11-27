@@ -38,6 +38,8 @@ fun normalizedEventKey(name: String): String =
 val Card.ticketGroupKey: String?
     get() {
         if (kind != CardKind.TICKET || deletedAt != null) return null
+        // ticket van een zaak: group_key = event_id
+        if (details.isEventTicket && details.eventId != null) return "event:" + details.eventId.lowercase()
         val date = details.eventDate ?: return null
         val event = normalizedEventKey(storeName).ifEmpty { return null }
         val day = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()

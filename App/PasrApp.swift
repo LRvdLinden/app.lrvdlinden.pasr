@@ -103,6 +103,7 @@ struct RootView: View {
         .onAppear {
             openFromNotification()
             openNewsFromNotification()
+            openBusinessPush()
         }
         .onOpenURL { url in handle(url) }
         // Universele links (pasr.nl/kaart, /tijdelijk, /uitnodiging) komen soms als NSUserActivity binnen
@@ -113,6 +114,7 @@ struct RootView: View {
             ReceiveCardSheet(shared: share.card)
         }
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenStore)) { _ in openStoreFromNotification() }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrOpenBusinessPush)) { _ in openBusinessPush() }
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenNews)) { _ in openNewsFromNotification() }
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenLink)) { note in
             if let url = note.object as? URL { handle(url) }
@@ -121,7 +123,7 @@ struct RootView: View {
             JoinBusinessSheet(cardID: item.cardID, memberCode: item.memberCode, referralToken: item.referralToken)
         }
         .sheet(item: $incomingAdd) { item in
-            AddToPasrSheet(link: item)
+            AddLinkSheet(link: item)
         }
         .sheet(item: $newStore) { item in
             AddCardView(store: item.template)
@@ -153,6 +155,7 @@ struct RootView: View {
             await StoreCatalog.shared.refresh()
             await TempShare.refreshStatuses(in: context)
             await BusinessCards.refreshAll(in: context)
+            await BusinessPasses.refreshAll(in: context)
             await WalletPass.upgradeExistingPasses(cards)
             await StorePush.syncIfEnabled()
             await Birthday.syncWithAccount()
@@ -285,6 +288,27 @@ extension RootView {
               let next = groups.invites.first(where: { !seenInvites.contains($0.id) }) else { return }
         seenInvites.insert(next.id)
         invite = next
+    }
+
+    /// Pushmelding over een ticket of klantenkaart van een zaak: eerst verversen (status, korting), dan dat ticket of
+    /// die kaart openen. Staat het ticket (nog) niet in Pasr, dan het event zelf (aanmelden / wachtlijst).
+    fileprivate func openBusinessPush() {
+        guard let push = NotificationRouter.pendingBusiness else { return }
+        NotificationRouter.pendingBusiness = nil
+        Task { @MainActor in
+            await BusinessPasses.refreshAll(in: context, force: true)
+            let all = (try? context.fetch(FetchDescriptor<Card>(predicate: #Predicate<Card> { $0.deletedAt == nil }))) ?? []
+            if push.type == "member_discount_started" {
+                if let card = BusinessPasses.memberCard(card: push.cardID, in: all) { openCardID = card.id }
+                else if let id = push.cardID { present { incomingAdd = AddLink(kind: .member, itemID: id) } }
+                return
+            }
+            if let card = BusinessPasses.ticketCard(event: push.eventID, ticket: push.ticketID, in: all) {
+                openCardID = card.id
+            } else if let event = push.eventID {
+                present { incomingAdd = AddLink(kind: .event, itemID: event) }
+            }
+        }
     }
 
     fileprivate func openFromNotification() {

@@ -181,6 +181,8 @@ struct WalletView: View {
                             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
                             titleVisibility: .visible) {
             Button("Verwijder", role: .destructive) {
+                // ticket of klantenkaart van een zaak: niet opnieuw ophalen; een klantenkaart ook bij de zaak opzeggen
+                if let card = deleting { BusinessPasses.didDelete(card) }
                 deleting?.deletedAt = .now
                 deleting = nil
                 deselect()
@@ -237,6 +239,7 @@ struct WalletView: View {
             await GroupService.shared.sync(in: context)
         }
         await BusinessCards.refreshAll(in: context, force: true)
+        await BusinessPasses.refreshAll(in: context, force: true)
     }
 
     private func openRequestedCard(_ id: UUID?) {
@@ -355,18 +358,23 @@ struct WalletView: View {
                             card.isFavorite.toggle()
                             card.updatedAt = .now
                         }
-                        actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
+                        // ticket of klantenkaart van een zaak: de zaak bepaalt de gegevens, dus niet zelf wijzigen of delen
+                        if !card.details.isServerItem {
+                            actionButton("pencil", label: "Wijzig") { sheet = .edit(card) }
+                        }
                         // cadeaukaart: tegoed en uitgaven; andere kaarten: Laatst gebruikt (vervangt de oude geschiedenis)
                         actionButton(card.kind == .voucher ? "eurosign.circle" : "clock.arrow.circlepath",
                                      label: card.kind == .voucher ? "Tegoed en uitgaven" : "Laatst gebruikt") {
                             sheet = card.kind == .voucher ? .history(card) : .uses(card)
                         }
-                        if !card.isTemporary {
+                        if !card.isTemporary && !card.details.isServerItem {
                             actionButton("square.and.arrow.up", label: "Deel") { share(card) }
                         }
                         // tijdelijk gedeelde kaarten mogen niet in Apple Wallet
                         if WalletPass.isAvailable, WalletPass.canMakePass(card) {
                             WalletActionButton(card: card).id(card.id)
+                        } else if WalletPass.isAvailable, card.details.isServerItem, !card.details.ticketCancelled, !card.number.isEmpty {
+                            ServerWalletActionButton(card: card).id(card.id)
                         }
                         // details (gids, foto's, ticket, abonnement) en verwijderen, zoals de achterkant van een pas in Wallet
                         actionButton("info.circle", label: "Details") { sheet = .info(card) }
@@ -375,6 +383,15 @@ struct WalletView: View {
 
                     if card.kind == .stamps {
                         StampControls(card: card, width: width)
+                            .transition(.opacity)
+                    }
+
+                    // ticket of klantenkaart van een zaak (Pasr Zakelijk)
+                    if card.details.isEventTicket {
+                        EventTicketPanel(card: card, width: width)
+                            .transition(.opacity)
+                    } else if card.details.isMemberCard {
+                        MemberCardPanel(card: card, width: width) { deleting = card }
                             .transition(.opacity)
                     }
 

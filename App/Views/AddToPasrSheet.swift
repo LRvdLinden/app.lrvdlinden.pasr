@@ -5,14 +5,21 @@ import SwiftData
 /// https://pasr.nl/add/<soort>/<id> (of pasr://add/<soort>/<id> vanaf de terugvalpagina).
 /// k = stempelkaart van een zaak, c = kortingsbon, a = actiecode (alle drie een uuid uit de database),
 /// t = ticket, g = cadeaukaart, s = winkelkaart (id uit de catalogus, bijv. "ah").
+/// Sinds 1.0.5 (build 66): e = aanmelden voor een gratis event van een zaak (event-uuid), m = klantenkaart met barcode
+/// van een zaak (kaart-uuid) en t/<ticket-uuid>?c=<code> = een ticket (aangemeld zonder account) aan je account koppelen.
 struct AddLink: Identifiable, Hashable {
     enum Kind: String, CaseIterable {
-        case business = "k", coupon = "c", promo = "a", ticket = "t", gift = "g", store = "s"
+        case business = "k", coupon = "c", promo = "a", ticket = "t", gift = "g", store = "s", event = "e", member = "m"
     }
 
     let kind: Kind
     let itemID: String
-    var id: String { kind.rawValue + "/" + itemID }
+    /// Code van een ticket (/add/t/<ticket>?c=<code>).
+    var code: String? = nil
+    var id: String { kind.rawValue + "/" + itemID + (code.map { "?" + $0 } ?? "") }
+
+    /// Ticket van een zaak koppelen (pasr_event_ticket_claim) in plaats van een ticket uit de catalogus.
+    var isTicketClaim: Bool { kind == .ticket && code != nil && UUID(uuidString: itemID) != nil }
 
     var webURL: URL { URL(string: "https://pasr.nl/add/\(kind.rawValue)/\(itemID)")! }
 
@@ -32,9 +39,16 @@ struct AddLink: Identifiable, Hashable {
         let raw = parts[1].removingPercentEncoding ?? parts[1]
         guard raw.range(of: "^[A-Za-z0-9][A-Za-z0-9-]{0,63}$", options: .regularExpression) != nil else { return nil }
         switch kind {
-        case .business, .coupon, .promo:
+        case .business, .coupon, .promo, .event, .member:
             guard UUID(uuidString: raw) != nil else { return nil }
             return AddLink(kind: kind, itemID: raw.lowercased())
+        case .ticket where UUID(uuidString: raw) != nil:
+            let code = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+                .first { $0.name == "c" || $0.name == "code" }?.value?.trimmingCharacters(in: .whitespaces)
+            if let code, code.range(of: "^[A-Za-z0-9-]{8,80}$", options: .regularExpression) != nil {
+                return AddLink(kind: .ticket, itemID: raw.lowercased(), code: code)
+            }
+            return AddLink(kind: kind, itemID: raw)
         default:
             return AddLink(kind: kind, itemID: raw)
         }
@@ -48,6 +62,26 @@ struct AddLink: Identifiable, Hashable {
         case .ticket: String(localized: "Ticket")
         case .gift: String(localized: "Cadeaukaart")
         case .store: String(localized: "Klantenkaart")
+        case .event: String(localized: "Aanmelden")
+        case .member: String(localized: "Klantenkaart")
+        }
+    }
+}
+
+/// Kiest het juiste venster bij een /add/-link: aanmelden voor een event, klantenkaart van een zaak, ticket koppelen,
+/// of het algemene "Toevoegen aan Pasr?".
+struct AddLinkSheet: View {
+    let link: AddLink
+
+    var body: some View {
+        if link.kind == .event {
+            EventSignupSheet(eventID: link.itemID)
+        } else if link.kind == .member {
+            MemberCardJoinSheet(cardID: link.itemID)
+        } else if link.isTicketClaim, let code = link.code {
+            TicketClaimSheet(ticketID: link.itemID, code: code)
+        } else {
+            AddToPasrSheet(link: link)
         }
     }
 }
@@ -197,6 +231,8 @@ struct AddToPasrSheet: View {
         case .ticket, .gift, .store:
             CardFaceView(appearance: storeAppearance, showsCode: false)
                 .aspectRatio(Brand.cardAspect, contentMode: .fit)
+        case .event, .member:
+            EmptyView()   // eigen vensters (AddLinkSheet)
         }
     }
 
@@ -261,6 +297,8 @@ struct AddToPasrSheet: View {
             return String(localized: "Pasr zet de cadeaukaart klaar met logo en kleur. Daarna scan of typ je het nummer van je eigen kaart.")
         case .store:
             return String(localized: "Pasr zet de kaart klaar met logo en kleur. Daarna scan of typ je het nummer van je eigen kaart.")
+        case .event, .member:
+            return ""
         }
     }
 
@@ -290,6 +328,8 @@ struct AddToPasrSheet: View {
             if StoreTemplates.template(id: link.itemID) == nil { await StoreCatalog.shared.refresh(force: true) }
             template = StoreTemplates.template(id: link.itemID)
             phase = template == nil ? .missing(String(localized: "Deze kaart staat niet (meer) in Pasr.")) : .ready
+        case .event, .member:
+            phase = .ready
         }
     }
 
@@ -339,6 +379,8 @@ struct AddToPasrSheet: View {
                 withAnimation { phase = .added }
             case .ticket, .gift, .store:
                 startStoreAdd()
+            case .event, .member:
+                break
             }
         } catch {
             self.error = error.localizedDescription

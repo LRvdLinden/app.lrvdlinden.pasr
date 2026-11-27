@@ -186,7 +186,7 @@ enum BusinessCards {
     }
 
     /// Logo van de server: base64 (PNG) of een https-adres.
-    private static func logoData(_ value: String?) async -> Data? {
+    static func logoData(_ value: String?) async -> Data? {
         guard let value, !value.isEmpty else { return nil }
         if value.hasPrefix("https://"), let url = URL(string: value) {
             guard let (data, response) = try? await URLSession.shared.data(from: url),
