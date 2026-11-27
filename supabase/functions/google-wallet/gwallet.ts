@@ -210,3 +210,96 @@ export function imageType(bytes: Uint8Array): string | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8) return "image/jpeg";
   return null;
 }
+
+// ---- tickets en klantenkaart met barcode uit de database (27-11-2026, docs/tickets-klantenkaart.md) ----
+// Een eventTicketClass per event (pasr_event_<event>) met eventTicketObjects per ticket, en een loyaltyClass per
+// klantenkaart (pasr_mcard_<kaart>) met een loyaltyObject per lid. Gegevens uit pasr_tk_pass_data; nooit geboortedatum.
+
+type Row = Record<string, unknown>;
+const nodash = (id: unknown) => String(id ?? "").toLowerCase().replace(/-/g, "");
+const iso = (v: unknown) => (typeof v === "string" && isFinite(Date.parse(v)) ? new Date(Date.parse(v)).toISOString() : undefined);
+const pctText = (v: unknown) => {
+  const n = Number(v);
+  return isFinite(n) && n > 0 ? `${n.toLocaleString("nl-NL", { maximumFractionDigits: 2 })}%` : "";
+};
+
+export const eventClassId = (issuer: string, eventId: unknown) => `${issuer}.pasr_event_${nodash(eventId)}`;
+export const loyaltyClassId = (issuer: string, cardId: unknown) => `${issuer}.pasr_mcard_${nodash(cardId)}`;
+
+export function eventTicketClass(issuer: string, d: Row, logoUri: string) {
+  const address = cleanText(d.address, 200);
+  return {
+    id: eventClassId(issuer, d.event_id),
+    issuerName: cleanText(d.business_name, 60) || "Pasr",
+    reviewStatus: "UNDER_REVIEW",
+    eventName: lv(cleanText(d.event_name, 80) || "Event"),
+    eventId: String(d.event_id ?? ""),
+    hexBackgroundColor: cleanHex(d.color),
+    logo: { sourceUri: { uri: logoUri }, contentDescription: lv(cleanText(d.business_name, 60) || "Pasr") },
+    dateTime: { start: iso(d.starts_at), end: iso(d.ends_at), doorsOpen: iso(d.doors_at) },
+    ...(address ? { venue: { name: lv(address), address: lv(address) } } : {}),
+  };
+}
+
+export function eventTicketObject(issuer: string, d: Row) {
+  const code = cleanText(d.code, 60);
+  const inactive = d.status === "cancelled" || d.event_status === "cancelled";
+  return {
+    id: objectId(issuer, String(d.ticket_id)),
+    classId: eventClassId(issuer, d.event_id),
+    state: inactive ? "INACTIVE" : "ACTIVE",
+    hexBackgroundColor: cleanHex(d.color),
+    barcode: { type: "QR_CODE", value: code, alternateText: code },
+    ...(cleanText(d.holder_name, 60) ? { ticketHolderName: cleanText(d.holder_name, 60) } : {}),
+    ticketType: lv(cleanText(d.ticket_type, 40) || "Toegang"),
+    groupingInfo: { groupingId: String(d.event_id ?? ""), sortIndex: Number(d.index) || 1 },
+    ...(iso(d.ends_at) ? { validTimeInterval: { end: { date: new Date(Date.parse(String(d.ends_at)) + 6 * 3600_000).toISOString() } } } : {}),
+  };
+}
+
+export function loyaltyClass(issuer: string, d: Row, logoUri: string) {
+  return {
+    id: loyaltyClassId(issuer, d.card_id),
+    issuerName: cleanText(d.business_name, 60) || "Pasr",
+    programName: cleanText(d.name, 40) || "Klantenkaart",
+    programLogo: { sourceUri: { uri: logoUri }, contentDescription: lv(cleanText(d.business_name, 60) || "Pasr") },
+    hexBackgroundColor: cleanHex(d.color),
+    reviewStatus: "UNDER_REVIEW",
+  };
+}
+
+export function loyaltyObject(issuer: string, d: Row) {
+  const number = cleanText(d.number, 40);
+  const fmt = d.barcode_type === "qr" ? "qr" : d.barcode_type === "ean13" ? "ean13" : "code128";
+  const now = (d.discount_now ?? null) as Row | null, next = (d.next_discount ?? null) as Row | null;
+  const saving = (d.saving ?? null) as Row | null;
+  const modulesOut: { id: string; header: string; body: string }[] = [];
+  if (now && pctText(now.percent)) modulesOut.push({ id: "now", header: "Korting nu", body: `${pctText(now.percent)} · ${cleanText(now.label, 40)}` });
+  if (next && pctText(next.percent)) {
+    modulesOut.push({ id: "next", header: "Volgende korting", body: `${pctText(next.percent)} vanaf ${nlDate(String(next.starts_at ?? "")) ?? ""}`.trim() });
+  }
+  if (saving && saving.reward) modulesOut.push({ id: "reward", header: "Beloning", body: `${cleanText(saving.reward, 80)} bij ${saving.target}` });
+  modulesOut.push({ id: "pasr", header: "Pasr", body: "Laat deze kaart scannen bij de kassa. Bewaard met Pasr – pasr.nl" });
+  return {
+    id: objectId(issuer, String(d.member_id)),
+    classId: loyaltyClassId(issuer, d.card_id),
+    state: d.active === false ? "INACTIVE" : "ACTIVE",
+    accountId: number,
+    ...(cleanText(d.member_name, 60) ? { accountName: cleanText(d.member_name, 60) } : {}),
+    barcode: { type: barcodeType(fmt, number), value: number, alternateText: number },
+    ...(saving && typeof saving.target === "number"
+      ? { loyaltyPoints: { label: saving.unit === "points" ? "Punten" : "Spaarstand", balance: { string: `${Number(saving.count) || 0}/${saving.target}` } } }
+      : {}),
+    ...(now && pctText(now.percent) ? { secondaryLoyaltyPoints: { label: "Korting", balance: { string: pctText(now.percent) } } } : {}),
+    textModulesData: modulesOut.slice(0, 10),
+  };
+}
+
+/** "Opslaan in Google Wallet"-JWT voor een eventTicket- of loyalty-object. */
+export function saveClaimsFor(serviceEmail: string, type: "eventTicketObjects" | "loyaltyObjects" | "genericObjects", id: string,
+  origins: string[] = ["https://pasr.nl"]) {
+  return { iss: serviceEmail, aud: "google", typ: "savetowallet", iat: Math.floor(Date.now() / 1000), origins, payload: { [type]: [{ id }] } };
+}
+
+/** Sleutel in pasr_gwallet_objects.member_code: "ET:<ticket>" of "MC:<lid>". */
+export const serverCode = (kind: string, id: string) => `${kind === "event_ticket" ? "ET" : "MC"}:${id.toLowerCase()}`;

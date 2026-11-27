@@ -11,7 +11,10 @@
 //   {action:"status"}                       → {available}
 //   {action:"save", card:{…}, key?}         → {url, object_id, key}
 //   {action:"remove", id, key}              → {ok}   (kaart verwijderd: pas wordt inactief)
-//   {action:"business", code} + x-pasr-hook → {updated}
+//   {action:"business", code} + x-pasr-hook → {updated}   (code "ET:<ticket>" / "MC:<lid>": ticket of klantenkaart)
+//   {action:"save", kind:"event_ticket"|"member_card", id, key?, code?} → {url, object_id, key}
+//        (27-11-2026, docs/tickets-klantenkaart.md: gegevens uit de database; JWT van de gebruiker in Authorization,
+//         of bij een ticket de code uit de mail)
 //   GET ?logo=<object_id>                   → het logo (PNG/JPEG) voor Google
 //
 // Function secrets (zet Léon zelf, zie README):
@@ -19,8 +22,8 @@
 //   GOOGLE_WALLET_SA_JSON     de JSON-sleutel van het service-account (met rechten in de console)
 //   PASR_PUBLISHABLE_KEY      (bestaat al, van wallet-pass) alleen de Pasr-apps mogen passen maken
 import {
-  cleanLogo, type GCard, genericObject, imageType, importPrivateKey, isKey, isUuid, objectId, sameText, saveClaims,
-  sha256hex, signJwt,
+  cleanLogo, eventTicketClass, eventTicketObject, type GCard, genericObject, imageType, importPrivateKey, isKey, isUuid,
+  loyaltyClass, loyaltyObject, objectId, sameText, saveClaims, saveClaimsFor, serverCode, sha256hex, signJwt,
 } from "./gwallet.ts";
 
 const API = "https://walletobjects.googleapis.com/walletobjects/v1";
@@ -113,14 +116,14 @@ async function ensureClass() {
   classReady = true;
 }
 
-/** Object maken of (bestaat het al) helemaal vervangen. */
-async function upsertObject(obj: Record<string, unknown>): Promise<boolean> {
+/** Object (of klasse) maken of, bestaat het al, helemaal vervangen. */
+async function upsertObject(obj: Record<string, unknown>, resource = "genericObject"): Promise<boolean> {
   const id = String(obj.id);
-  const put = await google("PUT", `genericObject/${encodeURIComponent(id)}`, obj);
+  const put = await google("PUT", `${resource}/${encodeURIComponent(id)}`, obj);
   await put.body?.cancel();
   if (put.ok) return false;
   if (put.status !== 404) throw new Error(`object ${put.status}`);
-  const made = await google("POST", "genericObject", obj);
+  const made = await google("POST", resource, obj);
   await made.body?.cancel();
   if (!made.ok && made.status !== 409) throw new Error(`object ${made.status}`);
   return true;
@@ -199,6 +202,9 @@ Deno.serve(async (req) => {
     }
     if (action !== "save") return json({ error: "bad_request" }, 400);
 
+    if (body.kind === "event_ticket" || body.kind === "member_card") {
+      return await saveServer(body.kind, body, req.headers.get("Authorization"));
+    }
     const card = body.card as GCard;
     if (!card || !isUuid(card.id) || typeof card.name !== "string" || !card.name.trim()) return json({ error: "bad_request" }, 400);
     if (String(card.number ?? "").length > 200) return json({ error: "bad_request" }, 400);
@@ -238,7 +244,7 @@ Deno.serve(async (req) => {
 });
 
 const cleanKind = (k: unknown) =>
-  typeof k === "string" && ["loyalty", "voucher", "code", "ticket", "subscription", "stamps"].includes(k) ? k : "loyalty";
+  typeof k === "string" && ["loyalty", "voucher", "code", "ticket", "subscription", "stamps", "event_ticket", "member_card"].includes(k) ? k : "loyalty";
 
 function selfUrl(): string {
   const base = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "");
@@ -261,9 +267,86 @@ async function memberStand(code: string): Promise<{ total?: number; count?: numb
   }
 }
 
+// ---- tickets en klantenkaart met barcode ----
+type Kind = "event_ticket" | "member_card";
+async function passData(kind: Kind, id: string): Promise<Record<string, unknown> | null> {
+  const d = await rest("rpc/pasr_tk_pass_data", { method: "POST", body: JSON.stringify({ p_kind: kind, p_id: id }) });
+  return d && typeof d === "object" && (d as Record<string, unknown>).kind === kind ? d as Record<string, unknown> : null;
+}
+/** Klasse en object bij Google zetten uit de gegevens in de database. */
+async function pushServer(kind: Kind, d: Record<string, unknown>, logoUri: string) {
+  const iss = issuer()!;
+  if (kind === "event_ticket") {
+    await upsertObject(eventTicketClass(iss, d, logoUri), "eventTicketClass");
+    return await upsertObject(eventTicketObject(iss, d), "eventTicketObject");
+  }
+  await upsertObject(loyaltyClass(iss, d, logoUri), "loyaltyClass");
+  return await upsertObject(loyaltyObject(iss, d), "loyaltyObject");
+}
+/** Mag deze aanvrager het? Met de ticketcode, of met de JWT: dan moet het in zijn eigen lijst staan. */
+async function mayHave(kind: Kind, id: string, code: unknown, real: unknown, auth: string | null): Promise<boolean> {
+  if (kind === "event_ticket" && typeof code === "string" && code) return sameText(code.trim().toUpperCase(), String(real ?? "").toUpperCase());
+  const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("PASR_PUBLISHABLE_KEY");
+  const jwt = /^Bearer\s+([A-Za-z0-9._-]{20,4096})$/.exec((auth ?? "").trim())?.[1];
+  if (!url || !key || !jwt) return false;
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/${kind === "event_ticket" ? "pasr_my_event_tickets" : "pasr_my_member_cards"}`, {
+      method: "POST", body: "{}", signal: AbortSignal.timeout(10000),
+      headers: { apikey: key, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+    });
+    if (!res.ok) { await res.body?.cancel(); return false; }
+    const rows = await res.json() as Record<string, unknown>[];
+    const field = kind === "event_ticket" ? "ticket_id" : "member_id";
+    return Array.isArray(rows) && rows.some((r) => String(r?.[field] ?? "").toLowerCase() === id);
+  } catch {
+    return false;
+  }
+}
+async function saveServer(kind: Kind, body: Record<string, unknown>, auth: string | null): Promise<Response> {
+  if (!isUuid(body.id)) return json({ error: "bad_request" }, 400);
+  const sid = String(body.id).toLowerCase();
+  const d = await passData(kind, sid);
+  if (!d) return json({ error: "not_found" }, 404);
+  if (!(await mayHave(kind, sid, body.code, d.code, auth))) return json({ error: "forbidden" }, 403);
+  const iss = issuer()!;
+  const id = objectId(iss, sid);
+  const row = await objectRow(id);
+  let key = isKey(body.key) ? String(body.key).toLowerCase() : null;
+  if (row) {
+    if (!key || !sameText(row.key_hash, await sha256hex(key))) return json({ error: "forbidden" }, 403);
+  } else {
+    key = key ?? Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  const logo = cleanLogo(kind === "event_ticket" ? d.business_logo : d.logo);
+  await rest("pasr_gwallet_objects?on_conflict=object_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ object_id: id, key_hash: await sha256hex(key), kind, member_code: serverCode(kind, sid), logo,
+      updated_at: new Date().toISOString() }),
+  });
+  const created = await pushServer(kind, d, logo ? `${selfUrl()}?logo=${encodeURIComponent(id)}` : FALLBACK_LOGO);
+  if (created || !row) count();
+  const jwt = await signJwt(saveClaimsFor(account()!.client_email, kind === "event_ticket" ? "eventTicketObjects" : "loyaltyObjects", id), await signer());
+  return json({ url: `https://pay.google.com/gp/v/save/${jwt}`, object_id: id, key });
+}
+
 /** Alle Google-passen van deze klantcode: header en regels opnieuw zetten. */
 async function kickBusiness(code: string): Promise<number> {
   if (!dbReady()) return 0;
+  const server = /^(ET|MC):([0-9a-f-]{36})$/.exec(code);
+  if (server) {
+    const kind: Kind = server[1] === "ET" ? "event_ticket" : "member_card";
+    const rows = await rest(`pasr_gwallet_objects?member_code=eq.${enc(code)}&select=object_id,logo`) as { object_id: string; logo: string | null }[];
+    if (!rows.length) return 0;
+    const d = await passData(kind, server[2]);
+    if (!d) return 0;
+    let n = 0;
+    for (const row of rows) {
+      await pushServer(kind, d, row.logo ? `${selfUrl()}?logo=${encodeURIComponent(row.object_id)}` : FALLBACK_LOGO);
+      n++;
+    }
+    return n;
+  }
   const rows = await rest(`pasr_gwallet_objects?member_code=eq.${enc(code)}&select=object_id`) as { object_id: string }[];
   if (!rows.length) return 0;
   const s = await memberStand(code);

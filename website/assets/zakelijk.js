@@ -46,6 +46,9 @@
     bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></svg>',
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ic-down"><path d="m6 9 6 6 6-6"/></svg>',
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ic-check"><path d="M5 12.5 10 17 19 7"/></svg>',
+    ticket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h13A1.5 1.5 0 0 1 20 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5V14a2 2 0 0 0 0-4z"/><path d="M14.5 6.5v11" stroke-dasharray="2 2.2"/></svg>',
+    mcard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 15h1M10 15h1M13 15h1M7 10h6"/></svg>',
+    pct: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="17" r="2.2"/></svg>',
   };
 
   // ---------------------------------------------------------------- hulpjes
@@ -243,6 +246,8 @@
   var TABS = [
     { id: "vandaag", label: "Vandaag", icon: "home", owner: true, group: "" },
     { id: "stempelkaarten", label: "Stempelkaarten", icon: "card", owner: true, group: "Klantenbinding" },
+    { id: "klantenkaarten", label: "Klantenkaarten", icon: "mcard", owner: true, group: "Klantenbinding", isNew: true },
+    { id: "tickets", label: "Tickets", icon: "ticket", owner: true, group: "Klantenbinding", isNew: true },
     { id: "kortingsbonnen", label: "Kortingsbonnen", icon: "tag", owner: true, group: "Klantenbinding" },
     { id: "actiecodes", label: "Actiecodes", icon: "code", owner: true, group: "Klantenbinding" },
     { id: "gezamenlijke-acties", label: "Gezamenlijke acties", icon: "users", owner: true, group: "Klantenbinding", badge: "invites" },
@@ -264,7 +269,7 @@
   var ALIAS = { overzicht: "vandaag", kaarten: "stempelkaarten", samenwerkingen: "gezamenlijke-acties", verwijderd: "prullenbak",
     acties: "beloningen", promotie: "promotiemateriaal", account: "mijn-account", bedrijfsinzichten: "inzichten" };
   // onderdelen die op een telefoon onder Acties vallen (de rest onder Meer)
-  var UNDER_ACTS = ["alle-acties", "stempelkaarten", "kortingsbonnen", "actiecodes", "gezamenlijke-acties"];
+  var UNDER_ACTS = ["alle-acties", "stempelkaarten", "klantenkaarten", "tickets", "kortingsbonnen", "actiecodes", "gezamenlijke-acties"];
   var VIEWS = {};   // tab-id -> function(panel, zaak)
 
   function dashRoot() { return $("#zk-app"); }
@@ -436,7 +441,7 @@
   function navLink(t, cls) {
     var on = t.id === dash.tab;
     return '<li><a href="#' + t.id + '" data-go="' + t.id + '"' + (cls ? ' class="' + cls + '"' : "") + (on ? ' aria-current="page"' : "") + ">" + ICON[t.icon] +
-      "<span>" + esc(t.label) + "</span>" + (t.badge ? '<span class="zd3-badge" data-badge="' + t.badge + '" hidden></span>' : "") + ICON.chevron + "</a></li>";
+      "<span>" + esc(t.label) + "</span>" + (t.isNew ? '<span class="zd3-new">Nieuw</span>' : "") + (t.badge ? '<span class="zd3-badge" data-badge="' + t.badge + '" hidden></span>' : "") + ICON.chevron + "</a></li>";
   }
   function sideNav(tabs) {
     var by = {};
@@ -496,10 +501,13 @@
       rpc("pasr_business_promo_list", { p_business: b.id }, true),
       rpc("pasr_business_community_list", { p_business: b.id }, true),
       rpc("pasr_business_community_my_invites", { p_business: b.id }, true),
+      rpc("pasr_business_events", { p_business: b.id }, true),
+      rpc("pasr_business_member_cards", { p_business: b.id }, true),
     ]).then(function (r) {
       function v(i) { return r[i].status === "fulfilled" && Array.isArray(r[i].value) ? r[i].value : null; }
       var alive = function (row) { return !row.deleted; };
-      return { coupons: v(0) && v(0).filter(alive), codes: v(1) && v(1).filter(alive), community: v(2), invites: v(3) || [] };
+      return { coupons: v(0) && v(0).filter(alive), codes: v(1) && v(1).filter(alive), community: v(2), invites: v(3) || [],
+        events: v(4) || [], memberCards: v(5) || [] };
     });
     dash.extra = { biz: b.id, at: Date.now(), p: p };
     return p;
@@ -530,7 +538,7 @@
     }
     return { active: ["Actief", "on"], ended: ["Afgelopen", ""], cancelled: ["Gestopt", ""] }[c.state] || [c.state || "—", ""];
   }
-  var KIND_COLOR = { coupon: "#C2361F", code: "#4A3CE0", community: "#087554" };
+  var KIND_COLOR = { coupon: "#C2361F", code: "#4A3CE0", community: "#087554", event: "#1F3A5F", mcard: "#8A4B1F" };
   /** Alle acties van de zaak als rijen: stempelkaarten, kortingsbonnen, actiecodes en gezamenlijke acties. */
   function actionRows(b, x) {
     var rows = (b.cards || []).map(function (c) {
@@ -547,6 +555,18 @@
       var s = codeState(c);
       rows.push({ kind: "code", title: c.title, sub: "Actiecode " + c.code + " · t/m " + nlDate(c.ends_at), state: s,
         count: Number(c.used_count || 0) + "/" + Number(c.max_uses || 0) + " gebruikt", color: KIND_COLOR.code, icon: "code", live: s[1] === "on", run: function () { go("actiecodes"); } });
+    });
+    (x.memberCards || []).filter(function (c) { return c.status !== "archived"; }).forEach(function (c) {
+      rows.push({ kind: "mcard", title: c.name, sub: "Klantenkaart · " + plural(Number(c.members || 0), "lid", "leden") + (c.discount_now && window.PasrTK ? " · " + window.PasrTK.pct(c.discount_now.percent) : ""),
+        state: c.status === "published" ? ["Online", "on"] : ["Concept", ""], count: plural(Number(c.members || 0), "lid", "leden"),
+        color: /^#[0-9a-f]{6}$/i.test(c.color || "") ? c.color : KIND_COLOR.mcard, icon: "mcard", live: c.status === "published",
+        run: function () { go("klantenkaarten"); dash.sub = "mc-edit"; dash.mcCard = c; render(); } });
+    });
+    (x.events || []).filter(function (e) { return e.status !== "cancelled" && Date.parse(e.ends_at) > Date.now(); }).forEach(function (e) {
+      var s = window.PasrTK ? window.PasrTK.eventState(e) : [e.status, ""];
+      rows.push({ kind: "event", title: e.name, sub: "Event · " + (window.PasrTK ? window.PasrTK.dShort(e.starts_at) + " " + window.PasrTK.hm(e.starts_at) : nlDate(e.starts_at)) + " · " + Number(e.registered || 0) + "/" + e.capacity + " aangemeld",
+        state: s, count: Number(e.registered || 0) + "/" + e.capacity, color: /^#[0-9a-f]{6}$/i.test(e.color || "") ? e.color : KIND_COLOR.event, icon: "ticket",
+        live: e.status === "published", run: function () { go("tickets"); dash.sub = "tk-event"; dash.tkEvent = e; render(); } });
     });
     (x.community || []).forEach(function (c) {
       var s = communityState(c);
@@ -589,6 +609,11 @@
     (x.codes || []).filter(function (c) { var e = Date.parse(c.ends_at); return c.active && e > Date.now() && e <= week; }).forEach(function (c) {
       out.push({ icon: "code", tone: "mint", html: "Actiecode <b>" + esc(c.code) + "</b> loopt " + inDays(daysLeft(c.ends_at)) + " af", sub: plural(Number(c.used_count || 0), "keer", "keer") + " gebruikt", label: "Verlengen", tab: "actiecodes" });
     });
+    if (window.PasrTK) window.PasrTK.todo(b, x, { esc: esc }).forEach(function (t) {
+      if (t.tkEvent) t.run = function () { go("tickets"); dash.sub = t.edit ? "tk-edit" : "tk-event"; dash.tkEvent = t.tkEvent; render(); focusPanel(); };
+      if (t.mcCard) t.run = function () { go("klantenkaarten"); dash.sub = "mc-edit"; dash.mcCard = t.mcCard; render(); focusPanel(); };
+      out.push(t);
+    });
     (x.community || []).filter(function (c) { return c.state === "waiting"; }).forEach(function (c) {
       var org = c.role === "owner" || c.is_lead;
       out.push({ icon: "users", tone: "iris", html: "<b>" + esc(c.name) + "</b>: " + esc(communityState(c)[0].toLowerCase()), sub: org ? "Nodig meer zaken uit om de actie te starten" : "De actie start zodra genoeg zaken meedoen",
@@ -622,6 +647,10 @@
       var out = tabsFor(b).filter(function (t) { return t.group !== "mobile"; }).map(function (t) { return { label: t.label, kind: "Onderdeel", run: function () { go(t.id); } }; });
       out.push({ label: "Logboek", kind: "Onderdeel", run: function () { go("vandaag"); dash.sub = "log"; render(); } });
       out.push({ label: "Nieuwe stempelkaart", kind: "Aanmaken", run: function () { openNewCard(b); } });
+      out.push({ label: "Nieuw event", extra: "tickets aanmelden", kind: "Aanmaken", run: function () { go("tickets"); dash.sub = "tk-edit"; dash.tkEvent = null; render(); } });
+      out.push({ label: "Nieuwe klantenkaart", extra: "barcode", kind: "Aanmaken", run: function () { go("klantenkaarten"); dash.sub = "mc-edit"; dash.mcCard = null; render(); } });
+      (x.events || []).forEach(function (e) { out.push({ label: e.name, extra: e.address, kind: "Event", run: function () { go("tickets"); dash.sub = "tk-event"; dash.tkEvent = e; render(); } }); });
+      (x.memberCards || []).forEach(function (c) { out.push({ label: c.name, kind: "Klantenkaart", run: function () { go("klantenkaarten"); dash.sub = "mc-edit"; dash.mcCard = c; render(); } }); });
       (b.cards || []).forEach(function (c) { out.push({ label: c.name, extra: c.reward, kind: "Stempelkaart", run: function () { openCard(c); } }); });
       (x.coupons || []).forEach(function (c) { out.push({ label: c.title, kind: "Kortingsbon", run: function () { go("kortingsbonnen"); } }); });
       (x.codes || []).forEach(function (c) { out.push({ label: c.code + " · " + c.title, kind: "Actiecode", run: function () { go("actiecodes"); } }); });
@@ -846,6 +875,19 @@
     if (window.PasrLoyalty2) window.PasrLoyalty2.community(panel, b, rpc);
     else panel.textContent = "Gezamenlijke acties konden niet worden geladen. Ververs de pagina.";
   };
+  // ---- Tickets en Klantenkaarten (tickets-klantenkaart.js, docs/tickets-klantenkaart.md) ----
+  function tkHelpers() {
+    return { rpc: rpc, esc: esc, ICON: ICON, toast: toast, nice: nice, modal: modal, panelTitle: panelTitle, table: table, setMsg: setMsg, copy: copy,
+      go: go, render: function () { render(); focusPanel(); }, state: dash, invalidate: function () { dash.extra = null; } };
+  }
+  VIEWS.tickets = function (panel, b) {
+    if (window.PasrTK) window.PasrTK.tickets(panel, b, tkHelpers());
+    else panel.textContent = "Tickets konden niet worden geladen. Ververs de pagina.";
+  };
+  VIEWS.klantenkaarten = function (panel, b) {
+    if (window.PasrTK) window.PasrTK.cards(panel, b, tkHelpers());
+    else panel.textContent = "Klantenkaarten konden niet worden geladen. Ververs de pagina.";
+  };
   VIEWS.actiecodes = function (panel, b) {
     if (window.PasrPromoCodes) window.PasrPromoCodes.mount(panel, b, rpc);
     else panel.textContent = "Actiecodes kunnen niet worden geladen.";
@@ -932,18 +974,26 @@
     var date = now.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" });
     function quick(act, icon, label) { return '<button type="button" class="zd3-qbtn" data-quick="' + act + '">' + ICON[icon] + "<span>" + label + "</span></button>"; }
     panel.innerHTML = '<div class="zd3-hello"><div><p class="zd3-date">' + esc(date.charAt(0).toUpperCase() + date.slice(1)) + '</p><h2 id="zd-title">' + hello + (name ? ", " + esc(name) : "") + "</h2></div>" +
-      '<div class="zd3-quick" role="group" aria-label="Nieuw maken">' + quick("card", "plus", "Stempelkaart") + quick("kortingsbonnen", "tag", "Kortingsbon") +
-      quick("actiecodes", "code", "Actiecode") + quick("gezamenlijke-acties", "users", "Gezamenlijke actie") + "</div></div>" +
+      '<div class="zd3-quick" role="group" aria-label="Nieuw maken">' + quick("card", "plus", "Stempelkaart") + quick("mcard", "mcard", "Klantenkaart") + quick("event", "ticket", "Event") +
+      quick("kortingsbonnen", "tag", "Kortingsbon") + quick("actiecodes", "code", "Actiecode") + quick("gezamenlijke-acties", "users", "Gezamenlijke actie") + "</div></div>" +
       '<div class="zd3-kpis" id="tdKpi">' + ["Stempels", "Beloningen", "Nieuwe leden", "Terugkerend (90 d)"].map(function (t, i) {
         return '<div class="zd3-kpi"><small>' + t + (i < 3 ? '<span class="zd3-kpiw"> deze week</span>' : "") + "</small><b>–</b></div>";
       }).join("") + "</div>" +
+      '<div class="zd3-kpis tk-kpirow" id="tdTk" hidden></div>' +
       '<div class="zd3-grid">' +
       '<section class="zd3-card zd3-todocard" id="tdTodo" aria-labelledby="tdTodoH"><div class="zd3-cardhead"><h3 id="tdTodoH">Te doen</h3></div><p class="zd3-muted">Laden…</p></section>' +
       '<section class="zd3-card zd3-chartcard" id="tdChart" aria-labelledby="tdChartH"><div class="zd3-cardhead"><h3 id="tdChartH">Stempels</h3></div><p class="zd3-muted">Laden…</p></section>' +
       '<section class="zd3-card" id="tdActs" aria-labelledby="tdActsH"><div class="zd3-cardhead"><h3 id="tdActsH">Je acties</h3><button type="button" class="zk-btn sm" id="tdNew">' + ICON.plus + 'Nieuw</button></div><div class="zd3-slot"><p class="zd3-muted">Laden…</p></div></section>' +
-      '<section class="zd3-card" id="tdLog" aria-labelledby="tdLogH"><div class="zd3-cardhead"><h3 id="tdLogH">Vandaag aan de toonbank</h3></div><p class="zd3-muted">Laden…</p></section></div>';
+      '<section class="zd3-card" id="tdLog" aria-labelledby="tdLogH"><div class="zd3-cardhead"><h3 id="tdLogH">Vandaag aan de toonbank</h3></div><p class="zd3-muted">Laden…</p></section>' +
+      '<section class="zd3-card" id="tdEvents" aria-labelledby="tdEvH" hidden><div class="zd3-cardhead"><h3 id="tdEvH">Komende events</h3><a class="zk-btn ghost sm" href="#tickets" data-go="tickets">Alle events' + ICON.chevron + '</a></div><div class="zd3-slot"></div></section></div>';
     panel.querySelectorAll("[data-quick]").forEach(function (btn) {
-      btn.addEventListener("click", function () { var q = btn.dataset.quick; if (q === "card") openNewCard(b); else go(q); });
+      btn.addEventListener("click", function () {
+        var q = btn.dataset.quick;
+        if (q === "card") openNewCard(b);
+        else if (q === "mcard") { go("klantenkaarten"); dash.sub = "mc-edit"; dash.mcCard = null; render(); }
+        else if (q === "event") { go("tickets"); dash.sub = "tk-edit"; dash.tkEvent = null; render(); }
+        else go(q);
+      });
     });
     $("#tdNew").addEventListener("click", function (ev) { createModal(b, ev.currentTarget); });
     todayKpis(b);
@@ -958,6 +1008,15 @@
       todo.querySelectorAll("[data-todo]").forEach(function (btn) {
         btn.addEventListener("click", function () { var t = items[Number(btn.dataset.todo)]; if (t.run) t.run(btn); else go(t.tab); });
       });
+      if (window.PasrTK) {
+        var tiles = window.PasrTK.kpiTiles(x, { esc: esc, ICON: ICON }), tk = $("#tdTk", panel), evc = $("#tdEvents", panel);
+        if (tk && tiles) { tk.innerHTML = tiles; tk.hidden = false; }
+        if (evc && ((x.events || []).length || (x.memberCards || []).length)) {
+          evc.hidden = false; evc.querySelector(".zd3-slot").innerHTML = window.PasrTK.upcoming(x, { esc: esc });
+          var upl = (x.events || []).filter(function (e) { return e.status !== "cancelled" && Date.parse(e.ends_at) > Date.now(); });
+          evc.querySelectorAll("[data-upc]").forEach(function (u) { u.addEventListener("click", function () { var e = upl[Number(u.dataset.upc)]; go("tickets"); dash.sub = "tk-event"; dash.tkEvent = e; render(); }); });
+        }
+      }
       var rows = actionRows(b, x).sort(function (p, q) { return (q.live ? 1 : 0) - (p.live ? 1 : 0); }), shown = rows.slice(0, 6);
       acts.querySelector(".zd3-slot").outerHTML = shown.length ? rowList(shown) + (rows.length > shown.length ? '<p class="zd-more"><a class="zk-btn ghost sm" href="#alle-acties" data-go="alle-acties">Alle ' + rows.length + " acties" + ICON.chevron + "</a></p>" : "")
         : '<p class="zd3-empty">Nog geen acties. Maak je eerste stempelkaart, kortingsbon of actiecode.</p>';
@@ -1031,9 +1090,9 @@
   }
 
   // ---- Acties (telefoon): alles op één lijst met filters ----
-  var FILTERS = [["alles", "Alles"], ["card", "Stempelkaarten"], ["coupon", "Bonnen"], ["code", "Codes"], ["community", "Samen"]];
+  var FILTERS = [["alles", "Alles"], ["card", "Stempelkaarten"], ["mcard", "Klantenkaarten"], ["event", "Tickets"], ["coupon", "Bonnen"], ["code", "Codes"], ["community", "Samen"]];
   VIEWS["alle-acties"] = function (panel, b) {
-    panel.innerHTML = panelTitle("Acties", "Je stempelkaarten, kortingsbonnen, actiecodes en gezamenlijke acties.", '<button class="zk-btn" type="button" id="aaNew">' + ICON.plus + "Nieuw</button>") +
+    panel.innerHTML = panelTitle("Acties", "Je stempelkaarten, klantenkaarten, events, kortingsbonnen, actiecodes en gezamenlijke acties.", '<button class="zk-btn" type="button" id="aaNew">' + ICON.plus + "Nieuw</button>") +
       '<div class="zd3-chips" role="group" aria-label="Soort actie">' + FILTERS.map(function (f) { return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (dash.filter === f[0]) + '">' + f[1] + "</button>"; }).join("") + "</div>" +
       '<div id="aaList" aria-live="polite"><p class="zd3-muted">Laden…</p></div>';
     $("#aaNew").addEventListener("click", function (ev) { createModal(b, ev.currentTarget); });
@@ -1199,6 +1258,8 @@
       '<h2>Wat wil je aanmaken?</h2><p>Kies een actie voor ' + esc(b.name) + '.</p>' +
       '<div class="zd-modal-foot zd3-create">' +
       '<button class="zk-btn" id="zkCreateCard" type="button"' + (cards.length >= 5 ? ' disabled' : '') + '>' + ICON.card + 'Stempelkaart</button>' +
+      '<button class="zk-btn" id="zkCreateMcard" type="button">' + ICON.mcard + 'Klantenkaart</button>' +
+      '<button class="zk-btn" id="zkCreateEvent" type="button">' + ICON.ticket + 'Event met tickets</button>' +
       '<button class="zk-btn" id="zkCreateCoupon" type="button">' + ICON.tag + 'Kortingsbon</button>' +
       '<button class="zk-btn" id="zkCreatePromo" type="button">' + ICON.code + 'Actiecode</button>' +
       '<button class="zk-btn" id="zkCreateCommunity" type="button">' + ICON.users + 'Gezamenlijke actie</button>' +
@@ -1207,6 +1268,8 @@
       (cards.length >= 5 ? '<p class="zd-help">Je hebt al 5 stempelkaarten, het maximum.</p>' : ""), opener);
     $("#zkCreateCard", md.el).addEventListener("click", function () { md.close(); openCard(null); });
     $("#zkCreateCoupon", md.el).addEventListener("click", function () { md.close(); go("kortingsbonnen"); });
+    $("#zkCreateMcard", md.el).addEventListener("click", function () { md.close(); go("klantenkaarten"); dash.sub = "mc-edit"; dash.mcCard = null; render(); });
+    $("#zkCreateEvent", md.el).addEventListener("click", function () { md.close(); go("tickets"); dash.sub = "tk-edit"; dash.tkEvent = null; render(); });
     $("#zkCreatePromo", md.el).addEventListener("click", function () { md.close(); go("actiecodes"); });
     $("#zkCreateCommunity", md.el).addEventListener("click", function () { md.close(); go("gezamenlijke-acties"); });
     $("#zkCreateAction", md.el).addEventListener("click", function () { md.close(); go("beloningen"); });
@@ -1692,6 +1755,12 @@
     var m = t.match(/PZ(?:[A-HJ-NP-Z2-9]{14}|[A-HJ-NP-Z2-9]{10})(?![A-HJ-NP-Z2-9])/);
     return m ? m[0] : null;
   }
+  /** Ticketcode (base32) of kaartnummer van een klantenkaart met barcode (KS-000124, EAN-13). */
+  function otherCode(text) {
+    var t = String(text || "").trim().toUpperCase().replace(/\s+/g, "");
+    if (!window.PasrTK || /^P[CZ]/.test(t)) return null;
+    return /^[A-Z0-9-]{4,40}$/.test(t) ? t : null;
+  }
   var scanner = null;   // { stop } van de scanner die nu loopt
   function stopScanner() { if (scanner) { scanner.stop(); scanner = null; } }
 
@@ -1705,8 +1774,9 @@
       '<div class="zk-cam" id="sCam"><video id="sVideo" playsinline muted aria-hidden="true"></video><span class="frame" aria-hidden="true"></span>' +
       '<div class="zk-cam-off" id="sOff"><span>' + ICON.camera + '</span><p>Scan de QR-code op de kaart van je klant.</p><button class="zk-btn mint" type="button" id="sStart">' + ICON.camera + "Camera aan</button></div>" +
       '<span class="hint" id="sHint" aria-live="polite"></span></div>' +
-      '<form id="sManual" class="zk-form zd-manual" novalidate><label for="sCode">Of typ de code van je klant</label><span class="row"><input id="sCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PZ…" aria-describedby="sCodeHelp"><button class="zk-btn dark" type="submit">' + ICON.search + "Zoek</button></span>" +
-      '<small id="sCodeHelp" class="zd-help">De code staat onder de QR-code en begint met PZ.</small></form>' +
+      '<div class="pz2-controls tk-pick" id="tkPickBox" hidden></div>' +
+      '<form id="sManual" class="zk-form zd-manual" novalidate><label for="sCode">Of typ de code van je klant</label><span class="row"><input id="sCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PZ…, ticketcode of kaartnummer" aria-describedby="sCodeHelp"><button class="zk-btn dark" type="submit">' + ICON.search + "Zoek</button></span>" +
+      '<small id="sCodeHelp" class="zd-help">Stempelkaart: begint met PZ. Ook tickets van je events en je klantenkaarten met barcode werken hier.</small></form>' +
       '<p class="zk-msg" id="sMsg" role="status" aria-live="assertive"></p><div id="sResult"></div>';
     if (opts.zaak && opts.zaak.id) {
       rpc("pasr_business_locations_list",{p_business:opts.zaak.id},true).then(function(rows){
@@ -1722,7 +1792,23 @@
       }).catch(function(){/* Scanner blijft beschikbaar zonder filiaalkeuze. */});
     }
     var video = $("#sVideo", root), busy = false, last = "", lastAt = 0, stream = null, alive = true, undoTimer = null;
-    var detector = ("BarcodeDetector" in window) ? new window.BarcodeDetector({ formats: ["qr_code"] }) : null;
+    var detector = null;
+    if ("BarcodeDetector" in window) {
+      // klantenkaarten met barcode: ook Code 128 en EAN-13 (als de browser ze kent)
+      try { detector = new window.BarcodeDetector({ formats: ["qr_code", "code_128", "ean_13"] }); }
+      catch (e) { try { detector = new window.BarcodeDetector({ formats: ["qr_code"] }); } catch (e2) { detector = null; } }
+    }
+    // tickets en klantenkaarten (tickets-klantenkaart.js): welke zaak, en eventueel welk event aan de deur
+    var tkZaak = opts.zaak && opts.zaak.id ? opts.zaak.id : null, tkEvent = dash.scanEvent || null;
+    function withZaak() {
+      if (tkZaak) return Promise.resolve(tkZaak);
+      return rpc("pasr_business_me", {}, true).then(function (me) {
+        var list = (me && me.businesses) || [], id = store(BIZ_KEY);
+        var z = list.filter(function (x) { return x.id === id; })[0] || list[0];
+        tkZaak = z ? z.id : null; return tkZaak;
+      });
+    }
+    if (window.PasrTK) withZaak().then(function (z) { if (z) window.PasrTK.eventPicker($("#tkPickBox", root), tkHelpers(), z, function (v) { tkEvent = v; dash.scanEvent = v; }, tkEvent); }).catch(function () {});
     var canvas = document.createElement("canvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
     function stop() {
       alive = false; clearInterval(undoTimer);
@@ -1733,6 +1819,12 @@
     async function show(code) {
       busy = true; setMsg($("#sMsg", root), "");
       try {
+        if (!/^P[CZ]/.test(code) && window.PasrTK) {
+          var z = await withZaak();
+          if (!z) { setMsg($("#sMsg", root), "Geen zaak gevonden voor dit account."); busy = false; return; }
+          await window.PasrTK.scan($("#sResult", root), tkHelpers(), z, code, tkEvent);
+          busy = false; return;
+        }
         if (/^PC[A-HJ-NP-Z2-9]{22}$/.test(code)) {
           var coupon = await rpc("pasr_business_coupon_check",{p_code:code},true);
           var amount = coupon.discount_type === "percent" ? coupon.discount_value + "%" :
@@ -1871,8 +1963,9 @@
     }
     $("#sManual", root).addEventListener("submit", function (ev) {
       ev.preventDefault();
-      var c = codeFrom($("#sCode", root).value.replace(/\s+/g, ""));
-      if (!c) { $("#sCode", root).focus(); return setMsg($("#sMsg", root), "Een stempelkaart begint met PZ; een kortingsbon met PC."); }
+      var raw = $("#sCode", root).value.replace(/\s+/g, "");
+      var c = codeFrom(raw) || otherCode(raw);
+      if (!c) { $("#sCode", root).focus(); return setMsg($("#sMsg", root), "Een stempelkaart begint met PZ; een kortingsbon met PC. Tickets en klantenkaarten: typ de code of het kaartnummer."); }
       show(c);
     });
     async function tick() {
@@ -1888,7 +1981,7 @@
             text = q && q.data;
           }
         } catch (e) { /* volgende frame */ }
-        var c = codeFrom(text);
+        var c = codeFrom(text) || otherCode(text);
         if (c && (c !== last || Date.now() - lastAt > 4000)) { last = c; lastAt = Date.now(); show(c); }
       }
       setTimeout(function () { requestAnimationFrame(tick); }, 120);
@@ -1919,7 +2012,7 @@
       root.innerHTML = '<section class="auth"><h1>Eerst inloggen</h1><p>De scanner werkt met het account van je zaak, of met je eigen account als medewerker.</p><a class="zk-btn" href="/zakelijk/dashboard/">Inloggen</a></section>';
       return;
     }
-    root.innerHTML = '<div class="zk-top"><div><span class="zk-kicker">Scanner</span><h1>Stempel geven</h1></div><a class="zk-btn ghost sm" href="/zakelijk/dashboard/">Dashboard</a></div><div id="sRoot"></div>';
+    root.innerHTML = '<div class="zk-top"><div><span class="zk-kicker">Scanner</span><h1>Scannen</h1></div><a class="zk-btn ghost sm" href="/zakelijk/dashboard/">Dashboard</a></div><div id="sRoot"></div>';
     mountScanner($("#sRoot"), { auto: true });
   }
 

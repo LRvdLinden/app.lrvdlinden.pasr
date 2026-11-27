@@ -432,6 +432,8 @@ SCRIPTS = '''  <script src="/assets/account-config.js"></script>
 {jsqr}  <script src="/assets/promo.js"></script>
   <script src="/assets/loyalty2.js"></script>
   <script src="/assets/promo-codes-business.js"></script>
+  <script src="/assets/vendor/jsbarcode.min.js"></script>
+  <script src="/assets/tickets-klantenkaart.js"></script>
   <script src="/assets/zakelijk.js"></script>'''
 JSQR = '  <script src="/assets/vendor/jsqr.min.js"></script>\n'
 APP_PAGES = [

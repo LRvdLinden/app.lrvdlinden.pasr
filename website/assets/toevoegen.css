@@ -46,3 +46,98 @@
   .ta-hero { grid-template-columns: 1fr; gap: 26px; padding-top: 12px; }
   .ta-item { max-width: 420px; width: 100%; }
 }
+
+/* ---- aanmelden voor een gratis event: pasr.nl/add/e/<id> (aanmelden.js). Eventkleur via --ev (tekst --evt). ---- */
+.ev { padding: 18px 0 56px; }
+.ev-head { --ev: #6A5CFF; --evt: #fff; position: relative; border-radius: 26px; overflow: hidden; color: var(--evt);
+  background: var(--ev); padding: clamp(22px, 4vw, 40px); min-height: 190px; display: flex; align-items: flex-end;
+  box-shadow: 0 30px 60px -40px rgba(23, 22, 42, .6); }
+.ev-head::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 90% 0%, rgba(255,255,255,.22), transparent 55%),
+  radial-gradient(circle at 12% 120%, rgba(0,0,0,.18), transparent 50%); pointer-events: none; }
+.ev-head.has-img::before { background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.55)), var(--evimg) center / cover; }
+.ev-head.has-img { --evt: #fff; }
+.ev-headin { position: relative; max-width: 760px; }
+.ev-biz { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-weight: 700; font-size: 15px; opacity: .95; }
+.ev-bizlogo { width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,.22); display: inline-flex; align-items: center;
+  justify-content: center; font-weight: 800; overflow: hidden; flex-shrink: 0; }
+.ev-bizlogo img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.ev-head h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 6vw, 56px); line-height: 1.02; letter-spacing: -.02em; margin: 0; overflow-wrap: anywhere; }
+.ev-when { margin: 12px 0 0; font-size: 17px; font-weight: 600; opacity: .92; }
+.ev-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px); gap: 28px; margin: 28px 0 32px; align-items: start; }
+.ev-desc { font-size: 18px; line-height: 1.55; color: var(--ink); margin: 4px 0 20px; white-space: pre-line; }
+.ev-facts { margin: 0; display: grid; gap: 10px; }
+.ev-facts div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; padding: 14px 16px; border-radius: 14px; background: var(--paper-2); border: 1px solid var(--line); }
+.ev-facts dt { display: flex; gap: 8px; align-items: center; color: var(--ink-2); font-weight: 600; font-size: 15px; }
+.ev-facts dt svg { width: 18px; height: 18px; flex-shrink: 0; }
+.ev-facts dd { margin: 0; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.ev-facts a { color: var(--iris-deep); }
+.ev-free { display: inline-block; margin: 16px 0 0; padding: 6px 12px; border-radius: 999px; background: var(--kicker-bg); color: var(--kicker-ink); font-weight: 700; font-size: 14px; }
+.ev-card { background: var(--paper-2); border: 1px solid var(--line); border-radius: 22px; padding: 24px clamp(18px, 3vw, 28px); box-shadow: 0 24px 50px -40px rgba(23, 22, 42, .5); }
+.ev-card h2 { font-family: var(--display); font-size: 26px; margin: 0 0 14px; color: var(--ink); }
+.ev-card p { color: var(--ink-2); line-height: 1.5; }
+.ev-form { display: grid; gap: 14px; }
+.ev-form label { display: grid; gap: 6px; font-weight: 700; font-size: 14px; color: var(--ink); }
+.ev-form input:not([type=radio]) { font: inherit; font-weight: 500; font-size: 16px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); min-height: 48px; width: 100%; box-sizing: border-box; }
+.ev-form input:focus-visible { outline: 3px solid color-mix(in srgb, var(--iris), transparent 50%); border-color: var(--iris); }
+.ev-form input[aria-invalid=true] { border-color: var(--danger); }
+.ev-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ev-types { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.ev-types legend { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 6px; }
+.ev-type { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); cursor: pointer; }
+.ev-type:has(input:checked) { border-color: var(--ev); box-shadow: inset 0 0 0 1px var(--ev); }
+.ev-type input { accent-color: var(--ev); width: 18px; height: 18px; }
+.ev-type span { display: flex; justify-content: space-between; gap: 10px; flex: 1; }
+.ev-type small { color: var(--ink-2); font-weight: 600; }
+.ev-count { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; font-weight: 700; font-size: 14px; color: var(--ink); }
+.ev-count small { color: var(--ink-2); font-weight: 500; }
+.ev-stepper { display: inline-flex; align-items: center; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--paper); }
+.ev-stepper button { width: 44px; height: 44px; border: 0; background: transparent; color: var(--ink); font-size: 22px; cursor: pointer; }
+.ev-stepper button:focus-visible { outline: 3px solid var(--iris); outline-offset: -3px; }
+.ev-stepper output { min-width: 36px; text-align: center; font-size: 17px; }
+.ev-privacy { display: flex; gap: 10px; align-items: flex-start; margin: 2px 0 0; font-size: 14px; padding: 12px 14px; border-radius: 12px; background: var(--soft); }
+.ev-privacy svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; color: var(--ink-2); }
+.ev-note { margin: -4px 0 0; font-size: 15px; }
+.ev-err { margin: 0; color: var(--danger); font-weight: 700; }
+.ev-submit { min-height: 54px; border: 0; border-radius: 14px; background: var(--ev); color: var(--evt); font: inherit; font-weight: 800; font-size: 17px; cursor: pointer; }
+.ev-submit:disabled { opacity: .6; cursor: progress; }
+.ev-submit:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.ev-closed h2 { margin-bottom: 8px; }
+.ev-done { text-align: center; }
+.ev-done:focus { outline: none; }
+.ev-ok { width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--success), transparent 82%); color: var(--success); margin-bottom: 10px; }
+.ev-ok.wait { background: var(--kicker-bg); color: var(--kicker-ink); }
+.ev-ok svg { width: 32px; height: 32px; }
+.ev-mini { display: flex; justify-content: space-between; align-items: center; gap: 14px; text-align: left; margin: 18px 0 8px; padding: 16px 18px; border-radius: 16px; background: var(--ev); color: var(--evt); }
+.ev-mini div { display: grid; gap: 2px; min-width: 0; }
+.ev-mini small { font-weight: 700; opacity: .85; }
+.ev-mini b { font-family: var(--display); font-size: 20px; overflow-wrap: anywhere; }
+.ev-mini span { font-weight: 600; font-size: 14px; }
+.ev-mini em { font-style: normal; font-size: 13px; opacity: .85; }
+.ev-qr { width: 92px; height: 92px; background: #fff; border-radius: 10px; padding: 4px; flex-shrink: 0; }
+.ev-qr svg { width: 100%; height: 100%; display: block; }
+.ev-badge { margin: 18px 0 6px; }
+.ev-badge img { display: inline-block; }
+.ev-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 12px 0 6px; }
+.ev-actions .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; }
+.ev-actions .btn svg { width: 18px; height: 18px; }
+.ev-get { margin-top: 8px; }
+@media (max-width: 860px) {
+  .ev-grid { grid-template-columns: 1fr; }
+  .ev-box { order: -1; }
+}
+@media (max-width: 520px) {
+  .ev-row2 { grid-template-columns: 1fr; }
+  .ev-facts div { grid-template-columns: 1fr; gap: 4px; }
+  .ev-mini { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---- klantenkaart met barcode (/add/m/<id>) en eventticket (/add/t/<id>?c=) op de terugvalpagina ---- */
+.ta-member .ta-chip { align-self: flex-start; display: inline-flex; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.92); color: #17162A; font-weight: 800; font-size: 14px; }
+.ta-member .ta-lines { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; font-weight: 600; opacity: .95; }
+.ta-member .ta-bars { margin-top: auto; height: 44px; border-radius: 10px; background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 4px, #fff 4px 5px, transparent 5px 8px), rgba(255,255,255,.12); opacity: .85; }
+.ta-evticket .ta-qr { margin-top: auto; align-self: flex-start; width: 132px; height: 132px; background: #fff; border-radius: 12px; padding: 6px; }
+.ta-evticket .ta-qr svg { width: 100%; height: 100%; display: block; }
+.ta-evticket .ta-code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; letter-spacing: 1px; opacity: .9; }
+.ta-state { display: inline-block; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.9); color: #17162A; font-weight: 800; font-size: 13px; align-self: flex-start; }
+.ta-cancelbox { margin-top: 18px; padding: 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--paper-2); }
+.ta-cancelbox p { margin: 0 0 10px; color: var(--ink-2); }

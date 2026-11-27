@@ -53,6 +53,11 @@
 //   community_revoke {invite_id}                    -> {ok}                   (openstaande uitnodiging intrekken; mail + push)
 //   community_remove {campaign_id, business_id}     -> {ok}                   (deelnemer eruit, niet de organisator; mail + push)
 //   notify {kind: "community"} + x-pasr-hook        -> {sent}                 (push naar Pasr Zakelijk uit de outbox)
+//   (tickets en klantenkaart met barcode, 27-11-2026; zie docs/tickets-klantenkaart.md)
+//   tk_business      {id}                           -> {events:[…aantallen], member_cards:[…leden]}  (per zaak)
+//   event_cancel     {id, message?}                 -> {ok}                   (event afgelasten; mail + push naar elke aanmelding)
+//   member_card_archive {id}                        -> {ok}                   (klantenkaart archiveren; scannen werkt niet meer)
+//   notify {kind: "tickets"} + x-pasr-hook          -> {sent}                 (push naar de Pasr-app van de klant uit de outbox)
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
@@ -65,6 +70,7 @@ import { chunks, cleanAudience, cleanNews, DUPLICATE_WINDOW_MS, newsFingerprint,
 import { cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, dbError } from "./business.ts";
 import { okLink, ownerMail } from "./owner_mail.ts";
 import { cleanDevices, communityPayload, type PushItem } from "./community.ts";
+import { ticketPayload, type TkItem, tkDevices } from "./tickets.ts";
 // huisstijl: dezelfde code als de functie business-brand (SSRF-beveiligd ophalen, logo en kleur)
 import { cleanUrl } from "../business-brand/brand.ts";
 import { brand } from "../business-brand/fetch.ts";
@@ -487,6 +493,42 @@ async function pushCommunity(): Promise<number> {
   return sent;
 }
 
+/** Tickets en klantenkaart: de outbox naar de Pasr-app van de klant (APNs uit pasr_user_push of pasr_devices, FCM uit
+ *  pasr_devices). Elke rij wordt daarna als verstuurd gemarkeerd, ook zonder apparaten; ongeldige tokens gaan weg. */
+async function pushTickets(): Promise<number> {
+  if (!pushConfigured()) return 0;
+  const { data, error } = await db.rpc("pasr_tk_push_due", { p_limit: 50 });
+  if (error) throw new Error(error.message);
+  const items = (Array.isArray(data) ? data : []) as TkItem[];
+  let sent = 0;
+  const done: number[] = [], invalid: string[] = [], invalidUser: string[] = [];
+  for (const item of items) {
+    const payload = ticketPayload(item);
+    if (payload) {
+      const res = await Promise.all(tkDevices(item.devices).map(async (d) => ({
+        d,
+        r: d.provider === "fcm"
+          ? await fcmSend(d.token, payload, "tickets")
+          : apnsConfigured()
+          ? await newsIosSend({ device_id: d.device_id, token: d.token, sandbox: d.sandbox, app: "pasr", src: d.src }, payload)
+          : { ok: false as const, invalid: false, error: "apns_not_configured" },
+      })));
+      for (const x of res) {
+        if (x.r.ok) sent++;
+        else if (x.r.invalid) (x.d.src === "user" ? invalidUser : invalid).push(x.d.device_id);
+      }
+    }
+    if (typeof item.id === "number") done.push(item.id);
+  }
+  if (invalid.length) await db.rpc("pasr_admin_push_forget", { p_devices: invalid });
+  if (invalidUser.length) await db.from("pasr_user_push").delete().in("device_id", invalidUser);
+  if (done.length) {
+    const { error: e } = await db.rpc("pasr_tk_push_sent", { p_ids: done });
+    if (e) console.error("admin", "tk_push_sent", e.message);
+  }
+  return sent;
+}
+
 // ---- zakelijk 1.1: eigenaarsuitnodiging mailen (SMTP-secrets van group-invite; zonder SMTP: alleen de link) ----
 async function mailOwnerInvite(to: unknown, business: { name?: string; city?: string | null }, invite: { link?: string; expires_at?: string | null } | null) {
   const host = env("PASR_SMTP_HOST"), user = env("PASR_SMTP_USER"), pass = Deno.env.get("PASR_SMTP_PASSWORD") ?? "", from = env("PASR_SMTP_FROM");
@@ -541,6 +583,9 @@ Deno.serve(async (req) => {
       if (!(await hookOk(req.headers.get("x-pasr-hook")))) return json({ error: "forbidden" }, 403);
       if (body.kind === "community") {
         return json({ sent: await pushCommunity() });
+      }
+      if (body.kind === "tickets") {
+        return json({ sent: await pushTickets() });
       }
       if (body.kind === "retention") {
         return json({ sent: await pushRetention() });
@@ -961,6 +1006,27 @@ Deno.serve(async (req) => {
           return json({ error: code }, code === "is_lead" ? 409 : code === "not_found" ? 404 : 500);
         }
         await audit("community_remove", ipHash, `${body.campaign_id} ${body.business_id}`);
+        return json({ ok: true });
+      }
+      case "tk_business": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_tk_business", { p_business: body.id });
+        if (error) throw new Error(error.message);
+        return json(data ?? { events: [], member_cards: [] });
+      }
+      case "event_cancel": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const message = typeof body.message === "string" ? body.message.replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 500) : null;
+        const { error } = await db.rpc("pasr_admin_event_cancel", { p_event: body.id, p_message: message || null });
+        if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
+        await audit("event_cancel", ipHash, String(body.id));
+        return json({ ok: true });
+      }
+      case "member_card_archive": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { error } = await db.rpc("pasr_admin_member_card_archive", { p_card: body.id });
+        if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
+        await audit("member_card_archive", ipHash, String(body.id));
         return json({ ok: true });
       }
       case "business_settings": {

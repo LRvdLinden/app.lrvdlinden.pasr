@@ -208,6 +208,73 @@ COMMUNITY_ROW = (f'<tr><td bgcolor="#1C1F29" style="background:#1C1F29;border-ra
                  f'<td bgcolor="#1C1F29" style="background:#1C1F29;border-radius:12px;padding:12px 16px;font-family:{FONT};'
                  f'font-size:15px;line-height:21px;font-weight:700;color:#ffffff">{{{{VALUE}}}}</td></tr>')
 
+
+def ticket_mail():
+    """Mail bij tickets van een event (functie event-mail): bevestiging, herinnering, wijziging, afgelast en plek vrij.
+    De functie vult {{EYEBROW}}, {{TITLE}}, {{PREHEADER}}, {{ACCENT}}, {{INTRO}}, {{EVCOLOR}}, {{EVTEXT}}, {{EVBUSINESS}},
+    {{EVNAME}}, {{EVWHEN}}, {{ROWS}} (regels van ROW), {{TICKETS}} (regels van TICKET), {{BADGE}} (de knop "Voeg toe aan
+    Pasr" of leeg), {{NOTE}} en {{EXTRA}} in, allemaal HTML-veilig. Zelfde donkere Pasr-huisstijl als de andere mails."""
+    rows_block = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+                  f'style="margin:18px 0 0;border-collapse:separate;border-spacing:0 8px">{{{{ROWS}}}}</table>')
+    return f"""<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><title>{{{{TITLE}}}}</title></head>
+<body style="margin:0;padding:0;background:{INK}">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:{INK}">{{{{PREHEADER}}}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{INK}" style="background:{INK}"><tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;font-family:{FONT}">
+<tr><td style="padding:0 4px 22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="vertical-align:middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="width:40px;vertical-align:middle"><img src="{SITE}/assets/mail-icon.png" width="40" height="40" alt="Pasr" style="display:block;width:40px;height:40px;border:0;border-radius:9px;color:#ffffff;font-size:12px"></td>
+<td style="padding-left:10px;font-size:26px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;font-family:{FONT}">pasr</td>
+</tr></table></td>
+<td align="right" style="vertical-align:middle;font-size:13px;font-weight:700;color:{MUTED};letter-spacing:.3px">{{{{EYEBROW}}}}</td>
+</tr></table></td></tr>
+<tr><td bgcolor="{PANEL}" style="background:{PANEL};border-radius:18px;padding:32px 30px 30px">
+<div style="height:6px;width:64px;border-radius:3px;background:{{{{ACCENT}}}};font-size:0;line-height:0;margin:0 0 22px">&nbsp;</div>
+<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;font-weight:800;color:#ffffff">{{{{TITLE}}}}</h1>
+<p style="margin:0;font-size:15px;line-height:23px;color:{TEXT}">{{{{INTRO}}}}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 0"><tr>
+<td bgcolor="{{{{EVCOLOR}}}}" style="background:{{{{EVCOLOR}}}};border-radius:14px;padding:18px 20px;font-family:{FONT}">
+<div style="font-size:12px;line-height:16px;font-weight:700;color:{{{{EVTEXT}}}};opacity:.85">{{{{EVBUSINESS}}}}</div>
+<div style="font-size:22px;line-height:28px;font-weight:800;color:{{{{EVTEXT}}}};margin-top:2px">{{{{EVNAME}}}}</div>
+<div style="font-size:14px;line-height:20px;font-weight:600;color:{{{{EVTEXT}}}};margin-top:6px">{{{{EVWHEN}}}}</div>
+</td></tr></table>
+{rows_block}
+{{{{TICKETS}}}}
+{{{{BADGE}}}}
+{{{{EXTRA}}}}
+<div style="height:1px;background:#262935;margin:24px 0 18px;font-size:0;line-height:0">&nbsp;</div>
+<p style="margin:0;font-size:13px;line-height:20px;color:{MUTED}">{{{{NOTE}}}}</p>
+</td></tr>
+<tr><td style="padding:22px 6px 0;font-size:12px;line-height:18px;color:{MUTED}">
+Je krijgt deze mail omdat je je met dit e-mailadres hebt aangemeld voor een event via Pasr. Je gegevens gaan alleen naar de organisator van dit event en worden na het event gewist.<br>
+<a href="{SITE}/" style="color:{MUTED}">pasr.nl</a> · <a href="{SITE}/privacy/" style="color:{MUTED}">Privacy</a> · <a href="{SITE}/support/" style="color:{MUTED}">Hulp</a>
+</td></tr>
+</table></td></tr></table>
+</body></html>"""
+
+
+# Eén ticket: QR-code (inline afbeelding, cid) met soort, volgnummer en de code eronder.
+TICKET_ROW = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:14px 0 0">'
+              f'<tr><td width="132" style="width:132px;vertical-align:top"><table role="presentation" cellpadding="0" cellspacing="0" border="0">'
+              f'<tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:12px;padding:8px">'
+              f'<img src="{{{{QR}}}}" width="112" height="112" alt="QR-code van je ticket" style="display:block;width:112px;height:112px;border:0">'
+              f'</td></tr></table></td>'
+              f'<td style="vertical-align:middle;padding-left:14px;font-family:{FONT}">'
+              f'<div style="font-size:15px;line-height:21px;font-weight:700;color:#ffffff">{{{{LABEL}}}}</div>'
+              f'<div style="font-size:13px;line-height:19px;color:{MUTED};margin-top:2px">{{{{SUB}}}}</div>'
+              f'<div style="font-size:13px;line-height:19px;color:{TEXT};margin-top:6px;font-family:Menlo,Consolas,monospace;letter-spacing:1px">{{{{CODE}}}}</div>'
+              f'</td></tr></table>')
+# De officiële knop "Voeg toe aan Pasr" (PNG, werkt in alle mailprogramma's) met de add-link van het ticket.
+TICKET_BADGE = (f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0"><tr>'
+                f'<td><a href="{{{{LINK}}}}" style="display:inline-block;text-decoration:none">'
+                f'<img src="{SITE}/badge/nl/zwart.png" width="150" height="52" alt="Voeg toe aan Pasr" '
+                f'style="display:block;width:150px;height:52px;border:0;border-radius:10px;background:#ffffff"></a></td></tr></table>'
+                f'<p style="margin:10px 0 0;font-size:13px;line-height:20px;color:{MUTED}">Met Pasr heb je je tickets offline bij de hand, '
+                f'met een herinnering de dag ervoor. Werkt de knop niet? <a href="{{{{LINK}}}}" style="color:{IRIS};word-break:break-all">Open je ticket</a>.</p>')
+
+
 def main():
     out = HERE.parent / "functions" / "reminder-mail" / "template.ts"
     out.parent.mkdir(exist_ok=True)
@@ -224,6 +291,15 @@ def main():
     out.write_text("// Gemaakt door supabase/templates/build.py (niet met de hand wijzigen).\n"
                    f"export const HTML = {json.dumps(community_mail(), ensure_ascii=False)};\n"
                    f"export const ROW = {json.dumps(COMMUNITY_ROW, ensure_ascii=False)};\n"
+                   f"export const IRIS = {json.dumps(IRIS)};\nexport const MINT = {json.dumps(MINT)};\n"
+                   f"export const CORAL = {json.dumps(CORAL)};\n")
+    out = HERE.parent / "functions" / "event-mail" / "template.ts"
+    out.parent.mkdir(exist_ok=True)
+    out.write_text("// Gemaakt door supabase/templates/build.py (niet met de hand wijzigen).\n"
+                   f"export const HTML = {json.dumps(ticket_mail(), ensure_ascii=False)};\n"
+                   f"export const ROW = {json.dumps(COMMUNITY_ROW, ensure_ascii=False)};\n"
+                   f"export const TICKET = {json.dumps(TICKET_ROW, ensure_ascii=False)};\n"
+                   f"export const BADGE = {json.dumps(TICKET_BADGE, ensure_ascii=False)};\n"
                    f"export const IRIS = {json.dumps(IRIS)};\nexport const MINT = {json.dumps(MINT)};\n"
                    f"export const CORAL = {json.dumps(CORAL)};\n")
     cfg = {}

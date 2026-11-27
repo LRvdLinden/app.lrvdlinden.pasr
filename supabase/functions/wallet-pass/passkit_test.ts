@@ -114,3 +114,52 @@ Deno.test("ticket: eigen ticket zonder catalogus blijft werken", () => {
   assertEquals(p.groupingIdentifier, "pasr-event-concert");
   assert(!("relevantDate" in p), "datum komt uit index.ts");
 });
+
+// ---- tickets en klantenkaart met barcode uit de database (27-11-2026) ----
+import { amsterdam, eventTicketCard, memberCardCard, memberPass, serverCard, serverCode } from "./passkit.ts";
+
+const EV = "11111111-2222-4333-8444-555555555555", TK = "66666666-7777-4888-8999-aaaaaaaaaaaa";
+const ticketData = {
+  kind: "event_ticket", ticket_id: TK, code: "K7Q2MXDATRZ5VWUY3ST2HJBN", status: "registered", event_id: EV,
+  event_name: "Winterborrel", starts_at: "2026-12-19T15:00:00Z", ends_at: "2026-12-19T18:00:00Z", doors_at: "2026-12-19T14:45:00Z",
+  address: "Hoofdstraat 12, Apeldoorn", color: "#1f3a5f", event_status: "published", business_name: "Bakkerij de Korenschoof",
+  business_logo: null, holder_name: "Anna de Vries", ticket_type: "Toegang", index: 1, of: 2,
+};
+
+Deno.test("Nederlandse tijd (winter en zomer)", () => {
+  assertEquals(amsterdam("2026-12-19T15:00:00Z"), { date: "2026-12-19", time: "16:00" });
+  assertEquals(amsterdam("2027-07-06T15:30:00Z"), { date: "2027-07-06", time: "17:30" });
+  assertEquals(amsterdam("x"), null);
+});
+
+Deno.test("eventTicket uit de database: QR = code, groep = event-id, naam van de houder", () => {
+  const card = serverCard("event_ticket", ticketData)!;
+  assertEquals([card.format, card.number, card.kind, card.date, card.doors, card.ends], ["qr", ticketData.code, "ticket", "2026-12-19", "15:45", "19:00"]);
+  const pass = ticketPass({ storeCard: { backFields: [] } }, card) as Record<string, any>;
+  assertEquals(pass.groupingIdentifier, EV);
+  assert(pass.eventTicket.auxiliaryFields.some((f: any) => f.key === "holder" && f.value === "Anna de Vries"), "houder");
+  assert(pass.eventTicket.backFields.some((f: any) => f.value === "1 van 2"), "1 van 2");
+  assert(!JSON.stringify(pass).includes("birth"), "geen geboortedatum");
+  assertEquals(pass.voided, undefined);
+  assertEquals((ticketPass({}, eventTicketCard({ ...ticketData, status: "cancelled" })) as Record<string, unknown>).voided, true);
+  assertEquals(serverCode(card), `ET:${TK}`);
+  assertEquals(serverCard("member_card", ticketData), null);
+});
+
+Deno.test("klantenkaart: korting rechtsboven, lidnummer, spaarstand; EAN-13 wordt Code 128", () => {
+  const data = { kind: "member_card", member_id: TK, card_id: EV, name: "Korenschoof Klantenkaart", color: "#8A4B1F", logo: null,
+    business_name: "Bakkerij de Korenschoof", number: "2123456789018", barcode_type: "ean13", member_name: "Anna de Vries",
+    member_since: "2026-03-01T10:00:00Z", discount_now: { percent: 15, label: "15% op alles", until: "2026-12-15T23:00:00Z" },
+    next_discount: { percent: 20, label: "happy hour", starts_at: "2026-12-08T16:00:00Z" },
+    saving: { count: 6, target: 10, reward: "Gratis gebakje", unit: "visits", can_redeem: false }, active: true };
+  const card = memberCardCard(data);
+  assertEquals([card.kind, card.format, serverCode(card)], ["member", "ean13", `MC:${TK}`]);
+  const pass = memberPass({ storeCard: {} }, card) as Record<string, any>;
+  assertEquals(pass.storeCard.headerFields[0].value, "15%");
+  assertEquals(pass.storeCard.secondaryFields.map((f: any) => f.value), ["2123456789018", "Anna de Vries"]);
+  assert(pass.storeCard.auxiliaryFields.some((f: any) => f.key === "saving" && f.value === "6/10"), "spaarstand");
+  const none = memberPass({ storeCard: {} }, memberCardCard({ ...data, discount_now: null, saving: null, active: false })) as Record<string, any>;
+  assertEquals(none.storeCard.headerFields[0].key, "brand");
+  assert(none.storeCard.auxiliaryFields.some((f: any) => f.key === "next"), "volgende korting");
+  assertEquals(none.voided, true);
+});

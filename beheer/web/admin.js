@@ -1390,7 +1390,7 @@
       log.append(r);
     }
     box.prepend(ownerBox(z, () => { box.remove(); toggleBizDetail(row, b, btn); loadBusinesses(); }));
-    box.append(set, stats, offersBox(b), staff, log);
+    box.append(set, stats, offersBox(b), ticketsBox(b), staff, log);
   }
 
   /** Acties van de zaak: kortingsbonnen, actiecodes, gezamenlijke acties, vestigingen. Alleen aantallen, geen klantgegevens. */
@@ -1453,6 +1453,59 @@
       for (const x of d.locations || []) box.append(line(x.name, `${x.address || "geen adres"}${x.active ? "" : " · inactief"}`));
       if (!(d.coupons || []).length && !(d.promo_codes || []).length && !(d.campaigns || []).length && !(d.locations || []).length)
         box.append(el("p", "muted", "Nog geen acties."));
+    }
+    load();
+    return box;
+  }
+
+  /** Tickets (gratis events) en klantenkaarten met barcode van de zaak: aantallen, event afgelasten, kaart archiveren.
+   *  Geen persoonsgegevens van wie zich aanmeldde. Zelfde als PasrBeheer en LRbeheer (docs/tickets-klantenkaart.md). */
+  function ticketsBox(b) {
+    const box = el("div", "biz-offers biz-tk");
+    box.append(el("h3", null, "Tickets en klantenkaarten"), el("p", "muted", "Laden…"));
+    const day = (v) => v ? new Date(v).toLocaleString("nl-NL", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+    const STATE = { draft: "concept", published: "online", cancelled: "afgelast", archived: "gearchiveerd" };
+    const BC = { qr: "QR-code", code128: "Code 128", ean13: "EAN-13" };
+    const line = (main, sub, btnEl) => { const r = el("div", "biz-line"); r.append(el("span", null, main), el("span", "muted sm", sub)); if (btnEl) r.append(btnEl); return r; };
+    async function load() {
+      let d;
+      try { d = await api("tk_business", { id: b.id }); }
+      catch (err) { box.replaceChildren(el("h3", null, "Tickets en klantenkaarten"), el("p", "err", err.message)); return; }
+      const now = Date.now(), ev = d.events || [], mc = d.member_cards || [];
+      box.replaceChildren(el("h3", null, "Tickets en klantenkaarten"),
+        el("p", "muted sm", `${ev.length} events · ${mc.length} klantenkaarten · ${num(mc.reduce((a, c) => a + Number(c.members || 0), 0))} leden`));
+      if (ev.length) box.append(el("h4", null, "Events"));
+      for (const x of ev) {
+        const past = new Date(x.ends_at).getTime() < now;
+        let k = null;
+        if (x.status !== "cancelled" && !past) {
+          k = el("button", "btn sm danger", "Afgelasten"); k.type = "button";
+          k.addEventListener("click", async () => {
+            if (!(await ask("Event afgelasten?", `${x.name} van ${b.name} gaat niet door. Alle tickets vervallen; iedereen die zich aanmeldde krijgt een mail en een melding.`, "Afgelasten"))) return;
+            k.disabled = true;
+            try { await api("event_cancel", { id: x.id, message: "Dit event is afgelast." }); toast(`${x.name} afgelast`); load(); }
+            catch (err) { toast(err.message); k.disabled = false; }
+          });
+        }
+        box.append(line(`${x.name} · ${day(x.starts_at)}`,
+          `${past && x.status === "published" ? "afgelopen" : STATE[x.status] || x.status} · ${num(x.registered)}/${num(x.capacity)} aangemeld · ${num(x.checked_in)} binnen · ${num(x.waitlist)} wachtlijst · ${num(x.cancelled)} afgemeld`, k));
+      }
+      if (mc.length) box.append(el("h4", null, "Klantenkaarten"));
+      for (const x of mc) {
+        let k = null;
+        if (x.status !== "archived") {
+          k = el("button", "btn sm danger", "Archiveren"); k.type = "button";
+          k.addEventListener("click", async () => {
+            if (!(await ask("Klantenkaart archiveren?", `${x.name} van ${b.name} kan daarna niet meer worden gescand en nieuwe klanten kunnen geen lid worden.`, "Archiveren"))) return;
+            k.disabled = true;
+            try { await api("member_card_archive", { id: x.id }); toast(`${x.name} gearchiveerd`); load(); }
+            catch (err) { toast(err.message); k.disabled = false; }
+          });
+        }
+        box.append(line(`${x.name} · ${BC[x.barcode_type] || x.barcode_type}${x.prefix ? " · " + x.prefix : ""}`,
+          `${STATE[x.status] || x.status} · ${num(x.members)} leden · ${num(x.visits_30d)} bezoeken (30 d) · ${(x.goals || []).join(" · ") || "geen doel"}`, k));
+      }
+      if (!ev.length && !mc.length) box.append(el("p", "muted", "Nog geen events of klantenkaarten."));
     }
     load();
     return box;
