@@ -121,57 +121,13 @@ struct BusinessCommunityView: View {
     private var rewardOK: Bool { (3...120).contains(reward.trimmingCharacters(in: .whitespacesAndNewlines).count) }
 
     var body: some View {
+        dialogs(stack)
+    }
+
+    private var stack: some View {
         NavigationStack {
             ScrollViewReader { proxy in
-                Form {
-                    if isOwner && !invites.isEmpty {
-                        Section {
-                            ForEach(invites) { invite in inviteRow(invite) }
-                        } header: {
-                            Text("Uitnodigingen (\(invites.count))")
-                        } footer: {
-                            Text("Je beslist zelf of je zaak meedoet. Klantgegevens worden niet tussen ondernemingen gedeeld.")
-                        }
-                        .id("invites")
-                    }
-                    if isOwner {
-                        Section {
-                            TextField("Actienaam", text: $name)
-                            TextField("Gezamenlijke beloning", text: $reward)
-                            Stepper("Benodigde verschillende winkels: \(required)", value: $required, in: 2...20)
-                            Stepper("Looptijd: \(days) dagen", value: $days, in: 1...366)
-                            Toggle("Open voor zaken in dezelfde plaats", isOn: $openSameCity)
-                            Stepper("Minimum aantal zaken: \(minParticipants)", value: $minParticipants, in: 2...20)
-                            Button("Samenwerking starten") { Task { await create() } }
-                                .disabled(busy || !nameOK || !rewardOK)
-                        } header: {
-                            Text("Nieuwe gezamenlijke actie")
-                        } footer: {
-                            Text("Je nodigt zelf zaken uit; zij beslissen of ze meedoen. De actie start voor klanten zodra het minimum aantal zaken meedoet. Klanten verzamelen een bezoek met een stempel bij elke deelnemende zaak. Klantgegevens worden niet tussen ondernemingen gedeeld.")
-                        }
-                    }
-                    Section {
-                        if !loaded && rows.isEmpty {
-                            ProgressView()
-                        } else if rows.isEmpty {
-                            Text(isOwner ? "Nog geen gezamenlijke acties" : "Je zaak doet nog niet mee aan een gezamenlijke actie")
-                                .foregroundStyle(.secondary)
-                        }
-                        ForEach(rows) { row in campaignRow(row).id(row.id) }
-                    } header: {
-                        Text(isOwner ? "Gezamenlijke acties" : "Acties van je zaak")
-                    } footer: {
-                        Text("Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.")
-                    }
-                    if let message {
-                        Section {
-                            Label(message, systemImage: failed ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                                .font(.subheadline)
-                                .foregroundStyle(failed ? Theme.coral : Theme.mint)
-                        }
-                        .id("message")
-                    }
-                }
+                Form { formContent }
                 .onChange(of: scrollTarget) { _, target in
                     guard let target else { return }
                     withAnimation { proxy.scrollTo(target, anchor: .top) }
@@ -191,6 +147,12 @@ struct BusinessCommunityView: View {
                 Task { await load(); await applyFocus() }
             }
             .onChange(of: managing) { _, now in if now == nil { Task { await load() } } }
+        }
+    }
+
+    /// Bevestigingsvragen apart van de rest, zodat de compiler de body snel genoeg kan controleren.
+    private func dialogs<V: View>(_ content: V) -> some View {
+        content
             .busyWhile(confirmCancel != nil || confirmLeave != nil || confirmDecline != nil)
             .confirmationDialog("Actie stoppen?", isPresented: Binding(get: { confirmCancel != nil }, set: { if !$0 { confirmCancel = nil } }),
                                 titleVisibility: .visible, presenting: confirmCancel) { row in
@@ -213,6 +175,71 @@ struct BusinessCommunityView: View {
             } message: { _ in
                 Text("De organisator ziet dat je zaak niet meedoet.")
             }
+    }
+
+    @ViewBuilder private var formContent: some View {
+        invitesSection
+        createSection
+        campaignsSection
+        messageSection
+    }
+
+    @ViewBuilder private var invitesSection: some View {
+        if isOwner && !invites.isEmpty {
+            Section {
+                ForEach(invites) { invite in inviteRow(invite) }
+            } header: {
+                Text("Uitnodigingen (\(invites.count))")
+            } footer: {
+                Text("Je beslist zelf of je zaak meedoet. Klantgegevens worden niet tussen ondernemingen gedeeld.")
+            }
+            .id("invites")
+        }
+    }
+
+    @ViewBuilder private var createSection: some View {
+        if isOwner {
+            Section {
+                TextField("Actienaam", text: $name)
+                TextField("Gezamenlijke beloning", text: $reward)
+                Stepper("Benodigde verschillende winkels: \(required)", value: $required, in: 2...20)
+                Stepper("Looptijd: \(days) dagen", value: $days, in: 1...366)
+                Toggle("Open voor zaken in dezelfde plaats", isOn: $openSameCity)
+                Stepper("Minimum aantal zaken: \(minParticipants)", value: $minParticipants, in: 2...20)
+                Button("Samenwerking starten") { Task { await create() } }
+                    .disabled(busy || !nameOK || !rewardOK)
+            } header: {
+                Text("Nieuwe gezamenlijke actie")
+            } footer: {
+                Text("Je nodigt zelf zaken uit; zij beslissen of ze meedoen. De actie start voor klanten zodra het minimum aantal zaken meedoet. Klanten verzamelen een bezoek met een stempel bij elke deelnemende zaak. Klantgegevens worden niet tussen ondernemingen gedeeld.")
+            }
+        }
+    }
+
+    @ViewBuilder private var campaignsSection: some View {
+        Section {
+            if !loaded && rows.isEmpty {
+                ProgressView()
+            } else if rows.isEmpty {
+                (isOwner ? Text("Nog geen gezamenlijke acties") : Text("Je zaak doet nog niet mee aan een gezamenlijke actie"))
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(rows) { row in campaignRow(row).id(row.id) }
+        } header: {
+            isOwner ? Text("Gezamenlijke acties") : Text("Acties van je zaak")
+        } footer: {
+            Text("Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.")
+        }
+    }
+
+    @ViewBuilder private var messageSection: some View {
+        if let message {
+            Section {
+                Label(message, systemImage: failed ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(failed ? Theme.coral : Theme.mint)
+            }
+            .id("message")
         }
     }
 
@@ -251,7 +278,9 @@ struct BusinessCommunityView: View {
                 }
             }
             StatusCapsule(text: row.stateLabel, color: row.state.color)
-            Text([row.lead, row.leadCity].filter { !$0.isEmpty }.joined(separator: ", ") + " · " + String(localized: "\(row.participants) deelnemende zaken"))
+            let leadLine: String = [row.lead, row.leadCity].filter { !$0.isEmpty }.joined(separator: ", ")
+            let countLine: String = String(localized: "\(row.participants) deelnemende zaken")
+            Text(verbatim: leadLine.isEmpty ? countLine : leadLine + " · " + countLine)
                 .font(.caption).foregroundStyle(.secondary)
             if !row.participantNames.isEmpty {
                 Text(verbatim: row.participantNames.joined(separator: ", "))
