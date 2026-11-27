@@ -37,7 +37,7 @@ export type Item = {
   participant_names?: string[];
 };
 
-export const DASHBOARD = "https://pasr.nl/zakelijk/dashboard/#samenwerkingen";
+export const DASHBOARD = "https://pasr.nl/zakelijk/dashboard/#gezamenlijke-acties";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });

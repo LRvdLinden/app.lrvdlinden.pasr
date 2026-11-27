@@ -430,9 +430,9 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
 SCRIPTS = '''  <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>
 {jsqr}  <script src="/assets/promo.js"></script>
-  <script src="/assets/loyalty2.js?v=zakelijk-uitnodigen-1"></script>
-  <script src="/assets/promo-codes-business.js?v=zakelijk-verwijderd-1"></script>
-  <script src="/assets/zakelijk.js?v=zakelijk-uitnodigen-1"></script>'''
+  <script src="/assets/loyalty2.js"></script>
+  <script src="/assets/promo-codes-business.js"></script>
+  <script src="/assets/zakelijk.js"></script>'''
 JSQR = '  <script src="/assets/vendor/jsqr.min.js"></script>\n'
 APP_PAGES = [
     ("dashboard", "Dashboard | Pasr voor ondernemers", "Beheer de stempelkaarten van je zaak.", "Dashboard", "zk-dashboard",
@@ -449,11 +449,11 @@ APP_PAGES = [
 
 
 def app_page(folder, title, desc, og_title, data_page, main, jsqr, app_id, active):
-    # Dashboard-specific assets must be included by the generator too;
-    # this page is regenerated every website deploy and on hourly catalog refreshes.
-    dashboard_css = '  <link rel="stylesheet" href="/assets/zakelijk-dashboard-v2.css">\n' if folder == "dashboard" else ""
-    dashboard_js = ('  <script src="/assets/zakelijk-dashboard-v2.js" defer></script>\n'
-                    '  <script src="/assets/zakelijk-badge.js" defer></script>\n') if folder == "dashboard" else ""   # Knop voor je website
+    # Het dashboard (app-scherm met werkbalk, zijbalk en onderbalk) heeft een eigen stylesheet; de generator zet hem erin,
+    # want deze pagina wordt bij elke deploy en elk uur opnieuw gemaakt. Versies (?v=…) zet tools/version_assets.py.
+    dashboard_css = '  <link rel="stylesheet" href="/assets/zakelijk-dashboard-v3.css">\n' if folder == "dashboard" else ""
+    # "Knop voor je website" (Voeg toe aan Pasr): losse laag bovenop het dashboard
+    dashboard_js = '  <script src="/assets/zakelijk-badge.js" defer></script>\n' if folder == "dashboard" else ""
     page_head = head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title,
                      business_icons=folder == "dashboard")
     if dashboard_css:

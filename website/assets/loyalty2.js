@@ -16,7 +16,7 @@
  }
  async function settingsView(root,b,rpc){
    var cards=b.cards||[];
-   root.innerHTML='<div class="zd-ptitle"><div><h2>Acties en beloningen</h2><p class="zd-sub">Stel voordelen per echte stempelkaart in. Niets staat standaard aan.</p></div></div>'+
+   root.innerHTML='<div class="zd-ptitle"><div><h2>Beloningen</h2><p class="zd-sub">Stel voordelen per echte stempelkaart in. Niets staat standaard aan.</p></div></div>'+
       (!cards.length?'<p>Maak eerst een stempelkaart.</p>':'<div class="pz2-controls"><label>Stempelkaart <select id="pz2Card">'+cards.map(function(c){return '<option value="'+escape(c.id)+'">'+escape(c.name)+'</option>';}).join("")+'</select></label></div>')+
       '<div id="pz2Settings"></div>';
    if(!cards.length)return;
@@ -237,7 +237,7 @@
      });
  }
  async function insightsView(root,b,rpc){
-   root.innerHTML='<div class="zd-ptitle"><div><h2>Bedrijfsinzichten</h2><p class="zd-sub">Geaggregeerde gegevens van jouw stempelkaarten en kortingsbonnen. Er worden geen klantnamen of contactgegevens getoond.</p></div></div>'+
+   root.innerHTML='<div class="zd-ptitle"><div><h2>Inzichten</h2><p class="zd-sub">Geaggregeerde gegevens van jouw stempelkaarten en kortingsbonnen. Er worden geen klantnamen of contactgegevens getoond.</p></div></div>'+
      '<div id="pz2Stats" class="pz2-statgrid" aria-live="polite"><p>Inzichten laden…</p></div>'+
      '<section class="pz2-panel"><h3>Hoe lees je deze cijfers?</h3>'+
      '<p>De cijfers zijn gebaseerd op echte scans en geregistreerde inwisselingen. Een terugkerende klant heeft minimaal twee stempels ontvangen in de afgelopen 90 dagen. Deze cijfers zijn geen omzetmeting.</p>'+
@@ -361,7 +361,7 @@
    var STATE={waiting:["Wacht op deelnemers","wait"],active:["Actief","on"],ended:["Afgelopen",""],cancelled:["Gestopt",""]};
    var STATUS={invited:["Uitgenodigd","wait"],accepted:["Doet mee","on"],declined:["Geweigerd",""],revoked:["Ingetrokken",""]};
    function pill(map,key){var s=map[key]||[key||"",""];return '<span class="zk-pill '+s[1]+'">'+escape(s[0])+'</span>';}
-   root.innerHTML='<div class="zd-ptitle"><div><h2>Samenwerkingen</h2><p class="zd-sub">Gezamenlijke beloningen voor bezoeken bij verschillende zaken. Je nodigt zelf de zaken uit waarmee je samenwerkt; een actie start zodra genoeg zaken meedoen. Er worden geen klantgegevens tussen zaken gedeeld. Bij het scannen zie je vanzelf of een klant een gezamenlijke beloning heeft verdiend.</p></div></div>'+
+   root.innerHTML='<div class="zd-ptitle"><div><h2>Gezamenlijke acties</h2><p class="zd-sub">Gezamenlijke beloningen voor bezoeken bij verschillende zaken. Je nodigt zelf de zaken uit waarmee je samenwerkt; een actie start zodra genoeg zaken meedoen. Er worden geen klantgegevens tussen zaken gedeeld. Bij het scannen zie je vanzelf of een klant een gezamenlijke beloning heeft verdiend.</p></div></div>'+
      '<p class="pz2-notice" id="pz2CommunityMsg" role="status" aria-live="polite"></p>'+
      (owner?'<section class="pz2-panel" id="pz2Invites" hidden><h3>Uitnodigingen</h3><p>Andere zaken nodigen je uit voor hun gezamenlijke actie.</p><div id="pz2InviteList"></div></section>'+
        '<section class="pz2-panel" id="pz2Open" hidden><h3>Open acties in je plaats</h3><p>Deze acties staan open voor zaken in jouw plaats. Meedoen kan zonder uitnodiging.</p><div id="pz2OpenList"></div></section>':'')+
@@ -370,8 +370,8 @@
      '<div class="pz2-fields">'+field("Verschillende zaken nodig voor de beloning (2–20)","required","3","number")+
      field("Looptijd in dagen (1–366)","days","60","number")+field("Start bij minimaal zoveel deelnemende zaken (2–30)","min","2","number")+'</div>'+
      toggle("Open voor zaken in mijn plaats","open_city",false,"Uit: alleen zaken die jij uitnodigt doen mee. Aan: zaken uit je eigen plaats kunnen ook zelf meedoen.")+
-     '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Samenwerking starten</button></form></section>':'')+
-     '<section class="pz2-panel"><h3>'+(owner?"Jouw samenwerkingen":"Acties van je zaak")+'</h3><div id="pz2CommunityList" role="status">Laden…</div></section></div>';
+     '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Gezamenlijke actie starten</button></form></section>':'')+
+     '<section class="pz2-panel"><h3>'+(owner?"Jouw gezamenlijke acties":"Acties van je zaak")+'</h3><div id="pz2CommunityList" role="status">Laden…</div></section></div>';
    var form=$("#pz2CommunityCreate",root),list=$("#pz2CommunityList",root),msg=$("#pz2CommunityMsg",root);
    function say(text,ok){msg.textContent=text;msg.dataset.ok=ok?"true":"false";}
    function call(fn,args,done){return rpc(fn,args,true).then(function(r){if(done)say(done,true);return r;},function(e){say(err(e),false);throw e;});}

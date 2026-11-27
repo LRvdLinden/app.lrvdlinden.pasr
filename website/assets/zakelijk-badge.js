@@ -3,6 +3,7 @@
    - online stempelkaarten: article.zk-card[data-id] met de pil "Online"  → https://pasr.nl/add/k/<id>
    - elementen met data-pasr-add="<soort>:<id>" (kortingsbonnen c, actiecodes a; loyalty2.js en promo-codes-business.js)
    en zet daar een knop bij. De dialoog geeft voorbeeld, HTML-snippet, link, PNG voor drukwerk en een QR-code.
+   - het venster "QR-code en link" van een stempelkaart (.zk-qr met de flyerlink)
    De knop is altijd Nederlands: "Voeg toe aan Pasr" (badges in /badge/nl/, tools/make_badges.py). */
 (function () {
   "use strict";
@@ -136,6 +137,12 @@
       var h = card.querySelector("h3");
       row.append(button("k", card.dataset.id, h ? h.textContent : ""));
     });
+    // venster "QR-code en link" van een stempelkaart (staat buiten #zk-app)
+    document.querySelectorAll('.zk-qr .zk-actions a[href^="/zakelijk/flyer/#"]').forEach(function (a) {
+      var row = a.parentNode; if (row.querySelector(".pz-badge-btn")) return;
+      var id = a.getAttribute("href").split("#")[1] || ""; if (!/^[A-Za-z0-9-]{1,64}$/.test(id)) return;
+      row.append(button("k", id, ""));
+    });
     app.querySelectorAll("[data-pasr-add]").forEach(function (item) {
       if (item.querySelector(".pz-badge-btn")) return;
       var m = String(item.dataset.pasrAdd).match(/^([kcatgs]):([A-Za-z0-9-]{1,64})$/); if (!m) return;
@@ -147,6 +154,6 @@
   var app = document.getElementById("zk-app"); if (!app) return;
   var scheduled = false;
   new MutationObserver(function () { if (!scheduled) { scheduled = true; requestAnimationFrame(function () { scheduled = false; install(); }); } })
-    .observe(app, { childList: true, subtree: true });
+    .observe(document.body, { childList: true, subtree: true });
   install();
 })();

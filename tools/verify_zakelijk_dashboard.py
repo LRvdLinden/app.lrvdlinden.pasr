@@ -30,12 +30,21 @@ for tab in tabs:
     require(re.search(r'VIEWS(?:\.'+re.escape(tab)+r'|\["'+re.escape(tab)+r'"\])\s*=',script) is not None,
             f"Tab {tab} has a view controller")
 mapping={
- "acties":"settings","vestigingen":"locations","marketing":"marketing",
- "inzichten":"insights","kortingsbonnen":"coupons","samenwerkingen":"community"
+ "beloningen":"settings","vestigingen":"locations","marketing":"marketing",
+ "inzichten":"insights","kortingsbonnen":"coupons","gezamenlijke-acties":"community"
 }
 for tab,fn in mapping.items():
-    require(f"window.PasrLoyalty2.{fn}(panel, b, rpc)" in script,tab+" routes to its module")
+    require(re.search(r"window\.PasrLoyalty2\."+fn+r"\(\w+, b, rpc\)",script) is not None,tab+" routes to its module")
     require(re.search(r'\b'+fn+r':\w+',module) is not None,fn+" exported from module")
+# Dashboard v3: app-scherm met eigen stylesheet; oude adressen (#overzicht, #kaarten, …) blijven werken.
+for source,name in [(html,"Published dashboard HTML"),(generator,"Dashboard page generator")]:
+    require('/assets/zakelijk-dashboard-v3.css' in source and 'zakelijk-dashboard-v2' not in source,name+" uses dashboard v3 styles")
+require((root/"website/assets/zakelijk-dashboard-v3.css").exists(),"Dashboard v3 stylesheet exists")
+for old_hash,new_hash in (("overzicht","vandaag"),("kaarten","stempelkaarten"),("samenwerkingen","gezamenlijke-acties"),
+                          ("verwijderd","prullenbak"),("acties","beloningen")):
+    require(re.search(r'\b'+old_hash+r': "'+new_hash+'"',script) is not None,"Old #"+old_hash+" redirects to #"+new_hash)
+for marker in ('class="zd3-side"','class="zd3-tabbar"','id="zdSearch"','pasr_business_community_my_invites','aria-current="page"'):
+    require(marker in script,"Dashboard shell has "+marker)
 for rpc in ("pasr_business_program","pasr_business_coupon_check",
             "pasr_business_marketing_list","pasr_business_locations_list",
             "pasr_business_loyalty_insights","pasr_business_community_list",
