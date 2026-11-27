@@ -623,7 +623,9 @@ fun CardShareSheet(business: Business, card: BusinessCard, onDismiss: () -> Unit
     val context = LocalContext.current
     val qr = remember(card.id) { QrCode.bitmap(card.joinURL)?.asImageBitmap() }
     var flyer by remember { mutableStateOf<File?>(null) }
+    var websiteBadge by remember { mutableStateOf(false) }
     LaunchedEffect(card.id) { flyer = Flyer.makePDF(context, business, card) }
+    if (websiteBadge) WebsiteBadgeSheet(card) { websiteBadge = false }
     FullSheet(onDismiss, card.name, cancelText = null, confirmText = L("Klaar"), onConfirm = onDismiss) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -651,6 +653,7 @@ fun CardShareSheet(business: Business, card: BusinessCard, onDismiss: () -> Unit
             BigButton("Promotiemateriaal (Licht en Donker)", {
                 openPromo(context, card)
             }, icon = Icons.Filled.Share, color = Pz.mint, foreground = Color.Black)
+            BigButton(L("Knop voor je website"), { websiteBadge = true }, icon = Icons.Filled.Share, color = Pz.card2, foreground = Pz.text)
             Text(L("Print de flyer en zet hem op de toonbank."), color = Pz.muted, fontSize = 13.sp)
         }
     }

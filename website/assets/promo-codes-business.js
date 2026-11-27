@@ -35,7 +35,7 @@ var logo=card.logo&&/^[A-Za-z0-9+/=]+$/.test(card.logo)?
  '<span aria-hidden="true">🏬</span>';
 list.innerHTML=allCodes.length?allCodes.map(function(x,i){
  var shade=x.deleted||!x.active?"#777480":/^#[0-9a-f]{6}$/i.test(card.color||"")?card.color:"#6A5CFF";
- return '<article class="zk-panel"><div style="background:'+shade+';color:white;padding:18px;border-radius:20px">'+
+ return '<article class="zk-panel"'+(x.active&&!x.deleted?' data-pasr-add="a:'+esc(x.id)+'" data-pasr-add-name="'+esc(x.title)+'"':'')+'><div style="background:'+shade+';color:white;padding:18px;border-radius:20px">'+
  '<div style="display:flex;align-items:center;justify-content:space-between">'+logo+'<b>pasr.</b></div>'+
  '<h3>'+esc(money(x.discount_value,x.discount_type))+' KORTING</h3>'+
  '<b>'+esc(x.title)+'</b><p>Actiecode · '+esc(x.deleted?"Verwijderd":x.active?"Actief":"Gepauzeerd")+

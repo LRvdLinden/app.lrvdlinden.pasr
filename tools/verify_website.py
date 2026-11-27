@@ -17,7 +17,20 @@ checks = {
     "overstappen/klarna/index.html": ("ch-menu", "ch-move-hero"),
     "overstappen/supercards/index.html": ("ch-menu", "ch-move-hero"),
     "zakelijk/index.html": ("zk-mobile-menu", "zc-hero"),
+    "toevoegen/index.html": ("ch-menu", "ta-main", "/assets/toevoegen.js", "/android/", "id6829229123"),
 }
+# De knop "Voeg toe aan Pasr" (tools/make_badges.py): alleen Nederlands, SVG en PNG @1x/@2x/@3x per variant.
+for theme in ("zwart", "wit", "nachtblauw"):
+    for size in ("", "-compact"):
+        for suffix in (".svg", ".png", "@2x.png", "@3x.png"):
+            badge = ROOT / "badge" / "nl" / f"{theme}{size}{suffix}"
+            if not badge.is_file() or badge.stat().st_size < 200:
+                raise SystemExit(f"missing badge {badge.relative_to(ROOT)} (python3 tools/make_badges.py)")
+for rel, marker in ((".htaccess", "/toevoegen/index.html"), ("404.html", "/toevoegen/#"),
+                    (".well-known/apple-app-site-association", '"/add/*"')):
+    if marker not in (ROOT / rel).read_text(encoding="utf-8"):
+        raise SystemExit(f"{rel}: missing {marker} (Voeg toe aan Pasr)")
+print("OK badges and /add/ links")
 class Scripts(HTMLParser):
     def __init__(self):
         super().__init__()

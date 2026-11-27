@@ -259,7 +259,7 @@ def apply_live(out):
         hexcol = s.get("card_hex") if isinstance(s.get("card_hex"), str) and re.fullmatch(r"#[0-9A-Fa-f]{6}", s.get("card_hex") or "") \
             else (base.get("card") or "#2B2F3A")
         guide = s.get("guide") if isinstance(s.get("guide"), dict) and s.get("guide") else None
-        result.append(dict(id=sid, key=domain or sid.lower(), name=s["name"], domain=domain,
+        result.append(dict(id=sid, key=domain or sid.lower(), name=s["name"], domain=domain, store_kind=s.get("kind"),
                            category=s.get("category") or base.get("category") or "Overig", kind=kind,
                            aliases=list(s.get("aliases") or []), card=hexcol.upper(), style=style, logo=logo,
                            balance=pages.get(sid) if kind == "voucher" else None,

@@ -1025,6 +1025,22 @@
         }
       }
     },
+    "Compact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compact"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compact"
+          }
+        }
+      }
+    },
     "Concept": {
       "localizations": {
         "en": {
@@ -1181,6 +1197,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "De zaak krijgt een melding en beslist zelf of zij meedoet."
+          }
+        }
+      }
+    },
+    "Deel HTML-code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share HTML code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel HTML-code"
+          }
+        }
+      }
+    },
+    "Deel QR-code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share QR code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel QR-code"
           }
         }
       }
@@ -1921,6 +1969,22 @@
         }
       }
     },
+    "Formaat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formaat"
+          }
+        }
+      }
+    },
     "Geef Pasr Zakelijk toegang tot de camera in Instellingen, of typ de code van de klant hieronder.": {
       "localizations": {
         "en": {
@@ -2049,6 +2113,22 @@
         }
       }
     },
+    "Gekopieerd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gekopieerd"
+          }
+        }
+      }
+    },
     "Gestopt": {
       "localizations": {
         "en": {
@@ -2141,6 +2221,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gezamenlijke beloning controleren en uitgeven"
+          }
+        }
+      }
+    },
+    "Groot": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groot"
           }
         }
       }
@@ -3073,6 +3169,22 @@
         }
       }
     },
+    "Klanten zetten je stempelkaart met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customers add your stamp card to Pasr with one tap. Without Pasr, pasr.nl opens with the download buttons."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klanten zetten je stempelkaart met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen."
+          }
+        }
+      }
+    },
     "Kleur": {
       "localizations": {
         "en": {
@@ -3085,6 +3197,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kleur"
+          }
+        }
+      }
+    },
+    "Knop als afbeelding (PNG)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Button as image (PNG)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Knop als afbeelding (PNG)"
+          }
+        }
+      }
+    },
+    "Knop voor je website": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Button for your website"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Knop voor je website"
+          }
+        }
+      }
+    },
+    "Kopieer HTML-code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy HTML code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopieer HTML-code"
           }
         }
       }
@@ -3229,6 +3389,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lidcode bij de kassa (PZ…)"
+          }
+        }
+      }
+    },
+    "Link": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link"
           }
         }
       }
@@ -3821,6 +3997,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Naar inloggen"
+          }
+        }
+      }
+    },
+    "Nachtblauw": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midnight blue"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachtblauw"
           }
         }
       }
@@ -4673,6 +4865,38 @@
         }
       }
     },
+    "QR-code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR-code"
+          }
+        }
+      }
+    },
+    "QR-code met de link": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code with the link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR-code met de link"
+          }
+        }
+      }
+    },
     "QR-code van de kaart": {
       "localizations": {
         "en": {
@@ -4717,6 +4941,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "QR-code van de uitnodigingslink"
+          }
+        }
+      }
+    },
+    "QR-code voor toonbank en kassabon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code for counter and receipt"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR-code voor toonbank en kassabon"
           }
         }
       }
@@ -4877,6 +5117,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scannen aan de kassa"
+          }
+        }
+      }
+    },
+    "Scannen met de camera opent dezelfde link: met Pasr meteen Toevoegen aan Pasr?, anders pasr.nl.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning with the camera opens the same link: with Pasr straight to Add to Pasr?, otherwise pasr.nl."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scannen met de camera opent dezelfde link: met Pasr meteen Toevoegen aan Pasr?, anders pasr.nl."
           }
         }
       }
@@ -5633,6 +5889,22 @@
         }
       }
     },
+    "Voeg toe aan Pasr": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voeg toe aan Pasr"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voeg toe aan Pasr"
+          }
+        }
+      }
+    },
     "Voor zaken die je niet kunt vinden of die Pasr Zakelijk nog niet gebruiken. Met een e-mailadres stuurt Pasr de uitnodiging ook per mail.": {
       "localizations": {
         "en": {
@@ -5645,6 +5917,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voor zaken die je niet kunt vinden of die Pasr Zakelijk nog niet gebruiken. Met een e-mailadres stuurt Pasr de uitnodiging ook per mail."
+          }
+        }
+      }
+    },
+    "Voorbeeld van de knop Voeg toe aan Pasr": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview of the Voeg toe aan Pasr button"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voorbeeld van de knop Voeg toe aan Pasr"
           }
         }
       }
@@ -6017,6 +6305,22 @@
         }
       }
     },
+    "Wit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wit"
+          }
+        }
+      }
+    },
     "ZAKELIJK": {
       "localizations": {
         "en": {
@@ -6161,6 +6465,22 @@
         }
       }
     },
+    "Zet deze code op je website": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put this code on your website"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet deze code op je website"
+          }
+        }
+      }
+    },
     "Zet in Instellingen de vergrendeling aan; bij openen vraagt de app om Face ID, Touch ID of je toegangscode.": {
       "localizations": {
         "en": {
@@ -6269,6 +6589,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zoveel stempels tegelijk mag niet. Pas het maximum aan in Instellingen."
+          }
+        }
+      }
+    },
+    "Zwart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwart"
           }
         }
       }

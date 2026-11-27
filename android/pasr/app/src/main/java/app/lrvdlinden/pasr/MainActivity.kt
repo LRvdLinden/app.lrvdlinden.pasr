@@ -32,7 +32,8 @@ object Incoming {
         val host = uri.host?.lowercase() ?: return false
         val path = uri.path ?: ""
         return uri.scheme == "https" && (host == "pasr.nl" || host == "www.pasr.nl") &&
-            (path.startsWith("/kaart") || path.startsWith("/zakelijk/kaart") || path == "/tijdelijk" || path.startsWith("/tijdelijk/"))
+            (path.startsWith("/kaart") || path.startsWith("/zakelijk/kaart") || path == "/tijdelijk" || path.startsWith("/tijdelijk/") ||
+                path.startsWith("/add/"))
     }
     /** Vergrendeld (app-slot): bij opstarten en elke keer dat Pasr weer naar voren komt. */
     val locked = MutableStateFlow(false)

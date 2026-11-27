@@ -259,3 +259,13 @@
 .zk-nav .zk-desktop-actions .nav-btn{padding:9px 14px;font-size:14px;white-space:nowrap}
 }
 @media(max-width:380px){.zk-nav .zk-tag{display:none}}
+
+/* De knop "Voeg toe aan Pasr" (tools/make_add.py, badges in /badge/nl/) op gidsen, stempelkaarten en kortingsbonnen */
+.pasr-add-badge { display: inline-block; line-height: 0; border-radius: 12px; transition: transform .15s ease; }
+.pasr-add-badge img { display: block; width: auto; height: 52px; }
+.pasr-add-badge:hover { transform: translateY(-1px); }
+.pasr-add-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
+.pasr-add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 14px 0 4px; }
+.pasr-add-row small { color: var(--ink-2); font-size: 13px; line-height: 1.4; }
+.pasr-add-row .pasr-add-badge img[height="38"] { height: 38px; }
+.pasr-add-join { margin-bottom: 30px; }

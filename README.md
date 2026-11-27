@@ -67,6 +67,19 @@ heeft. Tik → voorbeeld → Voeg toe aan Pasr (`pasr_business_join`). De QR-cod
 "Bewaar in Pasr" vanuit de browser (`pasr://zakelijk?code=<lidcode>#<kaart-id>`): de app neemt de lidcode over met
 `pasr_business_claim`, zodat de stempels uit de browser meegaan (anders `pasr_business_join`).
 
+## Voeg toe aan Pasr (build 65, Zakelijk build 20)
+
+De knop "Voeg toe aan Pasr" (alleen Nederlands) linkt naar `https://pasr.nl/add/<soort>/<id>`:
+`k` stempelkaart van een zaak, `c` kortingsbon, `a` actiecode (uuid's uit de database), `t` ticket, `g` cadeaukaart,
+`s` winkelkaart (id uit de catalogus). Met Pasr opent de link (universele link / App Link, ook `pasr://add/<soort>/<id>`)
+het venster **Toevoegen aan Pasr?** (`App/Views/AddToPasrSheet.swift`, Android `ui/AddToPasrScreen.kt`) met de bestaande
+stromen (`pasr_business_join`, `pasr_business_coupon_claim`, `pasr_business_promo_claim`, Kaart toevoegen bij de winkel).
+Zonder Pasr toont `pasr.nl/add/…` (rewrite in `.htaccess`, terugval via `404.html` naar `/toevoegen/#<soort>/<id>`) het
+item met de downloadknoppen en "Al geïnstalleerd? Open in Pasr" (`tools/make_add.py`, `website/assets/toevoegen.js`).
+Badges: `python3 tools/make_badges.py` → `website/badge/nl/{zwart,wit,nachtblauw}{,-compact}.svg` (tekst als paden) en
+PNG @1x/@2x/@3x, plus de voorbeelden in Pasr Zakelijk. Ondernemers vinden de knop met HTML-code, PNG en QR-code in het
+dashboard (`website/assets/zakelijk-badge.js`) en in Pasr Zakelijk bij QR-code en link › Knop voor je website.
+
 ## Verjaardagsvoordeel (1.0.3)
 
 Instellingen › Verjaardagsvoordeel: dag en maand (geen jaar), lokaal en met een account via `pasr_birthday_get` /

@@ -19,6 +19,9 @@
     (function () {
       var m = location.pathname.match(/^\/zakelijk\/kaart\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
       if (m) location.replace("/zakelijk/kaart/?hier=1" + location.search.replace(/^\?/, "&") + "#" + m[1].toLowerCase());
+      // "Voeg toe aan Pasr" (/add/<soort>/<id>) als de rewrite in .htaccess niet actief is: dezelfde terugvalpagina.
+      var a = location.pathname.match(/^\/add\/([kcatgs])\/([A-Za-z0-9][A-Za-z0-9-]{0,63})\/?$/);
+      if (a) location.replace("/toevoegen/#" + a[1] + "/" + a[2]);
     })();
   </script>
 </head>

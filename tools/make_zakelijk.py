@@ -452,7 +452,8 @@ def app_page(folder, title, desc, og_title, data_page, main, jsqr, app_id, activ
     # Dashboard-specific assets must be included by the generator too;
     # this page is regenerated every website deploy and on hourly catalog refreshes.
     dashboard_css = '  <link rel="stylesheet" href="/assets/zakelijk-dashboard-v2.css">\n' if folder == "dashboard" else ""
-    dashboard_js = '  <script src="/assets/zakelijk-dashboard-v2.js" defer></script>\n' if folder == "dashboard" else ""
+    dashboard_js = ('  <script src="/assets/zakelijk-dashboard-v2.js" defer></script>\n'
+                    '  <script src="/assets/zakelijk-badge.js" defer></script>\n') if folder == "dashboard" else ""   # Knop voor je website
     page_head = head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title,
                      business_icons=folder == "dashboard")
     if dashboard_css:

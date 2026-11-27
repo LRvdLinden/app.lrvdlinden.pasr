@@ -210,6 +210,7 @@ struct WalletView: View {
         .task(id: "\(order)|\(scenePhase == .active)|\(cards.count)") { await updateDistances(search: false) }
         .onChange(of: openCardID, initial: true) { _, id in openRequestedCard(id) }
         .onReceive(NotificationCenter.default.publisher(for: .pasrCloseSheets)) { _ in sheet = nil }
+        .onReceive(NotificationCenter.default.publisher(for: .pasrOpenCoupons)) { _ in sheet = .coupons }
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenReceipt)) { _ in openPendingReceipt() }
         .onAppear { openPendingReceipt() }
         .onChange(of: cards.count) { _, _ in openRequestedCard(openCardID) }

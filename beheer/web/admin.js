@@ -874,6 +874,7 @@
     $("seCategory").value = s.category || "Overig";
     $("seFormat").value = s.format || "ean13";
     $("seKind").value = s.kind || "loyalty";
+    addLinkBox($("seAdd"), s.kind === "voucher" ? "g" : s.kind === "ticket" ? "t" : "s", s.id, !!s.published);
     $("seColor").value = s.card_hex || "#2B2F3A";
     $("seAliases").value = (s.aliases || []).join(", ");
     const g = s.guide || {};
@@ -1726,6 +1727,24 @@
     const count = d === "full" ? s.stamps_total : d === "half" ? Math.ceil(s.stamps_total / 2) : 0;
     $("cePreview").replaceChildren(stampCardEl(s, count));
   }
+  // ---- "Voeg toe aan Pasr": link https://pasr.nl/add/<soort>/<id> en de knop (badges op pasr.nl/badge/nl/) ----
+  function addLinkBox(box, kind, id, live) {
+    box.replaceChildren();
+    if (!id) { box.classList.add("hidden"); return; }
+    box.classList.remove("hidden");
+    const url = "https://pasr.nl/add/" + kind + "/" + (/^[kca]$/.test(kind) ? String(id).toLowerCase() : id);
+    const head = el("div", "muted sm", "Voeg toe aan Pasr" + (live ? "" : " (werkt zodra het item online staat)"));
+    const link = el("a", "mono-link", url); link.href = url; link.target = "_blank"; link.rel = "noopener";
+    const row = el("div", "se-row add-badges");
+    for (const theme of ["zwart", "wit", "nachtblauw"]) {
+      const img = el("img"); img.src = "https://pasr.nl/badge/nl/" + theme + ".svg"; img.alt = "Voeg toe aan Pasr (" + theme + ")"; img.height = 40;
+      row.append(img);
+    }
+    const copy = el("button", "btn ghost sm", "Kopieer link"); copy.type = "button";
+    copy.addEventListener("click", () => navigator.clipboard?.writeText(url).then(() => { copy.textContent = "Gekopieerd"; setTimeout(() => { copy.textContent = "Kopieer link"; }, 1500); }));
+    row.append(copy);
+    box.append(head, link, row);
+  }
   function cardButtons() {
     const c = cardEditing.card;
     $("ceDelete").classList.toggle("hidden", !c);
@@ -1740,6 +1759,7 @@
       $("ceQr").src = qrData(url, 4); $("ceQrDl").href = big || "#";
       $("ceQrDl").download = "pasr-qr-" + (c.name || "kaart").toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".gif";
       $("ceFlyer").href = "https://pasr.nl/zakelijk/flyer/#" + c.id;
+      addLinkBox($("ceAdd"), "k", c.id, c.published);
       $("ceShareNote").textContent = c.published ? "Hang de QR-code bij de kassa of deel de link. De flyer is een A4 om te printen."
         : "De kaart is nog een concept: link, QR-code en flyer werken zodra hij online staat.";
     }

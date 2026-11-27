@@ -26,19 +26,19 @@ jobs:
         run: |
           set -euo pipefail
           grep -q 'MARKETING_VERSION = "1.0.5"' Pasr.xcodeproj/project.pbxproj
-          grep -q 'CURRENT_PROJECT_VERSION = "64"' Pasr.xcodeproj/project.pbxproj
+          grep -q 'CURRENT_PROJECT_VERSION = "65"' Pasr.xcodeproj/project.pbxproj
           mkdir -p dist
           work="$(mktemp -d)"
-          folder="Pasr-Klantenkaarten-1.0.5-build64"
+          folder="Pasr-Klantenkaarten-1.0.5-build65"
           mkdir -p "$work/$folder"
           cp -a App Shared Watch Widgets Config Pasr.xcodeproj "$work/$folder/"
           printf '%s\n' '# Pasr Klantenkaarten 1.0.5 build 63' 'Open Pasr.xcodeproj in Xcode. Selecteer scheme Pasr, stel signing in en gebruik Product > Archive om via Organizer te distribueren.' > "$work/$folder/OPEN-IN-XCODE.md"
-          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Klantenkaarten-Xcode-1.0.5-build64.zip" "$folder")
-          unzip -tq dist/Pasr-Klantenkaarten-Xcode-1.0.5-build64.zip
+          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Klantenkaarten-Xcode-1.0.5-build65.zip" "$folder")
+          unzip -tq dist/Pasr-Klantenkaarten-Xcode-1.0.5-build65.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Pasr-Klantenkaarten-Xcode-1.0.5-build64
-          path: dist/Pasr-Klantenkaarten-Xcode-1.0.5-build64.zip
+          name: Pasr-Klantenkaarten-Xcode-1.0.5-build65
+          path: dist/Pasr-Klantenkaarten-Xcode-1.0.5-build65.zip
           retention-days: 90
       - name: Publiceer ZIP op GitHub Releases
         env:
@@ -46,8 +46,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="xcode-pasr-1.0.5-build64"
+          TAG="xcode-pasr-1.0.5-build65"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Klantenkaarten 1.0.5 (build 64) – Xcode" --notes "Tickets in de stijl van Apple Wallet (logo en huisstijl van het evenement, Route en Informatie); tickets van hetzelfde evenement gegroepeerd; gezamenlijke acties: deelnemende winkels en einddatum zichtbaar. Het Xcode-project kan lokaal worden gearchiveerd en ingediend bij App Store Connect."
+            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Klantenkaarten 1.0.5 (build 65) – Xcode" --notes "Voeg toe aan Pasr: links pasr.nl/add/… (stempelkaart, kortingsbon, actiecode, ticket, cadeaukaart, winkelkaart) openen het venster Toevoegen aan Pasr? met voorbeeld, toevoegen en Bekijk in Pasr. Het Xcode-project kan lokaal worden gearchiveerd en ingediend bij App Store Connect."
           fi
-          gh release upload "$TAG" dist/Pasr-Klantenkaarten-Xcode-1.0.5-build64.zip --clobber
+          gh release upload "$TAG" dist/Pasr-Klantenkaarten-Xcode-1.0.5-build65.zip --clobber
