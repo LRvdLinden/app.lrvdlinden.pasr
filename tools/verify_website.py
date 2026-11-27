@@ -6,7 +6,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent / "website"
 checks = {
-    "index.html": ("ch-menu", "px-discover", "id=\"stack\""),
+    "index.html": ("ch-menu", "px-discover", "hv2-stage", "populaire-kaarten"),
     "kaarten/index.html": ("ch-menu", "ch-real-art"),
     "cadeaubon/index.html": ("ch-menu", "ch-real-art"),
     "klantenkaart/index.html": ("ch-menu", "ch-real-art"),
