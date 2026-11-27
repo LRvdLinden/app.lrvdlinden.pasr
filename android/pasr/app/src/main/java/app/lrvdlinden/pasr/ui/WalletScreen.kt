@@ -68,6 +68,7 @@ import app.lrvdlinden.pasr.data.Catalog
 import app.lrvdlinden.pasr.data.Prefs
 import app.lrvdlinden.pasr.data.Sync
 import app.lrvdlinden.pasr.data.ordered
+import app.lrvdlinden.pasr.data.stackItems
 import kotlinx.coroutines.launch
 
 private enum class Filter(val title: String) { ALL("Alles"), FAV("Favorieten"), LOYALTY("Klantenkaarten"), GIFT("Cadeaukaarten"), STAMPS("Stempelkaarten"), OTHER("Overig") }
@@ -94,7 +95,7 @@ fun WalletScreen() {
     var refreshing by remember { mutableStateOf(false) }
     val visible = all.filter { it.deletedAt == null }
     val q = Catalog.fold(query.trim())
-    val cards = visible.filter { c ->
+    fun matches(c: app.lrvdlinden.pasr.data.Card) =
         (q.isEmpty() || Catalog.fold("${c.storeName} ${c.note}").contains(q)) && when (filter) {
             Filter.ALL -> true
             Filter.FAV -> c.isFavorite
@@ -103,8 +104,10 @@ fun WalletScreen() {
             Filter.STAMPS -> c.kind == CardKind.STAMPS
             Filter.OTHER -> c.kind in CardKind.others
         }
-    }.ordered(order, here)
-    val favorites = if (filter == Filter.ALL && q.isEmpty()) cards.filter { it.isFavorite } else emptyList()
+    // tickets voor hetzelfde evenement op dezelfde dag zijn één tegel (data/TicketGroups.kt); een groep staat erin als
+    // één van zijn tickets bij het filter en de zoekterm past
+    val cards = visible.ordered(order, here).stackItems().filter { item -> item.cards.any(::matches) }
+    val favorites = if (filter == Filter.ALL && q.isEmpty()) cards.filter { item -> item.cards.any { it.isFavorite } } else emptyList()
     // de zoekbalk vindt ook bonnetjes (winkel, bedrag of datum)
     val receipts by app.lrvdlinden.pasr.data.ReceiptStore.receipts.collectAsState()
     // Herstel bestaande kassabonnen uit oudere builds zonder dubbele transactie.
@@ -194,10 +197,10 @@ fun WalletScreen() {
                 }
                 if (favorites.isNotEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("Favorieten") }
-                    items(favorites, key = { "fav-" + it.id }) { c -> CardTile(c) { nav.push(Screen.Detail(c.id)) } }
+                    items(favorites, key = { "fav-" + it.id }) { item -> StackTile(item) { nav.push(Screen.Detail(item.id)) } }
                     item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("Alle kaarten") }
                 }
-                items(cards, key = { it.id }) { c -> CardTile(c) { nav.push(Screen.Detail(c.id)) } }
+                items(cards, key = { it.id }) { item -> StackTile(item) { nav.push(Screen.Detail(item.id)) } }
                 if (foundReceipts.isNotEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -218,6 +221,12 @@ fun WalletScreen() {
             }
         }
     }
+}
+
+/** Een losse kaart, of een groep tickets als één tegel. */
+@Composable
+private fun StackTile(item: app.lrvdlinden.pasr.data.CardStackItem, onClick: () -> Unit) {
+    if (item.isGroup) TicketGroupTile(item, onClick) else CardTile(item.first, onClick)
 }
 
 @Composable

@@ -92,9 +92,13 @@ import app.lrvdlinden.pasr.data.PasrError
 import app.lrvdlinden.pasr.data.Prefs
 import kotlinx.coroutines.launch
 
+/**
+ * Detail van één kaart. [inGroup]: één ticket in een groep (TicketGroupScreen.kt); de helderheid regelt dan de groep,
+ * en onderin blijft ruimte voor de paginapuntjes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CardDetailScreen(id: String) {
+internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
     val nav = LocalNav.current
     val snack = LocalSnack.current
     val context = LocalContext.current
@@ -166,7 +170,7 @@ fun CardDetailScreen(id: String) {
         }
     }
     // volle helderheid zolang de code in beeld is (scanners bij de kassa)
-    DisposableEffect(Unit) {
+    if (!inGroup) DisposableEffect(Unit) {
         val w = (context as? Activity)?.window
         val before = w?.attributes?.screenBrightness
         if (Prefs.brightness) w?.let { it.attributes = it.attributes.apply { screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL } }
@@ -382,7 +386,7 @@ fun CardDetailScreen(id: String) {
                 }
                 RowItem(Icons.Outlined.Delete, "Verwijderen", tint = MaterialTheme.colorScheme.error) { confirmDelete = true }
             }
-            Gap(40.dp)
+            Gap(if (inGroup) 96.dp else 40.dp)
         }
     }
 
