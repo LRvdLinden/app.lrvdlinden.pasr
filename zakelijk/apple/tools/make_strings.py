@@ -69,8 +69,8 @@ def main():
         "CFBundleDisplayName": ("Pasr Zakelijk", "Pasr Zakelijk"),
         "CFBundleName": ("Pasr Zakelijk", "Pasr Zakelijk"),
         "NSCameraUsageDescription": (
-            "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.",
-            "Pasr Zakelijk uses the camera to scan the QR code on your customer's stamp card."),
+            "Pasr Zakelijk gebruikt de camera om stempelkaarten, tickets, klantenkaarten, kortingsbonnen en codes van je klanten te scannen.",
+            "Pasr Zakelijk uses the camera to scan your customers' stamp cards, tickets, loyalty cards, coupons and codes."),
         "NSFaceIDUsageDescription": (
             "Pasr Zakelijk gebruikt Face ID om de app te vergrendelen, zodat alleen jij stempels kunt zetten.",
             "Pasr Zakelijk uses Face ID to lock the app, so only you can add stamps."),

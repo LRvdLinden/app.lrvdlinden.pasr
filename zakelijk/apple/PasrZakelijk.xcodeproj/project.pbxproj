@@ -441,7 +441,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om stempelkaarten, tickets, klantenkaarten, kortingsbonnen en codes van je klanten te scannen.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr Zakelijk gebruikt Face ID om de app te vergrendelen, zodat alleen jij stempels kunt zetten.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pasr Zakelijk bewaart gemaakte promotieafbeeldingen in je Foto’s-bibliotheek.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -481,7 +481,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om stempelkaarten, tickets, klantenkaarten, kortingsbonnen en codes van je klanten te scannen.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Pasr Zakelijk gebruikt Face ID om de app te vergrendelen, zodat alleen jij stempels kunt zetten.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pasr Zakelijk bewaart gemaakte promotieafbeeldingen in je Foto’s-bibliotheek.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -582,7 +582,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om stempelkaarten, tickets, klantenkaarten, kortingsbonnen en codes van je klanten te scannen.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© LRvdLinden";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -617,7 +617,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om stempelkaarten, tickets, klantenkaarten, kortingsbonnen en codes van je klanten te scannen.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© LRvdLinden";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
