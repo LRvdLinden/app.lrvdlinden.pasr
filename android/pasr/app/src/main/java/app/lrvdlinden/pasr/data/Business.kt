@@ -155,7 +155,7 @@ object Business {
         return CardStore.visible.filter { it.isBusinessStamps }.mapNotNull { refresh(it) }
     }
 
-    private suspend fun logoBase64(value: String?): String? {
+    suspend fun logoBase64(value: String?): String? {
         if (value.isNullOrEmpty()) return null
         if (value.startsWith("https://")) return withContext(Dispatchers.IO) {
             runCatching {

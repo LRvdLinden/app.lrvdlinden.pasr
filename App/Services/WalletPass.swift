@@ -18,7 +18,7 @@ enum WalletPass {
 
     /// Kan deze kaart een Wallet-pas worden? Niet tijdelijk gedeeld, en met een code (een stempelkaart mag zonder).
     static func canMakePass(_ card: Card) -> Bool {
-        !card.isTemporary && (!card.number.isEmpty || card.kind == .stamps)
+        !card.isTemporary && (!card.number.isEmpty || card.kind == .stamps) && !card.details.isServerItem
     }
 
     /// Geheim van de pas (authenticationToken): 32 willekeurige bytes als hex, eenmalig per kaart. Staat in de
@@ -36,8 +36,8 @@ enum WalletPass {
     /// Already in Wallet? (Same serial number = the card's id.)
     static func removeRevokedPass(_ card: Card) {
         let library = PKPassLibrary()
-        if let pass = library.pass(withPassTypeIdentifier: passTypeID, serialNumber: card.id.uuidString) {
-            library.removePass(pass)
+        for serial in serials(card) {
+            if let pass = library.pass(withPassTypeIdentifier: passTypeID, serialNumber: serial) { library.removePass(pass) }
         }
     }
 
@@ -365,7 +365,7 @@ struct WalletPlacesSheet: View {
                 }
             }
             .task { await load() }
-            .sheet(item: Binding(get: { pass.map(IdentifiedPass.init) }, set: { if $0 == nil { pass = nil } })) { item in
+            .sheet(item: Binding(get: { pass.map { IdentifiedPass(pass: $0) } }, set: { if $0 == nil { pass = nil } })) { item in
                 AddPassSheet(pass: item.pass) { dismiss() }
                     .ignoresSafeArea()
             }
@@ -488,5 +488,101 @@ enum WalletTokens {
                                   kSecAttrSynchronizable as String: true,
                                   kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock]
         SecItemAdd(add as CFDictionary, nil)
+    }
+}
+
+// MARK: Ticket of klantenkaart van een zaak
+
+extension WalletPass {
+    /// Serienummers waaronder een pas van deze kaart in Wallet kan staan (kaart-id, of het id op de server).
+    static func serials(_ card: Card) -> [String] {
+        let d = card.details
+        return [card.id.uuidString, d.ticketId, d.memberId].compactMap { $0 }
+    }
+
+    static func isServerPassInWallet(_ card: Card) -> Bool {
+        let library = PKPassLibrary()
+        return serials(card).contains { library.pass(withPassTypeIdentifier: passTypeID, serialNumber: $0) != nil }
+    }
+
+    /// De pas van een ticket (kind "event_ticket") of klantenkaart (kind "member_card") van een zaak: de server
+    /// maakt hem uit zijn eigen gegevens (QR = de ticketcode, naam houder, groep = event; barcode van de kaart).
+    @MainActor
+    static func makeServerPass(for card: Card) async throws -> PKPass {
+        let d = card.details
+        let kind = d.isEventTicket ? "event_ticket" : "member_card"
+        guard let id = d.isEventTicket ? d.ticketId : d.memberId else {
+            throw Failure(message: String(localized: "Deze kaart kan niet in Apple Wallet."))
+        }
+        guard AccountConfig.isConfigured, let url = URL(string: "\(AccountConfig.url)/functions/v1/wallet-pass") else {
+            throw Failure(message: String(localized: "Apple Wallet is in deze versie nog niet beschikbaar."))
+        }
+        let accessToken = try await AccountService.shared.accessToken()
+        var request = URLRequest(url: url, timeoutInterval: 30)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(AccountConfig.publishableKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["kind": kind, "id": id, "token": token(for: card)])
+        let data: Data, response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw Failure(message: String(localized: "Geen verbinding. Controleer je internet en probeer het opnieuw."))
+        }
+        guard (response as? HTTPURLResponse)?.statusCode == 200, let pass = try? PKPass(data: data) else {
+            throw Failure(message: String(localized: "De Wallet-pas kon niet worden gemaakt. Probeer het later opnieuw."))
+        }
+        return pass
+    }
+}
+
+/// Knop "Voeg toe aan Apple Wallet" bij een ticket of klantenkaart van een zaak (zonder locatiekeuze: de server weet
+/// waar en wanneer het event is).
+struct ServerWalletActionButton: View {
+    let card: Card
+    @State private var busy = false
+    @State private var pass: PKPass?
+    @State private var error: String?
+    @State private var inWallet = false
+
+    var body: some View {
+        Button {
+            Task { await make() }
+        } label: {
+            Group {
+                if busy { ProgressView() } else {
+                    Image(systemName: inWallet ? "checkmark.circle" : "wallet.pass")
+                }
+            }
+            .font(.title3)
+            .frame(width: 30, height: 30)
+        }
+        .pasrGlassButton()
+        .disabled(busy)
+        .accessibilityLabel(Text(inWallet ? "Staat in Apple Wallet" : "Voeg toe aan Apple Wallet"))
+        .onAppear { inWallet = WalletPass.isServerPassInWallet(card) }
+        .sheet(item: Binding(get: { pass.map { IdentifiedPass(pass: $0) } }, set: { if $0 == nil { pass = nil } })) { item in
+            AddPassSheet(pass: item.pass) {
+                pass = nil
+                inWallet = WalletPass.isServerPassInWallet(card)
+            }
+            .ignoresSafeArea()
+        }
+        .alert(Text("Apple Wallet"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "")
+        }
+    }
+
+    private func make() async {
+        busy = true
+        defer { busy = false }
+        do {
+            pass = try await WalletPass.makeServerPass(for: card)
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 }

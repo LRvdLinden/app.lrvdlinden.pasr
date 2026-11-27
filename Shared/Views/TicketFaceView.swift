@@ -76,12 +76,16 @@ struct TicketFaceView: View {
                         .font(.system(size: min(26, geo.size.width * 0.075), weight: .heavy, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
-                    typePill(small: true).padding(.top, 5)
+                    HStack(spacing: 6) {
+                        typePill(small: true)
+                        statusBadge(small: true)
+                    }
+                    .padding(.top, 5)
                     Spacer(minLength: 4)
                     // strookje onder de perforatie: datum, toegang, locatie
                     HStack(alignment: .top, spacing: 12) {
                         if let d = ticket.dateText { field("DATUM", d, small: true) }
-                        if let t = ticket.timeText { field("TOEGANG", t, small: true) }
+                        if let t = ticket.timeText { field(timeLabel, t, small: true) }
                         if let p = ticket.place { field("LOCATIE", p, small: true).layoutPriority(-1) }
                     }
                     .frame(height: stub - 14, alignment: .center)
@@ -151,7 +155,10 @@ struct TicketFaceView: View {
                         .font(.system(size: 32, weight: .heavy, design: .rounded))
                         .lineLimit(2)
                         .minimumScaleFactor(0.6)
-                    typePill(small: false)
+                    HStack(spacing: 8) {
+                        typePill(small: false)
+                        statusBadge(small: false)
+                    }
                 }
                 fieldsGrid
             }
@@ -159,7 +166,7 @@ struct TicketFaceView: View {
             .padding(.top, 18)
             .padding(.bottom, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(brandColor)
+            .background { headBackground }
             .foregroundStyle(ink)
             .background(GeometryReader { g in Color.clear.preference(key: TicketHeadKey.self, value: g.size.height) })
 
@@ -201,6 +208,21 @@ struct TicketFaceView: View {
     }
 
     // MARK: Onderdelen
+
+    /// Merkkleur, met de headerafbeelding van het event erachter als die er is.
+    private var headBackground: some View {
+        ZStack {
+            brandColor
+            if let header = ticket.header {
+                AsyncImage(url: header) { image in
+                    image.resizable().scaledToFill().overlay(brandColor.opacity(0.6))
+                } placeholder: {
+                    Color.clear
+                }
+            }
+        }
+        .clipped()
+    }
 
     /// Merkkleur als tekstkleur op het witte deel; te licht (geel, wit) dan gewoon de tekstkleur.
     private var brandText: Color {
@@ -269,14 +291,47 @@ struct TicketFaceView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 16) {
                 if let d = ticket.dateText { field("DATUM", d) }
-                if let t = ticket.timeText { field("TOEGANG", t) }
+                if let t = ticket.timeText { field(timeLabel, t) }
+                if let doors = ticket.doorsText { field("DEUREN", doors) }
                 Spacer(minLength: 0)
+            }
+            if let holder = ticket.holder {
+                HStack(alignment: .top, spacing: 16) {
+                    field("NAAM", holder)
+                    Spacer(minLength: 0)
+                }
             }
             HStack(alignment: .top, spacing: 16) {
                 if let p = ticket.place { field("LOCATIE", p) }
                 if let s = ticket.seat { field("PLAATS", s) }
                 Spacer(minLength: 0)
             }
+        }
+    }
+
+    /// "TIJD" bij een ticket van een zaak (begin – eind), anders "TOEGANG".
+    private var timeLabel: LocalizedStringKey { ticket.isBusiness ? "TIJD" : "TOEGANG" }
+
+    /// Geannuleerd, gebruikt of wachtlijst (ticket van een zaak), duidelijk in beeld.
+    @ViewBuilder private func statusBadge(small: Bool) -> some View {
+        if let style = statusStyle {
+            Text(style.0)
+                .font(.system(size: small ? 10 : 12, weight: .heavy, design: .rounded))
+                .tracking(0.6)
+                .lineLimit(1)
+                .padding(.horizontal, small ? 7 : 10)
+                .padding(.vertical, small ? 3 : 5)
+                .background(style.1, in: Capsule())
+                .foregroundStyle(.white)
+        }
+    }
+
+    private var statusStyle: (String, Color)? {
+        switch ticket.status {
+        case "cancelled": (String(localized: "GEANNULEERD"), Color(hex: "#D64535"))
+        case "checked_in", "used": (String(localized: "GEBRUIKT"), Color(hex: "#5B6170"))
+        case "waitlist": (String(localized: "WACHTLIJST"), Color(hex: "#C98A12"))
+        default: nil
         }
     }
 
@@ -297,12 +352,28 @@ struct TicketFaceView: View {
     @ViewBuilder private func codeArea(compact: Bool) -> some View {
         if appearance.tempExpired {
             notice(appearance.tempRevoked ? "Delen gestopt" : "Verlopen", symbol: "clock.badge.xmark")
+        } else if ticket.status == "cancelled" {
+            notice("Geannuleerd door de organisator", symbol: "xmark.octagon.fill")
+        } else if ticket.status == "waitlist" {
+            notice("Je staat op de wachtlijst", symbol: "hourglass")
         } else if appearance.isLocked && !revealed {
             notice("Afgeschermd", symbol: "lock.fill")
         } else if appearance.number.isEmpty {
             notice("Geen code", symbol: "qrcode")
         } else if appearance.protectCode, let codeShield {
             codeShield(AnyView(code(compact: compact)))
+        } else if ticket.status == "checked_in" || ticket.status == "used" {
+            // al gescand: code blijft zichtbaar (voor de zaak), maar duidelijk als gebruikt
+            code(compact: compact)
+                .opacity(0.35)
+                .overlay {
+                    Text("GEBRUIKT")
+                        .font(.system(size: compact ? 11 : 18, weight: .heavy, design: .rounded))
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Color(hex: "#5B6170"), in: Capsule())
+                        .foregroundStyle(.white)
+                        .rotationEffect(.degrees(-12))
+                }
         } else {
             code(compact: compact)
         }
@@ -354,6 +425,8 @@ struct TicketFaceView: View {
         if let d = ticket.dateText { parts.append(d) }
         if let t = ticket.timeText { parts.append(String(localized: "toegang \(t)")) }
         if let p = ticket.place { parts.append(p) }
+        if let h = ticket.holder { parts.append(h) }
+        if let status = statusStyle?.0 { parts.append(status.lowercased()) }
         if layout != .front {
             if appearance.isLocked && !revealed { parts.append(String(localized: "code afgeschermd")) }
             else if !appearance.number.isEmpty { parts.append(String(localized: "\(appearance.format.displayName)-code")) }

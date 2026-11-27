@@ -96,8 +96,40 @@ data class CardDetails(
     val issuer: String? = null,
     val businessCardId: String? = null,
     val memberCode: String? = null,
+    // Gratis ticket van een zaak (pasr_my_event_tickets; issuer "event"), zelfde velden als iOS. Geboortedatum/e-mail nooit.
+    val eventId: String? = null,
+    val ticketId: String? = null,
+    /** "registered", "checked_in"/"used", "waitlist" of "cancelled". */
+    val ticketStatus: String? = null,
+    val holderName: String? = null,
+    val ticketTypeName: String? = null,
+    val eventEnd: Long? = null,
+    val doorsAt: Long? = null,
+    val address: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val headerURL: String? = null,
+    val businessName: String? = null,
+    val logoSource: String? = null,
+    // Klantenkaart met barcode van een zaak (pasr_my_member_cards; issuer "member").
+    val memberId: String? = null,
+    val memberCardId: String? = null,
+    val discountNow: MemberDiscount? = null,
+    val nextDiscount: MemberDiscount? = null,
+    val savingCount: Int? = null,
+    val savingTarget: Int? = null,
+    val savingReward: String? = null,
+    val savingCanRedeem: Boolean? = null,
+    val memberNotify: Boolean? = null,
 ) {
     val isEmpty get() = this == CardDetails()
+    val isEventTicket get() = issuer == "event" && ticketId != null
+    val isMemberCard get() = issuer == "member" && memberId != null
+    /** Komt van de server (ticket of klantenkaart van een zaak): niet via de kaartsynchronisatie, niet zelf wijzigen. */
+    val isServerItem get() = isEventTicket || isMemberCard
+    val ticketCancelled get() = ticketStatus == "cancelled"
+    val ticketUsed get() = ticketStatus == "checked_in" || ticketStatus == "used"
+    val ticketWaitlist get() = ticketStatus == "waitlist"
     val isBusiness get() = issuer == "business" && businessCardId != null
     val stampsTotalValue get() = (stampsTotal ?: 10).coerceIn(2, 30)
     val stampsCountValue get() = (stampsCount ?: 0).coerceIn(0, stampsTotalValue)
@@ -109,6 +141,12 @@ data class CardDetails(
             val r = reward?.trim()?.takeIf { it.isNotEmpty() }
             return if (r != null) "nog $stampsLeft tot $r" else "nog $stampsLeft tot je beloning"
         }
+}
+
+/** Korting op een klantenkaart van een zaak: nu (until = t/m) of de volgende (startsAt). Datums in ms. */
+@Serializable
+data class MemberDiscount(val percent: Double? = null, val label: String? = null, val until: Long? = null, val startsAt: Long? = null) {
+    val percentText: String? get() = percent?.let { if (it % 1.0 == 0.0) "${it.toInt()}%" else String.format(Locale.ROOT, "%.1f%%", it) }
 }
 
 /** Een klantenkaart, cadeaukaart, kortingscode, ticket, abonnement of zakelijke stempelkaart. */

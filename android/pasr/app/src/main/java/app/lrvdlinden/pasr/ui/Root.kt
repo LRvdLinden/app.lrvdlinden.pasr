@@ -117,6 +117,8 @@ fun Root() {
                     if (!app.lrvdlinden.pasr.notify.Push.hasToken && before[c.id] == false && c.details.stampsFull) Reminders.stampsFull(appContext, c)
                     GoogleWallet.updateIfSaved(c)
                 }
+                // tickets en klantenkaarten van zaken (Pasr Zakelijk)
+                for (c in app.lrvdlinden.pasr.data.BusinessPasses.refreshAll()) GoogleWallet.updateIfSaved(c)
             }
         }
         LaunchedEffect(link, splash, onboarded, locked) {
@@ -235,7 +237,7 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.Migrate -> MigrateScreen(s.candidates)
             is Screen.Editor -> CardEditorScreen(s)
             is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code, s.referralToken)
-            is Screen.AddItem -> AddToPasrScreen(s.link)
+            is Screen.AddItem -> AddLinkScreen(s.link)
             is Screen.Import -> ImportScreen(s.card)
             is Screen.ShareCard -> ShareCardScreen(s.id)
             is Screen.Groups -> SharedGroupsScreen(s.cardId)

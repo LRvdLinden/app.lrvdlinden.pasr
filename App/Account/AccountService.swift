@@ -115,6 +115,9 @@ final class AccountService {
         return (try await requestAny("functions/v1/\(name)", body: body, token: token) as? [String: Any]) ?? [:]
     }
 
+    /// Geldige toegangssleutel voor een eigen aanroep (bijv. de Wallet-pas van een ticket of klantenkaart van een zaak).
+    func accessToken() async throws -> String { try await validAccessToken() }
+
     private func validAccessToken() async throws -> String {
         guard let current = session else { throw AccountError(message: String(localized: "Je bent niet ingelogd.")) }
         if current.expiresAt.timeIntervalSinceNow > 60 { return current.accessToken }
@@ -198,7 +201,9 @@ final class AccountService {
         case (429, _), (_, "over_email_send_rate_limit"), (_, "over_request_rate_limit"):
             text = String(localized: "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.")
         default:
-            if let group = groupMessage(f.code + " " + f.message) {
+            if let business = businessPassMessage(f.code + " " + f.message) {
+                text = business
+            } else if let group = groupMessage(f.code + " " + f.message) {
                 text = group
             } else if f.message.contains("permanent email") {
                 text = String(localized: "Gebruik een vast e-mailadres; tijdelijke adressen werken niet.")
@@ -207,6 +212,18 @@ final class AccountService {
             }
         }
         return AccountError(message: text, status: f.status)
+    }
+
+    /// Meldingen bij tickets en klantenkaarten van een zaak (codes uit het contract).
+    private static func businessPassMessage(_ s: String) -> String? {
+        if s.contains("event_full") { return String(localized: "Dit event is vol.") }
+        if s.contains("signup_closed") { return String(localized: "Aanmelden voor dit event is gesloten.") }
+        if s.contains("too_many") { return String(localized: "Zoveel tickets kun je niet aanvragen. Kies een kleiner aantal.") }
+        if s.contains("event_cancelled") { return String(localized: "Dit event is geannuleerd.") }
+        if s.contains("invalid_input") { return String(localized: "Controleer je gegevens: voornaam, achternaam, e-mailadres en geboortedatum zijn verplicht.") }
+        if s.contains("card_not_found") { return String(localized: "Deze klantenkaart bestaat niet (meer).") }
+        if s.contains("invalid_code") { return String(localized: "Deze link of code klopt niet (meer).") }
+        return nil
     }
 
     /// Meldingen van de gedeelde Pasr (database en functie group-invite).

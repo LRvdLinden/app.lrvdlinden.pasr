@@ -79,7 +79,7 @@ object Sync {
                 val started = nowMs()
                 val pushed = lastSync(user) ?: 0L
                 val changes = JSONArray()
-                CardStore.cards.value.filter { it.groupId == null && it.changedAt > pushed }.forEach { changes.put(row(it)) }
+                CardStore.cards.value.filter { it.groupId == null && it.changedAt > pushed && !it.details.isServerItem }.forEach { changes.put(row(it)) }
                 val body = JSONObject().put("changes", changes).put("since", Prefs.string(sinceKey(user)) ?: JSONObject.NULL)
                 val result = Api.rpc("pasr_sync", body) as? JSONObject ?: return
                 if (Account.session.value?.userID != user) return
