@@ -130,11 +130,15 @@ jobs:
             supabase/20261124-app-only-discount-management.sql \
             supabase/20261124-deletion.sql \
             supabase/20261127-tickets-klantenkaart.sql \
+            supabase/20261127-antibot-forms.sql \
             supabase/tests/loyalty_smoke.sql \
             supabase/tests/promo_smoke.sql \
             supabase/tests/community_invites_smoke.sql \
             supabase/tests/tickets_klantenkaart_smoke.sql \
-            supabase/20261127-tickets-klantenkaart.sql; do
+            supabase/tests/antibot_forms_smoke.sql \
+            supabase/20261127-tickets-klantenkaart.sql \
+            supabase/20261127-antibot-forms.sql \
+            supabase/tests/antibot_forms_smoke.sql; do
             echo "::group::SQL $file"
             psql -h localhost -U postgres -d pasr_test -v ON_ERROR_STOP=1 -f "$file"
             echo "::endgroup::"
@@ -166,7 +170,7 @@ jobs:
           /tmp/pasr-sql/bin/python - <<'PY'
           from pathlib import Path
           from pglast import parse_sql
-          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql','20261124-deletion.sql','20261127-community-invites.sql','tests/community_invites_smoke.sql','20261127-tickets-klantenkaart.sql','tests/tickets_klantenkaart_smoke.sql'):
+          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql','20261124-deletion.sql','20261127-community-invites.sql','tests/community_invites_smoke.sql','20261127-tickets-klantenkaart.sql','tests/tickets_klantenkaart_smoke.sql','20261127-antibot-forms.sql','tests/antibot_forms_smoke.sql'):
               path=Path('supabase')/name
               if path.exists():
                   parse_sql(path.read_text())

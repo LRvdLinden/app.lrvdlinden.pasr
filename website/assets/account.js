@@ -85,18 +85,26 @@
     });
   }
 
-  // ---- pasr.nl/account/: account maken (met honeypot en tijdmeting) of wachtwoord vergeten ----
+  // ---- pasr.nl/account/: account maken of wachtwoord vergeten, beide met honeypot en tijdmeting ----
+  // Bot (verborgen veld "website" ingevuld of sneller dan een mens): we tonen dat het gelukt is, maar sturen niets.
+  // De server controleert bij het account maken hetzelfde (Auth-hook pasr_before_user_created in schema.sql).
+  var HP = '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></label></div>';
+  var MIN_MS = 3000, MIN_MS_SHORT = 1500;   // drie velden / alleen een e-mailadres
   function accountPage() {
     if (!ready) return card("err", "err", "Binnenkort", "Pasr-accounts komen binnenkort. Tot die tijd staan je kaarten in je eigen iCloud.");
     const mode = location.hash === "#vergeten" ? "forgot" : "signup";
     if (mode === "forgot") {
+      const shownF = performance.now();
       card("", "key", "Wachtwoord vergeten", "Vul je e-mailadres in. Je krijgt een mail om een nieuw wachtwoord te kiezen.",
-        '<form id="f"><label>E-mailadres<input type="email" id="email" autocomplete="email" required></label>' +
+        '<form id="f"><label>E-mailadres<input type="email" id="email" autocomplete="email" required></label>' + HP +
         '<button type="submit">Stuur mail</button><p class="msg" id="msg" role="status"></p></form>' +
         '<p class="switch"><a href="#">Nog geen account? Maak er een</a></p>');
       $("#f").addEventListener("submit", async (ev) => {
         ev.preventDefault();
         const btn = ev.target.querySelector("button"); btn.disabled = true;
+        if ($("#website").value || performance.now() - shownF < MIN_MS_SHORT) {   // bot: doe alsof
+          setMsg("Als er een account met dit adres is, staat er nu een mail in je inbox.", true); return;
+        }
         try {
           await call("auth/v1/recover?redirect_to=" + encodeURIComponent("https://pasr.nl/bevestigen/"), { email: $("#email").value.trim().toLowerCase() });
           setMsg("Als er een account met dit adres is, staat er nu een mail in je inbox.", true);
@@ -109,8 +117,7 @@
       '<form id="f" novalidate><label>Voornaam<input id="name" autocomplete="given-name" maxlength="40" required></label>' +
       '<label>E-mailadres<input type="email" id="email" autocomplete="email" required></label>' +
       '<label>Wachtwoord<input type="password" id="pw" autocomplete="new-password" minlength="8" required></label>' +
-      '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></label></div>' +
-      '<button type="submit">Account maken</button><p class="msg" id="msg" role="status"></p>' +
+      HP + '<button type="submit">Account maken</button><p class="msg" id="msg" role="status"></p>' +
       '<p class="small">Je krijgt een mail om je e-mailadres te bevestigen. Lees ook onze <a href="/privacy/">privacyverklaring</a>.</p></form>' +
       '<p class="switch"><a href="#vergeten">Wachtwoord vergeten?</a></p>');
     $("#f").addEventListener("submit", async (ev) => {
@@ -123,12 +130,13 @@
       const data = { first_name: name, fill_ms: Math.round(performance.now() - shown), app: "web" };
       // regio van de browserinstelling (bv. nl-NL → NL), alleen voor de landentelling; geen locatie
       try { const r = new Intl.Locale(navigator.language || "").maximize().region; if (/^[A-Z]{2}$/.test(r || "")) data.country = r; } catch {}
-      if (hp) data.hp = hp;
       const btn = ev.target.querySelector("button"); btn.disabled = true;
+      const sent = () => card("ok", "mail", "Check je mail", "We hebben een mail gestuurd naar " + email.replace(/[<>&]/g, "") + ". Tik op de knop in die mail om je account te bevestigen en log daarna in de Pasr-app in.");
+      if (hp || data.fill_ms < MIN_MS) return sent();   // bot: doe alsof, stuur niets
       try {
         await call("auth/v1/signup?redirect_to=" + encodeURIComponent("https://pasr.nl/bevestigen/"), { email, password: pw, data });
-        card("ok", "mail", "Check je mail", "We hebben een mail gestuurd naar " + email.replace(/[<>&]/g, "") + ". Tik op de knop in die mail om je account te bevestigen en log daarna in de Pasr-app in.");
-      } catch (e) { $("#website").value = ""; btn.disabled = false; setMsg(nice(e)); }
+        sent();
+      } catch (e) { btn.disabled = false; setMsg(nice(e)); }
     });
   }
 

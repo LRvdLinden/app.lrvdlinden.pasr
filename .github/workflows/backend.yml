@@ -110,6 +110,16 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/review-demo.json)
           head -c 500 /tmp/review-demo-result.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Review demo failed HTTP $code"; exit 1; }
+      - name: Anti-bot openbare formulieren (honeypot, tijdmeting, rem per e-mailadres)
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          # Logboek en rem voor pasr.nl/add/e/… en het afmelden van tickets; p_hp/p_fill_ms zitten al in de tickets-stap
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/20261127-antibot-forms.sql").read()}))' > /tmp/antibot.json
+          code=$(curl -s -o /tmp/antibot-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/antibot.json)
+          head -c 500 /tmp/antibot-result.txt; echo
+          [ "$code" -lt 300 ] || { echo "::error::Anti-bot schema failed HTTP $code"; exit 1; }
       - name: Mails, anti-bot hook and Auth settings
         if: steps.check.outputs.skip != '1'
         env:

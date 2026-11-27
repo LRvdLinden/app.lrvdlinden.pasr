@@ -81,6 +81,16 @@
 .ev-form input:focus-visible { outline: 3px solid color-mix(in srgb, var(--iris), transparent 50%); border-color: var(--iris); }
 .ev-form input[aria-invalid=true] { border-color: var(--danger); }
 .ev-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* geboortedatum: leeg met de tekst dd-mm-jjjj (telefoons tonen anders vandaag in een leeg datumveld) */
+.ev-date { position: relative; display: block; }
+.ev-help { font-weight: 500; font-size: 13px; color: var(--ink-2); }
+.ev-date-ph.is-empty input { color: transparent; }
+.ev-date-ph.is-empty input::-webkit-date-and-time-value { color: transparent; }
+.ev-date-ph.is-empty::after { content: attr(data-ph); position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--ink-2); opacity: .75; font-weight: 500; font-size: 16px; pointer-events: none; }
+@supports (-webkit-touch-callout: none) {
+  .ev-form input[type=date] { -webkit-appearance: none; appearance: none; display: block; text-align: left; }
+  .ev-form input[type=date]::-webkit-date-and-time-value { text-align: left; }
+}
 .ev-types { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .ev-types legend { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 6px; }
 .ev-type { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); cursor: pointer; }
