@@ -4,4 +4,37 @@
     <string name="payment_listener_label">Pasr: record purchases</string>
     <string name="shortcut_scan_receipt">Scan receipt</string>
     <string name="shortcut_receipts">Receipts</string>
+    <!-- Voeg toe aan Pasr (pasr.nl/add/…) -->
+    <string name="add_title">Add to Pasr?</string>
+    <string name="add_done_title">Added</string>
+    <string name="add_button">Add to Pasr</string>
+    <string name="add_busy">One moment…</string>
+    <string name="add_view_in_pasr">View in Pasr</string>
+    <string name="add_not_now">Not now</string>
+    <string name="add_close">Close</string>
+    <string name="add_another">Add another one</string>
+    <string name="add_kind_stamps">Stamp card</string>
+    <string name="add_kind_coupon">Coupon</string>
+    <string name="add_kind_promo">Promo code</string>
+    <string name="add_kind_ticket">Ticket</string>
+    <string name="add_kind_gift">Gift card</string>
+    <string name="add_kind_store">Loyalty card</string>
+    <string name="add_summary_stamps">Collect %1$d stamps. The business only sees your customer code and your progress, not who you are.</string>
+    <string name="add_summary_reward">Reward: %1$s.</string>
+    <string name="add_summary_ticket">Pasr prepares the ticket in the event\'s style. Then scan the code of your own ticket.</string>
+    <string name="add_summary_gift">Pasr prepares the gift card with logo and colour. Then scan or type the number of your own card.</string>
+    <string name="add_summary_store">Pasr prepares the card with logo and colour. Then scan or type the number of your own card.</string>
+    <string name="add_done_offer">Your personal code is under Coupons. Have it scanned at the checkout.</string>
+    <string name="add_done_card">It is in your Pasr.</string>
+    <string name="add_already_card">This card is already in your Pasr.</string>
+    <string name="add_already_offer">This offer is already in your Pasr.</string>
+    <string name="add_needs_account">Sign in with your Pasr account first (Settings › Account); a coupon or promo code gets a personal code linked to your account.</string>
+    <string name="add_missing_stamps">This stamp card is not (or no longer) online.</string>
+    <string name="add_missing_coupon">This coupon has expired or was not found.</string>
+    <string name="add_missing_promo">This promo code has expired or was not found.</string>
+    <string name="add_missing_expired">This offer has expired.</string>
+    <string name="add_missing_store">This card is not (or no longer) in Pasr.</string>
+    <string name="add_missing_offline">Pasr can\'t load this item right now. Please try again shortly.</string>
+    <string name="add_missing_hint">Ask the business for a new link, or look for the item in Add card.</string>
+    <string name="add_error_generic">Something went wrong. Please try again.</string>
 </resources>

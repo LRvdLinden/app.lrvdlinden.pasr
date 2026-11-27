@@ -69,6 +69,7 @@
                 <data android:pathPrefix="/kaart" />
                 <data android:pathPrefix="/tijdelijk" />
                 <data android:pathPrefix="/zakelijk/kaart" />
+                <data android:pathPrefix="/add/" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

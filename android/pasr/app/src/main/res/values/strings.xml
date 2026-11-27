@@ -4,4 +4,37 @@
     <string name="payment_listener_label">Pasr: aankopen vastleggen</string>
     <string name="shortcut_scan_receipt">Bon scannen</string>
     <string name="shortcut_receipts">Bonnetjes</string>
+    <!-- Voeg toe aan Pasr (pasr.nl/add/…) -->
+    <string name="add_title">Toevoegen aan Pasr?</string>
+    <string name="add_done_title">Toegevoegd</string>
+    <string name="add_button">Toevoegen aan Pasr</string>
+    <string name="add_busy">Even geduld…</string>
+    <string name="add_view_in_pasr">Bekijk in Pasr</string>
+    <string name="add_not_now">Niet nu</string>
+    <string name="add_close">Sluiten</string>
+    <string name="add_another">Nog een toevoegen</string>
+    <string name="add_kind_stamps">Stempelkaart</string>
+    <string name="add_kind_coupon">Kortingsbon</string>
+    <string name="add_kind_promo">Actiecode</string>
+    <string name="add_kind_ticket">Ticket</string>
+    <string name="add_kind_gift">Cadeaukaart</string>
+    <string name="add_kind_store">Klantenkaart</string>
+    <string name="add_summary_stamps">Spaar %1$d stempels. De zaak ziet alleen je klantcode en de stand, niet wie je bent.</string>
+    <string name="add_summary_reward">Beloning: %1$s.</string>
+    <string name="add_summary_ticket">Pasr zet het ticket klaar in de stijl van het evenement. Daarna scan je de code van je eigen ticket.</string>
+    <string name="add_summary_gift">Pasr zet de cadeaukaart klaar met logo en kleur. Daarna scan of typ je het nummer van je eigen kaart.</string>
+    <string name="add_summary_store">Pasr zet de kaart klaar met logo en kleur. Daarna scan of typ je het nummer van je eigen kaart.</string>
+    <string name="add_done_offer">Je persoonlijke code staat bij Kortingsbonnen. Laat hem aan de kassa scannen.</string>
+    <string name="add_done_card">Het staat in je Pasr.</string>
+    <string name="add_already_card">Deze kaart staat al in je Pasr.</string>
+    <string name="add_already_offer">Deze aanbieding staat al in je Pasr.</string>
+    <string name="add_needs_account">Log eerst in met je Pasr-account (Instellingen › Account); een kortingsbon of actiecode krijgt een persoonlijke code die bij je account hoort.</string>
+    <string name="add_missing_stamps">Deze stempelkaart is niet (meer) online.</string>
+    <string name="add_missing_coupon">Deze kortingsbon is verlopen of niet gevonden.</string>
+    <string name="add_missing_promo">Deze actiecode is verlopen of niet gevonden.</string>
+    <string name="add_missing_expired">Deze aanbieding is verlopen.</string>
+    <string name="add_missing_store">Deze kaart staat niet (meer) in Pasr.</string>
+    <string name="add_missing_offline">Pasr kan het item nu niet ophalen. Probeer het zo opnieuw.</string>
+    <string name="add_missing_hint">Vraag de zaak om een nieuwe link, of zoek het item in Kaart toevoegen.</string>
+    <string name="add_error_generic">Er ging iets mis. Probeer het opnieuw.</string>
 </resources>

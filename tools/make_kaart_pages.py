@@ -183,6 +183,12 @@ def json_ld(c, url, og):
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
+def add_badge(card_id):
+    """De knop "Voeg toe aan Pasr" (pasr.nl/add/k/<id>), zwart in licht en wit in donker thema."""
+    import make_add
+    return make_add.badge_pair("k", card_id)
+
+
 def page_html(c):
     import make_zakelijk as mz
     url = f'{BASE}/zakelijk/kaart/{c["id"]}/'
@@ -226,6 +232,7 @@ def page_html(c):
   <script src="/assets/consent.js" defer></script>
   <link rel="stylesheet" href="/assets/style.css">
   <link rel="stylesheet" href="/assets/zakelijk.css">
+  <link rel="stylesheet" href="/assets/catalog-hub.css">
 </head>
 <body data-page="zk-join">
 {mz.header()}
@@ -236,6 +243,7 @@ def page_html(c):
     {stamp_card_html(c)}
     <div class="actions"><a class="btn btn-primary" href="pasr://zakelijk#{c["id"]}">Open in Pasr</a><a class="btn btn-ghost" href="{APP_STORE}" rel="noopener">Pasr voor iPhone</a><a class="btn btn-ghost" href="/android/">Pasr voor Android</a></div>
   </main>
+  <div class="wrap pasr-add-row pasr-add-join">{add_badge(c["id"])}<small>Heb je Pasr al? Met deze knop zet je de stempelkaart meteen in de app.</small></div>
 {mz.FOOTER}
   <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>

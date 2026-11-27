@@ -581,6 +581,7 @@ struct CardShareView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var flyer: URL?
     @State private var showPromotionalMaterials = false
+    @State private var showWebsiteBadge = false
 
     var body: some View {
         NavigationStack {
@@ -621,6 +622,10 @@ struct CardShareView: View {
                         Label("Promotiemateriaal (Licht en Donker)", systemImage: "photo.on.rectangle")
                     }
                     .buttonStyle(BigButtonStyle(color: Theme.mint, foreground: .black))
+                    Button { showWebsiteBadge = true } label: {
+                        Label("Knop voor je website", systemImage: "chevron.left.forwardslash.chevron.right")
+                    }
+                    .buttonStyle(BigButtonStyle(color: Theme.card2, foreground: .primary))
                     Text("Print de flyer en zet hem op de toonbank.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -635,6 +640,9 @@ struct CardShareView: View {
             .task { flyer = Flyer.makePDF(business: business, card: card) }
             .sheet(isPresented: $showPromotionalMaterials) {
                 PromoBrowser(card: card).ignoresSafeArea()
+            }
+            .sheet(isPresented: $showWebsiteBadge) {
+                WebsiteBadgeView(card: card)
             }
         }
     }

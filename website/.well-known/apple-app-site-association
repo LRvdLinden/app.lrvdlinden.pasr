@@ -31,6 +31,10 @@
             "comment": "Uitnodiging voor een gedeelde Pasr"
           },
           {
+            "/": "/add/*",
+            "comment": "Voeg toe aan Pasr: stempelkaart, kortingsbon, actiecode, ticket, cadeaukaart of winkelkaart"
+          },
+          {
             "/": "/zakelijk/kaart/*",
             "comment": "Zakelijke stempelkaart (join-link van een ondernemer) openen in Pasr"
           },

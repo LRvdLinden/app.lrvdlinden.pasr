@@ -426,3 +426,9 @@ a.btn { text-decoration: none; }
 /* Gezamenlijke acties: uitnodigingen en deelnemers onder de actie */
 .biz-community{margin:4px 0 12px 14px;padding:4px 0 4px 14px;border-left:2px solid var(--line, #2a2d3a)}
 .biz-community h4{margin:10px 0 4px}
+
+/* Voeg toe aan Pasr: link en voorbeeld van de knop bij een stempelkaart en een winkel */
+.add-link { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line, rgba(127,127,127,.25)); }
+.add-link .mono-link { word-break: break-all; }
+.add-badges img { height: 40px; width: auto; border-radius: 9px; }
+#seAdd { margin: 0 0 14px; }

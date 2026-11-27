@@ -452,13 +452,15 @@ def app_page(folder, title, desc, og_title, data_page, main, jsqr, app_id, activ
     # Het dashboard (app-scherm met werkbalk, zijbalk en onderbalk) heeft een eigen stylesheet; de generator zet hem erin,
     # want deze pagina wordt bij elke deploy en elk uur opnieuw gemaakt. Versies (?v=…) zet tools/version_assets.py.
     dashboard_css = '  <link rel="stylesheet" href="/assets/zakelijk-dashboard-v3.css">\n' if folder == "dashboard" else ""
+    # "Knop voor je website" (Voeg toe aan Pasr): losse laag bovenop het dashboard
+    dashboard_js = '  <script src="/assets/zakelijk-badge.js" defer></script>\n' if folder == "dashboard" else ""
     page_head = head(title, desc, f"https://pasr.nl/zakelijk/{folder}/", app_id=app_id, og_title=og_title,
                      business_icons=folder == "dashboard")
     if dashboard_css:
         page_head = page_head.replace("</head>", dashboard_css + "</head>")
     return (page_head
             + f'\n<body data-page="{data_page}">\n{header(active)}\n  {main}\n{FOOTER}\n'
-            + SCRIPTS.format(jsqr=JSQR if jsqr else "") + "\n</body>\n</html>\n")
+            + SCRIPTS.format(jsqr=JSQR if jsqr else "") + "\n" + dashboard_js + "</body>\n</html>\n")
 
 
 # ---------------------------------------------------------------------------------------------------- landingspagina

@@ -9,3 +9,4 @@ __pycache__/
 # Deelpagina's en OG-afbeeldingen per stempelkaart: elke build opnieuw uit de database (tools/make_kaart_pages.py)
 website/zakelijk/kaart/*/
 website/og/zakelijk/
+website/toevoegen/winkels.json

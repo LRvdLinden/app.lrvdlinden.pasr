@@ -280,6 +280,8 @@ extension Notification.Name {
     static let pasrOpenLink = Notification.Name("pasrOpenLink")
     /// Sluit open vensters (voor een binnenkomende link).
     static let pasrCloseSheets = Notification.Name("pasrCloseSheets")
+    /// "Bekijk in Pasr" na een toegevoegde kortingsbon of actiecode (Voeg toe aan Pasr): opent Kortingsbonnen.
+    static let pasrOpenCoupons = Notification.Name("pasrOpenCoupons")
 }
 
 

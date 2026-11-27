@@ -1,0 +1,48 @@
+/* "Voeg toe aan Pasr": terugvalpagina /add/… en /toevoegen/ plus de knop op eigen pagina's. Kleuren via de tokens van
+   style.css (licht en donker). */
+.ta { padding: 18px 0 56px; }
+.ta-hero { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 48px; align-items: center; padding: 28px 0 40px; }
+.ta-text h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 5vw, 48px); line-height: 1.05; letter-spacing: -.02em; margin: 6px 0 14px; color: var(--ink); overflow-wrap: anywhere; }
+.ta-kicker { display: inline-block; margin: 0; padding: 5px 12px; border-radius: 999px; font-weight: 700; font-size: 14px; color: var(--kicker-ink, #4A3CE0); background: var(--kicker-bg, #E7E4FF); }
+.ta-lead { font-size: 18px; line-height: 1.5; color: var(--ink-2); margin: 0 0 22px; max-width: 46ch; }
+.ta-lead a, .ta-error a { color: var(--iris-deep); font-weight: 600; }
+.ta-error { color: var(--danger, #C0392B); font-weight: 600; margin: 0 0 16px; }
+.ta-openbtn { display: inline-flex; align-items: center; min-height: 52px; padding: 0 24px; border-radius: 14px; font-weight: 700; text-decoration: none; }
+
+/* het item: kaart in de kleur van de zaak (zoals in de app) */
+.add-page .skip { position: absolute; left: 16px; top: -60px; z-index: 50; background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 10px; }
+.add-page .skip:focus { top: 12px; }
+.ta-card { --c: #6A5CFF; --t: #fff; position: relative; min-height: 236px; border-radius: 22px; background: var(--c); color: var(--t);
+  padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 30px 60px -34px rgba(23, 22, 42, .55), inset 0 0 0 1px rgba(255, 255, 255, .08); overflow: hidden; }
+.ta-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(150deg, rgba(255, 255, 255, .16), transparent 45%); pointer-events: none; }
+.ta-head { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+.ta-logo { width: 40px; height: 40px; border-radius: 10px; object-fit: contain; background: #fff; }
+.ta-wordmark { max-height: 42px; max-width: 60%; object-fit: contain; }
+.ta-initial { width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; background: rgba(255, 255, 255, .2); }
+.ta-brand { font-weight: 700; font-size: 15px; opacity: .92; }
+.ta-name { font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1.1; }
+.ta-big { font-family: var(--display); font-weight: 800; font-size: 32px; line-height: 1; margin-top: 4px; }
+.ta-foot { margin-top: auto; font-size: 14px; font-weight: 600; opacity: .9; }
+.ta-stamps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 250px; margin: 4px 0 6px; }
+.ta-stamps.many { grid-template-columns: repeat(8, 1fr); gap: 5px; }
+.ta-stamps i { aspect-ratio: 1; border-radius: 50%; border: 2px dashed currentColor; opacity: .55; }
+.ta-ticket { border-radius: 16px; }
+.ta-ticket::before { content: ""; position: absolute; left: 18px; right: 18px; top: 64%; border-top: 2px dashed rgba(255, 255, 255, .45); }
+.ta-empty { background: var(--soft, #ECEAFB); color: var(--ink-2); align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; font-size: 26px; box-shadow: none; }
+.ta-loading { background: linear-gradient(100deg, var(--line) 30%, var(--paper-2) 50%, var(--line) 70%); background-size: 300% 100%; animation: taPulse 1.4s linear infinite; }
+@keyframes taPulse { to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .ta-loading { animation: none; } }
+
+.ta-get { background: var(--paper-2); border: 1px solid var(--line); border-radius: 26px; padding: 28px clamp(18px, 4vw, 36px); }
+.ta-get h2 { font-family: var(--display); font-size: 26px; margin: 0 0 14px; color: var(--ink); }
+.ta-steps { margin: 0 0 16px; padding-left: 22px; display: grid; gap: 18px; color: var(--ink-2); font-size: 17px; line-height: 1.5; }
+.ta-steps b { color: var(--ink); }
+.ta-badges { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 12px; }
+.ta-copy { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+.ta-copy code { font-size: 14px; padding: 10px 12px; border-radius: 10px; background: var(--paper); border: 1px solid var(--line); color: var(--ink); overflow-wrap: anywhere; max-width: 100%; }
+.ta-small { font-size: 14px; color: var(--ink-2); margin: 8px 0 0; }
+
+@media (max-width: 820px) {
+  .ta-hero { grid-template-columns: 1fr; gap: 26px; padding-top: 12px; }
+  .ta-item { max-width: 420px; width: 100%; }
+}

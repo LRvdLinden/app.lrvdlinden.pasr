@@ -922,12 +922,13 @@ def build_discovery(g):
     out = ROOT / "saldo-checken"
     out.mkdir(exist_ok=True)
     (out / "index.html").write_text(shell("saldo-checken", "Saldo checken van je cadeaukaart", "Vind de officiële saldo checker van jouw cadeaukaart.", body), encoding="utf-8")
+    import make_add
     stamps = sorted(store_catalog.stamp_cards(), key=lambda b: (b["business"].casefold(), b["name"].casefold()))
     rows = []
     for b in stamps:
         q = escape(" ".join(str(b.get(k) or "") for k in ("business", "name", "city", "reward")), quote=True)
         tile = make_kaarten.stamp_tile(b)
-        rows.append(f'<article class="ds-item ds-stamp" data-discovery="{q}"><ul class="ds-stamp-face">{tile}</ul><div class="ds-content"><h3>{escape(b["name"])}</h3><p>{escape(b["reward"])}</p><a class="ds-primary" href="/zakelijk/kaart/{escape(b["id"], quote=True)}/">Bekijk stempelkaart →</a></div></article>')
+        rows.append(f'<article class="ds-item ds-stamp" data-discovery="{q}"><ul class="ds-stamp-face">{tile}</ul><div class="ds-content"><h3>{escape(b["name"])}</h3><p>{escape(b["reward"])}</p><a class="ds-primary" href="/zakelijk/kaart/{escape(b["id"], quote=True)}/">Bekijk stempelkaart →</a><div class="pasr-add-row">{make_add.badge_pair("k", b["id"], compact=True)}</div></div></article>')
     body = f'''<section class="wrap ds-section"><h2>Ontdek ondernemers bij jou in de buurt</h2><label for="ds-search">Zoek op ondernemer, plaats of beloning</label><input class="ds-search" id="ds-search" type="search" placeholder="Zoek een plaats of ondernemer"><p id="ds-count" aria-live="polite"></p><div id="ds-grid" class="ds-grid">{"".join(rows)}</div><p id="ds-empty" {"hidden" if rows else ""}>Geen passende stempelkaarten gevonden.</p><p><a href="/kaarten/?soort=stempelkaarten">Bekijk ook het live kaartenoverzicht →</a></p><div class="ds-callout"><strong>Zelf ondernemer?</strong><p>Maak gratis een digitale stempelkaart in je eigen huisstijl.</p><a class="ds-primary" href="/zakelijk/">Ontdek Pasr Zakelijk →</a></div></section>'''
     out = ROOT / "stempelkaarten"
     out.mkdir(exist_ok=True)
@@ -986,6 +987,10 @@ if __name__ == "__main__":
     # pasr.nl/zakelijk/kaart/<id>/: deelpagina met eigen OG-afbeelding per gepubliceerde stempelkaart
     import make_kaart_pages
     make_kaart_pages.build()
+    # pasr.nl/add/<soort>/<id> en /toevoegen/: terugvalpagina van de knop "Voeg toe aan Pasr" (tools/make_add.py)
+    import make_add
+    for w in make_add.build():
+        print("Wrote", w)
     # Ook de algemene deelpreview van Pasr Zakelijk gebruikt exact dezelfde zegel.
     demo_og = dict(id="pasr-zakelijk", business="Koffiebar De Hoek", name="Koffiekaart",
                    city="Apeldoorn", color="#7B4B2A", text=None, total=10,

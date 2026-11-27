@@ -50,6 +50,8 @@ struct RootView: View {
     @State private var incoming: IncomingShare?
     @State private var incomingTemp: IncomingTempShare?
     @State private var incomingBusiness: IncomingBusinessCard?
+    /// "Voeg toe aan Pasr" (pasr.nl/add/<soort>/<id>)
+    @State private var incomingAdd: AddLink?
     @Environment(\.openURL) private var openURL
     @State private var newStore: NewStore?
     /// Link uit een pushmelding: wacht tot splash, welkomst en ontgrendelen klaar zijn.
@@ -95,7 +97,7 @@ struct RootView: View {
         .background(Brand.ink.ignoresSafeArea())
         // "Vind je Pasr leuk?": eerst een paar uur na het eerste gebruik, daarna hoogstens 1 keer per week
         .reviewPrompt(ready: !showSplash && onboarded && !locked && !covered && !cards.isEmpty && incoming == nil
-                       && incomingTemp == nil && invite == nil && incomingBusiness == nil)
+                       && incomingTemp == nil && invite == nil && incomingBusiness == nil && incomingAdd == nil)
         // A tapped notification (voucher reminder or "you're at the store") opens its card.
         .onReceive(NotificationCenter.default.publisher(for: .pasrOpenCard)) { _ in openFromNotification() }
         .onAppear {
@@ -117,6 +119,9 @@ struct RootView: View {
         }
         .sheet(item: $incomingBusiness) { item in
             JoinBusinessSheet(cardID: item.cardID, memberCode: item.memberCode, referralToken: item.referralToken)
+        }
+        .sheet(item: $incomingAdd) { item in
+            AddToPasrSheet(link: item)
         }
         .sheet(item: $newStore) { item in
             AddCardView(store: item.template)
@@ -184,6 +189,11 @@ extension RootView {
             openCardID = id
             return
         }
+        // "Voeg toe aan Pasr": pasr.nl/add/<soort>/<id> of pasr://add/<soort>/<id>
+        if let add = AddLink.parse(url) {
+            present { incomingAdd = add }
+            return
+        }
         // zakelijke stempelkaart: pasr.nl/zakelijk/kaart/<id>/ (oud: …/kaart/#<id>) of pasr://zakelijk/kaart#<id>
         if let businessID = BusinessLink.cardID(from: url) {
             let code = BusinessLink.memberCode(from: url)
@@ -212,6 +222,7 @@ extension RootView {
         incoming = nil
         incomingTemp = nil
         incomingBusiness = nil
+        incomingAdd = nil
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(450))
             show()
@@ -262,7 +273,7 @@ extension RootView {
 
     /// Kent Pasr deze link zelf (dezelfde regels als `handle`)?
     static func appHandles(_ url: URL) -> Bool {
-        if DeepLink.cardID(from: url) != nil || BusinessLink.cardID(from: url) != nil { return true }
+        if DeepLink.cardID(from: url) != nil || BusinessLink.cardID(from: url) != nil || AddLink.parse(url) != nil { return true }
         guard url.host()?.lowercased() == "pasr.nl" else { return false }
         let path = url.path()
         if path.hasPrefix("/tijdelijk") || path.hasPrefix("/uitnodiging") { return true }
@@ -270,7 +281,7 @@ extension RootView {
     }
 
     fileprivate func offerInvite() {
-        guard invite == nil, !showSplash, onboarded, !locked, incoming == nil, incomingTemp == nil, incomingBusiness == nil,
+        guard invite == nil, !showSplash, onboarded, !locked, incoming == nil, incomingTemp == nil, incomingBusiness == nil, incomingAdd == nil,
               let next = groups.invites.first(where: { !seenInvites.contains($0.id) }) else { return }
         seenInvites.insert(next.id)
         invite = next

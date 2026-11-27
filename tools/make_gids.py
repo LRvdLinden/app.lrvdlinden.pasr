@@ -224,6 +224,13 @@ I_GIFT = '<path d="M4 10h16v10H4zM3 7h18v3H3zM12 7v13M12 7c-1.5-3-5-3-5-1s3 1 5 
 I_CARD = '<path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h4"/>'
 
 
+def add_badge(c, kind):
+    """De knop "Voeg toe aan Pasr": cadeaukaart (g), ticket (t) of winkelkaart (s) uit de catalogus."""
+    import make_add
+    letter = "g" if kind == "voucher" else "t" if c.get("store_kind") == "ticket" or c.get("kind") == "ticket" else "s"
+    return make_add.badge_pair(letter, c["id"])
+
+
 def fact(label, value):
     return f'<div class="gd-fact"><dt>{label}</dt><dd>{value}</dd></div>'
 
@@ -385,6 +392,7 @@ def guide_page(c, g, items, kind, year):
       <aside class="gd-app" aria-labelledby="app-title">
         <h2 id="app-title">{app_title}</h2>
         <ul class="ticks">{ticks_html}</ul>
+        <div class="pasr-add-row">{add_badge(c, kind)}<small>Pasr al op je telefoon? Zet de {k["noun"]} er meteen in.</small></div>
         <div class="actions">{BADGE}</div>
         <p class="gd-small">Gratis, zonder reclame en zonder account.</p>
       </aside>
@@ -505,7 +513,8 @@ def overview(items, kind, year, today):
         <div>
           <h2 id="km-title">{box_title}</h2>
           <p>{box_text}</p>
-          <div class="actions">{BADGE}</div>
+          <div class="pasr-add-row">{add_badge(c, kind)}<small>Pasr al op je telefoon? Zet de {k["noun"]} er meteen in.</small></div>
+        <div class="actions">{BADGE}</div>
         </div>
       </div>
     </section>

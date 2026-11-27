@@ -54,6 +54,8 @@ sealed interface Screen {
     data class Editor(val id: String? = null, val template: StoreTemplate? = null, val kind: CardKind = CardKind.LOYALTY,
                       val draft: Card? = null) : Screen
     data class StampJoin(val cardId: String, val code: String? = null, val referralToken: String? = null) : Screen
+    /** "Voeg toe aan Pasr" (pasr.nl/add/<soort>/<id>). */
+    data class AddItem(val link: AddLink) : Screen
     data class Import(val card: Card) : Screen
     data class ShareCard(val id: String) : Screen
     data class Groups(val cardId: String? = null) : Screen
@@ -201,6 +203,7 @@ private fun CompositionLocalProviders(nav: Nav, snack: SnackbarHostState, conten
 }
 
 private fun handleLink(uri: Uri, nav: Nav) {
+    AddLink.parse(uri)?.let { nav.home(); nav.push(Screen.AddItem(it)); return }
     app.lrvdlinden.pasr.data.TempSharing.token(uri)?.let {
         nav.home(); nav.push(Screen.Borrowed(it)); return
     }
@@ -232,6 +235,7 @@ private fun Screens(nav: Nav, onAppearance: (String) -> Unit) {
             is Screen.Migrate -> MigrateScreen(s.candidates)
             is Screen.Editor -> CardEditorScreen(s)
             is Screen.StampJoin -> StampJoinScreen(s.cardId, s.code, s.referralToken)
+            is Screen.AddItem -> AddToPasrScreen(s.link)
             is Screen.Import -> ImportScreen(s.card)
             is Screen.ShareCard -> ShareCardScreen(s.id)
             is Screen.Groups -> SharedGroupsScreen(s.cardId)

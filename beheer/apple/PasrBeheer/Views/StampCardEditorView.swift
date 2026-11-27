@@ -145,6 +145,8 @@ struct StampCardEditorView: View {
                              : "De kaart is nog een concept: link, QR-code en flyer werken zodra hij online staat.")
                     }
 
+                    AddToPasrLinkSection(kind: "k", id: c.id, live: c.published == true)
+
                     Section {
                         ForEach(c.test_members ?? []) { m in TestMemberRow(member: m, card: c, business: business) { del in confirmTest = (m, del) } }
                         Button { Task { await makeTestMember() } } label: { Label("Testklant maken", systemImage: "person.crop.circle.badge.plus") }

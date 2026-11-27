@@ -478,6 +478,9 @@ struct StoreEditorView: View {
                 }
                 if draft.kind == "voucher" { coverSection }
                 if draft.kind != "ticket" { guideSection } else { ticketSection }
+                if let id = draft.storeID {
+                    AddToPasrLinkSection(kind: draft.kind == "voucher" ? "g" : draft.kind == "ticket" ? "t" : "s", id: id, live: draft.published)
+                }
                 Section {
                     if !draft.requestIDs.isEmpty {
                         Text("Na publiceren worden \(Fmt.plural(draft.requestIDs.count, "aanvraag", "aanvragen")) gesloten als toegevoegd.")

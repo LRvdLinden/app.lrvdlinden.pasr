@@ -126,7 +126,7 @@
        var rows=await rpc("pasr_business_coupon_list",{p_business:b.id},true);
        rows=(rows||[]).filter(function(row){return !row.deleted;});
        allCoupons=rows;
-       $("#pz2Coupons",root).innerHTML=rows.length?rows.map(function(c,i){return '<article class="pz2-coupon"><b>'+escape(c.title)+'</b> · '+
+       $("#pz2Coupons",root).innerHTML=rows.length?rows.map(function(c,i){return '<article class="pz2-coupon"'+(c.public&&!c.deleted?' data-pasr-add="c:'+escape(c.id)+'" data-pasr-add-name="'+escape(c.title)+'"':'')+'><b>'+escape(c.title)+'</b> · '+
          money(c.discount_type,c.discount_value)+'<br><small>'+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+
          ' · '+c.claimed+' opgehaald · '+c.redeemed+' gebruikt · '+(c.deleted?"Verwijderd":c.public?"Actief":"Gepauzeerd")+'</small>'+
          (!c.deleted?'<div class="zk-actions"><button type="button" class="zk-btn ghost" data-editcoupon="'+i+'">Bewerken</button>'+
@@ -210,7 +210,9 @@
            '<p>'+escape(c.title)+'</p><span>🔒 '+(isCode?"Actiecode":"Kortingscoupon")+' uitsluitend in Pasr</span></div>'+
            '<div class="pz2-publicbody"><p>Deze aanbieding is alleen te gebruiken in de Pasr: Klantenkaarten-app.</p>'+
            '<small>Geldig t/m '+escape(new Date(c.ends_at).toLocaleDateString("nl-NL"))+'</small>'+
-           '<p><a class="zk-btn" href="'+ios+'" rel="noopener">Open in Pasr</a></p></div></article>';
+           '<p class="pasr-add-row"><a class="pasr-add-badge" href="https://pasr.nl/add/'+(isCode?"a":"c")+'/'+encodeURIComponent(String(c.id).toLowerCase())+'"><picture>'+
+           '<source srcset="/badge/nl/wit.svg" media="(prefers-color-scheme: dark)"><img src="/badge/nl/zwart.svg" alt="Voeg toe aan Pasr" width="150" height="52"></picture></a>'+
+           '<small><a href="'+ios+'" rel="noopener">Pasr voor iPhone</a> · <a href="/android/">Android</a></small></p></div></article>';
        }).join("")||'<p>Er zijn momenteel geen beschikbare aanbiedingen.</p>';
    }
    search.addEventListener("input",show);

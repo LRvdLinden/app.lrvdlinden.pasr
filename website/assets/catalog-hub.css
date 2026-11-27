@@ -260,5 +260,14 @@
 }
 @media(max-width:380px){.zk-nav .zk-tag{display:none}}
 
+/* De knop "Voeg toe aan Pasr" (tools/make_add.py, badges in /badge/nl/) op gidsen, stempelkaarten en kortingsbonnen */
+.pasr-add-badge { display: inline-block; line-height: 0; border-radius: 12px; transition: transform .15s ease; }
+.pasr-add-badge img { display: block; width: auto; height: 52px; }
+.pasr-add-badge:hover { transform: translateY(-1px); }
+.pasr-add-badge:focus-visible { outline: 3px solid var(--iris, #6A5CFF); outline-offset: 3px; }
+.pasr-add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 14px 0 4px; }
+.pasr-add-row small { color: var(--ink-2); font-size: 13px; line-height: 1.4; }
+.pasr-add-row .pasr-add-badge img[height="38"] { height: 38px; }
+.pasr-add-join { margin-bottom: 30px; }
 /* Smalle schermen: de hero mag nooit breder worden dan het scherm (1fr = minmax(auto,1fr) rekte hem op tot de zoekbalk en tags) */
 @media(max-width:760px){.ch-hero{grid-template-columns:minmax(0,1fr)}.ch-hero-copy,.ch-hero-art,.ch-global-search{min-width:0;max-width:100%}.ch-global-search input{min-width:0}}
