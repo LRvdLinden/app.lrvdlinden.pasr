@@ -326,39 +326,39 @@ def feature_table():
 
 
 # ---------------------------------------------------------------------------------------------------- vragen
-FAQ = [
-    ("Wat kost Pasr Zakelijk?", "Niets. Pasr Zakelijk is gratis: geen abonnement, geen kosten per stempel of per klant en geen reclame op je kaart."),
-    ("Heb ik een kassakoppeling of apparaat nodig?", "Nee. Je scant de code van je klant met de app Pasr Zakelijk op je iPhone, iPad of Android-telefoon, of met de scanner op pasr.nl in elke browser met een camera."),
-    ("Moeten mijn klanten de app Pasr hebben?", "Nee. Met de gratis app Pasr (iPhone, Android) staat de kaart in de app en op hun Wallet-pas en krijgen ze een melding bij een stempel. Zonder app werkt de kaart in de browser: je klant scant de QR-code bij de toonbank en bewaart de kaart in zijn browser."),
-    ("Hoe voorkom ik dat iemand zelf stempels zet?", "Alleen jij en je medewerkers zetten stempels, nooit de klant. Met de afkoeltijd krijgt dezelfde klant na een stempel een tijdje geen nieuwe, en je kiest het maximum per scan. Elke stempel staat met wie, wat en wanneer in een logboek dat niemand kan wissen."),
+FAQ = [  # moet kloppen met wat live staat (tickets alleen gratis, gegevens 30 dagen na het event gewist, geen kassakoppeling)
+    ("Wat kost Pasr Zakelijk?", "Niets. Geen abonnement en geen kosten per klant, stempel, ticket of scan. Ook geen reclame op je kaart of ticket."),
+    ("Kan ik betaalde tickets verkopen?", "Nee. Tickets zijn alleen voor gratis events, zoals een borrel, workshop of open dag. Zo blijft het simpel: geen betalingen en geen ticketvoorwaarden."),
+    ("Welke gegevens vragen jullie bij een ticket?", "Voornaam, achternaam, e-mailadres en geboortedatum. Je ziet ze alleen voor je eigen event, en 30 dagen na het event wissen we ze."),
+    ("Welke gegevens zie ik bij stempelkaarten, bonnen en de klantenkaart?", "Bij stempelkaarten, kortingsbonnen en actiecodes alleen aantallen en de laatste tekens van een anonieme klantcode; Pasr vraagt je klanten daarvoor geen naam, e-mailadres of telefoonnummer. Bij een klantenkaart zie je het kaartnummer, en de naam alleen als de klant dat aanzet."),
+    ("Heb ik een kassakoppeling of apparaat nodig?", "Nee. Je scant met de app Pasr Zakelijk op je telefoon of tablet, of met de scanner in je browser. Ook de klantenkaart scan je zo: korting en spaarstand zie je meteen. Een koppeling met je kassa is er niet."),
+    ("Moeten mijn klanten de app Pasr hebben?", "Voor een stempelkaart en tickets niet: sparen werkt ook in de browser, en het ticket met QR-code staat op pasr.nl en in de bevestigingsmail. Met de gratis app Pasr (iPhone en Android) staat alles bij elkaar, ook in Apple Wallet of Google Wallet, met meldingen. Lid worden van je klantenkaart doet je klant in de app Pasr."),
+    ("Hoe voorkom ik misbruik?", "Alleen jij en je medewerkers scannen, nooit de klant. Bij stempelkaarten kies je een afkoeltijd en het maximum per scan, en een ticket kan maar één keer naar binnen. Alles staat in een logboek dat niemand kan wissen."),
     ("Kan ik een stempel terugdraaien?", "Ja. Binnen 2 minuten maak je de laatste stempel of inwisseling ongedaan. Het staat daarna doorgestreept in het logboek."),
-    ("Wat gebeurt er als een kaart vol is?", "Dan wissel je bij de volgende scan de beloning in. Kwamen er meer stempels bij dan er op de kaart passen, dan blijven die staan voor de volgende ronde."),
-    ("Kan ik mijn zaak ook in de browser beheren?", "Ja. Log in op pasr.nl/zakelijk met hetzelfde Pasr-account als in de app. Je maakt en bewerkt er kaarten, scant, nodigt medewerkers uit, past je instellingen aan en bekijkt je overzicht en logboek."),
-    ("Welke gegevens van mijn klanten zie ik?", "Alleen de laatste tekens van hun anonieme klantcode, hun stempels en beloningen. Pasr vraagt je klanten geen naam, e-mailadres of telefoonnummer."),
-    ("Hoe lang duurt het aanmelden?", "Een account maken en je zaak aanmelden kost een paar minuten. We keuren elke zaak met de hand goed, meestal binnen een werkdag. In de tussentijd ontwerp je je kaart al."),
-    ("Kan ik meerdere zaken beheren?", "Met één Pasr-account ben je eigenaar van één zaak, met tot 5 stempelkaarten. Daarnaast kun je medewerker zijn bij andere zaken. In het dashboard en in de app wissel je bovenin van zaak."),
-    ("Hoe werken kortingsbonnen en actiecodes?", "Een kortingsbon (procent of bedrag) haalt je klant op in Pasr; die krijgt een persoonlijke code die jij aan de kassa scant, één keer per klant. Een actiecode, zoals HERFST20, noemt de klant aan de kassa; jij kiest de limiet en de einddatum. Pauzeren, aanpassen of verwijderen kan altijd; wat al gebruikt is blijft in de historie."),
-    ("Kan ik meerdere vestigingen beheren?", "Ja. Voeg je vestigingen toe in het dashboard of de app; bij het scannen kies je de vestiging, zodat je per filiaal ziet waar gestempeld is."),
+    ("Kan ik met andere zaken samenwerken?", "Ja, met een gezamenlijke actie. Jij nodigt de zaken uit en elke zaak beslist zelf of hij meedoet; de actie start zodra genoeg zaken meedoen."),
+    ("Kan ik mijn zaak ook in de browser beheren?", "Ja. Log in op pasr.nl/zakelijk met hetzelfde Pasr-account als in de app. Je maakt er stempelkaarten, klantenkaarten, events en acties, scant, nodigt medewerkers uit en bekijkt je cijfers."),
+    ("Hoe lang duurt het aanmelden?", "Een account maken en je zaak aanmelden kost een paar minuten. We keuren elke zaak met de hand goed, meestal binnen een werkdag. In de tussentijd maak je alvast je eerste kaart of event."),
     ("Op welke apparaten werkt Pasr Zakelijk?", "De app Pasr Zakelijk werkt op iPhone en iPad met iOS 17 of nieuwer en op Android 8 of nieuwer (download op pasr.nl/zakelijk/download). Het dashboard en de scanner werken in elke moderne browser."),
 ]
 
 
 # ---------------------------------------------------------------------------------------------------- kop en voet
 def header(active=""):
-    """Kop van alle /zakelijk-pagina's: Inloggen en Aanmelden altijd zichtbaar, ook op een telefoon."""
-    links = [("maken", "/zakelijk/#maken", "Wat kun je maken"), ("terug", "/zakelijk/#terugkomen", "Klanten binden"),
-             ("functies", "/zakelijk/#functies", "Aan de toonbank"), ("faq", "/zakelijk/#faq", "Vragen"),
-             ("klanten", "/", "Pasr voor klanten")]
+    """Kop van alle /zakelijk-pagina's (ontwerp D): Wat kun je maken · Tickets · Scanner · Dashboard · Vragen.
+    Inloggen en Gratis aanmelden staan altijd in de kop; op een telefoon staat Inloggen in het menu."""
+    links = [("maken", "/zakelijk/#maken", "Wat kun je maken"), ("tickets", "/zakelijk/#tickets", "Tickets"),
+             ("scanner", "/zakelijk/#scanner", "Scanner"), ("dashboard", "/zakelijk/#dashboard", "Dashboard"),
+             ("faq", "/zakelijk/#faq", "Vragen")]
     li = "".join(f'<li class="zk-l"><a href="{h}">{t}</a></li>' for _, h, t in links)
     cur = ' aria-current="page"' if active == "dashboard" else ""
     return f'''  <header class="wrap nav zk-nav">
     <a class="brand" href="/zakelijk/" aria-label="Pasr Zakelijk"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span><em class="zk-tag">Zakelijk</em></a>
-    <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/support/">Support</a></li><li><a href="/zakelijk/dashboard/">Inloggen</a></li></ul></nav></details>
+    <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/zakelijk/dashboard/"{cur}>Inloggen</a></li><li><a href="/zakelijk/dashboard/#account">Gratis aanmelden</a></li><li><a href="/">Pasr voor klanten</a></li><li><a href="/support/">Support</a></li></ul></nav></details>
     <nav class="zk-desktop-actions" aria-label="Hoofdmenu">
       <ul>
         {li}
         <li><a class="nav-btn ghost" href="/zakelijk/dashboard/" data-zk-login{cur}>Inloggen</a></li>
-        <li><a class="nav-btn" href="/zakelijk/dashboard/#account" data-zk-signup>Aanmelden</a></li>
+        <li><a class="nav-btn" href="/zakelijk/dashboard/#account" data-zk-signup>Gratis aanmelden</a></li>
       </ul>
     </nav>
   </header>'''
@@ -437,9 +437,9 @@ SCRIPTS = '''  <script src="/assets/account-config.js"></script>
   <script src="/assets/zakelijk.js"></script>'''
 JSQR = '  <script src="/assets/vendor/jsqr.min.js"></script>\n'
 APP_PAGES = [
-    ("dashboard", "Dashboard | Pasr voor ondernemers", "Beheer de stempelkaarten van je zaak.", "Dashboard", "zk-dashboard",
+    ("dashboard", "Dashboard | Pasr voor ondernemers", "Beheer de stempelkaarten, klantenkaarten, tickets en acties van je zaak.", "Dashboard", "zk-dashboard",
      '<main class="wrap zk-dash" id="zk-app" aria-live="polite"><p class="zk-empty">Laden…</p></main>', True, APP_ID, "dashboard"),
-    ("scan", "Scanner | Pasr voor ondernemers", "Scan de stempelkaart van je klant.", "Scanner", "zk-scan",
+    ("scan", "Scanner | Pasr voor ondernemers", "Scan stempelkaarten, klantenkaarten, tickets, kortingsbonnen en actiecodes van je klanten.", "Scanner", "zk-scan",
      '<main class="wrap zk-scan" id="zk-scan" aria-live="polite"><p class="zk-empty">Laden…</p></main>', True, APP_ID, ""),
     ("kaart", "Stempelkaart | Pasr", "Spaar stempels bij deze zaak met Pasr of in je browser.", "Stempelkaart", "zk-join",
      '<main class="wrap zk-join" id="zk-join" aria-live="polite"><p class="zk-empty">Laden…</p></main>', False, PASR_APP_ID, ""),
@@ -521,38 +521,42 @@ def web_section():
 
 
 def page():
-    check_layout(FEATURES)
-    features = "\n".join(feature_card(*f) for f in FEATURES)
-    compare = "\n".join(f'          <div><strong>{a}</strong>{b}</div>\n          <div><strong>{c}</strong>{d}</div>' for a, b, c, d in COMPARE)
-    faq = "\n".join(f'''      <details id="{anchor(q)}">
-        <summary>{q}</summary>
-        <p>{a}</p>
-      </details>''' for q, a in FAQ)
-    faq_ld = ",".join('{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (json.dumps(q), json.dumps(a)) for q, a in FAQ)
-    desc = ("Gratis digitale stempelkaart voor je zaak. Stempelen met de app Pasr Zakelijk op iPhone, iPad of Android, "
-            "of gewoon in je browser. Klanten sparen in Pasr of hun browser.")
+    """De landingspagina pasr.nl/zakelijk: het brede platform (ontwerp D)."""
+    faq_ld = ",".join('{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (json.dumps(q, ensure_ascii=False), json.dumps(a, ensure_ascii=False)) for q, a in FAQ)
+    title = "Pasr Zakelijk: gratis klantenbinding, tickets en stempelkaarten | Pasr"
+    og_title = "Pasr Zakelijk: gratis klantenbinding, tickets en stempelkaarten"
+    desc = ("Gratis voor ondernemers: stempelkaarten, klantenkaarten met korting, tickets voor gratis events, kortingsbonnen "
+            "en actiecodes. Scannen met je telefoon, klanten bewaren alles in Pasr of Wallet.")
+    # og:image blijft de bestaande deelafbeelding (tools/make_website.py maakt /og/zakelijk.png); de alt-tekst beschrijft die.
     og_alt = "Twee digitale stempelkaarten van een koffiebar en een bakkerij, naast de tekst: Gratis digitale stempelkaart voor je zaak"
-    feature_list = json.dumps([re.sub(r"<[^>]+>", "", f[2]) for f in FEATURES], ensure_ascii=False)
-    steps = [("Meld je zaak aan", "Maak een gratis Pasr-account en meld je zaak aan. We keuren hem met de hand goed, meestal binnen een werkdag."),
-             ("Ontwerp je kaart", "Logo en kleur komen van je website. Kies het aantal stempels en de beloning, en zet de kaart online."),
-             ("Hang de QR-code op en scan", "Klanten scannen de QR-code of de flyer bij de toonbank. Jij scant hun kaart en kiest hoeveel stempels erbij komen.")]
-    steps_html = "".join(f"<li><h3>{a}</h3><p>{b}</p></li>" for a, b in steps)
+    features = ["Stempelkaarten met tussentijdse beloningen", "Klantenkaart met barcode (QR, Code 128 of EAN-13) en korting",
+                "Gratis tickets voor events met wachtlijst en scannen aan de deur", "Kortingsbonnen", "Actiecodes met limiet en einddatum",
+                "Gezamenlijke acties met andere zaken", "Knop Voeg toe aan Pasr voor je eigen website", "Eén scanner voor alles",
+                "Medewerkers en vestigingen", "Inzichten en marketingkalender", "Apple Wallet en Google Wallet"]
+    app_ld = json.dumps({"@context": "https://schema.org", "@type": "MobileApplication", "name": "Pasr Zakelijk",
+                         "operatingSystem": "iOS 17, iPadOS 17, Android 8, webbrowser", "applicationCategory": "BusinessApplication",
+                         "url": APP_URL, "description": "Gratis klantenbinding voor je zaak: stempelkaarten, klantenkaarten, tickets voor gratis events, "
+                         "kortingsbonnen, actiecodes en acties met andere zaken. Scannen met je telefoon; klanten bewaren alles in Pasr of Wallet.",
+                         "featureList": features, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+                         "publisher": {"@type": "Organization", "name": "Pasr", "url": "https://pasr.nl/"}}, ensure_ascii=False)
+    keywords = ("klantenbinding, digitale stempelkaart, klantenkaart maken, klantenkaart met barcode, gratis tickets event, "
+                "ticketscanner, kortingsbon maken, actiecode, loyaliteitsprogramma, stempelkaart zonder kassakoppeling, Pasr Zakelijk")
     return f'''<!doctype html>
 <html lang="nl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-itunes-app" content="app-id={APP_ID}">
-  <title>Pasr voor ondernemers: gratis digitale stempelkaart | Pasr</title>
+  <title>{title}</title>
   <meta name="description" content="{desc}">
-  <meta name="keywords" content="digitale stempelkaart, stempelkaart app, spaarkaart voor je zaak, klantenkaart maken, loyaliteitskaart horeca, stempelkaart zonder kassakoppeling, gratis stempelkaart, Pasr Zakelijk">
+  <meta name="keywords" content="{keywords}">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://pasr.nl/zakelijk/">
   <link rel="alternate" hreflang="nl-NL" href="https://pasr.nl/zakelijk/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Pasr">
   <meta property="og:url" content="https://pasr.nl/zakelijk/">
-  <meta property="og:title" content="Pasr voor ondernemers: gratis digitale stempelkaart">
+  <meta property="og:title" content="{og_title}">
   <meta property="og:description" content="{desc}">
   <meta property="og:image" content="https://pasr.nl/og/zakelijk.png">
   <meta property="og:image:type" content="image/png">
@@ -561,12 +565,12 @@ def page():
   <meta property="og:image:alt" content="{og_alt}">
   <meta property="og:locale" content="nl_NL">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Pasr voor ondernemers: gratis digitale stempelkaart">
+  <meta name="twitter:title" content="{og_title}">
   <meta name="twitter:description" content="{desc}">
   <meta name="twitter:image" content="https://pasr.nl/og/zakelijk.png">
   <meta name="twitter:image:alt" content="{og_alt}">
-  <script type="application/ld+json">{{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{{"@type":"ListItem","position":1,"name":"Pasr","item":"https://pasr.nl/"}},{{"@type":"ListItem","position":2,"name":"Pasr voor ondernemers","item":"https://pasr.nl/zakelijk/"}}]}}</script>
-  <script type="application/ld+json">{{"@context":"https://schema.org","@type":"MobileApplication","name":"Pasr Zakelijk","operatingSystem":"iOS 17, iPadOS 17, Android 8, webbrowser","applicationCategory":"BusinessApplication","url":"{APP_URL}","description":"Digitale stempelkaart voor je zaak: stempels zetten met je telefoon, klanten sparen in Pasr.","featureList":{feature_list},"offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"publisher":{{"@type":"Organization","name":"Pasr","url":"https://pasr.nl/"}}}}</script>
+  <script type="application/ld+json">{{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{{"@type":"ListItem","position":1,"name":"Pasr","item":"https://pasr.nl/"}},{{"@type":"ListItem","position":2,"name":"Pasr Zakelijk","item":"https://pasr.nl/zakelijk/"}}]}}</script>
+  <script type="application/ld+json">{app_ld}</script>
   <script type="application/ld+json">{{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{faq_ld}]}}</script>
   <meta name="theme-color" content="#F4F3FF">
   <link rel="icon" type="image/png" href="/assets/pasr-zakelijk-favicon.png">
@@ -583,26 +587,20 @@ def page():
 {zv.usp()}
 {header()}
 
-  <main class="zk-home zc-home">
-{zv.hero(badges(), DEMO)}
-{zv.steps()}
+  <main class="zk-home zc-home zn-home">
+{zv.hero(APP_URL)}
 {zv.products()}
-{zv.retention()}
-{zv.counter()}
-{zv.banners()}
-{zv.dark_band()}
-
-    <section class="wrap" id="faq" aria-labelledby="faq-title">
-      <div class="zc-heading"><h2 id="faq-title">Vragen</h2><span class="zc-underline" style="background:var(--iris)"></span></div>
-      <div class="faq">
-{faq}
-      </div>
-    </section>
-
+{zv.add_button()}
+{zv.scanner()}
+{zv.dashboard('<img src="/assets/icon.png" alt="">')}
+{zv.wallet()}
+{zv.steps()}
+{zv.faq(FAQ, anchor)}
 {zv.closer(badges(lazy=True))}
   </main>
 
 {FOOTER}
+{zv.FIT_FALLBACK}
   <script src="/assets/site.js" defer></script>
   <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>
