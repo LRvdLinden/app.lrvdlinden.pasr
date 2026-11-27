@@ -2,11 +2,12 @@
 -- Anti-bot voor de openbare formulieren van pasr.nl (aanmelden voor een event, ticket afmelden, en wat later komt).
 -- Idempotent; draait in de workflow Backend na 20261127-tickets-klantenkaart.sql.
 --
--- Op de website: een verborgen veld "website" (honeypot, zelfde als pasr.nl/account) en de invultijd. Is het veld
--- ingevuld of is het formulier sneller verstuurd dan een mens kan, dan doet de pagina alsof het gelukt is en stuurt ze
--- niets. Voor wie de functies rechtstreeks aanroept, controleren pasr_event_register en pasr_event_ticket_cancel
--- hetzelfde (p_hp, p_fill_ms; achteraan met een standaardwaarde, de apps hoeven niets mee te sturen): stil niets
--- doen, met een gewoon antwoord. Daarnaast een rem per e-mailadres (gehasht) naast de bestaande rem per internetadres
+-- Op de website: twee honeypots die een mens niet ziet: een verborgen tekstveld "hp_extra" en een verborgen vinkje
+-- "nieuwsbrief_extra" ("Stuur mij aanbiedingen"). Is een van beide ingevuld, dan doet de pagina alsof het gelukt is en
+-- stuurt ze niets. Er is geen tijdmeting: snel invullen (wachtwoordmanager, automatisch invullen) is gewoon toegestaan.
+-- Voor wie de functies rechtstreeks aanroept, controleren pasr_event_register en pasr_event_ticket_cancel hetzelfde
+-- via p_hp (niet leeg = bot; achteraan met een standaardwaarde, de apps hoeven niets mee te sturen): stil niets
+-- doen, met een gewoon antwoord. p_fill_ms staat nog in de signatuur voor oudere pagina's, maar wordt genegeerd. Daarnaast een rem per e-mailadres (gehasht) naast de bestaande rem per internetadres
 -- (pasr_web_rate_hit in schema.sql).
 --
 -- Er wordt geen e-mail- of IP-adres bewaard: alleen een gezouten hash van het e-mailadres, hoogstens 2 dagen, en per
@@ -17,7 +18,7 @@
 create table if not exists public.pasr_form_bot_log (
   id bigint generated always as identity primary key,
   form text not null check (char_length(form) <= 40),
-  reason text not null check (reason in ('honeypot', 'too_fast')),
+  reason text not null check (reason in ('honeypot', 'too_fast')),   -- too_fast: alleen nog in oude regels
   at timestamptz not null default now()
 );
 create index if not exists pasr_form_bot_log_at on public.pasr_form_bot_log (at);

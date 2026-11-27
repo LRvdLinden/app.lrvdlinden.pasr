@@ -689,9 +689,10 @@ begin
     'cancel_message', e.cancel_message);
 end $$;
 
--- p_hp en p_fill_ms (anti-bot, 20261127-antibot-forms.sql): het verborgen veld "website" en de invultijd in ms van
--- pasr.nl/add/e/…; achteraan met een standaardwaarde, zodat de apps (7 parameters) gewoon blijven werken. De oude
--- variant met 7 parameters gaat weg: twee varianten naast elkaar maakt de aanroep met 7 namen dubbelzinnig.
+-- p_hp (anti-bot, 20261127-antibot-forms.sql): honeypot van pasr.nl/add/e/… (verborgen tekstveld of vinkje); niet leeg
+-- = bot. p_fill_ms wordt genegeerd (er is geen tijdmeting meer); hij blijft in de signatuur zodat oudere pagina's in
+-- een cache niet breken. Beide achteraan met een standaardwaarde, zodat de apps (7 parameters) gewoon blijven werken.
+-- De oude variant met 7 parameters gaat weg: twee varianten naast elkaar maakt de aanroep met 7 namen dubbelzinnig.
 drop function if exists public.pasr_event_register(uuid, text, text, text, date, uuid, integer);
 create or replace function public.pasr_event_register(p_event uuid, p_first_name text, p_last_name text, p_email text,
   p_birth_date date, p_ticket_type uuid, p_count integer, p_hp text default null, p_fill_ms integer default null) returns json
@@ -702,10 +703,10 @@ declare
   v_count integer := coalesce(p_count, 1); v_status text; v_reg uuid; v_tid uuid; v_code text; v_list jsonb := '[]'::jsonb;
   v_have integer; v_free integer; i integer; v_first_link text;
 begin
-  -- bot (honeypot ingevuld of sneller dan een mens): niets aanmaken en niets mailen, wel een gewoon antwoord
-  if coalesce(btrim(p_hp), '') <> '' or (p_fill_ms is not null and p_fill_ms < 2000) then
+  -- bot (honeypot ingevuld): niets aanmaken en niets mailen, wel een gewoon antwoord. p_fill_ms telt niet mee.
+  if coalesce(btrim(p_hp), '') <> '' then
     if to_regprocedure('public.pasr_form_bot(text,text)') is not null then
-      perform public.pasr_form_bot('event_register', case when coalesce(btrim(p_hp), '') <> '' then 'honeypot' else 'too_fast' end);
+      perform public.pasr_form_bot('event_register', 'honeypot');
     end if;
     return json_build_object('status', 'registered', 'tickets', '[]'::json, 'add_link', null, 'registration_id', null,
       'event_id', p_event);
@@ -822,16 +823,16 @@ begin
 end $$;
 
 -- Extra (openbaar, met de code): zelf afmelden. Alle tickets van de aanmelding vervallen; de wachtlijst schuift door.
--- p_hp en p_fill_ms: anti-bot zoals bij pasr_event_register (oude variant met 2 parameters gaat weg).
+-- p_hp: honeypot zoals bij pasr_event_register; p_fill_ms wordt genegeerd (oude variant met 2 parameters gaat weg).
 drop function if exists public.pasr_event_ticket_cancel(uuid, text);
 create or replace function public.pasr_event_ticket_cancel(p_ticket uuid, p_code text, p_hp text default null,
   p_fill_ms integer default null) returns json
 language plpgsql security definer set search_path = '' as $$
 declare t public.pasr_tk_tickets; n integer;
 begin
-  if coalesce(btrim(p_hp), '') <> '' or (p_fill_ms is not null and p_fill_ms < 1000) then
+  if coalesce(btrim(p_hp), '') <> '' then   -- bot: honeypot ingevuld; p_fill_ms telt niet mee
     if to_regprocedure('public.pasr_form_bot(text,text)') is not null then
-      perform public.pasr_form_bot('event_ticket_cancel', case when coalesce(btrim(p_hp), '') <> '' then 'honeypot' else 'too_fast' end);
+      perform public.pasr_form_bot('event_ticket_cancel', 'honeypot');
     end if;
     return json_build_object('cancelled', 0, 'promoted', 0);
   end if;

@@ -228,7 +228,7 @@ Gebruikers kunnen een gratis account maken (e-mail + wachtwoord) en hun kaarten 
 
 - **App**: `App/Account/` (geen SDK, gewone HTTPS). Sessie in de sleutelhanger, alleen op dit apparaat. `CardSync` synchroniseert in één ronde via de databasefunctie `pasr_sync`; de nieuwste wijziging van een kaart wint. Welkomstschermen: `App/Views/OnboardingView.swift`.
 - **Server**: `supabase/schema.sql`. Kaarten staan versleuteld (pgcrypto, AES-256) in `pasr_cards`, alleen bereikbaar via `pasr_sync` en `pasr_delete_account`.
-- **Tegen bots**: verborgen honeypotveld `website` + tijdmeting (`fill_ms`) in app en op pasr.nl/account, limiet per netwerk (3/uur, 10/dag, alleen een gezouten hash) en wegwerpadressen geweigerd, via de Auth-hook `pasr_before_user_created`. Onbevestigde accounts zonder kaarten gaan na 48 uur weg.
+- **Tegen bots**: honeypots (in de app het veld `website`, op pasr.nl een verborgen tekstveld `hp_extra` en vinkje `nieuwsbrief_extra`; geen tijdmeting), limiet per netwerk (3/uur, 10/dag, alleen een gezouten hash) en wegwerpadressen geweigerd, via de Auth-hook `pasr_before_user_created`. Onbevestigde accounts zonder kaarten gaan na 48 uur weg.
 - **Mails** in Pasr-huisstijl: `supabase/templates/build.py` (bevestigen, wachtwoord vergeten, e-mail wijzigen, inloglink). Links gaan naar `pasr.nl/bevestigen/`, die pas na een tik bevestigt.
 - **Workflow Backend** zet schema, mails, hook en Auth-instellingen bij elke wijziging in `supabase/`.
 

@@ -103,10 +103,12 @@ grant execute on function public.pasr_delete_account() to authenticated;
 -- ---------------------------------------------------------------------------------------------------------------
 -- Bescherming tegen nepaccounts (Auth-hook "Before User Created", aangezet door de workflow Backend)
 --
--- 1. honeypot: het verborgen veld "website" (app en pasr.nl/account) is ingevuld → user_metadata.hp niet leeg.
--- 2. te snel: user_metadata.fill_ms < 2000 (formulier sneller verstuurd dan een mens kan).
--- 3. te veel: meer dan 3 accounts per uur of 10 per dag vanaf één netwerk.
--- 4. wegwerp-e-mail: domein in pasr_disposable_domains.
+-- 1. honeypot: een verborgen veld (tekstveld of vinkje op pasr.nl, het veld "website" in de apps) is ingevuld →
+--    user_metadata.hp niet leeg.
+-- 2. te veel: meer dan 3 accounts per uur of 10 per dag vanaf één netwerk.
+-- 3. wegwerp-e-mail: domein in pasr_disposable_domains.
+-- Geen tijdmeting meer: wie snel is (wachtwoordmanager, automatisch invullen) is geen bot. Oudere apps sturen nog
+-- user_metadata.fill_ms mee; dat wordt genegeerd en niet bewaard (pasr_user_meta).
 -- Er wordt geen IP- of e-mailadres bewaard: alleen een gezouten hash van het netwerk, 7 dagen.
 create table if not exists public.pasr_signup_attempts (
   id bigint generated always as identity primary key,
@@ -134,7 +136,7 @@ declare
   u jsonb := case when jsonb_typeof(event->'user') = 'object' then event->'user' else '{}'::jsonb end;
   meta jsonb := u->'user_metadata';
   ip text := nullif(btrim(coalesce(event->'metadata'->>'ip_address', '')), '');
-  net text; h text; reason text; fill numeric; dom text;
+  net text; h text; reason text; dom text;
 begin
   if ip is null or coalesce(u->'app_metadata'->>'provider', 'email') <> 'email' then return '{}'::jsonb; end if;
   begin
@@ -142,14 +144,9 @@ begin
     net := case when position(':' in ip) > 0 then set_masklen(ip::inet, 64)::cidr::text else host(ip::inet) end;
     select encode(digest(signup_salt || '|' || net, 'sha256'), 'hex') into h from public.pasr_secret where id = 1;
     perform pg_advisory_xact_lock(hashtextextended('pasr_signup:' || h, 0));
-    if jsonb_typeof(meta) = 'object' and jsonb_typeof(meta->'fill_ms') = 'number' then
-      fill := (meta->>'fill_ms')::numeric;
-    end if;
     dom := lower(substring(coalesce(u->>'email', '') from '@([^@]*)$'));
     if jsonb_typeof(meta) = 'object' and coalesce(btrim(meta->>'hp'), '') <> '' then
       reason := 'honeypot';
-    elsif fill is not null and fill < 2000 then
-      reason := 'too_fast';
     elsif (select count(*) from public.pasr_signup_attempts where ip_hash = h and allowed and at > now() - interval '1 hour') >= 3
        or (select count(*) from public.pasr_signup_attempts where ip_hash = h and allowed and at > now() - interval '24 hours') >= 10 then
       reason := 'rate_limit';
@@ -177,7 +174,7 @@ grant execute on function public.pasr_before_user_created(jsonb) to supabase_aut
 grant usage on schema public to supabase_auth_admin;
 grant all on public.pasr_signup_attempts, public.pasr_disposable_domains, public.pasr_secret to supabase_auth_admin;
 
--- Honeypot en tijdmeting nooit in het account bewaren; voornaam opschonen (max. 40 tekens, geen links of HTML).
+-- Honeypot en (van oudere apps) de invultijd nooit in het account bewaren; voornaam opschonen (max. 40 tekens, geen links of HTML).
 create or replace function public.pasr_user_meta() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare v text;

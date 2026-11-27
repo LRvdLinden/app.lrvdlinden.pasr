@@ -2,15 +2,17 @@
    tools/make_add.py. Haalt het event op met pasr_event_public (openbaar, zonder persoonsgegevens) en meldt aan met
    pasr_event_register. Voornaam, achternaam, e-mail en geboortedatum zijn verplicht en gaan alleen naar de organisator.
    Daarna: bevestiging met de knop "Voeg toe aan Pasr" (add-link van het ticket) en "Open in Pasr".
-   Anti-bot (zoals pasr.nl/account): verborgen veld "website" en de invultijd. Ingevuld of sneller dan MIN_MS: we tonen
-   de bevestiging, maar sturen niets naar de server. De invultijd gaat mee als p_fill_ms (server: 20261127-antibot-forms.sql). */
+   Anti-bot (zoals pasr.nl/account): twee honeypots die een mens niet ziet, een tekstveld "hp_extra" en een vinkje
+   "nieuwsbrief_extra". Is een van beide ingevuld, dan tonen we de bevestiging maar sturen we niets naar de server. Geen
+   tijdmeting: snel invullen (automatisch aanvullen) is gewoon goed. Server: p_hp in 20261127-antibot-forms.sql. */
 (function () {
   "use strict";
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var $ = function (id) { return document.getElementById(id); };
   var TZ = "Europe/Amsterdam";
-  var MIN_MS = 3000;   // vier velden invullen kan een mens niet sneller
-  var HP = '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
+  var HP = '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" name="hp_extra" tabindex="-1" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore></label><label><input type="checkbox" name="nieuwsbrief_extra" value="1" tabindex="-1" autocomplete="off"> Stuur mij aanbiedingen</label></div>';
+  // honeypot-waarde zoals de server hem als p_hp krijgt: de tekst, of "x" als het vinkje aan staat; leeg = mens
+  function hpValue(f) { var t = f.querySelector('[name="hp_extra"]'), c = f.querySelector('[name="nieuwsbrief_extra"]'); return (t && t.value.trim()) || (c && c.checked ? "x" : ""); }
   var ICON = {
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
     pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
@@ -37,13 +39,6 @@
   // datum (jjjj-mm-dd) in de tijdzone van de bezoeker, n dagen vanaf vandaag
   function localDay(n) { var d = new Date(); d.setDate(d.getDate() + (n || 0)); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   var BIRTH_MIN = "1900-01-01";
-
-  // Nieuwe parameters (p_fill_ms) eerst; kent de server ze nog niet (PGRST202, website eerder online dan de backend),
-  // dan dezelfde aanroep zonder.
-  function rpcCompat(name, body, extra) {
-    var all = {}; Object.keys(body).forEach(function (k) { all[k] = body[k]; }); Object.keys(extra).forEach(function (k) { all[k] = extra[k]; });
-    return rpc(name, all).catch(function (x) { if (x && x.code === "PGRST202") return rpc(name, body); throw x; });
-  }
 
   function rpc(name, body) {
     var cfg = window.PASR_ACCOUNT || {};
@@ -137,7 +132,7 @@
       '<p class="ev-privacy">' + ICON.lock + "<span>Je gegevens gaan alleen naar " + esc(e.business_name) + " voor dit event. Op het ticket staat alleen je naam; de QR-code bevat geen persoonsgegevens. Na het event worden ze gewist.</span></p>" +
       HP + '<p class="ev-err" id="ev-err" role="alert" hidden></p>' +
       '<button class="ev-submit" type="submit" id="ev-submit">' + (full ? "Op de wachtlijst" : "Gratis aanmelden") + "</button></form>";
-    var n = 1, out = $("ev-n"), shown = Date.now();
+    var n = 1, out = $("ev-n");
     // lege datum: eigen tekst dd-mm-jjjj op telefoons (iOS toont anders de datum van vandaag in een leeg veld)
     var bf = $("ev-form").birth, wrap = bf.parentNode;
     if (window.matchMedia && matchMedia("(pointer: coarse)").matches) wrap.classList.add("ev-date-ph");
@@ -161,12 +156,11 @@
         return;
       }
       err.hidden = true; btn.disabled = true; btn.textContent = "Bezig…";
-      var fill = Date.now() - shown;
-      if (f.website.value || fill < MIN_MS) {   // bot: doe alsof, stuur niets
+      if (hpValue(f)) {   // bot (honeypot ingevuld): doe alsof, stuur niets
         return setTimeout(function () { done(e, { status: full ? "waitlist" : "registered", tickets: [] }, email, first); }, 600);
       }
-      rpcCompat("pasr_event_register", { p_event: e.id, p_first_name: first, p_last_name: last, p_email: email, p_birth_date: birth,
-        p_ticket_type: typeEl && typeEl.value ? typeEl.value : null, p_count: n }, { p_fill_ms: Math.min(fill, 2147483647) })
+      rpc("pasr_event_register", { p_event: e.id, p_first_name: first, p_last_name: last, p_email: email, p_birth_date: birth,
+        p_ticket_type: typeEl && typeEl.value ? typeEl.value : null, p_count: n })
         .then(function (r) { done(e, r, email, first); })
         .catch(function (x) {
           btn.disabled = false; btn.textContent = full ? "Op de wachtlijst" : "Gratis aanmelden";

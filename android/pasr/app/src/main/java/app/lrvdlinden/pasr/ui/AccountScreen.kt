@@ -128,7 +128,7 @@ private fun AccountContent(onDone: (() -> Unit)?) {
     OutlinedTextField(password, { password = it }, Modifier.fillMaxWidth().padding(vertical = 4.dp), label = { Text("Wachtwoord") },
         singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-    // honeypot (veld "website") blijft in de app altijd leeg; de server rekent ook de invultijd mee (fill_ms)
+    // honeypot (veld "website") blijft in de app altijd leeg; fill_ms gaat nog mee, maar de server negeert hem (geen tijdmeting)
     message?.let { Gap(8.dp); Text(it, color = MaterialTheme.colorScheme.error) }
     info?.let { Gap(8.dp); Text(it, color = MaterialTheme.colorScheme.tertiary) }
     Gap(16.dp)

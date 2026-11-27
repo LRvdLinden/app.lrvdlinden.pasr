@@ -1,4 +1,6 @@
--- Anti-bot voor openbare formulieren (20261127-antibot-forms.sql en p_hp/p_fill_ms in 20261127-tickets-klantenkaart.sql).
+-- Anti-bot voor openbare formulieren (20261127-antibot-forms.sql en p_hp in 20261127-tickets-klantenkaart.sql).
+-- Alleen de honeypot (p_hp: tekstveld of vinkje, de website stuurt dan 'x') houdt iets tegen; p_fill_ms wordt genegeerd:
+-- er is geen afwijzing op tijd meer.
 -- Draait na tickets_klantenkaart_smoke.sql in de PR-check "backend-integration". Alleen testomgeving.
 
 create or replace function pg_temp.expect(p_sql text, p_code text) returns void language plpgsql as $$
@@ -21,7 +23,7 @@ declare
  klant text := '33333333-3333-4333-8333-333333333333';
  ev uuid; r json; x json; n int; regs int; outbox int; i int; tid uuid; code text;
 begin
- -- ---- één variant per functie; de oude (zonder p_hp/p_fill_ms) bestaat niet meer ----
+ -- ---- één variant per functie (p_fill_ms blijft in de signatuur); de oude (zonder p_hp/p_fill_ms) bestaat niet meer ----
  if to_regprocedure('public.pasr_event_register(uuid,text,text,text,date,uuid,integer)') is not null then
    raise exception 'old pasr_event_register overload still exists'; end if;
  if to_regprocedure('public.pasr_event_ticket_cancel(uuid,text)') is not null then
@@ -50,26 +52,32 @@ begin
  select count(*) into outbox from public.pasr_tk_outbox;
  r := public.pasr_event_register(ev, 'Bot', 'Bot', 'bot@example.nl', '1990-01-01', null, 1, 'https://spam.example', 9000);
  if r->>'status' <> 'registered' or json_array_length(r->'tickets') <> 0 or r->>'add_link' is not null then raise exception 'honeypot answer %', r; end if;
- -- te snel (onder 2 seconden), ook met ongeldige invoer: geen foutmelding die iets verraadt
- r := public.pasr_event_register(ev, '', '', 'geen-mail', null, null, 1, null, 400);
- if r->>'status' <> 'registered' then raise exception 'too fast answer %', r; end if;
+ -- het vinkje (de website stuurt p_hp = 'x'), ook met ongeldige invoer: geen foutmelding die iets verraadt
+ r := public.pasr_event_register(ev, '', '', 'geen-mail', null, null, 1, 'x');
+ if r->>'status' <> 'registered' then raise exception 'checkbox honeypot answer %', r; end if;
  r := public.pasr_event_register(p_event => ev, p_first_name => 'Bot', p_last_name => 'Bot', p_email => 'bot@example.nl',
    p_birth_date => '1990-01-01', p_ticket_type => null, p_count => 1, p_hp => '  x  ');
  if (select count(*) from public.pasr_tk_registrations where event_id = ev) <> regs then raise exception 'bot created a registration'; end if;
  if (select count(*) from public.pasr_tk_outbox) <> outbox then raise exception 'bot queued a mail'; end if;
- if (select count(*) from public.pasr_form_bot_log where form = 'event_register' and reason = 'honeypot') <> 2
-    or (select count(*) from public.pasr_form_bot_log where form = 'event_register' and reason = 'too_fast') <> 1 then
+ if (select count(*) from public.pasr_form_bot_log where form = 'event_register' and reason = 'honeypot') <> 3
+    or exists (select 1 from public.pasr_form_bot_log where reason = 'too_fast') then
    raise exception 'bot log %', (select json_agg(l) from public.pasr_form_bot_log l); end if;
- if (public.pasr_form_bot_stats()->'day'->>'event_register:honeypot')::int <> 2 then raise exception 'bot stats %', public.pasr_form_bot_stats(); end if;
+ if (public.pasr_form_bot_stats()->'day'->>'event_register:honeypot')::int <> 3 then raise exception 'bot stats %', public.pasr_form_bot_stats(); end if;
  if exists (select 1 from public.pasr_form_rate) then raise exception 'bots must not count for the rate limit'; end if;
 
- -- ---- een mens: leeg veld, normale invultijd; en de apps zonder de nieuwe parameters ----
+ -- ---- een mens: lege honeypot; ook razendsnel (p_fill_ms 0 of 50, oude pagina in een cache) gaat gewoon door;
+ -- en de apps zonder de nieuwe parameters ----
  r := public.pasr_event_register(ev, 'Anna', 'de Vries', 'anna.antibot@example.nl', '1991-03-14', null, 1, '', 8000);
  if r->>'status' <> 'registered' or json_array_length(r->'tickets') <> 1 then raise exception 'human %', r; end if;
+ r := public.pasr_event_register(ev, 'Snelle', 'Invuller', 'snel.antibot@example.nl', '1993-06-01', null, 1, null, 50);
+ if r->>'status' <> 'registered' or json_array_length(r->'tickets') <> 1 then raise exception 'fast human rejected %', r; end if;
+ r := public.pasr_event_register(p_event => ev, p_first_name => 'Nul', p_last_name => 'Seconden', p_email => 'nul.antibot@example.nl',
+   p_birth_date => '1994-02-02', p_ticket_type => null, p_count => 1, p_fill_ms => 0);
+ if r->>'status' <> 'registered' or json_array_length(r->'tickets') <> 1 then raise exception 'zero fill_ms rejected %', r; end if;
  r := public.pasr_event_register(ev, 'Mehmet', 'Yilmaz', 'mehmet.antibot@example.nl', '1985-11-02', null, 1);
  if r->>'status' <> 'registered' then raise exception 'app call without new params %', r; end if;
  tid := (r->'tickets'->0->>'ticket_id')::uuid; code := r->'tickets'->0->>'code';
- if (select count(*) from public.pasr_tk_outbox) <> outbox + 2 then raise exception 'human confirmations not queued'; end if;
+ if (select count(*) from public.pasr_tk_outbox) <> outbox + 4 then raise exception 'human confirmations not queued'; end if;
  -- geboortedatum in de toekomst of leeg blijft ongeldig
  perform pg_temp.expect(format('select public.pasr_event_register(%L,''Sanne'',''Bakker'',''s@example.nl'',%L,null,1,null,5000)', ev, current_date + 1), 'invalid_input');
 
@@ -92,11 +100,13 @@ begin
  perform set_config('app.user_id', '', true);
  x := public.pasr_event_ticket_cancel(tid, code, 'https://spam.example', 5000);
  if (x->>'cancelled')::int <> 0 then raise exception 'bot cancelled %', x; end if;
- x := public.pasr_event_ticket_cancel(tid, code, null, 300);
- if (x->>'cancelled')::int <> 0 then raise exception 'too fast cancelled %', x; end if;
+ x := public.pasr_event_ticket_cancel(tid, code, 'x');   -- vinkje aangevinkt
+ if (x->>'cancelled')::int <> 0 then raise exception 'checkbox bot cancelled %', x; end if;
  if (select status from public.pasr_tk_tickets where id = tid) <> 'registered' then raise exception 'ticket touched by bot'; end if;
  if (select count(*) from public.pasr_form_bot_log where form = 'event_ticket_cancel') <> 2 then raise exception 'cancel bot log'; end if;
- x := public.pasr_event_ticket_cancel(tid, code, '', 4000);
+ if exists (select 1 from public.pasr_form_bot_log where reason = 'too_fast') then raise exception 'too_fast must not be logged anymore'; end if;
+ -- een mens die meteen afmeldt (p_fill_ms 10) gaat gewoon door
+ x := public.pasr_event_ticket_cancel(tid, code, '', 10);
  if (x->>'cancelled')::int <> 1 then raise exception 'human cancel %', x; end if;
  -- zonder de nieuwe parameters (apps, oude pagina): code blijft het bewijs
  perform pg_temp.expect(format('select public.pasr_event_ticket_cancel(%L,''FOUT'')', tid), 'invalid_code');
