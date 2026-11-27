@@ -348,7 +348,7 @@ def header(active=""):
     cur = ' aria-current="page"' if active == "dashboard" else ""
     return f'''  <header class="wrap nav zk-nav">
     <a class="brand" href="/zakelijk/" aria-label="Pasr Zakelijk"><img src="/assets/icon.png" alt="" width="36" height="36"><span>pasr</span><em class="zk-tag">Zakelijk</em></a>
-    <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg><span>Menu</span></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/support/">Support</a></li></ul></nav></details>
+    <details class="zk-mobile-menu ch-menu"><summary aria-label="Zakelijk menu openen of sluiten"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path class="ch-hamburger" d="M4 6h16M4 12h16M4 18h16"/><path class="ch-close" d="m6 6 12 12M18 6 6 18"/></svg></summary><nav aria-label="Mobiel zakelijk menu"><ul>{li}<li><a href="/support/">Support</a></li></ul></nav></details>
     <nav class="zk-desktop-actions" aria-label="Hoofdmenu">
       <ul>
         {li}

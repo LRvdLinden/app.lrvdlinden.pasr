@@ -105,7 +105,8 @@
   .hv2-stampcard { width: 150px; }
 }
 @media (max-width: 560px) {
-  .hv2-usp ul { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .hv2-usp ul { justify-content: center; }
+  .hv2-usp li:not(:nth-child(2)) { display: none; }
   .hv2-promo { flex-direction: column; align-items: flex-start; }
   .hv2-stage { height: 520px; }
   .hv2-float { width: 112px; }
