@@ -36,6 +36,16 @@
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
     undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
     download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M4 20h16"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></svg>',
+    tag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.2 6.2a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.4"/></svg>',
+    code: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8.5 7-5 5 5 5M15.5 7l5 5-5 5"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
+    bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M6.5 16v-5M10.5 16V7M14.5 16v-7M18.5 16V5"/></svg>',
+    more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18.5" cy="12" r="1.3" fill="currentColor"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ic-down"><path d="m6 9 6 6 6-6"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ic-check"><path d="M5 12.5 10 17 19 7"/></svg>',
   };
 
   // ---------------------------------------------------------------- hulpjes
@@ -118,7 +128,9 @@
     return data;
   }
   function keep(s) {
-    session = { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: Date.now() + (s.expires_in || 3600) * 1000, email: s.user && s.user.email };
+    var meta = (s.user && s.user.user_metadata) || {}, first = String(meta.first_name || (session && session.first_name) || "").replace(/[<>]/g, "").trim().slice(0, 40);
+    session = { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: Date.now() + (s.expires_in || 3600) * 1000, email: (s.user && s.user.email) || (session && session.email) };
+    if (first) session.first_name = first;
     saveSession(session);
   }
   async function token() {
@@ -212,7 +224,7 @@
       var btn = ev.currentTarget; btn.disabled = true;
       try {
         await rpc("pasr_business_community_accept_token", { p_business: b.id, p_token: t }, true);
-        communityToken(null); box.remove(); toast("Je doet mee aan " + p.title); go("samenwerkingen");
+        communityToken(null); box.remove(); toast("Je doet mee aan " + p.title); go("gezamenlijke-acties");
       } catch (e) {
         setMsg($("#zkCiMsg"), nice(e)); btn.disabled = false;
         if (/invite_(expired|not_found)|already_participant/.test(String(e.message || ""))) communityToken(null);
@@ -221,27 +233,38 @@
   }
 
   // ---------------------------------------------------------------- dashboard: pasr.nl/zakelijk/dashboard/
-  // Alles wat de app Pasr Zakelijk kan, met dezelfde databasefuncties. Tabs staan in TABS; een nieuwe tab = een regel
-  // in TABS plus een functie in VIEWS. Eigenaar: alle tabs. Medewerker: alleen Scannen. Meerdere zaken: zaakkiezer.
-  var dash = { me: null, bizId: null, tab: null, sub: null, edit: null, chart: { days: 30, metric: "stamps", prev: false } };
+  // Alles wat de app Pasr Zakelijk kan, met dezelfde databasefuncties. Ingelogd is het een app-scherm: werkbalk (zaakkiezer,
+  // zoeken, Scannen, meldingen, account), een zijbalk in groepen en op een telefoon een onderbalk zoals de app.
+  // Onderdelen staan in TABS; een nieuw onderdeel = een regel in TABS plus een functie in VIEWS.
+  // Eigenaar: alles. Medewerker: alleen Scannen. Geblokkeerde zaak: alleen Account. Meerdere zaken: zaakkiezer.
+  var dash = { me: null, bizId: null, tab: null, sub: null, edit: null, chart: { days: 30, metric: "stamps", prev: false }, today: { days: 30 }, filter: "alles", extra: null };
   var BIZ_KEY = "pasr.zakelijk.biz";
+  // group: "" = bovenaan, "foot" = onderaan de zijbalk, "mobile" = alleen via de onderbalk, "none" = alleen via de werkbalk
   var TABS = [
-    { id: "overzicht", label: "Overzicht", icon: "chart", owner: true },
-    { id: "kaarten", label: "Acties", icon: "card", owner: true },
-    { id: "verwijderd", label: "Verwijderd", icon: "trash", owner: true },
-    { id: "acties", label: "Beloningen", icon: "gift", owner: true },
-    { id: "kortingsbonnen", label: "Kortingsbonnen", short: "Bonnen", icon: "card", owner: true },
-    { id: "actiecodes", label: "Actiecodes", short: "Codes", icon: "gift", owner: true },
-    { id: "promotiemateriaal", label: "Promotiemateriaal", short: "Promotie", icon: "download", owner: true },
-    { id: "inzichten", label: "Bedrijfsinzichten", short: "Inzichten", icon: "chart", owner: true },
-    { id: "marketing", label: "Marketingkalender", short: "Planning", icon: "chart", owner: true },
-    { id: "vestigingen", label: "Vestigingen", short: "Filialen", icon: "gear", owner: true },
-    { id: "samenwerkingen", label: "Samenwerkingen", short: "Samen", icon: "users", owner: true },
-    { id: "scannen", label: "Scannen", icon: "scan" },
-    { id: "medewerkers", label: "Medewerkers", short: "Team", icon: "users", owner: true },
-    { id: "instellingen", label: "Instellingen", icon: "gear", owner: true },
-    { id: "mijn-account", label: "Account", icon: "user", owner: true },
+    { id: "vandaag", label: "Vandaag", icon: "home", owner: true, group: "" },
+    { id: "stempelkaarten", label: "Stempelkaarten", icon: "card", owner: true, group: "Klantenbinding" },
+    { id: "kortingsbonnen", label: "Kortingsbonnen", icon: "tag", owner: true, group: "Klantenbinding" },
+    { id: "actiecodes", label: "Actiecodes", icon: "code", owner: true, group: "Klantenbinding" },
+    { id: "gezamenlijke-acties", label: "Gezamenlijke acties", icon: "users", owner: true, group: "Klantenbinding", badge: "invites" },
+    { id: "beloningen", label: "Beloningen", icon: "gift", owner: true, group: "Klantenbinding" },
+    { id: "inzichten", label: "Inzichten", icon: "bars", owner: true, group: "Groei" },
+    { id: "marketing", label: "Marketingkalender", icon: "calendar", owner: true, group: "Groei" },
+    { id: "promotiemateriaal", label: "Promotiemateriaal", icon: "download", owner: true, group: "Groei" },
+    { id: "vestigingen", label: "Vestigingen", icon: "pin", owner: true, group: "Je zaak" },
+    { id: "medewerkers", label: "Medewerkers", icon: "user", owner: true, group: "Je zaak" },
+    { id: "instellingen", label: "Instellingen", icon: "gear", owner: true, group: "Je zaak" },
+    { id: "prullenbak", label: "Prullenbak", icon: "trash", owner: true, group: "foot" },
+    { id: "mijn-account", label: "Account", icon: "user", owner: true, group: "foot" },
+    { id: "scannen", label: "Scannen", icon: "scan", group: "none" },
+    { id: "alle-acties", label: "Acties", icon: "card", owner: true, group: "mobile" },
+    { id: "meer", label: "Meer", icon: "more", owner: true, group: "mobile" },
   ];
+  var GROUPS = ["Klantenbinding", "Groei", "Je zaak"];
+  // Oude adressen (mails, apps, bladwijzers) blijven werken: #overzicht opent Vandaag, enzovoort.
+  var ALIAS = { overzicht: "vandaag", kaarten: "stempelkaarten", samenwerkingen: "gezamenlijke-acties", verwijderd: "prullenbak",
+    acties: "beloningen", promotie: "promotiemateriaal", account: "mijn-account", bedrijfsinzichten: "inzichten" };
+  // onderdelen die op een telefoon onder Acties vallen (de rest onder Meer)
+  var UNDER_ACTS = ["alle-acties", "stempelkaarten", "kortingsbonnen", "actiecodes", "gezamenlijke-acties"];
   var VIEWS = {};   // tab-id -> function(panel, zaak)
 
   function dashRoot() { return $("#zk-app"); }
@@ -327,7 +350,7 @@
       var btn = ev.target.querySelector("button"); btn.disabled = true;
       try {
         var nb = await rpc("pasr_business_register", bizArgs(), true);
-        dash.bizId = nb.id; store(BIZ_KEY, nb.id); dash.sub = null; dash.tab = "kaarten";
+        dash.bizId = nb.id; store(BIZ_KEY, nb.id); dash.sub = null; dash.tab = "stempelkaarten";
         await refresh(); toast("Je zaak is aangemeld");
       } catch (e) { setMsg($("#rMsg"), /bad_name/.test(e.message) ? "Vul de naam van je zaak in (minstens 2 tekens)." : nice(e)); btn.disabled = false; }
     });
@@ -358,20 +381,6 @@
     session = null; saveSession(null); dash.me = null; dash.tab = null; dash.sub = null; store(BIZ_KEY, null);
     navState(); history.replaceState(null, "", location.pathname); render();
   }
-  function picker(b) {
-    var list = bizList(), own = ownBiz();
-    if (list.length < 2 && own) return "";
-    var opts = list.map(function (x) {
-      return '<option value="' + esc(x.id) + '"' + (x.id === b.id ? " selected" : "") + ">" + esc(x.name) + (x.city ? " · " + esc(x.city) : "") + " (" + (x.role === "owner" ? "eigenaar" : "medewerker") + ")</option>";
-    }).join("") + (own ? "" : '<option value="__new">+ Eigen zaak aanmelden</option>');
-    return '<div class="zd-picker"><label for="zdPick">Zaak</label><select id="zdPick">' + opts + "</select></div>";
-  }
-  function head(b) {
-    var st = STATUS[b.status] || STATUS.pending;
-    return '<div class="zd-head"><div class="zd-biz"><span class="zd-logo" style="background:' + colorOf(b) + '">' + logoOf(b) + "</span><div>" +
-      '<span class="zk-status ' + st[1] + '">' + st[0] + '</span><h1>' + esc(b.name) + '</h1><p class="zd-sub">' + esc([b.city, b.role === "owner" ? "Eigenaar" : "Medewerker"].filter(Boolean).join(" · ")) + "</p></div></div>" +
-      picker(b) + userBox() + "</div>";
-  }
   function banner(b) {
     if (b.status === "blocked") {
       return '<div class="zd-state blocked" role="alert"><span class="zd-state-ic">' + ICON.lock + "</span><div><h2>" + (b.role === "owner" ? "Je zaak is geblokkeerd" : "Deze zaak is geblokkeerd") + "</h2>" +
@@ -385,100 +394,351 @@
     }
     return "";
   }
-  function tabBar(b) {
-    var tabs = tabsFor(b);
-    if (tabs.length < 2) return "";
-    return '<div class="zd-tabs" role="tablist" aria-label="Onderdelen van je dashboard">' + tabs.map(function (t) {
-      var on = t.id === dash.tab;
-      return '<button type="button" role="tab" id="tab-' + t.id + '" aria-controls="zd-panel" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-tab="' + t.id + '">' +
-        ICON[t.icon] + '<span class="l">' + t.label + "</span>" + (t.short ? '<span class="s" aria-hidden="true">' + t.short + "</span>" : "") + "</button>";
-    }).join("") + "</div>";
+  // ---- app-scherm: werkbalk, zijbalk, onderbalk ----
+  function shellOn(on) { document.body.classList.toggle("zd3-on", !!on); }
+  function initial() {
+    var n = String((session && (session.first_name || session.email)) || "?").trim();
+    return (n.charAt(0) || "?").toUpperCase();
   }
-  function bindTabs() {
-    var list = dashRoot().querySelector(".zd-tabs"); if (!list) return;
-    var btns = Array.prototype.slice.call(list.querySelectorAll("[role=tab]"));
-    btns.forEach(function (btn, i) {
-      btn.addEventListener("click", function () { go(btn.dataset.tab); });
-      btn.addEventListener("keydown", function (e) {
-        var k = e.key, j = k === "ArrowRight" ? i + 1 : k === "ArrowLeft" ? i - 1 : k === "Home" ? 0 : k === "End" ? btns.length - 1 : null;
-        if (j === null) return;
-        e.preventDefault(); j = (j + btns.length) % btns.length; go(btns[j].dataset.tab, true);
+  function isApp(b) { return b.role === "owner" && b.status !== "blocked"; }
+  function roleText(b) { return b.role === "owner" ? "Eigenaar" : "Medewerker"; }
+  function bizFace(b, small) {
+    return '<span class="zd3-bizlogo' + (small ? " sm" : "") + '" style="background:' + colorOf(b) + '" aria-hidden="true">' + logoOf(b) + "</span>" +
+      '<span class="zd3-bizname"><b>' + esc(b.name) + "</b><small>" + esc([b.city, roleText(b)].filter(Boolean).join(" · ")) + "</small></span>";
+  }
+  // Zaakkiezer: wisselen tussen je zaken (eigenaar of medewerker) en, zonder eigen zaak, er een aanmelden.
+  function bizPicker(b) {
+    var list = bizList(), own = ownBiz();
+    if (list.length < 2 && own) return '<div class="zd3-biz"><div class="zd3-bizbtn is-static">' + bizFace(b) + "</div></div>";
+    var items = list.map(function (x) {
+      return '<li><button type="button" data-biz="' + esc(x.id) + '" aria-current="' + (x.id === b.id) + '">' + bizFace(x, true) + (x.id === b.id ? ICON.check : "") + "</button></li>";
+    }).join("") + (own ? "" : '<li><button type="button" data-biz="__new"><span class="zd3-bizlogo sm add" aria-hidden="true">' + ICON.plus + '</span><span class="zd3-bizname"><b>Nieuwe zaak aanmelden</b><small>Gratis, we keuren elke zaak met de hand</small></span></button></li>');
+    return '<div class="zd3-biz zd3-pop"><button type="button" class="zd3-bizbtn zd3-toggle" id="zdBizBtn" aria-expanded="false" aria-controls="zdBizMenu">' +
+      '<span class="sr-only">Zaak kiezen. Nu: </span>' + bizFace(b) + ICON.down + '</button><ul class="zd3-menu zd3-bizmenu" id="zdBizMenu" hidden>' + items + "</ul></div>";
+  }
+  function topbar(b, tabs) {
+    var app = isApp(b), has = function (id) { return tabs.some(function (t) { return t.id === id; }); };
+    var mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+    return '<header class="zd3-top">' +
+      '<a class="zd3-brand" href="/zakelijk/"><img src="/assets/icon.png" alt="" width="30" height="30"><span>pasr</span><em class="zk-tag">Zakelijk</em><span class="sr-only"> (naar de website)</span></a>' +
+      bizPicker(b) +
+      (app ? '<div class="zd3-search" role="search"><label class="sr-only" for="zdSearch">Zoek in je dashboard</label>' + ICON.search +
+        '<input id="zdSearch" type="search" autocomplete="off" spellcheck="false" placeholder="Zoek een actie, code, kaart of onderdeel…" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="zdSearchList">' +
+        '<kbd aria-hidden="true">' + (mac ? "⌘K" : "Ctrl K") + '</kbd><ul class="zd3-menu zd3-results" id="zdSearchList" role="listbox" aria-label="Zoekresultaten" hidden></ul></div>' : '<span class="zd3-fill"></span>') +
+      (has("scannen") ? '<a class="zd3-scan" href="#scannen" data-go="scannen">' + ICON.scan + "<span>Scannen</span></a>" : "") +
+      (app ? '<div class="zd3-pop zd3-bell"><button type="button" class="zd3-icon zd3-toggle" id="zdBell" aria-expanded="false" aria-controls="zdBellMenu"><span class="sr-only" id="zdBellLabel">Meldingen</span>' + ICON.bell + '<span class="zd3-dot" hidden></span></button>' +
+        '<div class="zd3-menu zd3-bellmenu" id="zdBellMenu" hidden><h2>Meldingen</h2><div id="zdBellList"><p class="zd3-muted">Laden…</p></div></div></div>' : "") +
+      '<div class="zd3-pop zd3-me"><button type="button" class="zd3-avatar zd3-toggle" id="zdMe" aria-expanded="false" aria-controls="zdMeMenu"><span class="sr-only">Account en uitloggen</span><span aria-hidden="true">' + esc(initial()) + "</span></button>" +
+      '<ul class="zd3-menu zd3-memenu" id="zdMeMenu" hidden><li class="zd3-menuhead"><small>Ingelogd als</small><b>' + esc((session && session.email) || "") + "</b></li>" +
+      (has("mijn-account") ? '<li><a href="#mijn-account" data-go="mijn-account">' + ICON.user + "Account</a></li>" : "") +
+      '<li><button type="button" id="zkOut">' + ICON.logout + "Uitloggen</button></li></ul></div></header>";
+  }
+  function navLink(t, cls) {
+    var on = t.id === dash.tab;
+    return '<li><a href="#' + t.id + '" data-go="' + t.id + '"' + (cls ? ' class="' + cls + '"' : "") + (on ? ' aria-current="page"' : "") + ">" + ICON[t.icon] +
+      "<span>" + esc(t.label) + "</span>" + (t.badge ? '<span class="zd3-badge" data-badge="' + t.badge + '" hidden></span>' : "") + ICON.chevron + "</a></li>";
+  }
+  function sideNav(tabs) {
+    var by = {};
+    tabs.forEach(function (t) { (by[t.group] = by[t.group] || []).push(t); });
+    var html = '<nav class="zd3-side" aria-label="Onderdelen van je dashboard"><div class="zd3-sidein">';
+    if (by[""]) html += "<ul>" + by[""].map(function (t) { return navLink(t); }).join("") + "</ul>";
+    GROUPS.forEach(function (g, i) {
+      if (by[g]) html += '<h2 class="zd3-group" id="zdg' + i + '">' + esc(g) + '</h2><ul aria-labelledby="zdg' + i + '">' + by[g].map(function (t) { return navLink(t); }).join("") + "</ul>";
+    });
+    if (by.foot) html += '<ul class="zd3-foot">' + by.foot.map(function (t) { return navLink(t); }).join("") + "</ul>";
+    return html + "</div></nav>";
+  }
+  function tabBar() {
+    var acts = UNDER_ACTS.indexOf(dash.tab) >= 0, more = ["vandaag", "scannen", "inzichten"].indexOf(dash.tab) < 0 && !acts;
+    function item(id, icon, label, on, cls) {
+      return '<li><a href="#' + id + '" data-go="' + id + '"' + (cls ? ' class="' + cls + '"' : "") + (on ? ' aria-current="page"' : "") + "><span class=\"zd3-tbic\">" + ICON[icon] + "</span><span>" + label + "</span>" +
+        (id === "meer" ? '<span class="zd3-badge sm" data-badge="invites" hidden></span>' : "") + "</a></li>";
+    }
+    return '<nav class="zd3-tabbar" aria-label="Snelmenu"><ul>' +
+      item("vandaag", "home", "Vandaag", dash.tab === "vandaag") + item("alle-acties", "card", "Acties", acts) +
+      item("scannen", "scan", "Scannen", dash.tab === "scannen", "zd3-tbscan") + item("inzichten", "bars", "Inzichten", dash.tab === "inzichten") +
+      item("meer", "more", "Meer", more) + "</ul></nav>";
+  }
+  function closeMenus(except, refocus) {
+    document.querySelectorAll(".zd3-toggle[aria-expanded=true]").forEach(function (btn) {
+      if (btn === except) return;
+      btn.setAttribute("aria-expanded", "false");
+      var m = document.getElementById(btn.getAttribute("aria-controls")); if (m) m.hidden = true;
+      if (refocus) btn.focus();
+    });
+  }
+  function go(tab) {
+    dash.sub = null; dash.edit = null;
+    if (location.hash !== "#" + tab) history.pushState(null, "", "#" + tab);
+    dash.tab = tab; render(); focusPanel();
+  }
+  function focusPanel() {
+    var p = $("#zd-panel"); if (!p) return;
+    p.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }
+  function openCard(card) {
+    dash.tab = "stempelkaarten"; history.pushState(null, "", "#stempelkaarten");
+    dash.edit = card || null; dash.sub = "edit"; render(); focusPanel();
+  }
+  function openNewCard(b) {
+    if ((b.cards || []).length >= 5) { toast("Je kunt hoogstens 5 stempelkaarten maken."); return go("stempelkaarten"); }
+    openCard(null);
+  }
+
+  // Extra gegevens voor werkbalk, Vandaag en Acties: bonnen, codes, gezamenlijke acties en uitnodigingen (max. een minuut bewaard).
+  function loadExtra(b, fresh) {
+    var x = dash.extra;
+    if (!fresh && x && x.biz === b.id && Date.now() - x.at < 60000) return x.p;
+    var p = Promise.allSettled([
+      rpc("pasr_business_coupon_list", { p_business: b.id }, true),
+      rpc("pasr_business_promo_list", { p_business: b.id }, true),
+      rpc("pasr_business_community_list", { p_business: b.id }, true),
+      rpc("pasr_business_community_my_invites", { p_business: b.id }, true),
+    ]).then(function (r) {
+      function v(i) { return r[i].status === "fulfilled" && Array.isArray(r[i].value) ? r[i].value : null; }
+      var alive = function (row) { return !row.deleted; };
+      return { coupons: v(0) && v(0).filter(alive), codes: v(1) && v(1).filter(alive), community: v(2), invites: v(3) || [] };
+    });
+    dash.extra = { biz: b.id, at: Date.now(), p: p };
+    return p;
+  }
+  var DAY = 864e5;
+  function money(type, v) { return type === "percent" ? Number(v || 0).toLocaleString("nl-NL") + "%" : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(v || 0)); }
+  function daysLeft(iso) { return Math.max(0, Math.ceil((Date.parse(iso) - Date.now()) / DAY)); }
+  function inDays(n) { return n <= 0 ? "vandaag" : n === 1 ? "morgen" : "over " + n + " dagen"; }
+  function couponState(c) {
+    var now = Date.now();
+    if (Date.parse(c.ends_at) <= now) return ["Verlopen", ""];
+    if (!c.public) return ["Gepauzeerd", "wait"];
+    if (Date.parse(c.starts_at) > now) return ["Gepland", "wait"];
+    return ["Online", "on"];
+  }
+  function codeState(c) {
+    var now = Date.now();
+    if (Date.parse(c.ends_at) <= now) return ["Verlopen", ""];
+    if (!c.active) return ["Gepauzeerd", "wait"];
+    if (Number(c.used_count || 0) >= Number(c.max_uses || 0)) return ["Op", ""];
+    if (Date.parse(c.starts_at) > now) return ["Gepland", "wait"];
+    return ["Actief", "on"];
+  }
+  function communityState(c) {
+    if (c.state === "waiting") {
+      var n = Math.max(0, Number(c.min_participants || 0) - Number(c.accepted_count || 0));
+      return [n ? "Wacht op " + plural(n, "zaak", "zaken") : "Wacht op deelnemers", "wait"];
+    }
+    return { active: ["Actief", "on"], ended: ["Afgelopen", ""], cancelled: ["Gestopt", ""] }[c.state] || [c.state || "—", ""];
+  }
+  var KIND_COLOR = { coupon: "#C2361F", code: "#4A3CE0", community: "#087554" };
+  /** Alle acties van de zaak als rijen: stempelkaarten, kortingsbonnen, actiecodes en gezamenlijke acties. */
+  function actionRows(b, x) {
+    var rows = (b.cards || []).map(function (c) {
+      return { kind: "card", title: c.name, sub: "Stempelkaart · " + plural(Number(c.stamps_total) || 0, "stempel", "stempels"),
+        state: c.published ? ["Online", "on"] : ["Concept", ""], count: c.published ? plural(c.members || 0, "lid", "leden") : "—",
+        color: /^#[0-9a-f]{6}$/i.test(c.color || "") ? c.color : "#6A5CFF", icon: "card", live: !!c.published, run: function () { openCard(c); } };
+    });
+    (x.coupons || []).forEach(function (c) {
+      var s = couponState(c);
+      rows.push({ kind: "coupon", title: c.title, sub: "Kortingsbon · " + money(c.discount_type, c.discount_value) + " · t/m " + nlDate(c.ends_at), state: s,
+        count: Number(c.claimed || 0) + " bewaard", color: KIND_COLOR.coupon, icon: "tag", live: s[1] === "on", run: function () { go("kortingsbonnen"); } });
+    });
+    (x.codes || []).forEach(function (c) {
+      var s = codeState(c);
+      rows.push({ kind: "code", title: c.title, sub: "Actiecode " + c.code + " · t/m " + nlDate(c.ends_at), state: s,
+        count: Number(c.used_count || 0) + "/" + Number(c.max_uses || 0) + " gebruikt", color: KIND_COLOR.code, icon: "code", live: s[1] === "on", run: function () { go("actiecodes"); } });
+    });
+    (x.community || []).forEach(function (c) {
+      var s = communityState(c);
+      rows.push({ kind: "community", title: c.name, sub: "Gezamenlijke actie · " + plural(Number(c.accepted_count || 0), "zaak", "zaken"), state: s,
+        count: c.claims_here ? c.claims_here + "× uitgegeven" : "—", color: KIND_COLOR.community, icon: "users",
+        live: c.state === "waiting" || c.state === "active", run: function () { go("gezamenlijke-acties"); } });
+    });
+    return rows;
+  }
+  function rowList(rows, cls) {
+    return '<ul class="zd3-rows' + (cls ? " " + cls : "") + '">' + rows.map(function (r, i) {
+      return '<li><button type="button" class="zd3-row" data-row="' + i + '"><span class="zd3-sw" style="background:' + esc(r.color) + '" aria-hidden="true">' + ICON[r.icon] + "</span>" +
+        '<span class="zd3-rt"><b>' + esc(r.title) + "</b><small>" + esc(r.sub) + "</small></span>" +
+        '<span class="zk-pill ' + r.state[1] + '">' + esc(r.state[0]) + '</span><span class="zd3-rn">' + esc(r.count) + "</span>" + ICON.chevron + "</button></li>";
+    }).join("") + "</ul>";
+  }
+  function bindRows(box, rows) {
+    box.querySelectorAll("[data-row]").forEach(function (btn) { btn.addEventListener("click", function () { rows[Number(btn.dataset.row)].run(); }); });
+  }
+  /** Te doen: echte openstaande punten (uitnodigingen, concepten, bijna verlopen bonnen en codes, wachtende acties, goedkeuring). */
+  function todoItems(b, x) {
+    var out = [], week = Date.now() + 7 * DAY;
+    if (b.status === "pending") out.push({ icon: "clock", tone: "warn", html: "Je zaak <b>wacht op goedkeuring</b>", sub: "We bekijken je aanmelding, meestal binnen een werkdag. Je krijgt een mail.", tab: "instellingen" });
+    (x.invites || []).forEach(function (v) {
+      var n = Array.isArray(v.participant_names) ? v.participant_names.length : 0;
+      out.push({ icon: "users", tone: "coral", html: "Uitnodiging: <b>" + esc(v.title) + "</b>", sub: [v.initiator_name ? v.initiator_name + " nodigt je uit" : "", n ? plural(n, "zaak doet", "zaken doen") + " mee" : ""].filter(Boolean).join(" · "),
+        label: "Bekijken", tab: "gezamenlijke-acties" });
+    });
+    if (b.status === "approved") (b.cards || []).filter(function (c) { return !c.published; }).forEach(function (c) {
+      out.push({ icon: "card", tone: "iris", html: "<b>" + esc(c.name) + "</b> staat nog in concept", sub: "Zet hem online zodat klanten hem kunnen toevoegen", label: "Online zetten", tab: "stempelkaarten",
+        run: async function (btn) {
+          btn.disabled = true;
+          try { await rpc("pasr_business_card_save", { p_card: { id: c.id, name: c.name, reward: c.reward, stamps_total: c.stamps_total, color: c.color, published: true } }, true); await refresh(); toast("Je kaart staat online"); }
+          catch (e) { btn.disabled = false; toast(nice(e)); }
+        } });
+    });
+    (x.coupons || []).filter(function (c) { var e = Date.parse(c.ends_at); return c.public && e > Date.now() && e <= week; }).forEach(function (c) {
+      out.push({ icon: "tag", tone: "mint", html: "Kortingsbon <b>" + esc(c.title) + "</b> loopt " + inDays(daysLeft(c.ends_at)) + " af", sub: Number(c.claimed || 0) + " bewaard · " + Number(c.redeemed || 0) + " gebruikt", label: "Verlengen", tab: "kortingsbonnen" });
+    });
+    (x.codes || []).filter(function (c) { var e = Date.parse(c.ends_at); return c.active && e > Date.now() && e <= week; }).forEach(function (c) {
+      out.push({ icon: "code", tone: "mint", html: "Actiecode <b>" + esc(c.code) + "</b> loopt " + inDays(daysLeft(c.ends_at)) + " af", sub: plural(Number(c.used_count || 0), "keer", "keer") + " gebruikt", label: "Verlengen", tab: "actiecodes" });
+    });
+    (x.community || []).filter(function (c) { return c.state === "waiting"; }).forEach(function (c) {
+      var org = c.role === "owner" || c.is_lead;
+      out.push({ icon: "users", tone: "iris", html: "<b>" + esc(c.name) + "</b>: " + esc(communityState(c)[0].toLowerCase()), sub: org ? "Nodig meer zaken uit om de actie te starten" : "De actie start zodra genoeg zaken meedoen",
+        label: org ? "Uitnodigen" : "Bekijken", tab: "gezamenlijke-acties" });
+    });
+    return out;
+  }
+  function todoHtml(items, compact) {
+    return '<ul class="zd3-todo' + (compact ? " compact" : "") + '">' + items.map(function (t, i) {
+      var body = '<span class="zd3-tic ' + t.tone + '" aria-hidden="true">' + ICON[t.icon] + '</span><span class="zd3-rt"><span class="zd3-tt">' + t.html + "</span>" + (t.sub ? "<small>" + esc(t.sub) + "</small>" : "") + "</span>";
+      if (compact) return '<li><a href="#' + t.tab + '" data-go="' + t.tab + '">' + body + ICON.chevron + "</a></li>";
+      return "<li>" + body + (t.label ? '<button type="button" class="zk-btn ghost sm" data-todo="' + i + '">' + esc(t.label) + "</button>" : "") + "</li>";
+    }).join("") + "</ul>";
+  }
+  function updateShell(b, x) {
+    if (current() !== b) return;
+    var n = (x.invites || []).length;
+    document.querySelectorAll("[data-badge=invites]").forEach(function (el) { el.hidden = !n; el.innerHTML = n + '<span class="sr-only"> ' + (n === 1 ? "open uitnodiging" : "open uitnodigingen") + "</span>"; });
+    var items = todoItems(b, x), list = $("#zdBellList"), dot = $(".zd3-bell .zd3-dot"), label = $("#zdBellLabel");
+    if (dot) dot.hidden = !items.length;
+    if (label) label.textContent = items.length ? "Meldingen, " + plural(items.length, "punt", "punten") + " te doen" : "Meldingen, niets te doen";
+    if (list) list.innerHTML = items.length ? todoHtml(items, true) : '<p class="zd3-muted">Niets te doen. Alles is bij.</p>';
+  }
+
+  // ---- zoeken in de werkbalk: onderdelen, stempelkaarten, kortingsbonnen, actiecodes en gezamenlijke acties ----
+  function norm(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  function bindSearch(b) {
+    var input = $("#zdSearch"), list = $("#zdSearchList"); if (!input) return;
+    var index = null, hits = [], active = -1;
+    function build(x) {
+      var out = tabsFor(b).filter(function (t) { return t.group !== "mobile"; }).map(function (t) { return { label: t.label, kind: "Onderdeel", run: function () { go(t.id); } }; });
+      out.push({ label: "Logboek", kind: "Onderdeel", run: function () { go("vandaag"); dash.sub = "log"; render(); } });
+      out.push({ label: "Nieuwe stempelkaart", kind: "Aanmaken", run: function () { openNewCard(b); } });
+      (b.cards || []).forEach(function (c) { out.push({ label: c.name, extra: c.reward, kind: "Stempelkaart", run: function () { openCard(c); } }); });
+      (x.coupons || []).forEach(function (c) { out.push({ label: c.title, kind: "Kortingsbon", run: function () { go("kortingsbonnen"); } }); });
+      (x.codes || []).forEach(function (c) { out.push({ label: c.code + " · " + c.title, kind: "Actiecode", run: function () { go("actiecodes"); } }); });
+      (x.community || []).forEach(function (c) { out.push({ label: c.name, extra: c.reward, kind: "Gezamenlijke actie", run: function () { go("gezamenlijke-acties"); } }); });
+      return out;
+    }
+    function close() { list.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); active = -1; }
+    function mark(i) {
+      active = i;
+      list.querySelectorAll("[role=option]").forEach(function (li, j) { li.setAttribute("aria-selected", String(j === i)); });
+      if (i >= 0) { input.setAttribute("aria-activedescendant", "zds-" + i); var el = $("#zds-" + i); if (el) el.scrollIntoView({ block: "nearest" }); }
+    }
+    function choose(i) { var h = hits[i]; if (!h) return; input.value = ""; close(); h.run(); }
+    function show() {
+      var q = norm(input.value.trim());
+      if (!q) return close();
+      hits = (index || []).filter(function (h) { return norm(h.label + " " + (h.extra || "") + " " + h.kind).indexOf(q) >= 0; }).slice(0, 8);
+      list.innerHTML = hits.length ? hits.map(function (h, i) { return '<li role="option" id="zds-' + i + '" aria-selected="false" data-i="' + i + '"><b>' + esc(h.label) + "</b><small>" + esc(h.kind) + "</small></li>"; }).join("")
+        : '<li class="zd3-none" role="option" aria-disabled="true" aria-selected="false">Niets gevonden voor “' + esc(input.value.trim()) + "”</li>";
+      list.hidden = false; input.setAttribute("aria-expanded", "true"); mark(hits.length ? 0 : -1);
+    }
+    input.addEventListener("focus", function () { loadExtra(b).then(function (x) { index = build(x); if (document.activeElement === input && input.value) show(); }); });
+    input.addEventListener("input", function () { if (!index) index = build({}); show(); });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (list.hidden) show(); if (hits.length) mark((active + (e.key === "ArrowDown" ? 1 : -1) + hits.length) % hits.length); }
+      else if (e.key === "Enter") { if (active >= 0) { e.preventDefault(); choose(active); } }
+      else if (e.key === "Escape") { if (!list.hidden) { e.stopPropagation(); close(); } else { input.value = ""; input.blur(); } }
+    });
+    input.addEventListener("blur", function () { setTimeout(close, 150); });
+    list.addEventListener("mousedown", function (e) { var li = e.target.closest("[data-i]"); if (li) { e.preventDefault(); choose(Number(li.dataset.i)); } });
+  }
+
+  function bindShell(b) {
+    bindUser(); bindSearch(b);
+    dashRoot().querySelectorAll("[data-biz]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        closeMenus();
+        if (btn.dataset.biz === "__new") { dash.sub = "register"; return render(); }
+        if (btn.dataset.biz === b.id) return;
+        dash.bizId = btn.dataset.biz; store(BIZ_KEY, btn.dataset.biz); dash.tab = null; dash.sub = null; dash.extra = null;
+        history.replaceState(null, "", location.pathname); render(); toast("Gewisseld naar " + current().name);
       });
     });
   }
-  function go(tab, focusTab) {
-    dash.sub = null; dash.edit = null;
-    if (location.hash !== "#" + tab) history.pushState(null, "", "#" + tab);
-    dash.tab = tab; render();
-    var t = $("#tab-" + tab); if (focusTab && t) t.focus();
+  var shellEvents = false;
+  function shellListeners() {
+    if (shellEvents) return; shellEvents = true;
+    dashRoot().addEventListener("click", function (e) {
+      var t = e.target.closest(".zd3-toggle");
+      if (t) {
+        var open = t.getAttribute("aria-expanded") !== "true", m = document.getElementById(t.getAttribute("aria-controls"));
+        closeMenus(t); t.setAttribute("aria-expanded", String(open)); if (m) m.hidden = !open;
+        return;
+      }
+      var g = e.target.closest("[data-go]");
+      if (g && !(e.metaKey || e.ctrlKey || e.shiftKey || e.button)) { e.preventDefault(); closeMenus(); go(g.dataset.go); }
+    });
+    document.addEventListener("click", function (e) { if (!e.target.closest(".zd3-pop")) closeMenus(); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && document.querySelector(".zd3-toggle[aria-expanded=true]")) {
+        var open = document.querySelector(".zd3-toggle[aria-expanded=true]"); closeMenus(); open.focus(); return;
+      }
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && String(e.key).toLowerCase() === "k") {
+        var s = $("#zdSearch");
+        if (s && s.offsetParent) { e.preventDefault(); s.focus(); s.select(); }
+      }
+    });
   }
 
   function render() {
     stopScanner();
-    if (!ready) { dashRoot().innerHTML = '<section class="auth err"><h1>Binnenkort</h1><p>Pasr voor ondernemers komt binnenkort.</p></section>'; return; }
+    if (!ready) { shellOn(false); dashRoot().innerHTML = '<section class="auth err"><h1>Binnenkort</h1><p>Pasr voor ondernemers komt binnenkort.</p></section>'; return; }
     var h = location.hash.replace("#", "");
-    if (!session) return loginView(h === "account" ? "signup" : h === "vergeten" ? "forgot" : "login");
-    if (!dash.me) { dashRoot().innerHTML = '<p class="zk-empty">Laden…</p>'; return refresh(); }
-    if (dash.sub === "register" || !bizList().length) return registerView();
+    if (!session) { shellOn(false); return loginView(h === "account" ? "signup" : h === "vergeten" ? "forgot" : "login"); }
+    if (!dash.me) { shellOn(false); dashRoot().innerHTML = '<p class="zk-empty">Laden…</p>'; return refresh(); }
+    if (dash.sub === "register" || !bizList().length) { shellOn(false); return registerView(); }
     var b = current(); dash.bizId = b.id;
+    if (ALIAS[h]) { h = ALIAS[h]; history.replaceState(null, "", location.pathname + location.search + "#" + h); }
     var tabs = tabsFor(b), ids = tabs.map(function (t) { return t.id; });
     if (ids.indexOf(h) >= 0) dash.tab = h;
-    if (ids.indexOf(dash.tab) < 0) dash.tab = b.role === "owner" ? (b.status === "blocked" ? "mijn-account" : (b.cards || []).length ? "overzicht" : "kaarten") : "scannen";
-    var tab = tabs.filter(function (t) { return t.id === dash.tab; })[0];
-    dashRoot().innerHTML = head(b) + banner(b) + tabBar(b) +
-      '<section id="zd-panel" class="zd-panel" role="' + (tabs.length > 1 ? "tabpanel" : "region") + '" aria-labelledby="' + (tabs.length > 1 ? "tab-" + tab.id : "zd-title") + '" tabindex="-1"></section>';
+    if (ids.indexOf(dash.tab) < 0) dash.tab = b.role === "owner" ? (b.status === "blocked" ? "mijn-account" : (b.cards || []).length ? "vandaag" : "stempelkaarten") : "scannen";
+    var tab = tabs.filter(function (t) { return t.id === dash.tab; })[0], app = isApp(b);
+    var side = tabs.filter(function (t) { return t.group !== "mobile" && t.group !== "none"; });
+    shellOn(true); shellListeners();
+    dashRoot().innerHTML = '<div class="zd3 ' + (app ? "zd3--app" : "zd3--solo") + '">' + topbar(b, tabs) +
+      '<div class="zd3-body">' + (app ? sideNav(side) : "") + '<div class="zd3-main">' + (dash.tab === "vandaag" && b.status === "pending" ? "" : banner(b)) +
+      '<section id="zd-panel" class="zd-panel zd3-panel" aria-label="' + esc(tab.label) + '" tabindex="-1"></section></div></div>' + (app ? tabBar() : "") + "</div>";
     document.title = tab.label + " · " + b.name + " | Pasr voor ondernemers";
-    bindUser(); bindTabs();
-    var pick = $("#zdPick");
-    if (pick) pick.addEventListener("change", function () {
-      if (pick.value === "__new") { dash.sub = "register"; return render(); }
-      dash.bizId = pick.value; store(BIZ_KEY, pick.value); dash.tab = null; dash.sub = null;
-      history.replaceState(null, "", location.pathname); render(); toast("Gewisseld naar " + current().name);
-    });
+    bindShell(b);
     var panel = $("#zd-panel");
     if (b.status === "blocked" && b.role !== "owner") { panel.innerHTML = '<p class="zk-empty">Er is hier nu niets te doen.</p>'; return; }
     (VIEWS[tab.id] || function () {})(panel, b);
     communityBanner(b);
-    if (tab.id === "kaarten" && !dash.sub) {
-      var removal = document.createElement("section");
-      panel.append(removal);
-      mountRemoval(removal, b, false);
-    }
+    if (app) loadExtra(b).then(function (x) { updateShell(b, x); });
   }
   async function refresh() {
+    dash.extra = null;
     try { dash.me = await rpc("pasr_business_me", {}, true); }
     catch (e) {
       if (e.status === 401) { session = null; saveSession(null); navState(); }
       dash.me = null;
-      if (session) { dashRoot().innerHTML = '<div class="zd-state blocked" role="alert"><div><h2>Niet opgehaald</h2><p>' + esc(nice(e)) + '</p><p><button class="zk-btn" type="button" id="zdRetry">Opnieuw proberen</button></p></div></div>'; $("#zdRetry").addEventListener("click", refresh); return; }
+      if (session) { shellOn(false); dashRoot().innerHTML = '<div class="zd-state blocked" role="alert"><div><h2>Niet opgehaald</h2><p>' + esc(nice(e)) + '</p><p><button class="zk-btn" type="button" id="zdRetry">Opnieuw proberen</button></p></div></div>'; $("#zdRetry").addEventListener("click", refresh); return; }
     }
     render();
   }
-  async function mountRemoval(root, business, permanent) {
-    var kindLabels = { card: "Stempelkaart", coupon: "Kortingscoupon", code: "Actiecode" };
+  // ---- Prullenbak: verwijderde stempelkaarten, kortingsbonnen en actiecodes; hier definitief verwijderen ----
+  async function mountTrash(root, business) {
+    var kindLabels = { card: "Stempelkaart", coupon: "Kortingsbon", code: "Actiecode" };
     root.className = "pz2-panel";
-    root.innerHTML = "<h3>" + (permanent ? "Verwijderd" : "Acties verwijderen") + '</h3><p role="status">Laden…</p>';
+    root.innerHTML = '<h3>Verwijderde items</h3><p role="status">Laden…</p>';
     var message = root.querySelector("[role=status]");
     try {
-      var rows;
-      if (permanent) {
-        rows = await rpc("pasr_business_trash", { p_business: business.id }, true);
-      } else {
-        var offers = await Promise.all([
-          rpc("pasr_business_coupon_list", { p_business: business.id }, true),
-          rpc("pasr_business_promo_list", { p_business: business.id }, true)
-        ]);
-        rows = (business.cards || []).map(function (card) { return { id: card.id, title: card.name, kind: "card" }; });
-        offers.forEach(function (group, i) {
-          group.filter(function (offer) { return !offer.deleted; }).forEach(function (offer) {
-            rows.push({ id: offer.id, title: offer.title, kind: i === 0 ? "coupon" : "code" });
-          });
-        });
-      }
+      var rows = await rpc("pasr_business_trash", { p_business: business.id }, true);
       if (!root.isConnected) return;
-      message.textContent = rows.length ? "" : (permanent ? "Geen verwijderde items." : "Geen acties om te verwijderen.");
+      message.textContent = rows.length ? "" : "De prullenbak is leeg.";
       if (!rows.length) return;
-      var label = permanent ? "Definitief verwijderen" : "Verwijderen";
+      var label = "Definitief verwijderen";
       var controls = document.createElement("div");
       controls.className = "zk-actions";
       controls.innerHTML = '<label><input type="checkbox" data-all> Alles selecteren</label> ' +
@@ -496,18 +756,16 @@
       }
       async function remove(indices) {
         if (busy || !indices.length) return;
-        if (!window.confirm(permanent
-          ? indices.length + " item(s) definitief verwijderen? Dit kan niet ongedaan worden gemaakt."
-          : indices.length + " item(s) verwijderen? Ze verdwijnen ook bij klanten.")) return;
+        if (!window.confirm(indices.length + " item(s) definitief verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
         busy = true;
         update();
         try {
           await rpc("pasr_business_delete_items", {
-            p_business: business.id, p_permanent: permanent,
+            p_business: business.id, p_permanent: true,
             p_items: indices.map(function (i) { return { id: rows[i].id, kind: rows[i].kind }; })
           }, true);
           await refresh();
-          toast(permanent ? "Definitief verwijderd" : "Verplaatst naar Verwijderd");
+          toast("Definitief verwijderd");
         } catch (e) {
           message.textContent = nice(e);
           busy = false;
@@ -526,7 +784,7 @@
         entry.className = "pz2-coupon";
         entry.style.touchAction = "pan-y";
         entry.innerHTML = '<label><input type="checkbox"> <b>' + esc(row.title) + "</b> · " +
-          esc(kindLabels[row.kind]) + '</label> <button type="button" class="zk-btn ghost danger">' + label + "</button>";
+          esc(kindLabels[row.kind] || row.kind) + '</label> <button type="button" class="zk-btn ghost danger">' + label + "</button>";
         root.append(entry);
         var check = entry.querySelector("input");
         var button = entry.querySelector("button");
@@ -551,10 +809,11 @@
     } catch (e) { message.textContent = nice(e); }
   }
 
-  VIEWS.verwijderd = function (panel, business) {
-    mountRemoval(panel, business, true);
+  VIEWS.prullenbak = function (panel, business) {
+    panel.innerHTML = panelTitle("Prullenbak", "Verwijderde stempelkaarten, kortingsbonnen en actiecodes. Klanten zien ze niet meer; hier verwijder je ze definitief.") + '<section id="zdTrash"></section>';
+    mountTrash($("#zdTrash"), business);
   };
-  VIEWS.acties = function (panel, b) {
+  VIEWS.beloningen = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.settings(panel, b, rpc);
     else panel.textContent = "De instellingen zijn tijdelijk niet beschikbaar.";
   };
@@ -566,13 +825,26 @@
     if (window.PasrLoyalty2) window.PasrLoyalty2.marketing(panel, b, rpc);
     else panel.textContent = "De marketingkalender is tijdelijk niet beschikbaar.";
   };
+  // Inzichten: de cijfers over klantenbinding en bonnen, de grafiek per dag en het overzicht van je zakelijke producten.
   VIEWS.inzichten = function (panel, b) {
-    if (window.PasrLoyalty2) window.PasrLoyalty2.insights(panel, b, rpc);
-    else panel.textContent = "Inzichten zijn tijdelijk niet beschikbaar.";
+    panel.innerHTML = '<div id="inzTop"></div><div class="zd-insights" id="ovChart"><p class="zk-empty">Laden…</p></div>' +
+      '<section class="pz2-panel"><h3>Overzicht zakelijke producten</h3><div id="ovBusinessProducts">Laden…</div></section>';
+    var top = $("#inzTop");
+    if (window.PasrLoyalty2) window.PasrLoyalty2.insights(top, b, rpc);
+    else top.textContent = "Inzichten zijn tijdelijk niet beschikbaar.";
+    drawInsights(b);
+    loadExtra(b).then(function (x) {
+      var el = $("#ovBusinessProducts"); if (!el) return;
+      var cards = b.cards || [], coupons = x.coupons, codes = x.codes;
+      el.innerHTML = '<div class="zd-kpis"><div class="zd-kpi"><small>Stempelkaarten online</small><b>' + cards.filter(function (c) { return c.published; }).length + "</b></div>" +
+        '<div class="zd-kpi k1"><small>Actieve kortingsbonnen</small><b>' + (coupons ? coupons.filter(function (c) { return couponState(c)[1] === "on"; }).length : "–") + "</b></div>" +
+        '<div class="zd-kpi k2"><small>Actieve actiecodes</small><b>' + (codes ? codes.filter(function (c) { return codeState(c)[1] === "on"; }).length : "–") + "</b></div>" +
+        '<div class="zd-kpi k3"><small>Codegebruik totaal</small><b>' + (codes ? codes.reduce(function (n, c) { return n + Number(c.used_count || 0); }, 0) : "–") + "</b></div></div>";
+    });
   };
-  VIEWS.samenwerkingen = function (panel, b) {
+  VIEWS["gezamenlijke-acties"] = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.community(panel, b, rpc);
-    else panel.textContent = "Het samenwerkingsscherm kon niet worden geladen. Ververs de pagina.";
+    else panel.textContent = "Gezamenlijke acties konden niet worden geladen. Ververs de pagina.";
   };
   VIEWS.actiecodes = function (panel, b) {
     if (window.PasrPromoCodes) window.PasrPromoCodes.mount(panel, b, rpc);
@@ -607,9 +879,39 @@
   };
   VIEWS.kortingsbonnen = function (panel, b) {
     if (window.PasrLoyalty2) window.PasrLoyalty2.coupons(panel, b, rpc);
-    else panel.textContent = "Kortingsbonnen zijn tijdelijk niet beschikbaar.";
+    else { panel.textContent = "Kortingsbonnen zijn tijdelijk niet beschikbaar."; return; }
+    couponPreview(panel, b);
   };
-    function panelTitle(title, sub, actions) {
+  // Live voorbeeld van de kortingsbon in de huisstijl van de zaak, naast het formulier (zonder echte QR- of barcode).
+  function couponPreview(panel, b) {
+    var form = $("#pz2Coupon", panel);
+    if (!form) {
+      var mo = new MutationObserver(function () { if ($("#pz2Coupon", panel)) { mo.disconnect(); couponPreview(panel, b); } });
+      mo.observe(panel, { childList: true, subtree: true }); setTimeout(function () { mo.disconnect(); }, 10000);
+      return;
+    }
+    if (form.dataset.zdPreview) return;
+    form.dataset.zdPreview = "1";
+    var card = (b.cards || []).filter(function (c) { return c.logo; })[0] || (b.cards || [])[0] || {};
+    var color = /^#[0-9a-f]{6}$/i.test(card.color || "") ? card.color : "#6A5CFF";
+    var box = document.createElement("section");
+    box.className = "pz2-panel zd-preview-panel";
+    box.innerHTML = '<h3>Live voorbeeld in je huisstijl</h3><p class="zd-preview-sub">Voorbeeld van de uitstraling. Een unieke QR-code ontstaat pas wanneer een klant de bon bewaart.</p>' +
+      '<div class="zd-coupon-preview" style="--coupon-color:' + color + '"><div class="zd-coupon-top"><div class="zd-coupon-business">' + (card.logo ? '<img src="' + imgSrc(card.logo) + '" alt="">' : "") + "<span>" + esc(b.name) + "</span></div>" +
+      '<div class="zd-coupon-value"></div><div class="zd-coupon-desc"></div></div><div class="zd-coupon-bottom"><span></span><strong>pasr.</strong></div></div>' +
+      '<p class="zd-coupon-note">Kleur en logo volgen je stempelkaart. Voor dit voorbeeld worden geen QR- of barcodes uitgegeven.</p>';
+    form.after(box);
+    var value = $(".zd-coupon-value", box), desc = $(".zd-coupon-desc", box), terms = $(".zd-coupon-bottom span", box);
+    function update() {
+      var f = new FormData(form), amount = Number(f.get("discount_value") || 0);
+      value.textContent = money(f.get("discount_type"), amount).toUpperCase() + " KORTING";
+      desc.textContent = String(f.get("title") || "Nieuwe kortingsbon");
+      var min = Number(f.get("min_spend") || 0), end = f.get("ends_at");
+      terms.textContent = (min > 0 ? "Vanaf " + money("amount", min) + " · " : "") + (end ? "Geldig t/m " + new Date(end + "T12:00:00").toLocaleDateString("nl-NL") : "");
+    }
+    form.addEventListener("input", update); form.addEventListener("change", update); update();
+  }
+  function panelTitle(title, sub, actions) {
     return '<div class="zd-ptitle"><div><h2 id="zd-title">' + esc(title) + "</h2>" + (sub ? '<p class="zd-sub">' + sub + "</p>" : "") + "</div>" + (actions || "") + "</div>";
   }
   function table(cols, rows, cls) {
@@ -618,58 +920,156 @@
       "</tbody></table></div>";
   }
 
-  // ---- Overzicht: grafiek in Homey Insights-stijl, cijfers, leden per kaart en het logboek ----
+  // ---- Vandaag: begroeting, snelknoppen, cijfers met trend, Te doen, grafiek, je acties en wat er aan de toonbank gebeurde ----
   var METRICS = { stamps: ["Stempels", "stempels", "#12A77E", "#2ED3A6"], rewards: ["Beloningen", "beloningen", "#D2412E", "#FF6B57"], new_members: ["Nieuwe leden", "leden", "#4A3CE0", "#6A5CFF"] };
   var PERIODS = [[7, "W", "Week"], [30, "M", "Maand"], [90, "K", "Kwartaal"], [365, "J", "Jaar"]];
-  VIEWS.overzicht = async function (panel, b) {
-    if (dash.sub === "members") return membersView(panel, b);
+  function sumOf(arr, k) { return arr.reduce(function (a, d) { return a + (Number(d[k]) || 0); }, 0); }
+  VIEWS.vandaag = function (panel, b) {
     if (dash.sub === "log") return logView(panel, b, 300);
-    panel.innerHTML = panelTitle("Overzicht", "Resultaten van stempelkaarten, coupons, actiecodes en klantenbinding.") +
-      '<div class="zd-kpis" id="ovKpi">' + ["Stempels", "Beloningen", "Nieuwe leden", "Leden"].map(function (t, i) { return '<div class="zd-kpi k' + i + '"><small>' + t + "</small><b>–</b></div>"; }).join("") + "</div>" +
-      '<div class="zd-insights" id="ovChart"><p class="zk-empty">Laden…</p></div>' +
-      '<div class="zd-two"><div class="zk-panel" id="ovCards"></div><div class="zk-panel" id="ovLog"><h3>Logboek</h3><p class="zk-empty">Laden…</p></div></div>' +
-      '<section class="pz2-panel" id="pz2Insights"><h3>Klantenbinding en kortingsbonnen</h3><p>Inzichten laden…</p></section>' +
-      '<section class="pz2-panel"><h3>Overzicht zakelijke producten</h3><div id="ovBusinessProducts">Laden…</div></section>';
-    var cards = b.cards || [];
-    $("#ovCards").innerHTML = "<h3>Leden per kaart</h3>" + (cards.length ? '<ul class="zd-list">' + cards.map(function (c) {
-      return '<li><button type="button" data-card="' + esc(c.id) + '"><span class="dot" style="background:' + esc(c.color) + '"></span><span class="t"><b>' + esc(c.name) + "</b><small>" + (c.published ? "Online" : "Concept") + " · " + plural(c.stamps || 0, "stempel", "stempels") + "</small></span><span class=\"n\">" + (c.members || 0) + '<small>leden</small></span>' + ICON.chevron + "</button></li>";
-    }).join("") + "</ul>" : '<p class="zk-empty">Nog geen kaarten. <button class="zk-btn sm" type="button" id="ovNew">' + ICON.plus + "Kaart ontwerpen</button></p>");
-    $("#ovCards").querySelectorAll("[data-card]").forEach(function (btn) {
-      btn.addEventListener("click", function () { dash.edit = cards.filter(function (c) { return c.id === btn.dataset.card; })[0]; dash.sub = "members"; VIEWS.overzicht(panel, b); });
+    var now = new Date(), hr = now.getHours();
+    var hello = hr < 6 ? "Goedenacht" : hr < 12 ? "Goedemorgen" : hr < 18 ? "Goedemiddag" : "Goedenavond";
+    var name = session && session.first_name;
+    var date = now.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" });
+    function quick(act, icon, label) { return '<button type="button" class="zd3-qbtn" data-quick="' + act + '">' + ICON[icon] + "<span>" + label + "</span></button>"; }
+    panel.innerHTML = '<div class="zd3-hello"><div><p class="zd3-date">' + esc(date.charAt(0).toUpperCase() + date.slice(1)) + '</p><h2 id="zd-title">' + hello + (name ? ", " + esc(name) : "") + "</h2></div>" +
+      '<div class="zd3-quick" role="group" aria-label="Nieuw maken">' + quick("card", "plus", "Stempelkaart") + quick("kortingsbonnen", "tag", "Kortingsbon") +
+      quick("actiecodes", "code", "Actiecode") + quick("gezamenlijke-acties", "users", "Gezamenlijke actie") + "</div></div>" +
+      '<div class="zd3-kpis" id="tdKpi">' + ["Stempels", "Beloningen", "Nieuwe leden", "Terugkerend (90 d)"].map(function (t, i) {
+        return '<div class="zd3-kpi"><small>' + t + (i < 3 ? '<span class="zd3-kpiw"> deze week</span>' : "") + "</small><b>–</b></div>";
+      }).join("") + "</div>" +
+      '<div class="zd3-grid">' +
+      '<section class="zd3-card zd3-todocard" id="tdTodo" aria-labelledby="tdTodoH"><div class="zd3-cardhead"><h3 id="tdTodoH">Te doen</h3></div><p class="zd3-muted">Laden…</p></section>' +
+      '<section class="zd3-card zd3-chartcard" id="tdChart" aria-labelledby="tdChartH"><div class="zd3-cardhead"><h3 id="tdChartH">Stempels</h3></div><p class="zd3-muted">Laden…</p></section>' +
+      '<section class="zd3-card" id="tdActs" aria-labelledby="tdActsH"><div class="zd3-cardhead"><h3 id="tdActsH">Je acties</h3><button type="button" class="zk-btn sm" id="tdNew">' + ICON.plus + 'Nieuw</button></div><div class="zd3-slot"><p class="zd3-muted">Laden…</p></div></section>' +
+      '<section class="zd3-card" id="tdLog" aria-labelledby="tdLogH"><div class="zd3-cardhead"><h3 id="tdLogH">Vandaag aan de toonbank</h3></div><p class="zd3-muted">Laden…</p></section></div>';
+    panel.querySelectorAll("[data-quick]").forEach(function (btn) {
+      btn.addEventListener("click", function () { var q = btn.dataset.quick; if (q === "card") openNewCard(b); else go(q); });
     });
-    var nb = $("#ovNew"); if (nb) nb.addEventListener("click", function () { go("kaarten"); });
-    drawInsights(b);
-    Promise.allSettled([
-      rpc("pasr_business_coupon_list",{p_business:b.id},true),
-      rpc("pasr_business_promo_list",{p_business:b.id},true)
-    ]).then(function(results) {
-      var el=$("#ovBusinessProducts");if(!el)return;
-      var coupons=results[0].status==="fulfilled"?results[0].value:null;
-      var codes=results[1].status==="fulfilled"?results[1].value:null;
-      var now=Date.now();
-      var activeCoupons=coupons?coupons.filter(function(x){return x.public&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now;}):null;
-      var activeCodes=codes?codes.filter(function(x){return x.active&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now&&Number(x.used_count)<Number(x.max_uses);}):null;
-      el.innerHTML='<div class="zd-kpis"><div class="zd-kpi"><small>Stempelkaarten online</small><b>'+cards.filter(function(x){return x.published;}).length+'</b></div>'+
-        '<div class="zd-kpi"><small>Actieve coupons</small><b>'+(activeCoupons?activeCoupons.length:"–")+'</b></div>'+
-        '<div class="zd-kpi"><small>Actieve codes</small><b>'+(activeCodes?activeCodes.length:"–")+'</b></div>'+
-        '<div class="zd-kpi"><small>Codegebruik totaal</small><b>'+(codes?codes.reduce(function(n,x){return n+Number(x.used_count||0);},0):"–")+'</b></div></div>';
+    $("#tdNew").addEventListener("click", function (ev) { createModal(b, ev.currentTarget); });
+    todayKpis(b);
+    drawToday(b);
+    counterLog($("#tdLog"), b);
+    loadExtra(b, true).then(function (x) {
+      updateShell(b, x);
+      var todo = $("#tdTodo", panel), acts = $("#tdActs", panel); if (!todo || !acts || !acts.isConnected || !acts.querySelector(".zd3-slot")) return;
+      var items = todoItems(b, x);
+      todo.innerHTML = '<div class="zd3-cardhead"><h3 id="tdTodoH">Te doen' + (items.length ? ' <span class="zd3-count">' + items.length + "</span>" : "") + "</h3></div>" +
+        (items.length ? todoHtml(items) : '<p class="zd3-empty">' + ICON.check + "Niets te doen. Alles is bij.</p>");
+      todo.querySelectorAll("[data-todo]").forEach(function (btn) {
+        btn.addEventListener("click", function () { var t = items[Number(btn.dataset.todo)]; if (t.run) t.run(btn); else go(t.tab); });
+      });
+      var rows = actionRows(b, x).sort(function (p, q) { return (q.live ? 1 : 0) - (p.live ? 1 : 0); }), shown = rows.slice(0, 6);
+      acts.querySelector(".zd3-slot").outerHTML = shown.length ? rowList(shown) + (rows.length > shown.length ? '<p class="zd-more"><a class="zk-btn ghost sm" href="#alle-acties" data-go="alle-acties">Alle ' + rows.length + " acties" + ICON.chevron + "</a></p>" : "")
+        : '<p class="zd3-empty">Nog geen acties. Maak je eerste stempelkaart, kortingsbon of actiecode.</p>';
+      bindRows(acts, shown);
     });
-    logView($("#ovLog"), b, 8, true);
-    rpc("pasr_business_loyalty_insights",{p_business:b.id},true).then(function(metrics){
-      var box=$("#pz2Insights");
-      if(!box)return;
-      var labels=[
-        ["members","Actieve kaartleden"],["members_30d","Nieuwe leden (30 dagen)"],
-        ["stamps_30d","Stempels (30 dagen)"],["returning_customers_90d","Terugkerende klanten (90 dagen)"],
-        ["milestone_rewards","Tussentijdse beloningen"],["claimed_coupons","Bonnen bewaard"],
-        ["redeemed_coupons","Bonnen gebruikt"]];
-      box.innerHTML='<h3>Klantenbinding en kortingsbonnen</h3><p>Alleen geaggregeerde aantallen; geen klantnamen of privégegevens.</p>' +
-        '<div class="zd-kpis">'+labels.map(function(x){
-          return '<div class="zd-kpi"><small>'+esc(x[1])+'</small><b>'+Number(metrics[x[0]]||0)+'</b></div>';
-        }).join("")+'</div>';
-    }).catch(function(e){
-      var box=$("#pz2Insights");if(box)box.innerHTML='<h3>Klantenbinding en kortingsbonnen</h3><p>'+esc(nice(e))+'</p>';
+  };
+  async function todayKpis(b) {
+    var box = $("#tdKpi"); if (!box) return;
+    var res = await Promise.allSettled([rpc("pasr_business_stats", { p_business: b.id, p_days: 14 }, true), rpc("pasr_business_loyalty_insights", { p_business: b.id }, true)]);
+    box = $("#tdKpi"); if (!box) return;
+    var cells = box.querySelectorAll(".zd3-kpi");
+    // vergelijken kan pas als de zaak de hele vorige week al bestond
+    var compare = !b.created_at || Date.now() - Date.parse(b.created_at) >= 14 * DAY;
+    function trend(cur, prev) {
+      if (!compare) return "";
+      var d = cur - prev;
+      if (!d) return '<span class="zd3-trend">Gelijk aan vorige week</span>';
+      var pct = prev ? Math.round(Math.abs(d) / prev * 100) + "%" : String(Math.abs(d));
+      return '<span class="zd3-trend ' + (d > 0 ? "up" : "down") + '"><span aria-hidden="true">' + (d > 0 ? "▲" : "▼") + "</span> " + (d > 0 ? "+" : "−") + pct +
+        ' <span class="zd3-trendlbl">t.o.v. vorige week</span><span class="sr-only"> (' + (d > 0 ? "meer" : "minder") + " dan vorige week: " + prev + ")</span></span>";
+    }
+    if (res[0].status === "fulfilled") {
+      var all = (res[0].value && res[0].value.days) || [], cur = all.slice(-7), prev = all.slice(0, Math.max(0, all.length - 7));
+      ["stamps", "rewards", "new_members"].forEach(function (k, i) {
+        var c = sumOf(cur, k), p = sumOf(prev, k);
+        cells[i].innerHTML = "<small>" + cells[i].querySelector("small").innerHTML + "</small><b>" + c.toLocaleString("nl-NL") + "</b>" + (prev.length === 7 ? trend(c, p) : "");
+      });
+    } else for (var i = 0; i < 3; i++) cells[i].insertAdjacentHTML("beforeend", '<span class="zd3-trend">' + esc(nice(res[0].reason)) + "</span>");
+    if (res[1].status === "fulfilled") {
+      var x = res[1].value || {}, members = Number(x.members || 0), ret = Number(x.returning_customers_90d || 0);
+      cells[3].innerHTML = "<small>Terugkerend (90 d)</small><b>" + (members ? Math.round(ret / members * 100) + "%" : ret.toLocaleString("nl-NL")) + "</b>" +
+        '<span class="zd3-trend">' + (members ? ret.toLocaleString("nl-NL") + " van " + plural(members, "klant", "klanten") : "klanten met 2+ stempelacties") + "</span>";
+    }
+  }
+  async function drawToday(b) {
+    var box = $("#tdChart"); if (!box) return;
+    var days = dash.today.days, m = METRICS.stamps, data;
+    try { data = await rpc("pasr_business_stats", { p_business: b.id, p_days: days }, true); }
+    catch (e) { box.innerHTML = '<div class="zd3-cardhead"><h3 id="tdChartH">Stempels</h3></div><p class="zk-empty">' + esc(nice(e)) + "</p>"; return; }
+    box = $("#tdChart"); if (!box) return;
+    var rows = data.days || [], total = sumOf(rows, "stamps");
+    var range = rows.length ? dayLabel(rows[0].day) + " – " + dayLabel(rows[rows.length - 1].day) : "";
+    box.innerHTML = '<div class="zd3-cardhead"><div><h3 id="tdChartH">Stempels</h3><p class="zd3-chartval"><b id="ziVal">' + total + '</b> stempels · <span id="ziWhen">' + esc(range) + "</span></p></div>" +
+      '<div class="zi-seg" role="group" aria-label="Periode">' + [[7, "7 d", "7 dagen"], [30, "30 d", "30 dagen"], [365, "Jaar", "Een jaar"]].map(function (p) {
+        return '<button type="button" data-d="' + p[0] + '" aria-pressed="' + (p[0] === days) + '" aria-label="' + p[2] + '">' + p[1] + "</button>";
+      }).join("") + "</div></div>" + chartHtml(rows, "stamps", m) +
+      '<p class="sr-only">Stempels: ' + total + " in " + esc(range) + ".</p>";
+    box.querySelectorAll("[data-d]").forEach(function (x) { x.addEventListener("click", function () { dash.today.days = Number(x.dataset.d); drawToday(b).then(function () { var f = $('#tdChart [data-d="' + x.dataset.d + '"]'); if (f) f.focus(); }); }); });
+    bindChart(box, rows, "stamps", m, total, range);
+  }
+  // Wat er vandaag aan de toonbank gebeurde (uit het logboek); is het vandaag nog stil, dan de laatste gebeurtenissen.
+  async function counterLog(box, b) {
+    var head = '<div class="zd3-cardhead"><h3 id="tdLogH">Vandaag aan de toonbank</h3></div>';
+    try {
+      var r = await rpc("pasr_business_log", { p_business: b.id, p_limit: 12 }, true), ev = r.events || [];
+      if (!box.isConnected) return;
+      var today = new Date().toDateString();
+      var todays = ev.filter(function (x) { return new Date(x.at).toDateString() === today; });
+      var list = todays.length ? todays.slice(0, 6) : ev.slice(0, 4);
+      var rows = list.map(function (x) {
+        var what = x.kind === "stamp" ? ((x.amount || 1) > 1 ? x.amount + " stempels gezet" : "Stempel gezet") : (KIND[x.kind] || x.kind);
+        var d = new Date(x.at), t = todays.length ? d.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+        var sub = [x.card_name || "verwijderde kaart", x.by_role === "customer" ? "" : "door " + (x.by_name || "—")].filter(Boolean).join(" · ");
+        return '<li class="' + (x.undone ? "undone" : "") + '"><time datetime="' + esc(x.at) + '">' + esc(t) + "</time><span><b>" + esc(what) + (x.undone ? " <small>(ongedaan)</small>" : "") + "</b><small>" + esc(sub) + "</small></span></li>";
+      }).join("");
+      box.innerHTML = head + (todays.length ? "" : '<p class="zd3-muted">' + (ev.length ? "Vandaag nog niets gebeurd. Dit was het laatst:" : "Nog niets gebeurd. Zodra je de eerste klant scant, staat het hier.") + "</p>") +
+        (rows ? '<ol class="zd3-timeline">' + rows + "</ol>" : "") +
+        (ev.length ? '<p class="zd-more"><button class="zk-btn ghost sm" type="button" id="lgAll">Hele logboek bekijken' + ICON.chevron + "</button></p>" : "");
+      var all = $("#lgAll", box); if (all) all.addEventListener("click", function () { dash.sub = "log"; render(); focusPanel(); });
+    } catch (e) { box.innerHTML = head + '<p class="zk-empty">' + esc(nice(e)) + "</p>"; }
+  }
+
+  // ---- Acties (telefoon): alles op één lijst met filters ----
+  var FILTERS = [["alles", "Alles"], ["card", "Stempelkaarten"], ["coupon", "Bonnen"], ["code", "Codes"], ["community", "Samen"]];
+  VIEWS["alle-acties"] = function (panel, b) {
+    panel.innerHTML = panelTitle("Acties", "Je stempelkaarten, kortingsbonnen, actiecodes en gezamenlijke acties.", '<button class="zk-btn" type="button" id="aaNew">' + ICON.plus + "Nieuw</button>") +
+      '<div class="zd3-chips" role="group" aria-label="Soort actie">' + FILTERS.map(function (f) { return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (dash.filter === f[0]) + '">' + f[1] + "</button>"; }).join("") + "</div>" +
+      '<div id="aaList" aria-live="polite"><p class="zd3-muted">Laden…</p></div>';
+    $("#aaNew").addEventListener("click", function (ev) { createModal(b, ev.currentTarget); });
+    var data = null;
+    function draw() {
+      var box = $("#aaList"); if (!box || !data) return;
+      var rows = actionRows(b, data).filter(function (r) { return dash.filter === "alles" || r.kind === dash.filter; });
+      var hero = (dash.filter === "alles" || dash.filter === "card") ? (b.cards || []).filter(function (c) { return c.published; })[0] || (b.cards || [])[0] : null;
+      var heroRow = hero ? rows.filter(function (r) { return r.kind === "card" && r.title === hero.name; })[0] : null;
+      if (heroRow) rows.splice(rows.indexOf(heroRow), 1);
+      box.innerHTML = (hero ? '<button type="button" class="zd3-hero" id="aaHero"><span class="sr-only">' + esc(hero.name) + " openen</span>" + stampCard(hero, null) + "</button>" : "") +
+        (rows.length ? rowList(rows, "boxed") : hero ? "" : '<p class="zd3-empty">' + (dash.filter === "alles" ? "Nog geen acties. Tik op Nieuw om te beginnen." : "Geen acties van deze soort.") + "</p>");
+      bindRows(box, rows);
+      var hb = $("#aaHero"); if (hb) hb.addEventListener("click", function () { openCard(hero); });
+    }
+    panel.querySelectorAll("[data-f]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        dash.filter = btn.dataset.f;
+        panel.querySelectorAll("[data-f]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === btn)); });
+        draw();
+      });
     });
+    loadExtra(b, true).then(function (x) { data = x; updateShell(b, x); draw(); });
+  };
+  // ---- Meer (telefoon): de overige onderdelen in groepen ----
+  VIEWS.meer = function (panel, b) {
+    var skip = ["vandaag", "alle-acties", "meer", "scannen", "inzichten", "stempelkaarten"];
+    var tabs = tabsFor(b).filter(function (t) { return skip.indexOf(t.id) < 0; });
+    var html = panelTitle("Meer", "");
+    GROUPS.concat(["foot"]).forEach(function (g, i) {
+      var list = tabs.filter(function (t) { return t.group === g; });
+      if (!list.length) return;
+      html += '<h3 class="zd3-group" id="mg' + i + '">' + (g === "foot" ? "Overig" : esc(g)) + '</h3><ul class="zd3-morelist" aria-labelledby="mg' + i + '">' + list.map(function (t) { return navLink(t); }).join("") + "</ul>";
+    });
+    panel.innerHTML = html;
+    loadExtra(b).then(function (x) { updateShell(b, x); });
   };
 
   async function drawInsights(b) {
@@ -755,8 +1155,8 @@
   // ---- logboek (niet te wissen) ----
   var KIND = { join: "Nieuw lid", claim: "Kaart naar de app", stamp: "Stempel", redeem: "Beloning ingewisseld", undo: "Ongedaan gemaakt" };
   async function logView(box, b, limit, compact) {
-    if (!compact) box.innerHTML = '<p class="zd-back"><button class="zk-btn ghost sm" type="button" id="lgBack">' + ICON.back + "Overzicht</button></p>" + panelTitle("Logboek", "Elke stempel, inwisseling en ongedaanmaking met wie, wat en wanneer. Niemand kan het logboek wissen, ook jij niet.") + '<div class="zk-panel" id="lgBody"><p class="zk-empty">Laden…</p></div>';
-    if (!compact) $("#lgBack").addEventListener("click", function () { dash.sub = null; render(); });
+    if (!compact) box.innerHTML = '<p class="zd-back"><button class="zk-btn ghost sm" type="button" id="lgBack">' + ICON.back + "Vandaag</button></p>" + panelTitle("Logboek", "Elke stempel, inwisseling en ongedaanmaking met wie, wat en wanneer. Niemand kan het logboek wissen, ook jij niet.") + '<div class="zk-panel" id="lgBody"><p class="zk-empty">Laden…</p></div>';
+    if (!compact) $("#lgBack").addEventListener("click", function () { dash.sub = null; render(); focusPanel(); });
     var body = compact ? box : $("#lgBody");
     try {
       var r = await rpc("pasr_business_log", { p_business: b.id, p_limit: limit }, true), ev = r.events || [];
@@ -778,9 +1178,9 @@
   // ---- leden van één kaart ----
   async function membersView(panel, b) {
     var c = dash.edit;
-    panel.innerHTML = '<p class="zd-back"><button class="zk-btn ghost sm" type="button" id="mBack">' + ICON.back + "Overzicht</button></p>" +
+    panel.innerHTML = '<p class="zd-back"><button class="zk-btn ghost sm" type="button" id="mBack">' + ICON.back + "Stempelkaarten</button></p>" +
       panelTitle("Leden van " + c.name, c.stamps_total + " stempels voor " + esc(c.reward)) + '<div class="zk-panel" id="mBody"><p class="zk-empty">Laden…</p></div>';
-    $("#mBack").addEventListener("click", function () { dash.sub = null; render(); });
+    $("#mBack").addEventListener("click", function () { dash.sub = null; dash.edit = null; render(); focusPanel(); });
     try {
       var d = await rpc("pasr_business_members_list", { p_card: c.id, p_limit: 300 }, true);
       var rows = (d.members || []).map(function (m) {
@@ -792,15 +1192,46 @@
     } catch (e) { $("#mBody").innerHTML = '<p class="zk-empty">' + esc(nice(e)) + "</p>"; }
   }
 
-  // ---- Kaarten: maken, bewerken, publiceren, huisstijl, QR, link en flyer ----
-  VIEWS.kaarten = function (panel, b) {
+  // ---- Stempelkaarten: maken, bewerken, publiceren, huisstijl, QR, link, flyer, leden en verwijderen (naar de Prullenbak) ----
+  function createModal(b, opener) {
+    var cards = b.cards || [];
+    var md = modal("Wat wil je aanmaken?",
+      '<h2>Wat wil je aanmaken?</h2><p>Kies een actie voor ' + esc(b.name) + '.</p>' +
+      '<div class="zd-modal-foot zd3-create">' +
+      '<button class="zk-btn" id="zkCreateCard" type="button"' + (cards.length >= 5 ? ' disabled' : '') + '>' + ICON.card + 'Stempelkaart</button>' +
+      '<button class="zk-btn" id="zkCreateCoupon" type="button">' + ICON.tag + 'Kortingsbon</button>' +
+      '<button class="zk-btn" id="zkCreatePromo" type="button">' + ICON.code + 'Actiecode</button>' +
+      '<button class="zk-btn" id="zkCreateCommunity" type="button">' + ICON.users + 'Gezamenlijke actie</button>' +
+      '<button class="zk-btn" id="zkCreateAction" type="button"' + (!cards.length ? ' disabled' : '') + '>' + ICON.gift + 'Beloning</button>' +
+      '<button class="zk-btn ghost" id="zkCreateClose" type="button">Annuleren</button></div>' +
+      (cards.length >= 5 ? '<p class="zd-help">Je hebt al 5 stempelkaarten, het maximum.</p>' : ""), opener);
+    $("#zkCreateCard", md.el).addEventListener("click", function () { md.close(); openCard(null); });
+    $("#zkCreateCoupon", md.el).addEventListener("click", function () { md.close(); go("kortingsbonnen"); });
+    $("#zkCreatePromo", md.el).addEventListener("click", function () { md.close(); go("actiecodes"); });
+    $("#zkCreateCommunity", md.el).addEventListener("click", function () { md.close(); go("gezamenlijke-acties"); });
+    $("#zkCreateAction", md.el).addEventListener("click", function () { md.close(); go("beloningen"); });
+    $("#zkCreateClose", md.el).addEventListener("click", md.close);
+  }
+  function deleteCard(c, opener, after) {
+    var md = modal("Stempelkaart verwijderen", '<h2>' + esc(c.name) + ' verwijderen?</h2><p>De kaart gaat naar de Prullenbak en klanten zien hem niet meer. Definitief verwijderen doe je in de Prullenbak; het logboek blijft altijd staan.</p>' +
+      '<p class="zd-modal-foot"><button class="zk-btn ghost" type="button" id="dNo">Annuleren</button><button class="zk-btn danger-solid" type="button" id="dYes">' + ICON.trash + "Naar de Prullenbak</button></p>", opener);
+    $("#dNo", md.el).addEventListener("click", md.close);
+    $("#dYes", md.el).addEventListener("click", async function (ev) {
+      ev.currentTarget.disabled = true;
+      try { await rpc("pasr_business_card_delete", { p_card: c.id }, true); md.close(); dash.sub = null; dash.edit = null; await refresh(); toast("Verplaatst naar de Prullenbak"); }
+      catch (e) { md.close(); if (after) after(nice(e)); else toast(nice(e)); }
+    });
+  }
+  VIEWS.stempelkaarten = function (panel, b) {
     if (dash.sub === "edit") return editView(panel, b);
+    if (dash.sub === "members" && dash.edit) return membersView(panel, b);
     var cards = b.cards || [], approved = b.status === "approved";
-    var add = '<button class="zk-btn" id="zkNew" type="button">' + ICON.plus + "Nieuw aanmaken</button>";
-    var html = panelTitle("Acties", plural(cards.length, "stempelkaart", "stempelkaarten") + " van de 5" + (approved ? "" : " · online zetten kan na goedkeuring"), cards.length ? add : "");
+    var add = '<button class="zk-btn" id="zkNew" type="button">' + ICON.plus + "Nieuw</button>";
+    var html = panelTitle("Stempelkaarten", plural(cards.length, "stempelkaart", "stempelkaarten") + " van de 5" + (approved ? "" : " · online zetten kan na goedkeuring"), cards.length ? add : "");
     if (!cards.length) {
       html += '<div class="zk-panel zd-first"><div class="zd-first-card">' + stampCard({ name: "Koffiekaart", business: b.name, city: b.city, color: "#6A5CFF", stamps_total: 10, reward: "1 gratis koffie" }, 4) + "</div><div><h3>Je eerste stempelkaart</h3><p>Kies een naam, je logo en kleur, hoeveel stempels er op een kaart gaan en wat je klant daarvoor krijgt." +
-        (b.website ? " We halen je logo en kleur alvast van " + esc(b.website.replace(/^https?:\/\//, "").replace(/\/.*$/, "")) + "." : "") + "</p>" + add + "</div></div>";
+        (b.website ? " We halen je logo en kleur alvast van " + esc(b.website.replace(/^https?:\/\//, "").replace(/\/.*$/, "")) + "." : "") + "</p>" +
+        '<button class="zk-btn" id="zkFirst" type="button">' + ICON.plus + "Stempelkaart ontwerpen</button></div></div>";
     } else {
       html += '<div class="zk-cards">' + cards.map(function (c) {
         return '<article class="zk-card" data-id="' + esc(c.id) + '" aria-labelledby="c-' + esc(c.id) + '">' + stampCard(c, null) + '<div class="zd-cardinfo">' +
@@ -811,56 +1242,21 @@
           '<button class="zk-btn ghost sm" type="button" data-act="promo">' + ICON.download + 'Promotiemateriaal</button>' +
           (c.published ? '<button class="zk-btn ghost sm" type="button" data-act="share">' + ICON.qr + 'QR-code en link</button><a class="zk-btn ghost sm" href="/zakelijk/flyer/#' + esc(c.id) + '" target="_blank" rel="noopener">' + ICON.print + 'Flyer<span class="sr-only"> (opent in een nieuw venster)</span></a>'
             : approved ? '<button class="zk-btn ghost sm" type="button" data-act="publish">' + ICON.upload + "Online zetten</button>" : "") +
-          '<button class="zk-btn ghost sm" type="button" data-act="members">' + ICON.users + "Leden</button></div></div></article>";
+          '<button class="zk-btn ghost sm" type="button" data-act="members">' + ICON.users + "Leden</button>" +
+          '<button class="zk-btn ghost sm danger" type="button" data-act="delete">' + ICON.trash + 'Verwijderen<span class="sr-only"> ' + esc(c.name) + "</span></button></div></div></article>";
       }).join("") + "</div>";
     }
-    html += '<section class="pz2-panel" style="margin-top:22px"><h3>Kortingscoupons en actiecodes</h3>' +
-      '<div class="zd-kpis" id="zkAllOffers">Kortingen laden…</div>' +
-      '<div class="zk-actions"><button class="zk-btn ghost" id="zkViewCoupons">Kortingscoupons beheren</button>' +
-      '<button class="zk-btn ghost" id="zkViewCodes">Actiecodes beheren</button>' +
-      '<button class="zk-btn ghost" id="zkViewPromo">Promotiemateriaal maken</button></div></section>';
     panel.innerHTML = html;
-    $("#zkViewCoupons").addEventListener("click", function(){go("kortingsbonnen");});
-    $("#zkViewCodes").addEventListener("click", function(){go("actiecodes");});
-    $("#zkViewPromo").addEventListener("click", function(){go("promotiemateriaal");});
-    Promise.allSettled([
-      rpc("pasr_business_coupon_list",{p_business:b.id},true),
-      rpc("pasr_business_promo_list",{p_business:b.id},true)
-    ]).then(function(all){
-      var box=$("#zkAllOffers");if(!box)return;
-      var coupons=all[0].status==="fulfilled"?all[0].value:null;
-      var codes=all[1].status==="fulfilled"?all[1].value:null;
-      var now=Date.now();
-      function active(x){return x&&x.public&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now;}
-      function activeCode(x){return x&&x.active&&Date.parse(x.starts_at)<=now&&Date.parse(x.ends_at)>now&&Number(x.used_count||0)<Number(x.max_uses||0);}
-      box.innerHTML='<div class="zd-kpi"><small>Stempelkaarten online</small><b>'+cards.filter(function(x){return x.published;}).length+'</b></div>'+
-        '<div class="zd-kpi"><small>Actieve kortingscoupons</small><b>'+(coupons?coupons.filter(active).length:"–")+'</b></div>'+
-        '<div class="zd-kpi"><small>Actieve actiecodes</small><b>'+(codes?codes.filter(activeCode).length:"–")+'</b></div>'+
-        (coupons?coupons.map(function(c){return '<div class="zk-panel"><b>'+esc(c.title)+'</b> · Coupon · '+(active(c)?"Actief":"Concept/verlopen")+'</div>';}).join(""):'<p>Coupons konden niet worden geladen.</p>')+
-        (codes?codes.map(function(c){return '<div class="zk-panel"><b>'+esc(c.title)+'</b> · Code '+esc(c.code)+' · '+(activeCode(c)?"Actief":"Niet actief")+'</div>';}).join(""):'<p>Actiecodes konden niet worden geladen.</p>');
-    });
-    var nb = $("#zkNew"); if (nb) nb.addEventListener("click", function () {
-      var md = modal("Wat wil je aanmaken?",
-        '<h2>Wat wil je aanmaken?</h2><p>Kies een product voor ' + esc(b.name) + '.</p>' +
-        '<div class="zd-modal-foot" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-start">' +
-        '<button class="zk-btn" id="zkCreateCard" type="button"' + (cards.length >= 5 ? ' disabled' : '') + '>Stempelkaart</button>' +
-        '<button class="zk-btn" id="zkCreateCoupon" type="button">Kortingscoupon</button>' +
-        '<button class="zk-btn" id="zkCreatePromo" type="button">Zelfgekozen actiecode</button>' +
-        '<button class="zk-btn" id="zkCreateAction" type="button"' + (!cards.length ? ' disabled' : '') + '>Actie of beloning</button>' +
-        '<button class="zk-btn ghost" id="zkCreateClose" type="button">Annuleren</button></div>', nb);
-      $("#zkCreateCard", md.el).addEventListener("click", function () { md.close(); dash.edit = null; dash.sub = "edit"; render(); });
-      $("#zkCreateCoupon", md.el).addEventListener("click", function () { md.close(); go("kortingsbonnen"); });
-      $("#zkCreatePromo", md.el).addEventListener("click", function () { md.close(); go("actiecodes"); });
-      $("#zkCreateAction", md.el).addEventListener("click", function () { md.close(); go("acties"); });
-      $("#zkCreateClose", md.el).addEventListener("click", md.close);
-    });
+    var nb = $("#zkNew"); if (nb) nb.addEventListener("click", function () { createModal(b, nb); });
+    var first = $("#zkFirst"); if (first) first.addEventListener("click", function () { openCard(null); });
     panel.querySelectorAll(".zk-card button[data-act]").forEach(function (btn) {
       btn.addEventListener("click", async function () {
         var id = btn.closest(".zk-card").dataset.id, card = cards.filter(function (c) { return c.id === id; })[0];
-        if (btn.dataset.act === "edit") { dash.edit = card; dash.sub = "edit"; render(); }
+        if (btn.dataset.act === "edit") { dash.edit = card; dash.sub = "edit"; render(); focusPanel(); }
         if (btn.dataset.act === "share") shareModal(card, btn);
         if (btn.dataset.act === "promo") promoModal(card, btn);
-        if (btn.dataset.act === "members") { dash.edit = card; dash.tab = "overzicht"; history.pushState(null, "", "#overzicht"); dash.sub = "members"; render(); }
+        if (btn.dataset.act === "members") { dash.edit = card; dash.sub = "members"; render(); focusPanel(); }
+        if (btn.dataset.act === "delete") deleteCard(card, btn);
         if (btn.dataset.act === "publish") {
           btn.disabled = true;
           try { await rpc("pasr_business_card_save", { p_card: { id: card.id, name: card.name, reward: card.reward, stamps_total: card.stamps_total, color: card.color, published: true } }, true); await refresh(); toast("Je kaart staat online"); }
@@ -921,7 +1317,7 @@
     var c = dash.edit || { name: "", reward: "", stamps_total: 10, color: "#6A5CFF", logo: null, published: false };
     var approved = b.status === "approved";
     var state = { name: c.name, reward: c.reward, stamps_total: c.stamps_total, color: c.color, logo: c.logo, business: b.name, city: b.city, text_color: c.id ? undefined : null };
-    panel.innerHTML = '<p class="zd-back"><button class="zk-btn ghost sm" type="button" id="cBack">' + ICON.back + "Kaarten</button></p>" +
+    panel.innerHTML = '<p class="zd-back"><button class="zk-btn ghost sm" type="button" id="cBack">' + ICON.back + "Stempelkaarten</button></p>" +
       panelTitle(c.id ? "Kaart bewerken" : "Nieuwe kaart", c.id ? esc(c.name) : "Je ziet rechts meteen hoe je klant hem ziet.") +
       '<div class="zk-editor"><form id="zkCard" class="zk-panel zk-form" novalidate>' +
       '<label for="cName">Naam van de kaart</label><input id="cName" maxlength="40" placeholder="bijv. Koffiekaart" value="' + esc(c.name) + '" required>' +
@@ -988,19 +1384,10 @@
       img.onerror = function () { setMsg($("#cMsg"), "Dit bestand is geen afbeelding."); };
       img.src = url;
     });
-    var back = function () { dash.sub = null; dash.edit = null; render(); };
+    var back = function () { dash.sub = null; dash.edit = null; render(); focusPanel(); };
     $("#cBack").addEventListener("click", back); $("#cCancel").addEventListener("click", back);
     var del = $("#cDel");
-    if (del) del.addEventListener("click", function () {
-      var md = modal("Kaart verwijderen", '<h2>' + esc(c.name) + ' verwijderen?</h2><p>Alle leden en stempels van deze kaart gaan ook weg; het logboek blijft staan. Dit kan niet ongedaan worden gemaakt.</p>' +
-        '<p class="zd-modal-foot"><button class="zk-btn ghost" type="button" id="dNo">Annuleren</button><button class="zk-btn danger-solid" type="button" id="dYes">' + ICON.trash + "Verwijderen</button></p>", del);
-      $("#dNo", md.el).addEventListener("click", md.close);
-      $("#dYes", md.el).addEventListener("click", async function (ev) {
-        ev.currentTarget.disabled = true;
-        try { await rpc("pasr_business_card_delete", { p_card: c.id }, true); md.close(); dash.sub = null; dash.edit = null; await refresh(); toast("Kaart verplaatst naar Verwijderd"); }
-        catch (e) { md.close(); setMsg($("#cMsg"), nice(e)); }
-      });
-    });
+    if (del) del.addEventListener("click", function () { deleteCard(c, del, function (m) { setMsg($("#cMsg"), m); }); });
     $("#zkCard").addEventListener("submit", async function (ev) {
       ev.preventDefault();
       if (!state.name.trim()) { $("#cName").focus(); return setMsg($("#cMsg"), "Geef de kaart een naam."); }
@@ -1107,7 +1494,7 @@
         await refresh(); setMsg($("#bizMsg"), "Opgeslagen.", true);
         if (args.p_website && args.p_website !== oldWeb && (current().cards || []).length) {
           $("#bizBrand").innerHTML = '<div class="zd-hint"><p>Nieuwe website. Wil je je logo en kleur er opnieuw van ophalen voor je kaarten?</p><button class="zk-btn sm" type="button" id="bizRebrand">' + ICON.palette + "Huisstijl ophalen</button></div>";
-          $("#bizRebrand").addEventListener("click", function () { dash.edit = current().cards[0]; dash.rebrand = true; dash.tab = "kaarten"; history.pushState(null, "", "#kaarten"); dash.sub = "edit"; render(); });
+          $("#bizRebrand").addEventListener("click", function () { dash.edit = current().cards[0]; dash.rebrand = true; dash.tab = "stempelkaarten"; history.pushState(null, "", "#stempelkaarten"); dash.sub = "edit"; render(); });
         }
       } catch (e) { setMsg($("#bizMsg"), /bad_name/.test(e.message) ? "Vul de naam van je zaak in (minstens 2 tekens)." : nice(e)); }
       btn.disabled = false;
@@ -1559,7 +1946,7 @@
         await rpc("pasr_business_community_accept_token", { p_business: bizId, p_token: t }, true);
         communityToken(null);
         box("<h1>Je doet mee</h1><p>Je zaak doet nu mee aan \u201c" + esc(p.title) + "\u201d. Zodra genoeg zaken meedoen, start de actie en zien klanten hem in Pasr. Je krijgt dan een mail en een melding.</p>" +
-          '<p class="zk-ci-actions"><a class="zk-btn" href="/zakelijk/dashboard/#samenwerkingen">Naar Samenwerkingen</a></p>');
+          '<p class="zk-ci-actions"><a class="zk-btn" href="/zakelijk/dashboard/#gezamenlijke-acties">Naar Gezamenlijke acties</a></p>');
       } catch (e) {
         if (e.status === 401) { session = null; saveSession(null); navState(); return show(); }
         if (/invite_(expired|not_found)/.test(String(e.message || ""))) communityToken(null);
@@ -1591,7 +1978,7 @@
       box(intro + (ok.length > 1 ? '<label class="zk-ci-pick" for="ciBiz">Meedoen met</label><select id="ciBiz">' +
           ok.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.name) + (x.city ? " \u00b7 " + esc(x.city) : "") + "</option>"; }).join("") + "</select>" : "") +
         '<p class="zk-ci-actions"><button class="zk-btn" type="button" id="ciYes">Accepteren' + (ok.length === 1 ? " met " + esc(ok[0].name) : "") + "</button>" +
-        '<a class="zk-btn ghost" href="/zakelijk/dashboard/#samenwerkingen">Later beslissen</a></p><p class="zk-msg" id="zkCiMsg" role="status" aria-live="polite"></p>');
+        '<a class="zk-btn ghost" href="/zakelijk/dashboard/#gezamenlijke-acties">Later beslissen</a></p><p class="zk-msg" id="zkCiMsg" role="status" aria-live="polite"></p>');
       $("#ciYes").addEventListener("click", function (ev) {
         var btn = ev.currentTarget, pick = $("#ciBiz");
         btn.disabled = true;
