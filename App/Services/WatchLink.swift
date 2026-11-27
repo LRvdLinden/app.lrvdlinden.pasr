@@ -22,7 +22,9 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// Call with the current cards; sends only when something the Watch shows has changed.
     @MainActor
     func send(_ cards: [Card], order: CardOrder = .az, distances: [UUID: Double] = [:]) {
+        // tickets voor hetzelfde evenement op dezelfde dag naast elkaar (TicketGroups.swift), elk met zijn eigen code
         let list = cards.filter { $0.deletedAt == nil && !$0.isTemporary }.ordered(order, distances: distances)
+            .stackItems().flatMap(\.cards)
             .enumerated().map { i, card in
                 var w = WatchCard(card)
                 w.rank = order == .az ? nil : i
