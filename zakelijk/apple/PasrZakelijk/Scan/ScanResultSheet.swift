@@ -17,6 +17,8 @@ struct ScanResultSheet: View {
     @State private var locations: [LocationOption] = []
     @State private var locationID = ""
     @State private var milestones: [Milestone] = []
+    @State private var community: [CommunityReward] = []
+    @State private var confirmCommunity: CommunityReward?
 
     init(business: Business, initial: ScanResult) {
         self.business = business
@@ -71,6 +73,7 @@ struct ScanResultSheet: View {
                         .disabled(busy)
                     }
                     if !milestones.isEmpty { milestoneControls }
+                    if !community.isEmpty { communityControls }
                     undoButton
                 }
                 .padding(20)
@@ -90,7 +93,7 @@ struct ScanResultSheet: View {
                     .disabled(busy)
                 }
             }
-            .task(id: result.stamps) { await loadMilestones() }
+            .task(id: result.stamps) { await loadMilestones(); await loadCommunity() }
             .task(id: business.id) { await loadLocations() }
             .sensoryFeedback(.success, trigger: successTick)
             .sensoryFeedback(.error, trigger: errorTick)
@@ -99,6 +102,14 @@ struct ScanResultSheet: View {
                 Button("Annuleer", role: .cancel) {}
             } message: {
                 Text(String(format: String(localized: "Er gaan %lld stempels af."), result.stampsTotal))
+            }
+            .confirmationDialog("Gezamenlijke beloning uitgeven?",
+                                isPresented: Binding(get: { confirmCommunity != nil }, set: { if !$0 { confirmCommunity = nil } }),
+                                titleVisibility: .visible, presenting: confirmCommunity) { item in
+                Button("Uitgeven: \(item.reward)") { Task { await claimCommunity(item) } }
+                Button("Annuleer", role: .cancel) {}
+            } message: { _ in
+                Text("Een gezamenlijke beloning kan maar één keer per klant worden uitgegeven.")
             }
         }
     }
@@ -156,6 +167,73 @@ struct ScanResultSheet: View {
             done = milestone.title + " uitgegeven"
             successTick += 1
             await loadMilestones()
+        } catch { self.error = error.localizedDescription; errorTick += 1 }
+    }
+
+    /// Gezamenlijke winkelstraatactie waaraan deze zaak meedoet, met de voortgang van de gescande klant.
+    private struct CommunityReward: Identifiable {
+        let id: String
+        let name: String
+        let reward: String
+        let visited: Int
+        let required: Int
+        let claimed: Bool
+        var available: Bool { !claimed && visited >= required }
+        init?(_ data: [String: Any]) {
+            guard let j = JSONObject(data), let id = j.string("id"), let name = j.string("name") else { return nil }
+            self.id = id
+            self.name = name
+            reward = j.string("reward") ?? ""
+            visited = j.int("visited") ?? 0
+            required = j.int("required") ?? 0
+            claimed = j.bool("claimed") ?? false
+        }
+    }
+
+    private var communityControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Gezamenlijke acties", systemImage: "person.3.fill").font(.headline)
+            ForEach(community) { item in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(item.name).font(.subheadline.bold())
+                        Text(item.reward).font(.footnote)
+                        Text(item.claimed ? "Al uitgegeven" : "\(min(item.visited, item.required)) van \(item.required) winkels bezocht")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button(item.claimed ? "Uitgegeven" : (item.available ? "Uitgeven" : "Nog niet")) {
+                        confirmCommunity = item
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(busy || !item.available)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    @MainActor private func loadCommunity() async {
+        do {
+            let list = try await Account.shared.rpc("pasr_business_community_member",
+                ["p_business": business.id, "p_member_code": result.code])
+            community = (list as? [[String: Any]] ?? []).compactMap(CommunityReward.init)
+        } catch { community = [] }
+    }
+
+    @MainActor private func claimCommunity(_ item: CommunityReward) async {
+        busy = true
+        error = nil
+        done = nil
+        defer { busy = false }
+        do {
+            _ = try await Account.shared.rpc("pasr_business_community_claim",
+                ["p_campaign": item.id, "p_business": business.id, "p_member_code": result.code])
+            done = "Gezamenlijke beloning uitgegeven: " + item.reward
+            successTick += 1
+            await loadCommunity()
         } catch { self.error = error.localizedDescription; errorTick += 1 }
     }
 
