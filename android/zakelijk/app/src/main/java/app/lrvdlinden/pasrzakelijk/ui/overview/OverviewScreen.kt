@@ -124,6 +124,8 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
     var loyalty by remember { mutableStateOf<JSONObject?>(null) }
     var coupons by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var promoCodes by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var tkEvents by remember { mutableStateOf<List<app.lrvdlinden.pasrzakelijk.data.TicketEvent>>(emptyList()) }
+    var tkCards by remember { mutableStateOf<List<app.lrvdlinden.pasrzakelijk.data.MemberCard>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf<MetricPoint?>(null) }
@@ -159,6 +161,8 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
                         as? org.json.JSONArray
                 }.getOrNull()
                 if(promoRows!=null)promoCodes=(0 until promoRows.length()).mapNotNull{promoRows.optJSONObject(it)}
+                runCatching { app.lrvdlinden.pasrzakelijk.data.TkApi.events(business.id) }.getOrNull()?.let { tkEvents = it }
+                runCatching { app.lrvdlinden.pasrzakelijk.data.TkApi.memberCards(business.id) }.getOrNull()?.let { tkCards = it }
                 selected = null
                 error = null
             } catch (e: Exception) {
@@ -241,6 +245,7 @@ private fun OverviewMain(business: Business, demoStats: List<DayStat>?, onMember
                     Kpi(L("Leden"), members ?: business.cards.sumOf { it.members }, Pz.iris, Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(14.dp))
+                app.lrvdlinden.pasrzakelijk.ui.tickets.TkOverview(tkEvents, tkCards)
                 SectionHeader("Zakelijke acties")
                 Group {
                     val activeCoupons=coupons.count { c ->

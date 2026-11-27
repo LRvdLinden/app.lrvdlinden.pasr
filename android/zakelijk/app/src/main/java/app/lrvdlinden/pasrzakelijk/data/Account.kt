@@ -203,7 +203,9 @@ object Account {
 /** Nette teksten bij wat de server zegt (zelfde regels als APIError.from in de iOS-app). */
 object ApiErrors {
     /** Foutcodes van de gezamenlijke acties (uitnodigingen), ook als ze midden in de melding staan. */
-    private val communityCodes = listOf("invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner")
+    private val communityCodes = listOf("invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner",
+        // tickets en klantenkaarten
+        "card_not_found", "already_member", "invalid_code", "event_full", "signup_closed", "invalid_input", "event_cancelled", "event_not_found")
 
     fun from(status: Int, code: String, message: String, hint: String = "", details: String = ""): ApiError {
         hintText(hint, details)?.let { return ApiError(it, status) }
@@ -261,6 +263,14 @@ object ApiErrors {
         "owner_taken" -> L("Dit account is al eigenaar van een andere zaak. Log in met een ander account.")
         "not_signed_in", "not signed in" -> L("Je bent uitgelogd. Log opnieuw in.")
         "rate_limited" -> L("Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.")
+        "card_not_found" -> L("Deze klantenkaart bestaat niet (meer).")
+        "already_member" -> L("Deze klant heeft deze klantenkaart al.")
+        "invalid_code" -> L("Deze code is niet geldig. Scan opnieuw of typ het nummer over.")
+        "event_full" -> L("Dit event is vol.")
+        "signup_closed" -> L("Aanmelden voor dit event is gesloten.")
+        "invalid_input" -> L("Niet alle velden kloppen. Controleer naam, datum, tijden en plekken.")
+        "event_cancelled" -> L("Dit event is geannuleerd.")
+        "event_not_found" -> L("Dit event bestaat niet (meer).")
         else -> null
     }
 }

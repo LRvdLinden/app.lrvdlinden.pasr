@@ -2,7 +2,7 @@ import SwiftUI
 import VisionKit
 import AVFoundation
 
-/// Live QR-scanner (VisionKit). Meldt elke gelezen code; dezelfde code pas na 4 seconden opnieuw.
+/// Live QR- en barcodescanner (VisionKit: QR, Code 128, EAN-13). Meldt elke gelezen code; dezelfde code pas na 4 seconden opnieuw.
 struct QRScanner: UIViewControllerRepresentable {
     var paused: Bool
     var onCode: (String) -> Void
@@ -11,7 +11,7 @@ struct QRScanner: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let controller = DataScannerViewController(
-            recognizedDataTypes: [.barcode(symbologies: [.qr, .aztec, .code128])],
+            recognizedDataTypes: [.barcode(symbologies: [.qr, .aztec, .code128, .ean13])],
             qualityLevel: .balanced,
             recognizesMultipleItems: false,
             isHighFrameRateTrackingEnabled: false,
@@ -58,8 +58,10 @@ struct QRScanner: UIViewControllerRepresentable {
         private func consider(_ items: [RecognizedItem]) {
             guard !paused else { return }
             for item in items {
-                guard case .barcode(let barcode) = item, let payload = barcode.payloadStringValue,
-                      let code = MemberCode.extract(payload) else { continue }
+                // stempelkaart (PZ…), kortingsbon (PC…), ticket of klantenkaart; de scanner deelt de code later in
+                guard case .barcode(let barcode) = item,
+                      let code = barcode.payloadStringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      ScanCode.classify(code) != nil else { continue }
                 if code == last && Date.now.timeIntervalSince(lastAt) < 4 { return }
                 last = code
                 lastAt = .now

@@ -195,7 +195,9 @@ struct APIError: LocalizedError {
             text = String(localized: "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.")
         } else if let mapped = hintText(message.trimmingCharacters(in: .whitespaces), details: details, message: "") {
             text = mapped   // oudere functies: de code staat in message ("not_found", "bad_name", …)
-        } else if let k = ["invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner"].first(where: has),
+        } else if let k = ["invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner",
+                       "card_not_found", "already_member", "invalid_code", "event_full", "signup_closed", "invalid_input",
+                       "event_cancelled", "event_not_found"].first(where: has),
                   let mapped = hintText(k, details: details, message: "") {
             text = mapped   // gezamenlijke acties: code ergens in de melding
         } else if code == "P0002" {
@@ -268,6 +270,23 @@ struct APIError: LocalizedError {
             return String(localized: "Je bent uitgelogd. Log opnieuw in.")
         case "rate_limited":
             return String(localized: "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.")
+        // tickets en klantenkaarten
+        case "card_not_found":
+            return String(localized: "Deze klantenkaart bestaat niet (meer).")
+        case "already_member":
+            return String(localized: "Deze klant heeft deze klantenkaart al.")
+        case "invalid_code":
+            return String(localized: "Deze code is niet geldig. Scan opnieuw of typ het nummer over.")
+        case "event_full":
+            return String(localized: "Dit event is vol.")
+        case "signup_closed":
+            return String(localized: "Aanmelden voor dit event is gesloten.")
+        case "invalid_input":
+            return String(localized: "Niet alle velden kloppen. Controleer naam, datum, tijden en plekken.")
+        case "event_cancelled":
+            return String(localized: "Dit event is geannuleerd.")
+        case "event_not_found":
+            return String(localized: "Dit event bestaat niet (meer).")
         default:
             return nil
         }

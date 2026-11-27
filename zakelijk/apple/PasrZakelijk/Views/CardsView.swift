@@ -23,6 +23,12 @@ struct CardsView: View {
     @State private var offerError: String?
     @State private var showingCreateChoices = false
     @State private var showingActionCardChoices = false
+    @State private var newEvent = false
+    @State private var newMemberCard = false
+    @State private var openedEvent: TicketEvent?
+    @State private var editingMember: MemberCard?
+    @State private var sharingMember: MemberCard?
+    @State private var tkReload = 0
 
     private struct Item: Hashable {
         let id: String
@@ -93,7 +99,7 @@ struct CardsView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Acties")
-            .refreshable { await store.load(); await loadOffers() }
+            .refreshable { await store.load(); await loadOffers(); tkReload += 1 }
             .task(id: business.id) { marked.removeAll(); await loadOffers() }
             .onChange(of: showingTrash) { _, _ in
                 marked.removeAll()
@@ -158,6 +164,8 @@ struct CardsView: View {
                     coupons = true
                 }
                 Button("Zelfgekozen actiecode", systemImage: "number") { promoCodes = true }
+                Button("Ticket-event (gratis)", systemImage: "ticket") { newEvent = true }
+                Button("Klantenkaart met barcode", systemImage: "barcode") { newMemberCard = true }
                 Button("Actie of beloning bij stempelkaart", systemImage: "gift") {
                     showingActionCardChoices = true
                 }
@@ -201,6 +209,8 @@ struct CardsView: View {
             .sheet(isPresented: $community) {
                 BusinessCommunityView(business: business).trackModal()
             }
+            .modifier(TKSheets(business: business, newEvent: $newEvent, openedEvent: $openedEvent, newMemberCard: $newMemberCard,
+                               editingMember: $editingMember, sharingMember: $sharingMember, reload: $tkReload))
         }
     }
 
@@ -249,6 +259,9 @@ struct CardsView: View {
                 .font(.subheadline.weight(.semibold))
             }
         }
+        TicketEventsSection(business: business, reload: tkReload, onCreate: { newEvent = true }, onOpen: { openedEvent = $0 })
+        MemberCardsSection(business: business, reload: tkReload, onCreate: { newMemberCard = true },
+                           onEdit: { editingMember = $0 }, onShare: { sharingMember = $0 })
         Section("Kortingscoupons") {
             if offers.isEmpty {
                 Text("Nog geen kortingscoupons").foregroundStyle(.secondary)
@@ -368,6 +381,36 @@ struct CardsView: View {
     private func stat(_ icon: String, _ value: Int) -> some View {
         Label { Text(verbatim: "\(value)").monospacedDigit() } icon: { Image(systemName: icon) }
             .foregroundStyle(.secondary)
+    }
+}
+
+/// Vensters voor tickets en klantenkaarten (apart, zodat de body van CardsView klein blijft voor de type-checker).
+private struct TKSheets: ViewModifier {
+    let business: Business
+    @Binding var newEvent: Bool
+    @Binding var openedEvent: TicketEvent?
+    @Binding var newMemberCard: Bool
+    @Binding var editingMember: MemberCard?
+    @Binding var sharingMember: MemberCard?
+    @Binding var reload: Int
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $newEvent, onDismiss: { reload += 1 }) {
+                EventEditorView(business: business, event: TicketEvent()).trackModal()
+            }
+            .sheet(item: $openedEvent, onDismiss: { reload += 1 }) { event in
+                EventDetailView(business: business, event: event).trackModal()
+            }
+            .sheet(isPresented: $newMemberCard, onDismiss: { reload += 1 }) {
+                MemberCardEditorView(business: business, card: MemberCard()).trackModal()
+            }
+            .sheet(item: $editingMember, onDismiss: { reload += 1 }) { card in
+                MemberCardEditorView(business: business, card: card).trackModal()
+            }
+            .sheet(item: $sharingMember) { card in
+                MemberCardsSection.share(card).trackModal()
+            }
     }
 }
 

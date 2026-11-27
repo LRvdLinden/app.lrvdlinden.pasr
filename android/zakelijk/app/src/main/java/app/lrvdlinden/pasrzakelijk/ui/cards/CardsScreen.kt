@@ -200,6 +200,11 @@ fun CardsScreen(business: Business) {
     var community by remember { mutableStateOf(false) }
     var createChoices by remember { mutableStateOf(false) }
     var actionCardChoices by remember { mutableStateOf(false) }
+    var newEvent by remember { mutableStateOf(false) }
+    var newMemberCard by remember { mutableStateOf(false) }
+    var openedEvent by remember { mutableStateOf<app.lrvdlinden.pasrzakelijk.data.TicketEvent?>(null) }
+    var editingMember by remember { mutableStateOf<app.lrvdlinden.pasrzakelijk.data.MemberCard?>(null) }
+    var sharingMember by remember { mutableStateOf<app.lrvdlinden.pasrzakelijk.data.MemberCard?>(null) }
     val context = LocalContext.current
     ScreenScaffold(L("Acties"), actions = {
         TextButton(onClick = { community = true }) {
@@ -312,6 +317,11 @@ fun CardsScreen(business: Business) {
                 }
                 }
             }
+            item { app.lrvdlinden.pasrzakelijk.ui.tickets.TicketEventsBlock(business, reload, { newEvent = true }, { openedEvent = it }) }
+            item {
+                app.lrvdlinden.pasrzakelijk.ui.tickets.MemberCardsBlock(business, reload, { newMemberCard = true },
+                    { editingMember = it }, { sharingMember = it })
+            }
             item {
                 Column(verticalArrangement=Arrangement.spacedBy(9.dp)) {
                     Text("Kortingscoupons",fontWeight=FontWeight.Bold,color=Pz.text)
@@ -382,6 +392,8 @@ fun CardsScreen(business: Business) {
                         Text("Kortingscoupon")
                     }
                     TextButton(onClick = { createChoices = false; promoCodes = true }) { Text("Zelfgekozen actiecode") }
+                    TextButton(onClick = { createChoices = false; newEvent = true }) { Text(L("Ticket-event (gratis)")) }
+                    TextButton(onClick = { createChoices = false; newMemberCard = true }) { Text(L("Klantenkaart met barcode")) }
                     TextButton(onClick = { createChoices = false; actionCardChoices = true },
                         enabled = business.cards.isNotEmpty()) { Text("Actie of beloning bij stempelkaart") }
                 }
@@ -406,6 +418,12 @@ fun CardsScreen(business: Business) {
         )
     }
     editing?.let { CardEditorSheet(business, it) { editing = null } }
+    // tickets en klantenkaarten
+    if (newEvent) app.lrvdlinden.pasrzakelijk.ui.tickets.EventEditorSheet(business, app.lrvdlinden.pasrzakelijk.data.TicketEvent()) { newEvent = false; reload++ }
+    openedEvent?.let { app.lrvdlinden.pasrzakelijk.ui.tickets.EventDetailSheet(business, it) { openedEvent = null; reload++ } }
+    if (newMemberCard) app.lrvdlinden.pasrzakelijk.ui.tickets.MemberCardEditorSheet(business, app.lrvdlinden.pasrzakelijk.data.MemberCard()) { newMemberCard = false; reload++ }
+    editingMember?.let { app.lrvdlinden.pasrzakelijk.ui.tickets.MemberCardEditorSheet(business, it) { editingMember = null; reload++ } }
+    sharingMember?.let { app.lrvdlinden.pasrzakelijk.ui.tickets.MemberCardShareSheet(it) { sharingMember = null } }
     sharing?.let { CardShareSheet(business, it) { sharing = null } }
     program?.let { ProgramDialog(it) { program = null } }
     if (coupons) CouponBusinessDialog(business.id) { coupons = false; reload++ }

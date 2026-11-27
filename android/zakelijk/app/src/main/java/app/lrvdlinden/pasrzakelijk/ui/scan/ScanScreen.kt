@@ -60,6 +60,18 @@ import app.lrvdlinden.pasrzakelijk.data.Business
 import app.lrvdlinden.pasrzakelijk.data.BusinessApi
 import app.lrvdlinden.pasrzakelijk.data.MemberCode
 import app.lrvdlinden.pasrzakelijk.data.ScanResult
+import app.lrvdlinden.pasrzakelijk.data.MemberScan
+import app.lrvdlinden.pasrzakelijk.data.ScanCode
+import app.lrvdlinden.pasrzakelijk.data.TicketEvent
+import app.lrvdlinden.pasrzakelijk.data.TicketScan
+import app.lrvdlinden.pasrzakelijk.data.TkApi
+import app.lrvdlinden.pasrzakelijk.data.TkText
+import app.lrvdlinden.pasrzakelijk.core.Prefs
+import app.lrvdlinden.pasrzakelijk.ui.tickets.MemberScanSheet
+import app.lrvdlinden.pasrzakelijk.ui.tickets.TicketScanSheet
+import androidx.compose.material.icons.filled.ConfirmationNumber
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import app.lrvdlinden.pasrzakelijk.ui.BigButton
 import app.lrvdlinden.pasrzakelijk.ui.EmptyState
 import app.lrvdlinden.pasrzakelijk.ui.ErrorLine
@@ -81,6 +93,13 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     var error by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf(demoResult) }
     var couponCode by remember { mutableStateOf<String?>(null) }
+    var ticketScan by remember { mutableStateOf<TicketScan?>(null) }
+    var memberScan by remember { mutableStateOf<MemberScan?>(null) }
+    // Scannen voor één event (leeg = alle events van de zaak)
+    var eventFilter by remember(business.id) { mutableStateOf(Prefs.string("scan.event." + business.id, "")) }
+    var events by remember(business.id) { mutableStateOf<List<TicketEvent>>(emptyList()) }
+    var savingUnits by remember(business.id) { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var eventMenu by remember { mutableStateOf(false) }
     var torch by remember { mutableStateOf(false) }
     var torchAvailable by remember { mutableStateOf(false) }
     var typing by remember { mutableStateOf(false) }
@@ -95,22 +114,65 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     val focus = LocalFocusManager.current
 
     LaunchedEffect(Unit) { if (!granted && hasCamera && !inspection) permission.launch(Manifest.permission.CAMERA) }
+    // komende events (eventfilter) en spaar-eenheid per klantenkaart; mislukt het, dan geen filter
+    LaunchedEffect(business.id) {
+        if (inspection) return@LaunchedEffect
+        val now = System.currentTimeMillis()
+        events = runCatching { TkApi.events(business.id) }.getOrDefault(emptyList())
+            .filter { it.isPublished && it.endsAt.time > now - 6 * 3600_000L }
+        if (eventFilter.isNotEmpty() && events.none { it.id == eventFilter }) eventFilter = ""
+        savingUnits = runCatching { TkApi.memberCards(business.id) }.getOrDefault(emptyList()).associate { it.id to it.goals.savingUnit }
+    }
 
-    fun look(code: String) {
-        val normalized = code.trim().uppercase()
-        if (normalized.matches(Regex("PC[A-HJ-NP-Z2-9]{22}"))) {
-            couponCode = normalized
+    /** Oudere klantcodes zonder PZ: toch nog als stempelkaart proberen. */
+    suspend fun legacy(code: String): ScanResult? = MemberCode.extract(code)?.let { c -> runCatching { BusinessApi.scan(c) }.getOrNull() }
+
+    fun look(raw: String) {
+        val kind = ScanCode.classify(raw)
+        if (kind == null) {
+            error = L("Deze code is niet bekend. Laat de klant de kaart opnieuw tonen of typ de code over.")
+            haptics.error()
+            return
+        }
+        if (kind is ScanCode.Coupon) {
+            couponCode = kind.code
             manual = ""
             return
         }
-        if (busy || result != null || couponCode != null) return
+        if (busy || result != null || couponCode != null || ticketScan != null || memberScan != null) return
         busy = true
         scope.launch {
             try {
-                val r = BusinessApi.scan(code)
+                when (kind) {
+                    is ScanCode.StampCard -> result = BusinessApi.scan(kind.code)
+                    is ScanCode.Ticket -> {
+                        val t: TicketScan? = try {
+                            TkApi.scanTicket(business.id, kind.code, eventFilter.ifEmpty { null })
+                        } catch (e: Exception) {
+                            result = legacy(kind.code) ?: throw e
+                            null
+                        }
+                        if (t != null) {
+                            val old = if (t.result == "invalid") legacy(kind.code) else null
+                            if (old != null) result = old else ticketScan = t
+                        }
+                    }
+                    is ScanCode.MemberCardCode -> {
+                        val m: MemberScan? = try {
+                            TkApi.scanMemberCard(business.id, kind.code)
+                        } catch (e: Exception) {
+                            result = legacy(kind.code) ?: throw e
+                            null
+                        }
+                        if (m != null) {
+                            val old = if (m.result == "invalid") legacy(kind.code) else null
+                            if (old != null) result = old else memberScan = m
+                        }
+                    }
+                    is ScanCode.Coupon -> Unit
+                }
                 error = null
                 manual = ""
-                result = r
             } catch (e: Exception) {
                 error = e.message
                 haptics.error()
@@ -121,18 +183,33 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     }
 
     fun lookManual() {
-        val code = manual.trim().uppercase().takeIf { it.matches(Regex("PC[A-HJ-NP-Z2-9]{22}")) }
-            ?: MemberCode.extract(manual)
-        if (code == null) {
+        if (ScanCode.classify(manual) == null) {
             error = L("Een code begint met PZ. Typ hem over zoals hij onder de QR-code staat.")
             haptics.error()
             return
         }
         focus.clearFocus()
-        look(code)
+        look(manual)
     }
 
     ScreenScaffold(L("Scannen"), actions = {
+        if (events.isNotEmpty()) {
+            Box {
+                IconButton(onClick = { eventMenu = true }) {
+                    Icon(Icons.Filled.ConfirmationNumber, L("Scannen voor één event"), tint = if (eventFilter.isEmpty()) Pz.muted else Pz.accent)
+                }
+                DropdownMenu(eventMenu, onDismissRequest = { eventMenu = false }) {
+                    DropdownMenuItem(text = { Text(L("Alle events")) }, onClick = {
+                        eventFilter = ""; Prefs.putString("scan.event." + business.id, ""); eventMenu = false
+                    })
+                    events.forEach { e ->
+                        DropdownMenuItem(text = { Text(e.name + " · " + TkText.dayMonth(e.startsAt)) }, onClick = {
+                            eventFilter = e.id; Prefs.putString("scan.event." + business.id, e.id); eventMenu = false
+                        })
+                    }
+                }
+            }
+        }
         if (torchAvailable && granted) {
             IconButton(onClick = { torch = !torch }) {
                 Icon(if (torch) Icons.Filled.FlashlightOn else Icons.Filled.FlashlightOff, if (torch) L("Zaklamp uit") else L("Zaklamp aan"), tint = Pz.accent)
@@ -148,11 +225,9 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
                 if ((granted && hasCamera) || demoCamera) {
                     if (!demoCamera) {
                         QrCamera(
-                            paused = result != null || busy || typing, torch = torch,
+                            paused = result != null || ticketScan != null || memberScan != null || busy || typing, torch = torch,
                             onTorchAvailable = { torchAvailable = it }, onCode = { raw ->
-                                val code = raw.trim().uppercase().takeIf { it.matches(Regex("PC[A-HJ-NP-Z2-9]{22}")) }
-                                    ?: MemberCode.extract(raw)
-                                if (code != null) look(code) else { error = L("Deze QR-code is geen klantkaart van Pasr."); haptics.error() }
+                                if (ScanCode.classify(raw) != null) look(raw) else { error = L("Deze QR-code is geen klantkaart van Pasr."); haptics.error() }
                             },
                             modifier = Modifier.fillMaxSize(),
                         )
@@ -169,7 +244,8 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
                     )
                     if (busy) CircularProgressIndicator(color = Color.White)
                     Text(
-                        L("Richt de camera op de QR-code van je klant"), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+                        events.firstOrNull { it.id == eventFilter }?.let { L("Scannen · %@", it.name) }
+                            ?: L("Richt de camera op de QR-code, het ticket of de klantenkaart"), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp).clip(CircleShape)
                             .background(Color.Black.copy(alpha = 0.55f)).padding(horizontal = 14.dp, vertical = 8.dp),
                     )
@@ -212,6 +288,8 @@ fun ScanScreen(business: Business, demoResult: ScanResult? = null) {
     result?.let { r ->
         ScanResultSheet(business, r, onDismiss = { result = null })
     }
+    ticketScan?.let { t -> TicketScanSheet(t) { ticketScan = null } }
+    memberScan?.let { m -> MemberScanSheet(business, m, m.cardId?.let { savingUnits[it] }) { memberScan = null } }
     couponCode?.let { code ->
         app.lrvdlinden.pasrzakelijk.ui.cards.CouponBusinessDialog(business.id, initialCode = code) {
             couponCode = null
