@@ -41,9 +41,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Maak Xcode ZIP
         run: |
-          git archive --format=zip --output=Pasr-Beheer-Xcode-build19.zip HEAD beheer/apple
-          unzip -tq Pasr-Beheer-Xcode-build19.zip
+          git archive --format=zip --output=Pasr-Beheer-Xcode-build20.zip HEAD beheer/apple
+          unzip -tq Pasr-Beheer-Xcode-build20.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Pasr-Beheer-Xcode-build19
-          path: Pasr-Beheer-Xcode-build19.zip
+          name: Pasr-Beheer-Xcode-build20
+          path: Pasr-Beheer-Xcode-build20.zip
