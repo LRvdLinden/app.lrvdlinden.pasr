@@ -391,10 +391,10 @@ def badges(lazy=False):
             '<span><small>Download for</small>Android</span></a>')
 
 
-OG_ZAKELIJK = "https://pasr.nl/og/zakelijk.png?v=20261127"
+OG_ZAKELIJK = "https://pasr.nl/og/zakelijk-2026-11.png"
 OG_ZAKELIJK_ALT = ("Pasr Zakelijk: Alles om klanten terug te laten komen. Een stempelkaart, een klantenkaart met korting "
                    "en een ticket naast het app-icoon van Pasr Zakelijk")
-OG_HOME = "https://pasr.nl/og/home.png?v=20261127"
+OG_HOME = "https://pasr.nl/og/home-2026-11.png"
 OG_HOME_ALT = "Pasr: klantenkaarten, cadeaukaarten en tickets in één app. Een cadeaukaart, een klantenkaart met barcode en een ticket naast het app-icoon van Pasr"
 ZK_MANIFEST = "/zakelijk/site.webmanifest"     # naam en icoon van Pasr Zakelijk (niet die van Pasr voor klanten)
 

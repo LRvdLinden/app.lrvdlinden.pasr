@@ -37,8 +37,8 @@ async def main():
                           ("kaarten", OUT.parent / "og" / "kaarten.png"),
                           ("cadeaubon", OUT.parent / "og" / "cadeaubon.png"),          # /cadeaubon/ (gemaakt door make_gids.py)
                           ("klantenkaart", OUT.parent / "og" / "klantenkaart.png"),
-                          ("zakelijk", OUT.parent / "og" / "zakelijk.png"),    # /zakelijk/ en de zakelijk-app-pagina's
-                          ("home", OUT.parent / "og" / "home.png")]:           # pasr.nl en de algemene pagina's   # /zakelijk/   # /klantenkaart/   # /kaarten/ (tools/og/kaarten.html)
+                          ("zakelijk", OUT.parent / "og" / "zakelijk-2026-11.png"),    # /zakelijk/ en de zakelijk-app-pagina's
+                          ("home", OUT.parent / "og" / "home-2026-11.png")]:           # pasr.nl en de algemene pagina's   # /zakelijk/   # /klantenkaart/   # /kaarten/ (tools/og/kaarten.html)
             if len(sys.argv) > 1 and name not in sys.argv[1:]:
                 continue
             await page.goto(base + f"{name}.html")
