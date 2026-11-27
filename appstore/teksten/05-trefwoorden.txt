@@ -1,1 +1,1 @@
-klantenkaart,zegels,wallet,cadeaukaart,voucher,barcode,spaarpas,portemonnee,bonuskaart,delen,gezin
+klantenkaart,stempelkaart,wallet,cadeaukaart,voucher,barcode,spaarpas,tickets,bonuskaart,delen,gezin

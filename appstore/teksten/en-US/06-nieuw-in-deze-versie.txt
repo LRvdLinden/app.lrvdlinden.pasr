@@ -1,9 +1,5 @@
-• Recently used: below each card you see when you used it, just like Apple Wallet. Just looking no longer counts: if you showed the card for a few seconds, Pasr asks "Used at PLUS? Yes · No" when you close it, and with your location only when you are really at the store. Add what you spent if you like; on a gift card it comes off your balance.
-• Record purchases automatically: connect Record purchase in the Shortcuts app to your Apple Pay payments, and Pasr adds the purchase to the right card.
-• Keep receipts: scan the receipt and Pasr reads the total and the date. With Warranty until you get a reminder a month ahead. Find any receipt quickly in Receipts, the search bar or Spotlight, and share it as a PDF.
-• Stamp cards from your favourite shop: have the QR code scanned at the till and collect stamps towards your reward. The shop sets the stamps, Pasr always shows the current count.
-• Already have a stamp card in your browser? With Save in Pasr your stamps move to the app.
-• Your own stamp cards are now loyalty cards; your count is in the note. From now on only the shop itself sets stamps.
-• Birthday perks: add your birthday (day and month only) and get a reminder for cards with a birthday offer.
-• News about my cards: turn it on to hear when there is something new at your stores.
-• Passes in Apple Wallet are now also updated on your other devices.
+• Tickets from businesses: sign up for free through a business's link or QR code. Your ticket lives in Pasr in Apple Wallet style, with logo, date, time, doors, location with Directions and a large QR code. Tickets for the same event sit together; swipe to the next ticket.
+• You get a notification the day before, when something changes and when you move up from the waiting list.
+• A business's loyalty card: with barcode, the current or next discount, your savings and a notification for new discounts.
+• Add to Pasr: tap the button on a business's website or open a pasr.nl/add link, and Pasr shows what you are adding.
+• Tickets and loyalty cards from businesses can also go into Apple Wallet.
