@@ -51,6 +51,7 @@ begin
     or (rows->0->>'min_participants')::int <> 3 or (rows->0->>'open_same_city')::boolean is not false
  then raise exception 'List after create wrong: %',rows; end if;
  if public.pasr_business_community_state(camp) <> 'waiting' then raise exception 'state'; end if;
+ if (public.pasr_business_community_create(a,'Oude aanroep','Gratis koffie',2,10)->>'campaign_id') is null then raise exception 'create without campaign_id'; end if;
 
  -- zoeken: geen eigen zaak, met status
  select count(*) into n from public.pasr_business_community_search(a,camp,'');
@@ -220,8 +221,16 @@ begin
   if s <> 'invite_required' then raise exception 'Wrong error %',s; end if;
  end;
 
- -- de klant: alleen een actieve actie, alleen deelnemende zaken
+ -- de klant: geen wachtende of gestopte acties, alleen een actieve actie met alleen deelnemende zaken
  perform set_config('app.user_id',klant,true);
+ rows := public.pasr_business_community_progress();
+ if exists (select 1 from jsonb_array_elements(rows) x
+            join public.pasr_business_community_campaigns cc on cc.id::text = x->>'id'
+            where public.pasr_business_community_state(cc.id) <> 'active')
+ then raise exception 'Customer sees a non-active campaign: %',rows; end if;
+ if exists (select 1 from jsonb_array_elements(rows) x where x->>'id' in
+            (select id::text from public.pasr_business_community_campaigns where name = 'Oude aanroep'))
+ then raise exception 'Customer sees waiting campaign'; end if;
  rows := public.pasr_business_community_progress();
  if not exists (select 1 from jsonb_array_elements(rows) x where x->>'id' = camp::text
                 and jsonb_array_length(x->'businesses') = 3) then raise exception 'Customer progress %',rows; end if;

@@ -25,7 +25,7 @@ export type PushItem = {
 const line = (s: unknown, n: number) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Melding voor een gebeurtenis: {aps, kind: "community", type, campaign}. null bij een onbekende soort of campagne. */
+/** Melding voor een gebeurtenis: {aps, kind: "community", type, campaign, business_id}. null bij een onbekende soort of campagne. */
 export function communityPayload(item: PushItem) {
   const type = PUSH_TYPES[item?.kind as OutboxKind];
   if (!type || typeof item.campaign !== "string" || !UUID.test(item.campaign)) return null;
@@ -64,6 +64,7 @@ export function communityPayload(item: PushItem) {
     kind: "community",
     type,
     campaign: item.campaign.toLowerCase(),
+    ...(typeof item.business_id === "string" && UUID.test(item.business_id) ? { business_id: item.business_id.toLowerCase() } : {}),
   };
 }
 

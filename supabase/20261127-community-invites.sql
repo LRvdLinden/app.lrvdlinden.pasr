@@ -249,7 +249,7 @@ begin
   values (v_id, p_business, v_owner);
   insert into public.pasr_business_community_invites(campaign_id, business_id, status, organizer, invited_by, responded_at)
   values (v_id, p_business, 'accepted', true, v_owner, now());
-  return jsonb_build_object('id', v_id, 'ok', true, 'state', 'waiting', 'min_participants', v_min,
+  return jsonb_build_object('id', v_id, 'campaign_id', v_id, 'ok', true, 'state', 'waiting', 'min_participants', v_min,
                             'open_same_city', coalesce(p_open_same_city, false));
 end $$;
 

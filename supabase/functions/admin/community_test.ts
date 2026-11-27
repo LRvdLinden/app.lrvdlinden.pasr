@@ -12,7 +12,7 @@ Deno.test("payload: type en campaign volgens het contract", () => {
   };
   for (const [kind, type] of Object.entries(want)) {
     const p = communityPayload({ id: 1, kind: kind as keyof typeof PUSH_TYPES, campaign: CAMP.toUpperCase(), business_id: CAMP, title: "Route", actor: "De Bakkerij" });
-    ok(p && p.type === type && p.campaign === CAMP, `${kind}: ${JSON.stringify(p)}`);
+    ok(p && p.type === type && p.campaign === CAMP && p.business_id === CAMP, `${kind}: ${JSON.stringify(p)}`);
     ok(p!.aps.alert.title && p!.aps.alert.body.length <= 200, `${kind}: tekst`);
   }
 });

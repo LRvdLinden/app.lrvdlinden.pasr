@@ -36,7 +36,7 @@ de bestaande `pasr_business_community_*`. `p_business` is de zaak namens wie je 
 
 | Functie | Geeft | Notities |
 | --- | --- | --- |
-| `pasr_business_community_create(p_business, p_name, p_reward, p_required, p_days default 60, p_open_same_city boolean default false, p_min_participants int default 2)` | jsonb `{id, ok, state, min_participants, open_same_city}` | Oude aanroep met 5 parameters werkt nog. Organisator doet meteen mee (`accepted`, organisator). |
+| `pasr_business_community_create(p_business, p_name, p_reward, p_required, p_days default 60, p_open_same_city boolean default false, p_min_participants int default 2)` | jsonb `{id, campaign_id, ok, state, min_participants, open_same_city}` (`campaign_id` = `id`) | Oude aanroep met 5 parameters werkt nog. Organisator doet meteen mee (`accepted`, organisator). |
 | `pasr_business_community_list(p_business)` | jsonb-lijst | Acties waaraan de zaak meedoet (ook als organisator), plus gestopte of verlopen acties van de laatste 30 dagen. Per rij de bestaande velden (`id, name, reward, required, starts_at, ends_at, lead_business, lead_city, is_lead, participants, participant_names, joined, claims_here, can_manage`) en nieuw: `role` (`owner` = organisator, `participant`), `open_same_city`, `min_participants`, `accepted_count`, `state`. Extra: `invite_only`, `pending_invites` (organisator), `cancelled_at`, `activated_at`. |
 | `pasr_business_community_search(p_business uuid, p_campaign uuid, p_query text)` | setof `(business_id uuid, name text, city text, logo_url text, invite_status text null)` | Goedgekeurde zaken met "Vindbaar in Pasr" aan, zoekt in naam en plaats, max 25, zonder eigen zaak. Alleen organisator. `logo_url` is een `data:`-URL van het logo van de eerste kaart (alleen kleine logo's, anders `null`). `invite_status` is de laatste status voor deze actie of `null`. |
 | `pasr_business_community_invite(p_business uuid, p_campaign uuid, p_target uuid)` | json `{invite_id, status}` | Alleen organisator. Al uitgenodigd: dezelfde uitnodiging terug. Na weigeren of intrekken mag opnieuw. Max 50 uitnodigingen per actie per dag. |
@@ -54,8 +54,9 @@ de bestaande `pasr_business_community_*`. `p_business` is de zaak namens wie je 
 | `pasr_business_community_open(p_business)` | jsonb-lijst | **Extra.** Open acties in de plaats van deze zaak waaraan ze nog niet meedoet (meedoen met `join`). |
 
 Klant en kassa: `pasr_business_community_progress()`, `pasr_business_community_member()` en
-`pasr_business_community_claim()` houden hun vorm, maar tellen alleen nog acties met `state = active` en alleen zaken
-die meedoen. De klant ziet in `businesses` alleen deelnemende zaken. `claim` op een wachtende actie geeft een fout met
+`pasr_business_community_claim()` houden hun vorm (zonder `state`-veld), maar geven alleen nog acties met
+`state = active`: acties die wachten op deelnemers, gestopt of verlopen zijn worden helemaal weggelaten. Alleen
+geaccepteerde deelnemers tellen en worden getoond. De klant ziet in `businesses` alleen deelnemende zaken. `claim` op een wachtende actie geeft een fout met
 hint `waiting`.
 
 ## Foutcodes
@@ -85,12 +86,13 @@ Elke gebeurtenis komt in `pasr_business_community_outbox`. Daaruit:
 
 ```json
 { "aps": { "alert": { "title": "…", "body": "…" }, "sound": "default", "thread-id": "community" },
-  "kind": "community", "type": "community_invite", "campaign": "<uuid>" }
+  "kind": "community", "type": "community_invite", "campaign": "<uuid>", "business_id": "<uuid>" }
 ```
 
 `type`: `community_invite` (uitgenodigd), `community_invite_answered` (aan de organisator: geaccepteerd of geweigerd),
-`community_active` (minimum bereikt), `community_removed` (verwijderd of uitnodiging ingetrokken). Op Android komen
-`type` en `campaign` als data-velden mee (FCM data-only, kanaal `zakelijk`).
+`community_active` (minimum bereikt), `community_removed` (verwijderd of uitnodiging ingetrokken). `business_id` is de
+zaak waarvoor de melding is (handig bij meerdere zaken op één toestel). Op Android komen `type`, `campaign` en
+`business_id` als data-velden mee (FCM data-only, kanaal `zakelijk`).
 
 ## Website
 
