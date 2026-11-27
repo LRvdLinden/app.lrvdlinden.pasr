@@ -822,3 +822,7 @@
 .zk-ci-banner .zd-state-ic{color:var(--iris-deep);background:var(--kicker-bg)}
 .zk-ci-banner .zk-ci-actions{justify-content:flex-start}
 @media (max-width:520px){.zk-ci-list div{grid-template-columns:1fr;gap:2px}}
+
+/* Kop op een smalle telefoon: logo, ZAKELIJK, Gratis aanmelden en het menu op één regel zonder over de rand te lopen. */
+@media (max-width: 440px) { .zk-nav.nav .brand > span { display: none; } .zk-nav.nav { gap: 8px; } }
+@media (max-width: 340px) { .zk-nav.nav .zk-desktop-actions .nav-btn { padding: 8px 11px; font-size: 13px; } }

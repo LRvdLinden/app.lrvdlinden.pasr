@@ -299,7 +299,7 @@
     dashRoot().innerHTML =
       '<section class="auth zd-auth"><div class="badge">' + ICON.stamp + "</div>" +
       "<h1>" + (signup ? "Gratis aanmelden" : forgot ? "Wachtwoord vergeten" : "Inloggen voor ondernemers") + "</h1>" +
-      "<p>" + (signup ? "Maak een gratis Pasr-account met het e-mailadres van je zaak. Daarna meld je je zaak aan en ontwerp je je stempelkaart." : forgot ? "Vul je e-mailadres in. Je krijgt een mail om een nieuw wachtwoord te kiezen." : "Log in met je Pasr-account, hetzelfde als in de app Pasr Zakelijk.") + "</p>" +
+      "<p>" + (signup ? "Maak een gratis Pasr-account met het e-mailadres van je zaak. Daarna meld je je zaak aan en maak je je stempelkaart, klantenkaart, event of actie." : forgot ? "Vul je e-mailadres in. Je krijgt een mail om een nieuw wachtwoord te kiezen." : "Log in met je Pasr-account, hetzelfde als in de app Pasr Zakelijk.") + "</p>" +
       '<form id="zkAuth" class="zk-form" novalidate>' +
       (signup ? '<label for="zkName">Je voornaam</label><input id="zkName" autocomplete="given-name" maxlength="40" required>' : "") +
       '<label for="zkEmail">E-mailadres</label><input id="zkEmail" type="email" autocomplete="email" required>' +
