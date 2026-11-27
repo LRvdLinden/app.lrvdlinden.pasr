@@ -85,16 +85,17 @@
     });
   }
 
-  // ---- pasr.nl/account/: account maken of wachtwoord vergeten, beide met honeypot en tijdmeting ----
-  // Bot (verborgen veld "website" ingevuld of sneller dan een mens): we tonen dat het gelukt is, maar sturen niets.
-  // De server controleert bij het account maken hetzelfde (Auth-hook pasr_before_user_created in schema.sql).
-  var HP = '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></label></div>';
-  var MIN_MS = 3000, MIN_MS_SHORT = 1500;   // drie velden / alleen een e-mailadres
+  // ---- pasr.nl/account/: account maken of wachtwoord vergeten, beide met honeypots (geen tijdmeting) ----
+  // Twee velden die een mens niet ziet: tekstveld "hp_extra" en vinkje "nieuwsbrief_extra". Is een van beide ingevuld,
+  // dan tonen we dat het gelukt is, maar sturen we niets. Snel invullen (automatisch aanvullen) is gewoon goed.
+  // De server controleert bij het account maken user_metadata.hp (Auth-hook pasr_before_user_created in schema.sql).
+  var HP = '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" name="hp_extra" tabindex="-1" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore></label><label><input type="checkbox" name="nieuwsbrief_extra" value="1" tabindex="-1" autocomplete="off"> Stuur mij aanbiedingen</label></div>';
+  // de honeypot-waarde zoals de server hem als hp krijgt: de tekst, of "x" als het vinkje aan staat; leeg = mens
+  function hpValue(f) { var t = f.querySelector('[name="hp_extra"]'), c = f.querySelector('[name="nieuwsbrief_extra"]'); return (t && t.value.trim()) || (c && c.checked ? "x" : ""); }
   function accountPage() {
     if (!ready) return card("err", "err", "Binnenkort", "Pasr-accounts komen binnenkort. Tot die tijd staan je kaarten in je eigen iCloud.");
     const mode = location.hash === "#vergeten" ? "forgot" : "signup";
     if (mode === "forgot") {
-      const shownF = performance.now();
       card("", "key", "Wachtwoord vergeten", "Vul je e-mailadres in. Je krijgt een mail om een nieuw wachtwoord te kiezen.",
         '<form id="f"><label>E-mailadres<input type="email" id="email" autocomplete="email" required></label>' + HP +
         '<button type="submit">Stuur mail</button><p class="msg" id="msg" role="status"></p></form>' +
@@ -102,7 +103,7 @@
       $("#f").addEventListener("submit", async (ev) => {
         ev.preventDefault();
         const btn = ev.target.querySelector("button"); btn.disabled = true;
-        if ($("#website").value || performance.now() - shownF < MIN_MS_SHORT) {   // bot: doe alsof
+        if (hpValue(ev.target)) {   // bot (honeypot ingevuld): doe alsof
           setMsg("Als er een account met dit adres is, staat er nu een mail in je inbox.", true); return;
         }
         try {
@@ -112,7 +113,6 @@
       });
       return;
     }
-    const shown = performance.now();
     card("", "user", "Maak je Pasr-account", "Gratis. Al je klantenkaarten versleuteld in één account, op al je apparaten.",
       '<form id="f" novalidate><label>Voornaam<input id="name" autocomplete="given-name" maxlength="40" required></label>' +
       '<label>E-mailadres<input type="email" id="email" autocomplete="email" required></label>' +
@@ -123,16 +123,16 @@
     $("#f").addEventListener("submit", async (ev) => {
       ev.preventDefault();
       const name = $("#name").value.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 40);
-      const email = $("#email").value.trim().toLowerCase(), pw = $("#pw").value, hp = $("#website").value;
+      const email = $("#email").value.trim().toLowerCase(), pw = $("#pw").value, hp = hpValue(ev.target);
       if (!name) return setMsg("Vul je voornaam in.");
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setMsg("Dit e-mailadres klopt niet.");
       if (pw.length < 8) return setMsg("Kies een wachtwoord van minstens 8 tekens.");
-      const data = { first_name: name, fill_ms: Math.round(performance.now() - shown), app: "web" };
+      const data = { first_name: name, app: "web" };
       // regio van de browserinstelling (bv. nl-NL → NL), alleen voor de landentelling; geen locatie
       try { const r = new Intl.Locale(navigator.language || "").maximize().region; if (/^[A-Z]{2}$/.test(r || "")) data.country = r; } catch {}
       const btn = ev.target.querySelector("button"); btn.disabled = true;
       const sent = () => card("ok", "mail", "Check je mail", "We hebben een mail gestuurd naar " + email.replace(/[<>&]/g, "") + ". Tik op de knop in die mail om je account te bevestigen en log daarna in de Pasr-app in.");
-      if (hp || data.fill_ms < MIN_MS) return sent();   // bot: doe alsof, stuur niets
+      if (hp) return sent();   // bot (honeypot ingevuld): doe alsof, stuur niets
       try {
         await call("auth/v1/signup?redirect_to=" + encodeURIComponent("https://pasr.nl/bevestigen/"), { email, password: pw, data });
         sent();

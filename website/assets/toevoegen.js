@@ -104,25 +104,24 @@
       (state ? '<span class="ta-state">' + esc(state) + "</span>" : "") +
       (qr ? '<span class="ta-qr" role="img" aria-label="QR-code van je ticket">' + qr + '</span><span class="ta-code">' + esc(CODE.match(/.{1,4}/g).join(" ")) + "</span>" : "") + "</div>";
   }
-  // Afmelden (/add/t/<id>?c=<code>&afmelden=1). Anti-bot zoals pasr.nl/account: verborgen veld "website" en de tijd
-  // sinds de knop er staat; bot = we tonen "afgemeld" maar sturen niets. De tijd gaat mee als p_fill_ms
-  // (20261127-antibot-forms.sql); kent de server die nog niet, dan zonder.
+  // Afmelden (/add/t/<id>?c=<code>&afmelden=1). Anti-bot zoals pasr.nl/account: een verborgen tekstveld "hp_extra" en
+  // een verborgen vinkje "nieuwsbrief_extra"; is een van beide ingevuld, dan tonen we "afgemeld" maar sturen we niets.
+  // Geen tijdmeting. Server: p_hp in pasr_event_ticket_cancel (20261127-antibot-forms.sql).
   function cancelBox(item) {
-    var box = document.createElement("div"), shown = Date.now();
+    var box = document.createElement("div");
     var okHtml = "<p><b>Je bent afgemeld.</b> Je tickets zijn niet meer geldig. Bedankt dat je je plek vrijgeeft.</p>";
     box.className = "ta-cancelbox";
     box.innerHTML = "<p>Kun je niet? Meld je af, dan gaat je plek naar iemand op de wachtlijst. Dit geldt voor alle tickets van je aanmelding.</p>" +
-      '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" id="ta-website" name="website" tabindex="-1" autocomplete="off"></label></div>' +
+      '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" name="hp_extra" tabindex="-1" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore></label><label><input type="checkbox" name="nieuwsbrief_extra" value="1" tabindex="-1" autocomplete="off"> Stuur mij aanbiedingen</label></div>' +
       '<button class="btn btn-ghost" type="button" id="ta-cancel">Afmelden</button>';
     $("ta-lead").after(box);
     $("ta-cancel").addEventListener("click", function () {
       if (!confirm("Weet je zeker dat je je afmeldt? Je tickets vervallen.")) return;
-      var fill = Date.now() - shown, bot = !!$("ta-website").value || fill < 1500;   // inclusief het lezen van de vraag
+      var hpT = box.querySelector('[name="hp_extra"]'), hpC = box.querySelector('[name="nieuwsbrief_extra"]');
+      var bot = !!(hpT && hpT.value.trim()) || !!(hpC && hpC.checked);
       var b = this; b.disabled = true;
       if (bot) { box.innerHTML = okHtml; return; }
-      var body = { p_ticket: item.id, p_code: CODE };
-      rpc("pasr_event_ticket_cancel", { p_ticket: item.id, p_code: CODE, p_fill_ms: Math.min(fill, 2147483647) })
-        .catch(function (x) { if (x && x.status === 404) return rpc("pasr_event_ticket_cancel", body); throw x; })
+      rpc("pasr_event_ticket_cancel", { p_ticket: item.id, p_code: CODE })
         .then(function () {
         box.innerHTML = okHtml;
       }, function () { b.disabled = false; box.querySelector("p").textContent = "Afmelden lukte niet. Probeer het later nog eens."; });

@@ -144,7 +144,8 @@ def aanmeld_page():
     """pasr.nl/add/e/<event-id>: aanmelden voor een gratis event (pasr_event_public en pasr_event_register, anoniem).
     Header in de kleur van het event, formulier met voornaam, achternaam, e-mail, geboortedatum (verplicht), ticketsoort en
     aantal, daarna de bevestiging met de knop "Voeg toe aan Pasr" en "Open in Pasr". Script: /assets/aanmelden.js (bouwt
-    het formulier, met honeypot "website", tijdmeting en een lege geboortedatum met max = gisteren)."""
+    het formulier, met de honeypots "hp_extra" (tekstveld) en "nieuwsbrief_extra" (vinkje), zonder tijdmeting, en een
+    lege geboortedatum met max = gisteren)."""
     return f"""<!doctype html>
 <html lang="nl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
