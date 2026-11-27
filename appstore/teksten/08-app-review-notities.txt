@@ -10,6 +10,7 @@ How to test:
 7. Shared Pasr (needs the demo account): Settings > "Gedeelde Pasr" > create a group and invite an email address. Members see the group's cards; when adding or editing a card, "Bewaren in" chooses private or the group.
 8. Request a store (needs the demo account): + > "Kaart toevoegen" > "Mis je een winkel?" at the bottom. Added stores appear in the list without an app update, and the requester gets a push notification.
 
+9. Tickets and business cards (demo account): open TODO-LEON-EVENT-LINK (pasr.nl/add/e/...), register; the ticket appears in the stack in Wallet style, swipe between tickets of one event. TODO-LEON-MEMBER-LINK (pasr.nl/add/m/...) adds a business loyalty card with barcode, discount and savings. Any pasr.nl/add/... link opens a confirmation sheet first.
 Demo account (sign-in fields in App Store Connect): already contains three cards and a shared Pasr "Gezin" with two cards, so Shared Pasr can be checked right away. Sign in via Settings > Account > "Inloggen of account maken".
 
 Permissions:
@@ -17,7 +18,7 @@ Permissions:
 - Photos: only the photos or screen recording the user picks for import or a logo.
 - Location (When In Use): only when the user turns on "Kaart tonen bij de winkel", sorts by "Dichtstbij eerst", taps "Ik sta hier" or picks Wallet branches. Used to find nearby branches in Apple Maps and to set local location notifications (UNLocationNotificationTrigger).
 - Location (Always, optional): Settings > Meldingen > "Ook als Pasr dicht is". With it, significant-location-change monitoring wakes Pasr after the user has moved about a kilometre, so it can replace the 20 monitored stores with the ones around the new position (iOS allows 20 per app). No continuous tracking, no background location mode. The location never leaves the device.
-- Notifications: local reminders, and push notifications only for "your requested store was added" and (opt-in) "new stores".
+- Notifications: local reminders; push only for "your requested store was added", (opt-in) "new stores", and for added tickets/business cards (reminder, change, waiting list, new discount).
 - Face ID: optional lock for the app or single cards.
 
 Screenshot protection: codes of temporarily shared cards (and, if the user enables it, all codes) appear blank in screenshots and screen recordings, so a shared card really stops working after its end date.

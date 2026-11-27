@@ -1,1 +1,1 @@
-loyalty,wallet,gift card,voucher,barcode,rewards,store card,netherlands,dutch,share,family
+loyalty,wallet,gift card,voucher,barcode,rewards,stamp card,tickets,netherlands,dutch,family

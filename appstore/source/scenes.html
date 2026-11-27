@@ -293,6 +293,127 @@ h1 em { font-style: normal; background: linear-gradient(90deg, #A79FFF, #FF8A78)
 .social .s-url { font: 700 calc(var(--u) * 3.3)/1 "Figtree"; opacity: .9; }
 .social.light .store { background: #0E0C1F; color: #fff; }
 .social .fade { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; pointer-events: none; }
+
+/* ===== voorstel 2026-11-27 ===== */
+.tk { position: absolute; left: 30px; width: 380px; border-radius: 22px; overflow: hidden; color: #fff;
+  box-shadow: 0 26px 50px rgba(0,0,0,.55); font-family: var(--ui); }
+.tk .tkh { position: relative; padding: 18px 20px 12px; background: linear-gradient(160deg, #234E8C 0%, #16325E 60%, #0F2445 100%); }
+.tk .tkh::after { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 70% at 85% 10%, rgba(255,190,90,.35), transparent 70%); }
+.tk .tkh > * { position: relative; z-index: 1; }
+.tk .hrow { display: flex; align-items: center; gap: 8px; }
+.tk .mono { width: 34px; height: 34px; border-radius: 9.5px; background: rgba(255,255,255,.18); display: grid; place-items: center; font: 800 14px var(--ui); }
+.tk .brand { font: 800 14px var(--ui); letter-spacing: .07em; }
+.tk .klabel { margin-left: auto; font: 600 10px var(--ui); letter-spacing: .08em; opacity: .7; display: flex; gap: 4px; align-items: center; }
+.tk h4 { font: 800 29px/1.05 "Figtree"; letter-spacing: -.01em; margin-top: 12px; }
+.tk .pill { display: inline-flex; gap: 6px; margin-top: 9px; padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,.18);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); font: 700 14px var(--ui); }
+.tk .pill small { font: 500 12px var(--ui); opacity: .8; align-self: center; }
+.tk .fields { display: grid; gap: 10px; margin-top: 12px; }
+.tk .frow { display: flex; gap: 18px; }
+.tk .f small { display: block; font: 700 10px var(--ui); letter-spacing: .08em; opacity: .7; margin-bottom: 3px; }
+.tk .f b { font: 700 16px var(--ui); }
+.tk .wave { height: 18px; background: #fff; position: relative; }
+.tk .wave::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 18px; background:
+  radial-gradient(circle at 10px 0, #0F2445 9px, transparent 9.5px) 0 0 / 20px 18px repeat-x; }
+.tk .paper { background: #fff; color: #17162A; padding: 4px 20px 18px; display: grid; justify-items: center; gap: 10px; }
+.tk .qr { width: 150px; height: 150px; }
+.tk .qr svg { width: 100%; height: 100%; }
+.tk .qrnum { font: 600 13px ui-monospace, Menlo, monospace; letter-spacing: .12em; color: #555; }
+.tk .pz { font: 800 13px "Figtree"; opacity: .45; }
+.tk .acts { display: flex; gap: 10px; }
+.tk .acts span { padding: 8px 14px; border-radius: 99px; background: #EEF0F5; font: 600 14px var(--ui); color: #234E8C; }
+.tkpeek { position: absolute; width: 380px; height: 700px; border-radius: 22px; background: linear-gradient(160deg, #8E2C48, #5B1B30); opacity: .55; }
+.dots { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--ui); }
+.dots .d { display: flex; gap: 7px; justify-content: center; }
+.dots .d i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.35); }
+.dots .d i.on { background: #fff; }
+.dots small { display: block; font: 600 13px var(--ui); color: var(--muted); margin-top: 6px; }
+.dots b { display: block; font: 600 15px var(--ui); margin-top: 3px; }
+.wordmark { font: 800 22px/1 "Bricolage"; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.wordmark i { width: 26px; height: 26px; border-radius: 50%; background: #F3D9B1; display: inline-block; position: relative; }
+.wordmark i::after { content: ""; position: absolute; inset: 7px 5px; border-radius: 50%; border-top: 3px solid #7A4A2A; }
+.mface { position: absolute; left: 16px; width: 408px; height: 257px; border-radius: 18px; overflow: hidden; color: #fff;
+  background: linear-gradient(150deg, #9A6A43, #7A4A2A 60%, #5E3720); box-shadow: 0 26px 50px rgba(0,0,0,.5); }
+.mface .wordmark { position: absolute; left: 20px; top: 18px; }
+.mface .kl { position: absolute; right: 20px; top: 24px; font: 600 11px var(--ui); letter-spacing: .08em; opacity: .75; }
+.mface .codep { position: absolute; left: 18px; right: 18px; bottom: 16px; height: 150px; background: #fff; border-radius: 12px; padding: 14px 22px 10px; color: #111; text-align: center; }
+.mface .codep svg { width: 100%; height: 92px; }
+.mface .codep b { display: block; font: 600 15px var(--ui); letter-spacing: .14em; margin-top: 8px; }
+.panel { position: absolute; left: 16px; right: 16px; border-radius: 16px; background: rgba(21,23,31,.92); padding: 14px; font-family: var(--ui);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.panel .disc { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: rgba(154,106,67,.28); font: 700 15px var(--ui); }
+.panel .disc i { width: 22px; height: 22px; border-radius: 50%; background: #C98B5A; display: grid; place-items: center; font: 800 12px var(--ui); font-style: normal; }
+.panel .sv { margin-top: 14px; }
+.panel .sv .h { display: flex; justify-content: space-between; font: 600 15px var(--ui); }
+.panel .sv .bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); margin-top: 8px; overflow: hidden; }
+.panel .sv .bar i { display: block; width: 70%; height: 100%; background: #C98B5A; border-radius: 3px; }
+.panel .sv small { display: block; font: 500 12.5px var(--ui); color: var(--muted); margin-top: 6px; }
+.panel hr { border: 0; border-top: 1px solid rgba(255,255,255,.1); margin: 14px 0; }
+.panel .tg { display: flex; justify-content: space-between; align-items: center; font: 400 16px var(--ui); }
+.panel .del { margin-top: 14px; color: #FF6B57; font: 500 15px var(--ui); }
+.switch.off { background: rgba(120,120,128,.32); }
+.switch.off::after { right: auto; left: 2px; }
+.switch.iris { background: var(--iris); }
+.safari { position: absolute; inset: 0; background: #F4F3FF; color: #17162A; font-family: var(--ui); }
+.safari .url { position: absolute; left: 16px; right: 16px; bottom: 34px; height: 48px; border-radius: 24px; background: rgba(255,255,255,.95);
+  box-shadow: 0 4px 18px rgba(0,0,0,.12); display: grid; place-items: center; font: 500 15px var(--ui); color: #333; }
+.safari .pg { position: absolute; left: 24px; right: 24px; top: 70px; }
+.safari .pg h5 { font: 800 26px/1.1 "Bricolage"; margin-top: 16px; }
+.safari .pg p { font: 400 15px/1.4 var(--ui); color: #555; margin-top: 8px; }
+.sheet2 { position: absolute; left: 0; right: 0; bottom: 0; top: 150px; background: var(--ink); color: #fff; border-radius: 30px 30px 0 0; font-family: var(--ui);
+  box-shadow: 0 -10px 40px rgba(0,0,0,.35); }
+.sheet2 .x { position: absolute; left: 16px; top: 14px; width: 36px; height: 36px; border-radius: 18px; background: rgba(255,255,255,.1); display: grid; place-items: center; font: 600 17px var(--ui); color: #ccc; }
+.sheet2 h3 { text-align: center; font: 700 17px var(--ui); margin-top: 22px; }
+.sheet2 .cap { text-align: center; font: 700 12px var(--ui); letter-spacing: .06em; color: var(--muted); margin-top: 26px; }
+.sheet2 .sum { text-align: center; font: 400 15px/1.35 var(--ui); color: var(--muted); padding: 0 28px; }
+.sheet2 .lbl { text-align: center; font: 600 15px var(--ui); }
+.sheet2 .box { margin: 0 20px; padding: 14px; border-radius: 14px; background: var(--raised); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.sheet2 .box div { font: 400 16px var(--ui); }
+.sheet2 .box small { display: block; font: 400 12.5px var(--ui); color: var(--muted); margin-top: 2px; }
+.sheet2 .go { margin: 0 auto; width: 272px; height: 50px; border-radius: 25px; background: var(--iris); display: grid; place-items: center; font: 700 17px var(--ui);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+/* Watch: stapel zoals Wallet op de Watch (PasrWatchApp: elke pas toont 40 pt, de laatste helemaal) */
+.wui .wtitle { position: absolute; top: 30px; left: 12px; font: 700 19px var(--ui); color: #fff; }
+.wui .wtime { position: absolute; top: 9px; right: 14px; font: 600 15px var(--ui); }
+.wst { position: absolute; left: 6px; right: 6px; height: 125px; border-radius: 12px; overflow: hidden; box-shadow: 0 -4px 10px rgba(0,0,0,.35); }
+.wst img { position: absolute; left: 10px; top: 10px; max-height: 18px; max-width: 100px; }
+.wst .k { position: absolute; right: 10px; top: 13px; font: 600 8px var(--ui); letter-spacing: .08em; opacity: .7; }
+.wpass { position: absolute; left: 4px; right: 4px; top: 40px; bottom: 6px; border-radius: 14px; overflow: hidden; }
+.wpass img { position: absolute; left: 10px; top: 10px; max-height: 20px; max-width: 110px; }
+.wpass .k { position: absolute; right: 10px; top: 14px; font: 600 8px var(--ui); letter-spacing: .08em; opacity: .7; }
+.wpass .cp { position: absolute; left: 8px; right: 8px; bottom: 8px; top: 44px; background: #fff; border-radius: 10px; padding: 10px 10px 6px; text-align: center; color: #111; }
+.wpass .cp svg { width: 100%; height: 118px; }
+.wpass .cp b { font: 600 11px ui-monospace, Menlo, monospace; letter-spacing: .08em; }
+/* ===== Apple Watch Ultra 3, titanium (natuurlijk) met Action Button en Trail Loop-bandje ===== */
+.u3 { position: absolute; inset: 0; overflow: hidden;
+  background: radial-gradient(80% 60% at 50% 0%, rgba(106,92,255,.45), transparent 70%), radial-gradient(70% 50% at 100% 100%, rgba(255,107,87,.3), transparent 70%), #0A0B10; }
+.u3 .band { position: absolute; left: 50%; transform: translateX(-50%); width: 60%; height: 40%;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.06) 0 0.4%, rgba(0,0,0,0) 0.4% 1.1%), repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0 0.6%, rgba(0,0,0,0) 0.6% 1.6%), linear-gradient(90deg, #1B2340, #2C3866 50%, #1B2340); }
+.u3 .band.t { top: -6%; border-radius: 0 0 6px 6px; }
+.u3 .band.b { bottom: -6%; border-radius: 6px 6px 0 0; }
+.u3 .band::after { content: ""; position: absolute; left: 0; right: 0; height: 10%; background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(0,0,0,.25)); }
+.u3 .band.t::after { bottom: 0; } .u3 .band.b::after { top: 0; transform: scaleY(-1); }
+.u3 .lug { position: absolute; left: 50%; transform: translateX(-50%); width: 64%; height: 5%; border-radius: 14px; background: linear-gradient(90deg, #77726A, #D9D3C6 22%, #A6A094 50%, #D9D3C6 78%, #77726A); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.u3 .lug.t { top: 15%; } .u3 .lug.b { bottom: 15%; }
+.u3 .case { position: absolute; left: 15%; right: 15%; top: 18%; bottom: 18%; border-radius: 21% / 17.5%;
+  background: linear-gradient(135deg, #E6E1D6 0%, #BDB7AA 18%, #8C877C 45%, #C9C4B8 70%, #77726A 100%);
+  box-shadow: 0 10px 28px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.55), inset 0 -3px 6px rgba(0,0,0,.35); }
+.u3 .rim { position: absolute; left: 16.9%; right: 16.9%; top: 18.6%; bottom: 18.6%; border-radius: 19% / 15.5%;
+  background: linear-gradient(135deg, #D8D2C5, #9C978B 50%, #C3BDB0); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.u3 .scr { position: absolute; left: 18.6%; right: 18.6%; top: 19.4%; bottom: 19.4%; border-radius: 18% / 14.5%; background: #000; overflow: hidden;
+  box-shadow: 0 0 0 2px #050505; }
+.u3 .scr .ui { position: absolute; left: 0; top: 0; width: 211px; height: 257px; transform-origin: 0 0; }
+.u3 .scr::after { content: ""; position: absolute; inset: 0; background: linear-gradient(125deg, rgba(255,255,255,.10), transparent 35%); pointer-events: none; z-index: 70; }
+.u3 .guard { position: absolute; right: 12.4%; top: 33%; width: 3.2%; height: 30%; border-radius: 0 12px 12px 0;
+  background: linear-gradient(90deg, #8C877C, #D6D0C3 55%, #8C877C); box-shadow: 1px 0 2px rgba(0,0,0,.5); }
+.u3 .crown { position: absolute; right: 9.6%; top: 36.5%; width: 4.2%; height: 11%; border-radius: 3px;
+  background: repeating-linear-gradient(180deg, #6E695F 0 2px, #CFC9BC 2px 4px); box-shadow: inset -2px 0 2px rgba(0,0,0,.4); }
+.u3 .crown::after { content: ""; position: absolute; right: -10%; top: 30%; width: 40%; height: 40%; border-radius: 50%; background: #FF6A1A; opacity: .0; }
+.u3 .side { position: absolute; right: 12.2%; top: 55%; width: 2.8%; height: 9%; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, #8C877C, #CFC9BC); }
+.u3 .action { position: absolute; left: 12.4%; top: 30%; width: 2.8%; height: 14%; border-radius: 6px 0 0 6px;
+  background: linear-gradient(90deg, #E2581A, #FF7A2E 60%, #C94A12); box-shadow: -1px 0 2px rgba(0,0,0,.5); }
+.u3 .spk { position: absolute; left: 13.4%; top: 55%; width: 1.2%; height: 12%; background: repeating-linear-gradient(180deg, #2A2A2A 0 3px, transparent 3px 6px); }
+
 </style>
 </head>
 <body>
@@ -465,6 +586,7 @@ function device(kind, screen, style = "") {
 const floatCard = (d, l, t, w, rot) => `<div class="float" style="left:${l}%;top:${t}%;width:${w}%;aspect-ratio:1.586;background:${C[d]};transform:rotate(${rot}deg)">${logo(d, "")}</div>`;
 
 // ---------- marketing-scènes ----------
+
 const SCENES = {
   // iPhone en iPad (staand): kop boven, toestel eronder
   s1: { bg: "dark", eyebrow: "Gratis · zonder reclame", title: "Al je klantenkaarten <em>in één app</em>", sub: "Je portemonnee wordt een stuk dunner.", screen: "stack" },
@@ -565,8 +687,74 @@ function og(sc) {
   return html + "</div>";
 }
 
+
+// ===== voorstel 2026-11-27: nieuwe schermen (nagebouwd uit App/Views en Shared/Views, build 66) =====
+Object.assign(SCREENS, {
+  tickets: () => `<div class="app">${status()}
+    <div class="stack" style="filter:blur(14px);opacity:.5">${["ah.nl", "jumbo.com", "kruidvat.nl", "ikea.com", "hema.nl"].map((d, i) => card(d, i * 62)).join("")}</div><div class="dim"></div>
+    <div class="nav"><span style="font:600 17px var(--ui);color:#A79FFF">Klaar</span></div>
+    <div class="tkpeek" style="left:418px;top:120px;height:600px"></div>
+    <div class="tk" style="top:106px">
+      <div class="tkh"><div class="hrow"><span class="mono">DK</span><span class="brand">PODIUM DE KADE</span><span class="klabel">🎟 TICKET</span></div>
+        <h4>Winterjazz aan de Kade</h4><span class="pill">Staanplaats <small>gratis</small></span>
+        <div class="fields"><div class="frow"><div class="f"><small>DATUM</small><b>za 12 dec</b></div><div class="f"><small>TIJD</small><b>20:00 – 23:30</b></div><div class="f"><small>DEUREN</small><b>19:30</b></div></div>
+          <div class="frow"><div class="f"><small>NAAM</small><b>Sanne de Vries</b></div></div>
+          <div class="frow"><div class="f"><small>LOCATIE</small><b>Podium De Kade, Zwolle</b></div></div></div></div>
+      <div class="wave"></div>
+      <div class="paper"><div class="qr">${qrSVG("PASR-TICKET-WJ-2026-0001")}</div><span class="qrnum">WJ7K 2Q9D</span><span class="pz">Pasr</span>
+        <div class="acts"><span>⌖ Route</span><span>ⓘ Informatie</span></div></div></div>
+    <div class="dots" style="top:748px"><div class="d"><i class="on"></i><i></i><i></i></div><small>1 van 3</small><b>Winterjazz aan de Kade</b></div></div>`,
+  member: () => `<div class="app">${status()}
+    <div class="stack" style="filter:blur(14px);opacity:.5">${["ah.nl", "jumbo.com", "kruidvat.nl", "ikea.com", "hema.nl", "lidl.nl"].map((d, i) => card(d, i * 62)).join("")}</div><div class="dim"></div>
+    <div class="nav"><span style="font:600 17px var(--ui);color:#A79FFF">Klaar</span></div>
+    <div class="mface" style="top:122px"><div class="wordmark"><i></i>Bakkerij Korrel</div><span class="kl">KLANTENKAART</span>
+      <div class="codep">${barcodeSVG("PK-204817", "CODE128", 80)}<b>PK-204817</b></div></div>
+    <div class="actions" style="top:404px"><div class="glass">${ICON.star}</div><div class="glass">${ICON.share}</div></div>
+    <div class="walletbtn" style="top:478px"><i class="wi"></i>Voeg toe aan Apple Wallet</div>
+    <div class="panel" style="top:548px">
+      <div class="disc"><i>%</i>Nu 10% korting · weekendactie t/m 14 dec</div>
+      <div class="sv"><div class="h"><span>Spaarstand</span><b>7/10</b></div><div class="bar"><i></i></div><small>Nog 3 tot een gratis taartje</small></div>
+      <hr><div class="tg"><span>🔔 Melding bij nieuwe korting</span><div class="switch iris"></div></div>
+      <div class="del">🗑 Kaart verwijderen</div></div></div>`,
+  addsheet: () => `<div class="safari">${status(false)}
+    <div class="pg"><div class="wordmark" style="color:#7A4A2A"><i></i>Bakkerij Korrel</div><h5>Spaar bij elke aankoop</h5>
+      <p>Je klantenkaart staat in Pasr. Laat de barcode scannen en krijg in het weekend korting.</p>
+      <img src="../../website/badge/nl/zwart.svg" style="width:190px;margin-top:14px"></div>
+    <div class="url">🔒 pasr.nl</div>
+    <div class="dim" style="background:rgba(0,0,0,.35);backdrop-filter:none"></div>
+    <div class="sheet2"><div class="x">✕</div><h3>Toevoegen aan Pasr?</h3>
+      <div class="cap">KLANTENKAART</div>
+      <div style="position:relative;height:257px;margin-top:14px"><div class="mface" style="top:0;left:16px;box-shadow:0 14px 30px rgba(0,0,0,.45)"><div class="wordmark"><i></i>Bakkerij Korrel</div><span class="kl">KLANTENKAART</span></div></div>
+      <p class="sum" style="margin-top:16px">Spaar bij elke aankoop en krijg korting in het weekend.</p>
+      <p class="lbl" style="margin-top:12px">% Nu 10% korting · weekendactie t/m 14 dec</p>
+      <div class="box" style="margin-top:18px"><div>Mijn naam tonen aan Bakkerij Korrel<small>Uit: de zaak ziet alleen je kaartnummer.</small></div><div class="switch off" style="flex:none"></div></div>
+      <div class="go" style="margin-top:20px">＋ Toevoegen</div></div>
+    <div class="homebar" style="background:rgba(255,255,255,.85)"></div></div>`,
+  watchstack: () => `<div class="wui"><span class="wtime">9:41</span><span class="wtitle">Pasr</span>
+    ${["ah.nl", "jumbo.com", "kruidvat.nl", "ikea.com", "hema.nl"].map((d, i) => `<div class="wst" style="top:${62 + i * 40}px;background:${C[d]};color:${light(C[d]) ? "#111" : "#fff"}">${logo(d, "")}<span class="k">KLANTENKAART</span></div>`).join("")}</div>`,
+  watchpass: () => `<div class="wui"><div class="wt"><span style="color:#A79FFF">‹ Jumbo</span><span>9:41</span></div>
+    <div class="wpass" style="background:#FFC800;color:#111">${logo("jumbo.com", "")}<span class="k">KLANTENKAART</span>
+      <div class="cp">${barcodeSVG("8719327004417", "EAN13", 110)}<b>8719 3270 0441 7</b></div></div></div>`,
+});
+Object.assign(SCENES, {
+  s11: { bg: "dark", eyebrow: "Tickets", title: "Je tickets, <em>in Wallet&#8209;stijl</em>", sub: "Meld je gratis aan bij een zaak en veeg naar het volgende ticket.", screen: "tickets" },
+  s12: { bg: "light", eyebrow: "Klantenkaart van je zaak", title: "Korting en sparen <em>op één kaart</em>", sub: "Laat de barcode scannen; de stand gaat vanzelf mee.", screen: "member" },
+  s13: { bg: "iris", eyebrow: "Voeg toe aan Pasr", title: "Eén tik op de site, <em>en hij staat erin</em>", sub: "Klantenkaarten, tickets en kortingsbonnen van zaken.", screen: "addsheet" },
+});
+
 const root = document.getElementById("root");
-if (KIND === "watchmock") {
+
+if (KIND === "ultra3" || KIND === "ultra3bare") {
+  const bare = KIND === "ultra3bare";
+  root.innerHTML = bare ? `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden;background:#000"><div class="ui" style="--k:${W / 211};width:211px;height:${H / (W / 211)}px">${SCREENS[SCENE]()}</div></div>`
+   : `<div class="u3"><div class="band t"></div><div class="band b"></div><div class="lug t"></div><div class="lug b"></div>
+    <div class="case"></div><div class="rim"></div><div class="guard"></div><div class="crown"></div><div class="side"></div><div class="action"></div><div class="spk"></div>
+    <div class="scr"><div class="ui">${SCREENS[SCENE]()}</div></div></div>`;
+  if (!bare) requestAnimationFrame(() => { const g = document.querySelector(".u3 .scr"); const ui = g.querySelector(".ui");
+    const k = g.clientWidth / 211; ui.style.transform = `scale(${k})`; ui.style.height = (g.clientHeight / k) + "px"; });
+}
+
+else if (KIND === "watchmock") {
   root.innerHTML = `<div class="canvas dark" style="position:relative"><div class="ultra"><div class="band t"></div><div class="band b"></div>
     <div class="case"></div><div class="guard"></div><div class="crown"></div><div class="side"></div><div class="action"></div>
     <div class="bezel"><div class="ui">${SCREENS[SCENE]()}</div></div></div></div>`;

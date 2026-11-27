@@ -1,9 +1,5 @@
-• Laatst gebruikt: onder elke kaart zie je wanneer je hem gebruikte, zoals in Apple Wallet. Even kijken telt niet meer: liet je de kaart een paar seconden zien, dan vraagt Pasr bij het sluiten "Gebruikt bij PLUS? Ja · Nee", en met je locatie alleen als je echt bij de winkel bent. Vul als je wilt in wat je uitgaf; bij een cadeaukaart gaat het van je tegoed af.
-• Aankopen vanzelf vastleggen: koppel Aankoop vastleggen in de app Opdrachten aan je Apple Pay-betalingen, en Pasr zet de aankoop bij de juiste kaart.
-• Bonnetjes bewaren: scan de kassabon, Pasr leest het totaal en de datum. Met Garantie tot krijg je een maand van tevoren een herinnering. Vind elke bon snel terug via Bonnetjes, de zoekbalk of Spotlight, en deel hem als PDF.
-• Stempelkaarten van je favoriete zaak: scan de QR-code bij de kassa en spaar stempels tot je beloning. De zaak zet de stempels, Pasr toont altijd de actuele stand.
-• Al een stempelkaart in je browser? Met Bewaar in Pasr gaan je stempels mee naar de app.
-• Je eigen stempelkaarten zijn klantenkaarten geworden; je stand staat in de notitie. Stempels zet voortaan alleen de zaak zelf.
-• Verjaardagsvoordeel: vul je verjaardag in (alleen dag en maand) en krijg een seintje voor kaarten met een verjaardagsactie.
-• Nieuws over mijn kaarten: zet het aan en hoor het als er iets nieuws is bij jouw winkels.
-• Passen in Apple Wallet worden nu ook op je andere apparaten bijgewerkt.
+• Tickets van zaken: meld je gratis aan via de link of QR-code van een zaak. Je ticket staat in Pasr in de stijl van Apple Wallet, met logo, datum, tijd, deuren, locatie met Route en een grote QR-code. Tickets voor hetzelfde event staan samen; veeg naar het volgende ticket.
+• Je krijgt een melding de dag ervoor, als er iets verandert en als je van de wachtlijst doorschuift.
+• Klantenkaart van een zaak: met barcode, korting nu of de volgende, je spaarstand en een melding bij nieuwe korting.
+• Voeg toe aan Pasr: tik op de knop op de site van een zaak of open een pasr.nl/add-link, en Pasr laat zien wat je toevoegt.
+• Tickets en klantenkaarten van zaken kun je ook in Apple Wallet zetten.

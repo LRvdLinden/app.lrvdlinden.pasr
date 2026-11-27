@@ -12,8 +12,19 @@ Gegevens die worden verzameld:
    - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
 4. Identificatoren › Apparaat-ID (het push-token, alleen als je meldingen voor winkels aanzet)
    - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
+   - Ook: voor- en achternaam bij aanmelden voor een event van een zaak (alleen naar die zaak, op het ticket staat alleen
+     de naam), en bij een klantenkaart van een zaak alleen als "Mijn naam tonen aan <zaak>" aan staat. (build 66)
 5. Overige gegevens (land uit de regio-instelling, geen locatie)
    - Doel: Analyse · Gekoppeld: Ja · Tracking: Nee
+6. Overige gegevens › geboortedatum bij aanmelden voor een event (build 66; gaat naar de organiserende zaak, staat niet
+   op het ticket). Naam, e-mail en geboortedatum van een aanmelding worden 30 dagen na het event (of na het afgelasten)
+   gewist (pasr_tk_cron in supabase/20261127-tickets-klantenkaart.sql).
+   Ook: de verjaardag (alleen dag en maand) van Verjaardagsvoordeel wordt gedeeld met de zaak waar de klant spaart; die
+   zaak bepaalt hoe lang hij bewaard blijft.
+   - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
+7. Gebruikersinhoud › Overige gebruikersinhoud: tickets en klantenkaarten van zaken (ticketcode, status, spaarstand)
+   horen bij het account (build 66).
+   - Doel: App-functionaliteit · Gekoppeld: Ja · Tracking: Nee
 
 Niet verzameld:
 - Locatie: blijft op het apparaat. (Bij een Wallet-pas gaan plaatsen van filialen mee om de pas te maken; de server bewaart niets.)

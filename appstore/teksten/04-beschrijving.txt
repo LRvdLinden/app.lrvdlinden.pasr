@@ -29,6 +29,12 @@ CADEAUKAARTEN EN VOUCHERS
 • Geschiedenis per kaart: wanneer en waar je hem gebruikte, zoals in Apple Wallet.
 • Zie in één oogopslag wat je nog tegoed hebt.
 
+VAN JE FAVORIETE ZAAK
+• Tickets: meld je gratis aan voor een event van een zaak. Je ticket staat in Pasr in de stijl van Apple Wallet, met datum, tijd, locatie, route en een grote QR-code. Meerdere tickets voor hetzelfde event staan samen; veeg naar het volgende.
+• Klantenkaart van een zaak: laat de barcode scannen, zie of er nu korting is en hoe ver je spaart. Met een melding bij nieuwe korting.
+• Stempelkaarten: spaar stempels tot je beloning. De zaak zet de stempels, Pasr toont altijd de stand.
+• Voeg toe aan Pasr: tik op de knop op de site van een zaak of scan de QR-code, en de kaart, het ticket of de kortingsbon staat in Pasr.
+
 IPHONE, IPAD, APPLE WATCH EN MAC
 • Je kaarten op je Apple Watch: draai je pols en laat de code scannen.
 • Widgets voor je beginscherm met je meest gebruikte kaarten.

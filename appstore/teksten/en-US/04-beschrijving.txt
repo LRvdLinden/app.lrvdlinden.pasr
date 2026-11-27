@@ -28,6 +28,12 @@ GIFT CARDS AND VOUCHERS
 • Keep track of balance, PIN and expiry date. After showing a card, Pasr asks what you spent, so the balance goes down.
 • History per card: when and where you used it, like in Apple Wallet.
 
+FROM YOUR FAVOURITE BUSINESS
+• Tickets: sign up for free for a business's event. Your ticket lives in Pasr in Apple Wallet style, with date, time, location, directions and a large QR code. Several tickets for the same event sit together; swipe to the next one.
+• A business's loyalty card: have the barcode scanned and see whether there is a discount right now and how far you have saved. With a notification for new discounts.
+• Stamp cards: collect stamps towards your reward. The business sets the stamps, Pasr always shows the count.
+• Add to Pasr: tap the button on a business's website or scan its QR code, and the card, ticket or coupon is in Pasr.
+
 IPHONE, IPAD, APPLE WATCH AND MAC
 • Your cards on your Apple Watch.
 • Home Screen widgets with your most used cards.

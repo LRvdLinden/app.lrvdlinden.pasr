@@ -10,17 +10,22 @@ const page = pathToFileURL(path.join(here, "scenes.html")).href;
 const jobs = [];
 const only = process.env.ONLY;   // bijvoorbeeld ONLY=Duo: alleen mappen met dat woord
 const add = (dir, name, w, h, s, k) => jobs.push({ dir, name, w, h, s, k });
-const iphone = ["s1", "s2", "s3", "s10", "s8", "s9", "s4", "s5", "s6", "s7"];
+// 2026-11-27: 06 tickets (was s9 tijdelijk delen), 07 Voeg toe aan Pasr (was s4 Apple Wallet)
+const iphone = ["s1", "s2", "s3", "s10", "s8", "s11", "s13", "s5", "s6", "s7"];
 iphone.forEach((s, i) => add("screenshots/iPhone 6.9 inch (1320x2868)", String(i + 1).padStart(2, "0"), 1320, 2868, s, "iphone"));
 iphone.forEach((s, i) => add("screenshots/iPhone 6.5 inch (1284x2778)", String(i + 1).padStart(2, "0"), 1284, 2778, s, "iphone"));
-["s1", "s2", "s3", "s10", "s8", "s9", "s4", "s5", "s7"].forEach((s, i) => add("screenshots/iPad 13 inch (2064x2752)", String(i + 1).padStart(2, "0"), 2064, 2752, s, "ipad"));
-["s1", "s2", "s3", "s10", "s8", "s9", "s4", "s5"].forEach((s, i) => add("screenshots/iPhone Duo binnenscherm (2007x2853)", String(i + 1).padStart(2, "0"), 2007, 2853, s, "duo"));
+["s1", "s2", "s3", "s10", "s8", "s11", "s4", "s5", "s7", "s13"].forEach((s, i) => add("screenshots/iPad 13 inch (2064x2752)", String(i + 1).padStart(2, "0"), 2064, 2752, s, "ipad"));
+["s1", "s2", "s3", "s10", "s8", "s11", "s4", "s5", "s13", "s12"].forEach((s, i) => add("screenshots/iPhone Duo binnenscherm (2007x2853)", String(i + 1).padStart(2, "0"), 2007, 2853, s, "duo"));
 iphone.forEach((s, i) => add("screenshots/iPhone 6.3 inch (1206x2622)", String(i + 1).padStart(2, "0"), 1206, 2622, s, "iphone"));
 iphone.forEach((s, i) => add("screenshots/iPhone 6.1 inch (1179x2556)", String(i + 1).padStart(2, "0"), 1179, 2556, s, "iphone"));
-["watchlist", "watchcode", "watchqr"].forEach((s, i) => {
-  add("screenshots/Apple Watch Ultra 3 (422x514)", String(i + 1).padStart(2, "0"), 422, 514, s, "watchmock");
-  add("screenshots/Apple Watch Ultra 3 zonder mockup (422x514)", String(i + 1).padStart(2, "0"), 422, 514, s, "watch");
-  add("screenshots/Apple Watch Series 46mm (416x496)", String(i + 1).padStart(2, "0"), 416, 496, s, "watchmock");
+// Watch zoals Watch/PasrWatchApp.swift: 01 stapel, 02 pas met code, 03 alleen de code, 04 QR.
+// Ultra 3 in de Ultra 3-mockup (Léons keuze); reserve zonder kader als Apple de mockup afkeurt; Series alleen het scherm.
+["watchstack", "watchpass", "watchcode", "watchqr"].forEach((s, i) => {
+  const n = String(i + 1).padStart(2, "0");
+  add("screenshots/Apple Watch Ultra 3 (422x514)", n, 422, 514, s, "ultra3");
+  add("screenshots/Apple Watch Ultra 3 zonder mockup (reserve) (422x514)", n, 422, 514, s, "ultra3bare");
+  add("screenshots/Apple Watch Series 46mm (416x496)", n, 416, 496, s, "ultra3bare");
+  add("promo/Apple Watch Ultra 3 mockup (1688x2056)", n, 1688, 2056, s, "ultra3");
 });
 add("promo/App Store artwork 1 (5244x2950, 3840x1646)", "5244x2950", 5244, 2950, "", "promo");
 add("promo/App Store artwork 1 (5244x2950, 3840x1646)", "3840x1646", 3840, 1646, "", "promo");
