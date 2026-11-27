@@ -5,7 +5,22 @@ import UIKit
 /// nachtblauw en groot of compact; deel de HTML-code, de link (https://pasr.nl/add/k/<id>) of de QR-code.
 /// De knop zelf is altijd Nederlands (badges uit tools/make_badges.py, ook op pasr.nl/badge/nl/).
 struct WebsiteBadgeView: View {
-    let card: BusinessCard
+    let addURL: URL
+    let name: String
+    let intro: LocalizedStringKey
+
+    init(card: BusinessCard) {
+        addURL = URL(string: "https://pasr.nl/add/k/\(card.id.lowercased())")!
+        name = card.name
+        intro = "Klanten zetten je stempelkaart met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen."
+    }
+
+    /// Zelfde knop voor een event (/add/e/<id>) of klantenkaart (/add/m/<id>).
+    init(url: URL, name: String, intro: LocalizedStringKey) {
+        addURL = url
+        self.name = name
+        self.intro = intro
+    }
     @Environment(\.dismiss) private var dismiss
     @AppStorage("badge.theme") private var theme = "zwart"
     @AppStorage("badge.size") private var size = "groot"
@@ -16,7 +31,6 @@ struct WebsiteBadgeView: View {
 
     private var file: String { theme + (size == "compact" ? "-compact" : "") }
     private var height: Int { size == "compact" ? 38 : 52 }
-    private var addURL: URL { URL(string: "https://pasr.nl/add/k/\(card.id.lowercased())")! }
     private var snippet: String {
         "<a href=\"\(addURL.absoluteString)\">\n  <img src=\"https://pasr.nl/badge/nl/\(file).svg\"\n       alt=\"Voeg toe aan Pasr\" height=\"\(height)\">\n</a>"
     }
@@ -25,7 +39,7 @@ struct WebsiteBadgeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("Klanten zetten je stempelkaart met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen.")
+                    Text(intro)
                         .foregroundStyle(Theme.muted)
                     Picker("Kleur", selection: $theme) {
                         ForEach(Self.themes, id: \.0) { Text($0.1).tag($0.0) }
@@ -59,7 +73,7 @@ struct WebsiteBadgeView: View {
                         Label(copied == "code" ? "Gekopieerd" : "Kopieer HTML-code", systemImage: "doc.on.doc")
                     }
                     .buttonStyle(BigButtonStyle())
-                    ShareLink(item: snippet, subject: Text(verbatim: card.name)) {
+                    ShareLink(item: snippet, subject: Text(verbatim: name)) {
                         Label("Deel HTML-code", systemImage: "chevron.left.forwardslash.chevron.right")
                     }
                     .buttonStyle(BigButtonStyle(color: Theme.card2, foreground: .primary))
@@ -69,7 +83,7 @@ struct WebsiteBadgeView: View {
                         .font(.footnote.monospaced())
                         .foregroundStyle(Theme.muted)
                         .textSelection(.enabled)
-                    ShareLink(item: addURL, subject: Text(verbatim: card.name)) {
+                    ShareLink(item: addURL, subject: Text(verbatim: name)) {
                         Label("Link delen", systemImage: "square.and.arrow.up")
                     }
                     .buttonStyle(BigButtonStyle(color: Theme.mint, foreground: .black))

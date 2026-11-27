@@ -54,6 +54,8 @@ struct OverviewView: View {
     @State private var loyalty: [String: Any] = [:]
     @State private var coupons: [[String: Any]] = []
     @State private var promoCodes: [[String: Any]] = []
+    @State private var tkEvents: [TicketEvent] = []
+    @State private var tkCards: [MemberCard] = []
     @State private var loading = false
     @State private var error: String?
     @State private var selected: MetricPoint?
@@ -85,6 +87,7 @@ struct OverviewView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                 }
+                TKOverviewSection(events: tkEvents, cards: tkCards)
                 Section("Zakelijke acties") {
                     LabeledContent("Stempelkaarten online") { Text("\(business.cards.filter(\.published).count)") }
                     LabeledContent("Actieve kortingscoupons") {
@@ -288,6 +291,8 @@ struct OverviewView: View {
                 ["p_business": business.id]) as? [[String: Any]] { coupons = list }
             if let list = try? await Account.shared.rpc("pasr_business_promo_list",
                 ["p_business": business.id]) as? [[String: Any]] { promoCodes = list }
+            if let list = try? await TKAPI.events(business: business.id) { tkEvents = list }
+            if let list = try? await TKAPI.memberCards(business: business.id) { tkCards = list }
             if let response = try? await Account.shared.rpc("pasr_business_loyalty_insights",
                 ["p_business": business.id]),
                 let values = response as? [String: Any] {

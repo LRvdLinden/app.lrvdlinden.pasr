@@ -27,7 +27,7 @@ import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
 /**
- * Camera die QR-codes leest (CameraX + ML Kit, gebundeld model: werkt ook zonder Google Play-diensten).
+ * Camera die QR-codes en barcodes (Code 128, EAN-13) leest (CameraX + ML Kit, gebundeld model: werkt ook zonder Google Play-diensten).
  * Zolang [paused] waar is, wordt er niets doorgegeven. Dezelfde code wordt niet binnen 3 s opnieuw gemeld.
  */
 @SuppressLint("UnsafeOptInUsageError")
@@ -42,7 +42,7 @@ fun QrCamera(paused: Boolean, torch: Boolean, onTorchAvailable: (Boolean) -> Uni
 
     DisposableEffect(owner) {
         val executor = Executors.newSingleThreadExecutor()
-        val scanner = BarcodeScanning.getClient(BarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build())
+        val scanner = BarcodeScanning.getClient(BarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE, Barcode.FORMAT_CODE_128, Barcode.FORMAT_EAN_13).build())
         val providerFuture = ProcessCameraProvider.getInstance(context)
         var lastCode = ""
         var lastAt = 0L

@@ -21,29 +21,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'BUILD = "20"' zakelijk/apple/make_project.py
+          grep -q 'BUILD = "21"' zakelijk/apple/make_project.py
           grep -q 'VERSION = "1.0.4"' zakelijk/apple/make_project.py
-          grep -q 'CURRENT_PROJECT_VERSION = "20"' zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj
+          grep -q 'CURRENT_PROJECT_VERSION = "21"' zakelijk/apple/PasrZakelijk.xcodeproj/project.pbxproj
           work="$(mktemp -d)"
-          mkdir -p "$work/Pasr-Zakelijk-1.0.4-build20" dist
-          cp -a zakelijk/apple/. "$work/Pasr-Zakelijk-1.0.4-build20/"
-          cat > "$work/Pasr-Zakelijk-1.0.4-build20/OPEN-IN-XCODE.md" <<'INFO'
-          # Pasr Zakelijk 1.0.4 (build 20)
+          mkdir -p "$work/Pasr-Zakelijk-1.0.4-build21" dist
+          cp -a zakelijk/apple/. "$work/Pasr-Zakelijk-1.0.4-build21/"
+          cat > "$work/Pasr-Zakelijk-1.0.4-build21/OPEN-IN-XCODE.md" <<'INFO'
+          # Pasr Zakelijk 1.0.4 (build 21)
           Open PasrZakelijk.xcodeproj in Xcode.
           Selecteer de PasrZakelijk scheme, configureer je Apple Developer Team
           en Signing & Capabilities. Kies Product > Archive en verzend via
           Organizer > Distribute App > App Store Connect.
           Inclusief alle Swift-code, iconen, assets, projectinstellingen en
-          gezamenlijke acties met uitnodigingen (zoeken, link of QR, accepteren of weigeren), stoppen, uitstappen en uitgeven bij het scannen.
+          gezamenlijke acties met uitnodigingen, gratis tickets voor events en
+          klantenkaarten met barcode (scannen aan de deur en aan de kassa).
           INFO
-          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.4-build20.zip" Pasr-Zakelijk-1.0.4-build20)
-          unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.4-build20.zip
+          (cd "$work" && zip -qr "$GITHUB_WORKSPACE/dist/Pasr-Zakelijk-Xcode-1.0.4-build21.zip" Pasr-Zakelijk-1.0.4-build21)
+          unzip -tq dist/Pasr-Zakelijk-Xcode-1.0.4-build21.zip
           ls -lh dist/*.zip
       - name: Oplevering GitHub artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Pasr-Zakelijk-Xcode-1.0.4-build20
-          path: dist/Pasr-Zakelijk-Xcode-1.0.4-build20.zip
+          name: Pasr-Zakelijk-Xcode-1.0.4-build21
+          path: dist/Pasr-Zakelijk-Xcode-1.0.4-build21.zip
           retention-days: 90
       - name: Oplevering ZIP als GitHub Release
         env:
@@ -51,8 +52,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="xcode-zakelijk-1.0.4-20"
+          TAG="xcode-zakelijk-1.0.4-21"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Zakelijk 1.0.4 (build 20) – Xcode-project" --notes "Volledig Xcode-bronproject met Knop voor je website: de knop Voeg toe aan Pasr (zwart, wit, nachtblauw; groot of compact) met HTML-code, link en QR-code bij elke stempelkaart. Open de .xcodeproj in Xcode, Archive en upload zelf naar App Store Connect."
+            gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Zakelijk 1.0.4 (build 21) – Xcode-project" --notes "Volledig Xcode-bronproject met gratis tickets (events maken, aanmeldingen, scannen aan de deur) en klantenkaarten met barcode (QR, Code 128, EAN-13; korting, sparen en kortingsperiodes bij het scannen). Open de .xcodeproj in Xcode, Archive en upload zelf naar App Store Connect."
           fi
-          gh release upload "$TAG" dist/Pasr-Zakelijk-Xcode-1.0.4-build20.zip --clobber
+          gh release upload "$TAG" dist/Pasr-Zakelijk-Xcode-1.0.4-build21.zip --clobber

@@ -59,12 +59,17 @@ import java.io.File
  * De knop is altijd Nederlands (badges uit tools/make_badges.py, ook op pasr.nl/badge/nl/). Zelfde als iOS.
  */
 @Composable
-fun WebsiteBadgeSheet(card: BusinessCard, onDismiss: () -> Unit) {
+fun WebsiteBadgeSheet(card: BusinessCard, onDismiss: () -> Unit) =
+    WebsiteBadgeSheet("https://pasr.nl/add/k/${card.id.lowercase()}", card.name,
+        L("Klanten zetten je stempelkaart met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen."), onDismiss)
+
+/** Zelfde knop voor een event (/add/e/<id>) of klantenkaart (/add/m/<id>). */
+@Composable
+fun WebsiteBadgeSheet(url: String, name: String, intro: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var theme by remember { mutableStateOf(Prefs.string("badge.theme", "zwart")) }
     var size by remember { mutableStateOf(Prefs.string("badge.size", "groot")) }
     var copied by remember { mutableStateOf(false) }
-    val url = "https://pasr.nl/add/k/${card.id.lowercase()}"
     val file = theme + if (size == "compact") "-compact" else ""
     val height = if (size == "compact") 38 else 52
     val snippet = "<a href=\"$url\">\n  <img src=\"https://pasr.nl/badge/nl/$file.svg\"\n       alt=\"Voeg toe aan Pasr\" height=\"$height\">\n</a>"
@@ -76,7 +81,7 @@ fun WebsiteBadgeSheet(card: BusinessCard, onDismiss: () -> Unit) {
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(L("Klanten zetten je stempelkaart met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen."), color = Pz.muted)
+            Text(intro, color = Pz.muted)
             Choice(L("Kleur"), listOf("zwart" to L("Zwart"), "wit" to L("Wit"), "nachtblauw" to L("Nachtblauw")), theme) {
                 theme = it; copied = false; Prefs.putString("badge.theme", it)
             }
@@ -98,10 +103,10 @@ fun WebsiteBadgeSheet(card: BusinessCard, onDismiss: () -> Unit) {
                     ?.setPrimaryClip(ClipData.newPlainText("Voeg toe aan Pasr", snippet))
                 copied = true
             }, icon = Icons.Filled.ContentCopy)
-            BigButton(L("Deel HTML-code"), { context.shareText(snippet, card.name) }, icon = Icons.Filled.Share, color = Pz.card2, foreground = Pz.text)
+            BigButton(L("Deel HTML-code"), { context.shareText(snippet, name) }, icon = Icons.Filled.Share, color = Pz.card2, foreground = Pz.text)
             Text(L("Link"), fontWeight = FontWeight.Bold)
             Text(url, color = Pz.muted, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
-            BigButton(L("Link delen"), { context.shareText(url, card.name) }, icon = Icons.Filled.Share, color = Pz.mint, foreground = Color.Black)
+            BigButton(L("Link delen"), { context.shareText(url, name) }, icon = Icons.Filled.Share, color = Pz.mint, foreground = Color.Black)
             Text(L("QR-code voor toonbank en kassabon"), fontWeight = FontWeight.Bold)
             if (qr != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
