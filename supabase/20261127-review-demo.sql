@@ -26,3 +26,7 @@ begin
     '{"membership":true,"saving":{"enabled":true,"unit":"visits","target":10,"reward":"Gratis koffie"},"fixed_discount":{"enabled":true,"percent":10}}'::jsonb)
   on conflict (id) do update set status = 'published', archived_at = null, updated_at = now();
 end $$;
+
+-- Controle (staat in de workflow-log): 1 event en 1 klantenkaart verwacht
+select (select count(*) from public.pasr_tk_events where id = '7e5a1c2d-4b6f-4c1a-9d3e-0a1b2c3d4e01' and status = 'published') as review_events,
+       (select count(*) from public.pasr_mc_cards where id = '7e5a1c2d-4b6f-4c1a-9d3e-0a1b2c3d4e02' and status = 'published') as review_cards;
