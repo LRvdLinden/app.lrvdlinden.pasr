@@ -161,7 +161,7 @@
 .nav-btn.ghost:hover { background: var(--paper-2); }
 .nav-btn:focus-visible { outline: 3px solid var(--iris); outline-offset: 3px; }
 .zk-nav ul li:has(.nav-btn) + li:has(.nav-btn) { margin-left: -12px; }
-@media (max-width: 980px) { .zk-nav .zk-l { display: none !important; } }
+@media (max-width: 1180px) { .zk-nav .zk-l { display: none !important; } }
 @media (max-width: 620px) {
   .zk-nav ul { gap: 8px; }
   .zk-nav ul li:has(.nav-btn) + li:has(.nav-btn) { margin-left: 0; }
