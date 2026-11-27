@@ -199,6 +199,13 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+            if (card.kind == CardKind.TICKET && card.cover == null) {
+                // ticket: hoog, zoals in Apple Wallet (kop, QR-code, Route en Informatie)
+                TicketFace(card, Modifier.fillMaxWidth(), full = true, revealed = revealed, onReveal = {
+                    val a = context as? FragmentActivity
+                    if (a == null) revealed = true else AppLock.authenticate(a, "Toon ${card.storeName}") { ok -> if (ok) revealed = true }
+                })
+            } else {
             CardFace(card, Modifier.fillMaxWidth())
             Gap(18.dp)
             // de code
@@ -227,6 +234,7 @@ internal fun CardDetailContent(id: String, inGroup: Boolean = false) {
                     Gap(6.dp)
                     Text("Pincode: ${card.pin}", color = Color(0xFF444654), fontFamily = FontFamily.Monospace)
                 }
+            }
             }
 
             if (card.kind == CardKind.STAMPS) {

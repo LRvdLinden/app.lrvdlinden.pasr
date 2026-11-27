@@ -82,6 +82,15 @@
     "terms_url": "https://www.bol.com/nl/nl/tc/cadeaukaartvoorwaarden/",
     "checked": "2026-11-21"
   },
+  "concert-at-sea-ticket": {
+    "event": "Concert at SEA 2027",
+    "brand": "Concert at SEA",
+    "date": "2027-06-24",
+    "end_date": "2027-06-26",
+    "venue": "Brouwersdam",
+    "city": "Zeeland",
+    "info_url": "https://www.concertatsea.nl/"
+  },
   "decathlon": {
     "how": "Lid worden is gratis met een Decathlon-account.",
     "earn": "Je verdient 10 punten per euro aan Decathlon-producten, 100 punten per week met sporten en dubbele punten op Second Life-producten en reparaties. Punten verzilver je voor een Decathlon Giftcard (2.500 punten = € 5).",
@@ -103,6 +112,52 @@
     "how": "Te besteden bij ruim 3.000 aangesloten restaurants in Nederland en een deel van België; de ontvanger kiest zelf waar en wanneer. Niet inwisselbaar voor geld.",
     "terms_url": "https://www.diner-cadeau.nl/algemene-voorwaarden/",
     "checked": "2026-11-21"
+  },
+  "drakenboot-early-bird": {
+    "event": "Drakenboot 2027",
+    "brand": "Drakenboot",
+    "date": "2027-06-18",
+    "doors": "17:00",
+    "ends": "01:00",
+    "venue": "Zwitsalpark",
+    "city": "Apeldoorn",
+    "info_url": "https://www.drakenboot.nl/tickets",
+    "ticket_type": "Early Bird"
+  },
+  "drakenboot-kids-early-bird": {
+    "event": "Drakenboot 2027",
+    "brand": "Drakenboot",
+    "date": "2027-06-18",
+    "doors": "17:00",
+    "ends": "01:00",
+    "venue": "Zwitsalpark",
+    "city": "Apeldoorn",
+    "info_url": "https://www.drakenboot.nl/tickets",
+    "ticket_type": "KIDS Early Bird",
+    "ticket_note": "t/m 14 jaar"
+  },
+  "drakenboot-kids-regular": {
+    "event": "Drakenboot 2027",
+    "brand": "Drakenboot",
+    "date": "2027-06-18",
+    "doors": "17:00",
+    "ends": "01:00",
+    "venue": "Zwitsalpark",
+    "city": "Apeldoorn",
+    "info_url": "https://www.drakenboot.nl/tickets",
+    "ticket_type": "KIDS Regular",
+    "ticket_note": "t/m 14 jaar"
+  },
+  "drakenboot-regular": {
+    "event": "Drakenboot 2027",
+    "brand": "Drakenboot",
+    "date": "2027-06-18",
+    "doors": "17:00",
+    "ends": "01:00",
+    "venue": "Zwitsalpark",
+    "city": "Apeldoorn",
+    "info_url": "https://www.drakenboot.nl/tickets",
+    "ticket_type": "Regular"
   },
   "dreamland": {
     "online": true,
@@ -307,5 +362,15 @@
     "how": "Vul de code in bij het afrekenen op zalando.nl; wat overblijft staat in je account onder 'Mijn cadeaubon totaal' en gebruik je bij een volgende bestelling. Retouren worden teruggestort op dat tegoed.",
     "terms_url": "https://www.zalando.nl/faq/Vouchere/gift-cards-and-vouchers-general-info.html",
     "checked": "2026-11-21"
+  },
+  "zwarte-cross-ticket": {
+    "event": "Zwarte Cross 2027",
+    "brand": "Zwarte Cross",
+    "date": "2027-07-15",
+    "end_date": "2027-07-18",
+    "venue": "Festivalterrein De Schans",
+    "city": "Lichtenvoorde",
+    "address": "Heringsaweg, 7137 PH Lichtenvoorde",
+    "info_url": "https://www.zwartecross.nl/"
   }
 }

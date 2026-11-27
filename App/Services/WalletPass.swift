@@ -89,6 +89,30 @@ enum WalletPass {
         if let d = details.renewsAt { body["renewsAt"] = iso.string(from: d) }
         if let c = details.cost { body["cost"] = c; body["currency"] = card.currencyCode ?? "EUR"; body["period"] = details.periodValue.rawValue }
         if card.showsCodeAsText { body["codeAsText"] = true }
+        // ticket (sinds 1.0.5): een eventTicket-pas met de gegevens en huisstijl van het evenement; tickets voor
+        // hetzelfde evenement krijgen dezelfde groep (groupingIdentifier) in Wallet
+        if card.kind == .ticket {
+            let ticket = card.ticketInfo
+            body["event"] = ticket.title
+            body["brand"] = ticket.brand
+            body["group"] = ticket.groupKey
+            if let v = ticket.type { body["ticketType"] = v }
+            if let v = ticket.note { body["ticketNote"] = v }
+            if details.eventDate == nil, let e = ticket.event {
+                if let v = e.date { body["date"] = v }
+                if let v = e.endDate { body["endDate"] = v }
+                if let v = e.doors { body["doors"] = v }
+                if let v = e.ends { body["ends"] = v }
+            }
+            if details.venue?.isEmpty != false {
+                if let v = ticket.venue { body["venue"] = v }
+                if let v = ticket.city { body["city"] = v }
+            }
+            if let v = ticket.address { body["address"] = v }
+            if let v = ticket.info { body["infoURL"] = v.absoluteString }
+            if let v = ticket.textHex { body["textHex"] = v }
+            if let v = ticket.labelHex { body["labelHex"] = v }
+        }
         // stempelkaart (sinds 1.0.3); een zakelijke kaart werkt de server zelf bij met de stand van de zaak
         if card.kind == .stamps {
             body["stampsTotal"] = details.stampsTotalValue

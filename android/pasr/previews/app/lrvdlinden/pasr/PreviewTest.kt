@@ -70,6 +70,11 @@ import app.lrvdlinden.pasr.ui.ReceiptRow
 import app.lrvdlinden.pasr.ui.Toggle
 import app.lrvdlinden.pasr.ui.UsePromptBar
 import app.lrvdlinden.pasr.ui.UsePromptData
+import app.lrvdlinden.pasr.data.TicketInfo
+import app.lrvdlinden.pasr.ui.TicketFace
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import org.json.JSONObject
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -111,6 +116,35 @@ class PreviewTest {
             if (icon) Icon(Icons.Outlined.Settings, null)
         }
     }
+
+    /** Drakenboot-tickets zoals in het voorbeeld van Léon (demo-codes, geen echte toegangsbewijzen). */
+    private fun drakenboot(type: String, note: String?, code: String): Pair<Card, TicketInfo> {
+        val card = Card(storeName = "Drakenboot – $type", number = code, formatRaw = "qr", kindRaw = "ticket", colorHex = "#1FB5B0")
+        val guide = JSONObject().put("event", "Drakenboot 2027").put("brand", "Drakenboot").put("date", "2027-06-18")
+            .put("doors", "17:00").put("ends", "01:00").put("venue", "Zwitsalpark").put("city", "Apeldoorn")
+            .put("ticket_type", type).put("info_url", "https://www.drakenboot.nl/tickets").put("text_hex", "#FFFFFF")
+        if (note != null) guide.put("ticket_note", note)
+        return card to TicketInfo.resolve(card, guide)
+    }
+
+    @Composable
+    private fun TicketShots(dark: Boolean) {
+        Frame(dark) {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                val (c1, i1) = drakenboot("Regular", null, "PASR-DEMO-REGULAR")
+                val (c2, i2) = drakenboot("KIDS Early Bird", "t/m 14 jaar", "PASR-DEMO-KIDS-EB")
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TicketFace(c1, Modifier.weight(1f), compact = true, info = i1, logo = null)
+                    TicketFace(c2, Modifier.weight(1f), compact = true, info = i2, logo = null)
+                }
+                TicketFace(c2, Modifier.fillMaxWidth(), full = true, demo = true, info = i2, logo = null)
+            }
+        }
+    }
+
+    @Test fun ticketLicht() = paparazzi.snapshot { TicketShots(dark = false) }
+
+    @Test fun ticketDonker() = paparazzi.snapshot { TicketShots(dark = true) }
 
     @Test fun wallet() = paparazzi.snapshot {
         Frame {

@@ -33,6 +33,8 @@ struct CardAppearance: Equatable {
     var cover: Data?
     /// Kaartontwerp van de winkel uit het beheer (alleen cadeaukaarten); een eigen voorkant gaat voor.
     var storeCover: Data?
+    /// Ticket: evenement, soort, datum, toegang en locatie (uit de catalogus en de kaart); nil = alleen uit naam en details.
+    var ticket: TicketInfo?
 
     init(storeName: String, number: String, format: BarcodeFormat, colorHex: String, kind: CardKind,
          isFavorite: Bool = false, logoData: Data? = nil, codeImage: Data? = nil,
@@ -69,6 +71,7 @@ struct CardAppearance: Equatable {
         codeAsText = card.showsCodeAsText
         cover = card.coverPhoto
         storeCover = card.storeCover
+        if card.kind == .ticket { ticket = card.ticketInfo }
     }
 
     /// Kopie met de gegevens van ticket, abonnement of kortingscode.
@@ -198,6 +201,10 @@ struct CardFaceView: View {
     var body: some View {
         if let coverImage {
             coverFront(coverImage)
+        } else if appearance.kind == .ticket {
+            // een ticket ziet eruit als een ticket (zoals eventTicket in Apple Wallet), niet als een klantenkaart
+            TicketFaceView(appearance: appearance, layout: showsCode ? .code : .front, revealed: revealed,
+                           cornerRadius: cornerRadius)
         } else if let storeCoverImage {
             storeCoverFront(storeCoverImage)
         } else {

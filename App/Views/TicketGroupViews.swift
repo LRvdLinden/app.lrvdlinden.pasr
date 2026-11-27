@@ -4,17 +4,20 @@ import SwiftUI
 //
 // Zie Shared/Model/TicketGroups.swift voor de groepeersleutel.
 
-/// DE plek voor de weergave van een ticket in een groep. Nu de gewone kaartweergave; zodra TicketFaceView er is, is
-/// dit per regel één aanpassing (stapel: `front`, vooraan met de code: `page`).
+/// DE plek voor de weergave van een ticket in een groep: TicketFaceView (stapel: `front` op kaartformaat, vooraan
+/// met de code: `page`, het hoge ticket met QR-code en Route/Informatie).
 enum TicketGroupFace {
+    /// Hoogte van een hoog ticket (`page`) bij deze breedte; de pager heeft een vaste hoogte nodig.
+    static func pageHeight(for width: CGFloat) -> CGFloat { 430 + min(width - 40, 230) }   // kop + golf + QR-deel + knoppen
+
     /// Voorkant in de stapel (zonder code).
     @ViewBuilder static func front(_ appearance: CardAppearance) -> some View {
-        CardFaceView(appearance: appearance, showsCode: false)
+        TicketFaceView(appearance: appearance, layout: .front)
     }
 
-    /// Eén ticket vooraan, omgedraaid naar de code bij `angle` 180.
+    /// Eén ticket vooraan, met de code (`angle` blijft voor de aanroepers; een ticket draait niet om).
     @ViewBuilder static func page(_ card: Card, angle: Double) -> some View {
-        FlipCardView(appearance: CardAppearance(card), angle: angle)
+        TicketFaceView(card: card)
     }
 }
 
@@ -69,7 +72,8 @@ struct TicketGroupPager: View {
             TabView(selection: $page) {
                 ForEach(Array(cards.enumerated()), id: \.element.id) { i, card in
                     TicketGroupFace.page(card, angle: angle)
-                        .frame(width: width, height: width / Brand.cardAspect)
+                        .frame(width: width)
+                        .frame(height: TicketGroupFace.pageHeight(for: width), alignment: .top)
                         .shadow(color: .black.opacity(0.5), radius: 24, y: 16)
                         .padding(.vertical, 30)
                         .frame(maxWidth: .infinity)
@@ -79,7 +83,7 @@ struct TicketGroupPager: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: width / Brand.cardAspect + 60)
+            .frame(height: TicketGroupFace.pageHeight(for: width) + 60)
 
             indicator
         }

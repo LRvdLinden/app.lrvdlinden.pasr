@@ -328,6 +328,8 @@ struct StoreDraft: Identifiable {
     var gTerms = ""
     var gChecked = ""
     var gBirthday = ""
+    /// Ticket: evenementvelden (sleutels als in StoreGuide.ticketKeys).
+    var ticket: [String: String] = [:]
     /// Gids zoals geladen (voor "alleen meesturen als gewijzigd").
     var originalGuide: StoreGuide?
 
@@ -347,6 +349,7 @@ struct StoreDraft: Identifiable {
         gValidity = g.validity ?? ""; gOnline = g.online; gStore = g.store; gShipping = g.shipping ?? ""
         gEarn = g.earn ?? ""; gPerks = g.perks ?? ""; gProgram = g.program_url ?? ""
         gHow = g.how ?? ""; gTerms = g.terms_url ?? ""; gChecked = g.checked ?? ""; gBirthday = g.birthday ?? ""
+        for (key, _) in StoreGuide.ticketKeys { if let v = g[ticket: key] { ticket[key] = v } }
         originalGuide = guide()
     }
 
@@ -362,6 +365,16 @@ struct StoreDraft: Identifiable {
             return s
         }
         var g = StoreGuide()
+        if kind == "ticket" {
+            // alleen de evenementvelden (zoals guideBody in beheer/web)
+            for (key, _) in StoreGuide.ticketKeys {
+                var v = t(ticket[key] ?? "", 300)
+                if key == "info_url" { v = url(ticket[key] ?? "") }
+                if key == "text_hex" || key == "label_hex" { v = v?.uppercased() }
+                g[ticket: key] = v
+            }
+            return g.isEmpty ? nil : g
+        }
         if kind == "voucher" {
             g.validity = t(gValidity, 80)
             g.online = gOnline
@@ -464,7 +477,7 @@ struct StoreEditorView: View {
                     }
                 }
                 if draft.kind == "voucher" { coverSection }
-                if draft.kind != "ticket" { guideSection }
+                if draft.kind != "ticket" { guideSection } else { ticketSection }
                 Section {
                     if !draft.requestIDs.isEmpty {
                         Text("Na publiceren worden \(Fmt.plural(draft.requestIDs.count, "aanvraag", "aanvragen")) gesloten als toegevoegd.")
@@ -597,6 +610,26 @@ struct StoreEditorView: View {
             Text(voucher ? "Gids: cadeaubon-gids" : "Gids: programmagids")
         } footer: {
             Text("In de app en op pasr.nl. Alleen officiële bronnen; onbekend leeg laten. Alleen een gewijzigde gids wordt opgeslagen; leeg laten houdt de bestaande gids.")
+        }
+    }
+
+    /// Ticket: de evenementgegevens (zoals beheer/web). De app tekent er het ticket mee, en de Wallet-pas ook.
+    @ViewBuilder private var ticketSection: some View {
+        Section {
+            ForEach(StoreGuide.ticketKeys.indices, id: \.self) { i in
+                let item = StoreGuide.ticketKeys[i]
+                let binding = Binding(get: { draft.ticket[item.key] ?? "" }, set: { draft.ticket[item.key] = $0 })
+                if item.key == "info_url" {
+                    urlField(item.title, text: binding)
+                } else {
+                    TextField(item.title, text: binding)
+                        .autocorrectionDisabled(item.key.hasSuffix("_hex") || item.key == "date" || item.key == "end_date")
+                }
+            }
+        } header: {
+            Text("Evenement")
+        } footer: {
+            Text("Alleen van de officiële site van het evenement; onbekend leeg laten. Logo en kaartkleur hierboven zijn de huisstijl van het ticket.")
         }
     }
 

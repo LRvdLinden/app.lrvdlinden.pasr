@@ -3,7 +3,9 @@ const assert = (c: unknown, m = "assert") => { if (!c) throw new Error(m); };
 const assertEquals = (a: unknown, b: unknown) => {
   if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${JSON.stringify(a)} != ${JSON.stringify(b)}`);
 };
-import { applePassToken, businessStand, open, route, seal, stampFields, stamps, stored, tagFor, tokenHash } from "./passkit.ts";
+import {
+  amsterdamOffset, applePassToken, businessStand, dutchDates, open, route, seal, stampFields, stamps, stored, tagFor, ticketGroup, ticketPass, tokenHash,
+} from "./passkit.ts";
 
 const serial = "3F2504E0-4F89-11D3-9A0C-0305E82C3301";
 
@@ -63,4 +65,52 @@ Deno.test("stand van de zaak lezen", () => {
   assertEquals(businessStand([{ stampsCount: "2" }]), { total: undefined, count: 2, reward: undefined });
   assertEquals(businessStand(null), null);
   assertEquals(tagFor("2026-11-22T10:00:00Z"), String(Date.parse("2026-11-22T10:00:00Z")));
+});
+
+Deno.test("ticket: datums in het Nederlands en de Nederlandse tijdzone", () => {
+  assertEquals(dutchDates("2027-06-18"), "18 juni 2027");
+  assertEquals(dutchDates("2027-07-15", "2027-07-18"), "15 – 18 juli 2027");
+  assertEquals(dutchDates("2027-06-30", "2027-07-02"), "30 juni – 2 juli 2027");
+  assertEquals(dutchDates("geen datum"), null);
+  assertEquals(amsterdamOffset(2027, 6, 18), "+02:00");
+  assertEquals(amsterdamOffset(2027, 1, 10), "+01:00");
+  assertEquals(amsterdamOffset(2027, 3, 28), "+02:00");   // laatste zondag van maart 2027
+  assertEquals(amsterdamOffset(2027, 10, 31), "+01:00");  // laatste zondag van oktober 2027
+});
+
+Deno.test("ticket: eventTicket met merkkleur, evenementvelden en groep", () => {
+  const base = { formatVersion: 1, backgroundColor: "rgb(0, 0, 0)", foregroundColor: "rgb(255, 255, 255)", labelColor: "x",
+    barcodes: [{ format: "PKBarcodeFormatQR", message: "ABC123" }],
+    storeCard: { headerFields: [], secondaryFields: [], backFields: [{ key: "pasr", label: "Pasr", value: "pasr.nl" }] } };
+  const card = { id: serial, name: "Drakenboot – KIDS Early Bird", number: "ABC123", format: "qr", colorHex: "#1FB5B0", kind: "ticket",
+    event: "Drakenboot 2027", brand: "Drakenboot", ticketType: "KIDS Early Bird", ticketNote: "t/m 14 jaar", date: "2027-06-18",
+    doors: "17:00", ends: "01:00", venue: "Zwitsalpark", city: "Apeldoorn", infoURL: "https://www.drakenboot.nl/tickets", textHex: "#ffffff" };
+  const p = ticketPass(base, card) as Record<string, any>;
+  assert(!("storeCard" in p), "geen storeCard meer");
+  assertEquals(p.eventTicket.primaryFields[0], { key: "event", label: "DRAKENBOOT", value: "Drakenboot 2027" });
+  assertEquals(p.eventTicket.headerFields[0].value, "KIDS Early Bird");
+  assertEquals(p.eventTicket.secondaryFields.map((f: any) => f.value), ["18 juni 2027", "17:00 – 01:00"]);
+  assertEquals(p.eventTicket.auxiliaryFields.map((f: any) => f.label), ["LOCATIE", "LEEFTIJD"]);
+  assertEquals(p.eventTicket.backFields.map((f: any) => f.key), ["info", "route", "pasr"]);
+  assertEquals(p.backgroundColor, "rgb(31, 181, 176)");
+  assertEquals(p.foregroundColor, "rgb(255, 255, 255)");
+  assertEquals(p.relevantDate, "2027-06-18T17:00:00+02:00");
+  assertEquals(p.expirationDate, "2027-06-19T06:00:00+02:00");
+  assertEquals(p.logoText, "Drakenboot");
+  assertEquals(p.barcodes, base.barcodes);
+  // alle Drakenboot-tickets in één groep, een ander evenement apart
+  const regular = ticketPass(base, { ...card, name: "Drakenboot – Regular", ticketType: "Regular", ticketNote: undefined }) as Record<string, any>;
+  assertEquals(regular.groupingIdentifier, p.groupingIdentifier);
+  assertEquals(p.groupingIdentifier, "pasr-event-drakenboot-2027");
+  assert(ticketGroup({ ...card, event: "Zwarte Cross 2027" }) !== p.groupingIdentifier, "ander evenement, andere groep");
+});
+
+Deno.test("ticket: eigen ticket zonder catalogus blijft werken", () => {
+  const p = ticketPass({ storeCard: {} }, { id: serial, name: "Concert", number: "1", format: "qr", colorHex: "#222222", kind: "ticket",
+    eventDate: "2027-03-01T20:00:00Z", venue: "Ziggo Dome", seat: "Rij 4" }) as Record<string, any>;
+  assertEquals(p.eventTicket.primaryFields[0].value, "Concert");
+  assertEquals(p.eventTicket.secondaryFields[0].dateStyle, "PKDateStyleMedium");
+  assertEquals(p.eventTicket.auxiliaryFields.map((f: any) => f.value), ["Ziggo Dome", "Rij 4"]);
+  assertEquals(p.groupingIdentifier, "pasr-event-concert");
+  assert(!("relevantDate" in p), "datum komt uit index.ts");
 });

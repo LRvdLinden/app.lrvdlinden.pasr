@@ -130,6 +130,9 @@ struct CardEditorView: View {
             a.cover = cover
             // Kaartontwerp van de winkel (cadeaukaart) zolang je geen eigen voorkant kiest.
             a.storeCover = kind == .voucher && cover == nil ? RemoteStores.cover(for: templateID) : nil
+            if kind == .ticket {
+                a.ticket = TicketInfo.resolve(name: storeName, templateID: templateID, details: savedDetails, website: website)
+            }
             return a
         }
     }

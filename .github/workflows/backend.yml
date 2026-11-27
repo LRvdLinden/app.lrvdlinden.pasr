@@ -331,6 +331,9 @@ jobs:
       - name: Cadeaubon-gids (alleen waar de gids nog leeg is; aanpassingen in het beheer blijven staan)
         if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/guides.json') != ''
         run: python3 supabase/catalog/guides.py
+      - name: Logo en merkkleur van evenementtickets (alleen waar nog geen logo of nog de neutrale kleur; het beheer is leidend)
+        if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/ticket_brands.json') != ''
+        run: python3 supabase/catalog/ticket_brands.py
       - name: Kaartontwerpen van cadeaukaarten (alleen waar de cover nog leeg is; het beheer is leidend)
         if: steps.check.outputs.skip != '1' && hashFiles('supabase/catalog/covers.json') != ''
         run: python3 supabase/catalog/covers.py
