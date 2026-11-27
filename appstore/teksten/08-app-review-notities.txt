@@ -10,7 +10,7 @@ How to test:
 7. Shared Pasr (needs the demo account): Settings > "Gedeelde Pasr" > create a group and invite an email address. Members see the group's cards; when adding or editing a card, "Bewaren in" chooses private or the group.
 8. Request a store (needs the demo account): + > "Kaart toevoegen" > "Mis je een winkel?" at the bottom. Added stores appear in the list without an app update, and the requester gets a push notification.
 
-9. Tickets and business cards (demo account): open TODO-LEON-EVENT-LINK (pasr.nl/add/e/...), register; the ticket appears in the stack in Wallet style, swipe between tickets of one event. TODO-LEON-MEMBER-LINK (pasr.nl/add/m/...) adds a business loyalty card with barcode, discount and savings. Any pasr.nl/add/... link opens a confirmation sheet first.
+9. Tickets and business cards (demo account): open https://pasr.nl/add/e/7e5a1c2d-4b6f-4c1a-9d3e-0a1b2c3d4e01, register; the ticket appears in the stack in Wallet style, swipe between tickets of one event. https://pasr.nl/add/m/7e5a1c2d-4b6f-4c1a-9d3e-0a1b2c3d4e02 adds a business loyalty card with barcode, discount and savings. Any pasr.nl/add/... link opens a confirmation sheet first.
 Demo account (sign-in fields in App Store Connect): already contains three cards and a shared Pasr "Gezin" with two cards, so Shared Pasr can be checked right away. Sign in via Settings > Account > "Inloggen of account maken".
 
 Permissions:
