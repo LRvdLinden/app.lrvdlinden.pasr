@@ -48,6 +48,11 @@
 //   business_test_member {card_id}                -> {member:{id, member_code, label, stamps_count, …}} (Testklant (App Review))
 //   business_test_member_reset {id} / business_test_member_delete {id} -> {ok}  (alleen leden met een label)
 //   business_brand   {business_id?, url?}           -> {name, logo, color, text_color, source_url, domain} (zelfde als business-brand)
+//   (gezamenlijke acties op uitnodiging, 27-11-2026; zie docs/community-invites.md)
+//   community_detail {id}                           -> {campaign:{…, state, min_participants, accepted_count}, participants, invites}
+//   community_revoke {invite_id}                    -> {ok}                   (openstaande uitnodiging intrekken; mail + push)
+//   community_remove {campaign_id, business_id}     -> {ok}                   (deelnemer eruit, niet de organisator; mail + push)
+//   notify {kind: "community"} + x-pasr-hook        -> {sent}                 (push naar Pasr Zakelijk uit de outbox)
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
@@ -59,6 +64,7 @@ import { alreadyExists, cleanReview } from "./review.ts";
 import { chunks, cleanAudience, cleanNews, DUPLICATE_WINDOW_MS, newsFingerprint, newsPayload, type Target, uniqueTokens, wantsAndroid, wantsIos } from "./news.ts";
 import { cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, dbError } from "./business.ts";
 import { okLink, ownerMail } from "./owner_mail.ts";
+import { cleanDevices, communityPayload, type PushItem } from "./community.ts";
 // huisstijl: dezelfde code als de functie business-brand (SSRF-beveiligd ophalen, logo en kleur)
 import { cleanUrl } from "../business-brand/brand.ts";
 import { brand } from "../business-brand/fetch.ts";
@@ -446,6 +452,41 @@ async function pushMember(code: string, before: number, after: number): Promise<
   return (await fcmToDevices(list, payload, "stamps")).sent;
 }
 
+/** Gezamenlijke acties: de outbox naar de apparaten van Pasr Zakelijk van de betrokken zaak (APNs en FCM). Elke rij wordt
+ *  daarna als verstuurd gemarkeerd, ook zonder apparaten; ongeldige tokens gaan weg. */
+async function pushCommunity(): Promise<number> {
+  if (!pushConfigured()) return 0;   // niets claimen: dan probeert de volgende run het opnieuw
+  const { data, error } = await db.rpc("pasr_business_community_push_due", { p_limit: 50 });
+  if (error) throw new Error(error.message);
+  const items = (Array.isArray(data) ? data : []) as PushItem[];
+  let sent = 0;
+  const done: number[] = [], invalid: string[] = [];
+  for (const item of items) {
+    const payload = communityPayload(item);
+    if (payload) {
+      const res = await Promise.all(cleanDevices(item.devices).map(async (d) => ({
+        d,
+        r: d.provider === "fcm"
+          ? await fcmSend(d.token, payload, "zakelijk")
+          : apnsConfigured()
+          ? await newsIosSend({ device_id: d.device_id, token: d.token, sandbox: d.sandbox, app: "zakelijk", src: "device" }, payload)
+          : { ok: false as const, invalid: false, error: "apns_not_configured" },
+      })));
+      for (const x of res) {
+        if (x.r.ok) sent++;
+        else if (x.r.invalid) invalid.push(x.d.device_id);
+      }
+    }
+    if (typeof item.id === "number") done.push(item.id);
+  }
+  if (invalid.length) await db.rpc("pasr_admin_push_forget", { p_devices: invalid });
+  if (done.length) {
+    const { error: e } = await db.rpc("pasr_business_community_push_sent", { p_ids: done });
+    if (e) console.error("admin", "community_push_sent", e.message);
+  }
+  return sent;
+}
+
 // ---- zakelijk 1.1: eigenaarsuitnodiging mailen (SMTP-secrets van group-invite; zonder SMTP: alleen de link) ----
 async function mailOwnerInvite(to: unknown, business: { name?: string; city?: string | null }, invite: { link?: string; expires_at?: string | null } | null) {
   const host = env("PASR_SMTP_HOST"), user = env("PASR_SMTP_USER"), pass = Deno.env.get("PASR_SMTP_PASSWORD") ?? "", from = env("PASR_SMTP_FROM");
@@ -498,6 +539,9 @@ Deno.serve(async (req) => {
     // Seintje van de database: eigen geheim, geen beheer-token.
     if (action === "notify") {
       if (!(await hookOk(req.headers.get("x-pasr-hook")))) return json({ error: "forbidden" }, 403);
+      if (body.kind === "community") {
+        return json({ sent: await pushCommunity() });
+      }
       if (body.kind === "retention") {
         return json({ sent: await pushRetention() });
       }
@@ -893,6 +937,30 @@ Deno.serve(async (req) => {
         const { error } = await db.rpc("pasr_admin_business_offer_disable", { p_kind: kind, p_id: body.id });
         if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
         await audit("business_offer_disable", ipHash, `${kind} ${body.id}`);
+        return json({ ok: true });
+      }
+      case "community_detail": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_community_detail", { p_campaign: body.id });
+        if (error) throw new Error(error.message);
+        if (!data) return json({ error: "not_found" }, 404);
+        return json(data);
+      }
+      case "community_revoke": {
+        if (!isUuid(body.invite_id)) return json({ error: "bad_id" }, 400);
+        const { error } = await db.rpc("pasr_admin_community_revoke", { p_invite: body.invite_id });
+        if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
+        await audit("community_revoke", ipHash, String(body.invite_id));
+        return json({ ok: true });
+      }
+      case "community_remove": {
+        if (!isUuid(body.campaign_id) || !isUuid(body.business_id)) return json({ error: "bad_id" }, 400);
+        const { error } = await db.rpc("pasr_admin_community_remove", { p_campaign: body.campaign_id, p_business: body.business_id });
+        if (error) {
+          const code = /is_lead/.test(error.message) ? "is_lead" : /not_found/.test(error.message) ? "not_found" : "server_error";
+          return json({ error: code }, code === "is_lead" ? 409 : code === "not_found" ? 404 : 500);
+        }
+        await audit("community_remove", ipHash, `${body.campaign_id} ${body.business_id}`);
         return json({ ok: true });
       }
       case "business_settings": {

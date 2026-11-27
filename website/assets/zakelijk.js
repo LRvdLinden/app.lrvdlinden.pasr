@@ -55,6 +55,7 @@
     var q = qrcode(0, "M"); q.addData(text); q.make();
     return q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   }
+  window.PasrQrSvg = qrSvg;   // ook voor loyalty2.js (uitnodigingslink van een gezamenlijke actie)
   // Deellink van een stempelkaart: eigen pagina per kaart (titel, beschrijving en OG-afbeelding voor WhatsApp, iMessage, …).
   // De oude vorm /zakelijk/kaart/#<id> blijft werken: die pagina stuurt door naar /zakelijk/kaart/<id>/.
   function joinUrl(id) { return "https://pasr.nl/zakelijk/kaart/" + String(id).toLowerCase() + "/"; }
@@ -140,6 +141,7 @@
     if (e.code === "user_already_exists" || e.code === "email_exists") return "Er is al een account met dit e-mailadres. Log in.";
     if (e.code === "weak_password") return "Kies een wachtwoord van minstens 8 tekens.";
     if (/permanent email/i.test(m)) return "Gebruik een vast e-mailadres; tijdelijke adressen werken niet.";
+    var cm = communityError(e); if (cm) return cm;
     if (/not_approved/.test(m)) return "Je zaak is nog niet goedgekeurd. Je krijgt bericht zodra dat zo is.";
     if (/other_business/.test(m)) return "Deze kaart hoort bij een andere zaak.";
     if (/not_found/.test(m)) return "Niet gevonden. Controleer de code of de link.";
@@ -151,6 +153,71 @@
     if (/blocked/.test(m)) return "Je zaak is geblokkeerd. Mail support@pasr.nl als dat niet klopt.";
     if (e.status === 401) return "Je bent uitgelogd. Log opnieuw in.";
     return "Er ging iets mis. Probeer het opnieuw.";
+  }
+
+  // Foutcodes van gezamenlijke acties (docs/community-invites.md); ook gebruikt door loyalty2.js.
+  function communityError(e) {
+    var m = String((e && e.message) || ""), h = String((e && e.hint) || "");
+    var map = {
+      invite_required: "Meedoen kan alleen met een uitnodiging van de organisator.",
+      not_owner: "Alleen de eigenaar van de organiserende zaak kan dit doen.",
+      already_participant: "Deze zaak doet al mee aan de actie.",
+      invite_not_found: "Deze uitnodiging bestaat niet meer of is al beantwoord.",
+      invite_expired: "Deze uitnodiging is verlopen. Vraag de organisator om een nieuwe.",
+    };
+    return map[m] || map[h] || "";
+  }
+  window.PasrCommunityError = communityError;
+
+  // Uitnodiging voor een gezamenlijke actie (pasr.nl/zakelijk/uitnodiging/?t=<token>): het token blijft 14 dagen in deze
+  // browser bewaard, zodat het na aanmelden, bevestigen en goedkeuren nog in het dashboard klaarstaat.
+  var COMMUNITY_KEY = "pasr.zakelijk.community";
+  function communityToken(v) {
+    try {
+      if (v === null) { localStorage.removeItem(COMMUNITY_KEY); return null; }
+      if (v) { localStorage.setItem(COMMUNITY_KEY, JSON.stringify({ t: v, at: Date.now() })); return v; }
+      var o = JSON.parse(localStorage.getItem(COMMUNITY_KEY) || "null");
+      if (!o || !/^[0-9a-f]{64}$/.test(o.t) || Date.now() - o.at > 14 * 864e5) { localStorage.removeItem(COMMUNITY_KEY); return null; }
+      return o.t;
+    } catch (e) { return null; }
+  }
+  function communityPeriod(p) { return nlDate(p.starts_at) + " t/m " + nlDate(p.ends_at); }
+  function communityCard(p) {
+    var names = Array.isArray(p.participant_names) ? p.participant_names : [];
+    return '<div class="zk-ci-card"><span class="zk-ci-kicker">' + ICON.users + "Gezamenlijke actie</span>" +
+      "<h2>" + esc(p.title) + "</h2>" +
+      '<dl class="zk-ci-list"><div><dt>Beloning</dt><dd>' + esc(p.reward) + "</dd></div>" +
+      "<div><dt>Looptijd</dt><dd>" + esc(communityPeriod(p)) + "</dd></div>" +
+      "<div><dt>Organisator</dt><dd>" + esc(p.initiator_name) + "</dd></div>" +
+      (names.length ? "<div><dt>Doen mee</dt><dd>" + esc(names.join(", ")) + "</dd></div>" : "") + "</dl></div>";
+  }
+  // In het dashboard: een bewaarde uitnodiging bovenaan, met accepteren namens de gekozen zaak.
+  async function communityBanner(b) {
+    var t = communityToken();
+    if (!t || b.role !== "owner" || b.status !== "approved") return;
+    var p;
+    try { p = await rpc("pasr_business_community_invite_preview", { p_token: t }); } catch (e) { return; }
+    if (!p || p.status !== "invited") { communityToken(null); return; }
+    var panel = $("#zd-panel");
+    if (!panel || $("#zkCiBanner")) return;
+    var box = document.createElement("div");
+    box.id = "zkCiBanner"; box.className = "zd-state zk-ci-banner"; box.setAttribute("role", "status");
+    box.innerHTML = '<span class="zd-state-ic">' + ICON.users + "</span><div><h2>Uitnodiging voor \u201c" + esc(p.title) + "\u201d</h2>" +
+      "<p>" + esc(p.initiator_name) + " nodigt je uit voor een gezamenlijke actie: " + esc(p.reward) + ". Looptijd " + esc(communityPeriod(p)) + ".</p>" +
+      '<p class="zk-ci-actions"><button class="zk-btn sm" type="button" id="zkCiYes">Accepteren met ' + esc(b.name) + "</button>" +
+      '<button class="zk-btn ghost sm" type="button" id="zkCiNo">Niet nu</button></p><p class="zk-msg" id="zkCiMsg" role="status"></p></div>';
+    panel.parentNode.insertBefore(box, panel);
+    $("#zkCiNo").addEventListener("click", function () { communityToken(null); box.remove(); });
+    $("#zkCiYes").addEventListener("click", async function (ev) {
+      var btn = ev.currentTarget; btn.disabled = true;
+      try {
+        await rpc("pasr_business_community_accept_token", { p_business: b.id, p_token: t }, true);
+        communityToken(null); box.remove(); toast("Je doet mee aan " + p.title); go("samenwerkingen");
+      } catch (e) {
+        setMsg($("#zkCiMsg"), nice(e)); btn.disabled = false;
+        if (/invite_(expired|not_found)|already_participant/.test(String(e.message || ""))) communityToken(null);
+      }
+    });
   }
 
   // ---------------------------------------------------------------- dashboard: pasr.nl/zakelijk/dashboard/
@@ -371,6 +438,7 @@
     var panel = $("#zd-panel");
     if (b.status === "blocked" && b.role !== "owner") { panel.innerHTML = '<p class="zk-empty">Er is hier nu niets te doen.</p>'; return; }
     (VIEWS[tab.id] || function () {})(panel, b);
+    communityBanner(b);
     if (tab.id === "kaarten" && !dash.sub) {
       var removal = document.createElement("section");
       panel.append(removal);
@@ -1468,8 +1536,79 @@
     mountScanner($("#sRoot"), { auto: true });
   }
 
+  // ---------------------------------------------------------------- uitnodiging gezamenlijke actie: ?t=<token>
+  async function communityInvitePage(t) {
+    function box(html) { dashRoot().innerHTML = '<section class="auth zk-ci">' + '<div class="badge">' + ICON.users + "</div>" + html + "</section>"; }
+    if (!ready) return box("<h1>Even niet beschikbaar</h1><p>Probeer het later opnieuw.</p>");
+    var p;
+    try { p = await rpc("pasr_business_community_invite_preview", { p_token: t }); } catch (e) { return box("<h1>Niet opgehaald</h1><p>Geen verbinding met Pasr. Laad de pagina opnieuw.</p>"); }
+    var st = p && p.status;
+    if (st !== "invited") {
+      communityToken(null);
+      var why = st === "used" ? "Deze uitnodiging is al gebruikt door een zaak." : st === "expired" ? "Deze uitnodiging is verlopen of de actie loopt niet meer." :
+        st === "revoked" ? "De organisator heeft deze uitnodiging ingetrokken." : "Deze link klopt niet.";
+      return box("<h1>Uitnodiging niet meer geldig</h1><p>" + why + " Vraag de organisator om een nieuwe link.</p>" +
+        '<p class="zk-ci-actions"><a class="zk-btn ghost" href="/zakelijk/">Over Pasr voor ondernemers</a></p>');
+    }
+    communityToken(t);
+    document.title = "Uitnodiging: " + p.title + " | Pasr Zakelijk";
+    var intro = "<h1>Je bent uitgenodigd</h1><p>" + esc(p.initiator_name) + " nodigt je zaak uit voor een gezamenlijke klantenactie met Pasr. " +
+      "Klanten sparen bij alle deelnemende zaken samen voor \u00e9\u00e9n beloning; er worden geen klantgegevens tussen zaken gedeeld.</p>" + communityCard(p);
+    async function accept(bizId, btn) {
+      try {
+        await rpc("pasr_business_community_accept_token", { p_business: bizId, p_token: t }, true);
+        communityToken(null);
+        box("<h1>Je doet mee</h1><p>Je zaak doet nu mee aan \u201c" + esc(p.title) + "\u201d. Zodra genoeg zaken meedoen, start de actie en zien klanten hem in Pasr. Je krijgt dan een mail en een melding.</p>" +
+          '<p class="zk-ci-actions"><a class="zk-btn" href="/zakelijk/dashboard/#samenwerkingen">Naar Samenwerkingen</a></p>');
+      } catch (e) {
+        if (e.status === 401) { session = null; saveSession(null); navState(); return show(); }
+        if (/invite_(expired|not_found)/.test(String(e.message || ""))) communityToken(null);
+        setMsg($("#zkCiMsg"), nice(e));
+        if (btn) btn.disabled = false;
+      }
+    }
+    async function show() {
+      if (!session || !(await token())) {
+        dash.afterLogin = show;
+        box(intro + '<p class="zk-ci-actions"><button class="zk-btn" type="button" id="ciLogin">Inloggen en accepteren</button>' +
+          '<a class="zk-btn ghost" href="/zakelijk/dashboard/#account">Gratis aanmelden</a></p>' +
+          '<p class="zk-ci-note">Nog geen zaak in Pasr? Meld je gratis aan. Na de goedkeuring van je zaak staat de uitnodiging in deze browser klaar in je dashboard.</p>');
+        $("#ciLogin").addEventListener("click", function () { location.hash = "inloggen"; loginView("login"); });
+        return;
+      }
+      var me = null;
+      try { me = await rpc("pasr_business_me", {}, true); } catch (e) { /* hieronder: geen zaak */ }
+      var own = ((me && me.businesses) || []).filter(function (x) { return x.role === "owner"; });
+      var ok = own.filter(function (x) { return x.status === "approved"; });
+      if (!own.length) {
+        return box(intro + "<p>Je hebt nog geen zaak in Pasr. Meld je zaak gratis aan; na de goedkeuring (meestal binnen een werkdag) staat de uitnodiging klaar in je dashboard.</p>" +
+          '<p class="zk-ci-actions"><a class="zk-btn" href="/zakelijk/dashboard/">Zaak aanmelden</a></p>');
+      }
+      if (!ok.length) {
+        return box(intro + "<p>Je zaak wacht nog op goedkeuring. Zodra Pasr je zaak heeft goedgekeurd, accepteer je de uitnodiging in je dashboard.</p>" +
+          '<p class="zk-ci-actions"><a class="zk-btn" href="/zakelijk/dashboard/">Naar je dashboard</a></p>');
+      }
+      box(intro + (ok.length > 1 ? '<label class="zk-ci-pick" for="ciBiz">Meedoen met</label><select id="ciBiz">' +
+          ok.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.name) + (x.city ? " \u00b7 " + esc(x.city) : "") + "</option>"; }).join("") + "</select>" : "") +
+        '<p class="zk-ci-actions"><button class="zk-btn" type="button" id="ciYes">Accepteren' + (ok.length === 1 ? " met " + esc(ok[0].name) : "") + "</button>" +
+        '<a class="zk-btn ghost" href="/zakelijk/dashboard/#samenwerkingen">Later beslissen</a></p><p class="zk-msg" id="zkCiMsg" role="status" aria-live="polite"></p>');
+      $("#ciYes").addEventListener("click", function (ev) {
+        var btn = ev.currentTarget, pick = $("#ciBiz");
+        btn.disabled = true;
+        accept(pick ? pick.value : ok[0].id, btn);
+      });
+    }
+    window.addEventListener("hashchange", function () {
+      var h = location.hash.replace("#", "");
+      if (h === "account") loginView("signup"); else if (h === "vergeten") loginView("forgot"); else if (h === "inloggen") loginView("login");
+    });
+    show();
+  }
+
   // ---------------------------------------------------------------- uitnodiging medewerker: pasr.nl/zakelijk/uitnodiging/#<code>
   async function invitePage() {
+    var ct = new URLSearchParams(location.search).get("t");
+    if (ct && /^[0-9a-f]{64}$/i.test(ct)) return communityInvitePage(ct.toLowerCase());
     var KEY = "pasr.zakelijk.invite";
     var fromHash = location.hash.slice(1).toUpperCase();
     if (/^[A-HJ-NP-Z2-9]{20}$/.test(fromHash)) { try { sessionStorage.setItem(KEY, fromHash); } catch (e) { /* */ } }

@@ -791,3 +791,34 @@
 .zk-form input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.zk-form textarea,.zk-form select,.pz2-form input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.pz2-form textarea,.pz2-form select {
   background:var(--paper); color:var(--ink); border-color:var(--line);
 }
+
+/* Gezamenlijke acties op uitnodiging (dashboard Samenwerkingen en pasr.nl/zakelijk/uitnodiging/?t=…). Alleen variabelen:
+   licht en donker volgen het thema. */
+.pz2-manage{display:grid;gap:12px;margin-top:6px;padding:16px;border-radius:16px;background:var(--paper);border:1px solid var(--line)}
+.pz2-manage h4{font:800 16px var(--display);margin:8px 0 0;color:var(--ink)}
+.pz2-manage .pz2-inline .pz2-field{flex:1 1 260px}
+.pz2-invitees{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pz2-invitees li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:12px;background:var(--paper-2);border:1px solid var(--line)}
+.pz2-invitees .who{flex:1 1 180px;min-width:0;font-weight:700;color:var(--ink);overflow-wrap:anywhere}
+.pz2-invitees .who small{display:block;font-weight:400;color:var(--ink-2);font-size:13px}
+.pz2-invitees .logo{width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;overflow:hidden;background:var(--soft);color:var(--ink);font-weight:800}
+.pz2-invitees .logo img{width:100%;height:100%;object-fit:contain;background:#fff}
+.pz2-planned strong .zk-pill{vertical-align:middle;margin-left:4px;font-family:var(--body)}
+.pz2-panel[hidden],[data-panel][hidden]{display:none}
+.zk-ci{max-width:560px}
+.zk-ci-card{text-align:left;margin:18px 0;padding:20px;border-radius:18px;background:var(--paper-2);border:1px solid var(--line);color:var(--ink)}
+.zk-ci-card h2{font:800 24px/1.2 var(--display);margin:8px 0 12px;color:var(--ink);overflow-wrap:anywhere}
+.zk-ci-kicker{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:13px;font-weight:700;background:var(--kicker-bg);color:var(--kicker-ink)}
+.zk-ci-kicker svg{width:16px;height:16px}
+.zk-ci-list{display:grid;gap:8px;margin:0}
+.zk-ci-list div{display:grid;grid-template-columns:110px 1fr;gap:10px}
+.zk-ci-list dt{color:var(--ink-2);font-size:14px}
+.zk-ci-list dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+.zk-ci-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.zk-ci-note{font-size:14px;color:var(--ink-2)}
+.zk-ci-pick{display:block;font-weight:700;margin:6px 0}
+.zk-ci select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit}
+.zk-ci-banner{background:color-mix(in srgb,var(--iris) 10%,var(--paper-2));border-color:var(--line)}
+.zk-ci-banner .zd-state-ic{color:var(--iris-deep);background:var(--kicker-bg)}
+.zk-ci-banner .zk-ci-actions{justify-content:flex-start}
+@media (max-width:520px){.zk-ci-list div{grid-template-columns:1fr;gap:2px}}

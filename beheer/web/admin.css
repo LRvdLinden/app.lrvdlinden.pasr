@@ -422,3 +422,7 @@ a.btn { text-decoration: none; }
 }
 .bf-result p { margin: 0; }
 .owner-link > div { flex: 1 1 220px; min-width: 0; }
+
+/* Gezamenlijke acties: uitnodigingen en deelnemers onder de actie */
+.biz-community{margin:4px 0 12px 14px;padding:4px 0 4px 14px;border-left:2px solid var(--line, #2a2d3a)}
+.biz-community h4{margin:10px 0 4px}
