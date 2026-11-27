@@ -303,10 +303,8 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         // ticket gewijzigd/geannuleerd of nieuwe korting terwijl Pasr open is: meteen bijwerken
         if BusinessPush(notification.request.content.userInfo) != nil {
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated {
-                    Task { await BusinessPasses.refreshAll(in: PasrStore.app.mainContext, force: true) }
-                }
+            Task { @MainActor in
+                await BusinessPasses.refreshAll(in: PasrStore.app.mainContext, force: true)
             }
         }
         completionHandler([.banner, .list, .sound])
