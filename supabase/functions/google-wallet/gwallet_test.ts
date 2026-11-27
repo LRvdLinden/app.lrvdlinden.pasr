@@ -70,3 +70,40 @@ Deno.test("JWT met RS256 is te controleren", async () => {
   assertEquals(payload.payload.genericObjects[0].id, "123.pasr_x");
   assertEquals(b64url("ab?"), "YWI_");
 });
+
+// ---- tickets en klantenkaart met barcode ----
+import { eventClassId, eventTicketClass, eventTicketObject, loyaltyClass, loyaltyObject, saveClaimsFor, serverCode } from "./gwallet.ts";
+
+const EV = "11111111-2222-4333-8444-555555555555", TK = "66666666-7777-4888-8999-aaaaaaaaaaaa";
+
+Deno.test("eventTicket: klasse per event, object per ticket met QR en houder", () => {
+  const d = { kind: "event_ticket", ticket_id: TK, code: "K7Q2MXDATRZ5VWUY3ST2HJBN", status: "registered", event_id: EV, event_name: "Winterborrel",
+    starts_at: "2026-12-19T15:00:00Z", ends_at: "2026-12-19T18:00:00Z", doors_at: null, address: "Hoofdstraat 12", color: "#1f3a5f",
+    business_name: "Korenschoof", holder_name: "Anna de Vries", ticket_type: "Toegang", index: 2, of: 2 };
+  const c = eventTicketClass("338800", d, "https://x/logo.png");
+  assertEquals(c.id, "338800.pasr_event_11111111222243338444555555555555");
+  assertEquals(c.hexBackgroundColor, "#1F3A5F");
+  const o = eventTicketObject("338800", d);
+  assertEquals(o.classId, eventClassId("338800", EV));
+  assertEquals(o.barcode, { type: "QR_CODE", value: d.code, alternateText: d.code });
+  assertEquals(o.ticketHolderName, "Anna de Vries");
+  assertEquals(o.groupingInfo.groupingId, EV);
+  assertEquals(eventTicketObject("338800", { ...d, event_status: "cancelled" }).state, "INACTIVE");
+  assert(!JSON.stringify(o).includes("birth"));
+  assertEquals(saveClaimsFor("sa@x", "eventTicketObjects", o.id).payload, { eventTicketObjects: [{ id: o.id }] });
+  assertEquals(serverCode("event_ticket", TK.toUpperCase()), `ET:${TK}`);
+});
+
+Deno.test("loyalty: lidnummer als EAN-13, spaarstand en korting", () => {
+  const d = { kind: "member_card", member_id: TK, card_id: EV, name: "Korenschoof Klantenkaart", color: "#8a4b1f", business_name: "Korenschoof",
+    number: "2123456789018", barcode_type: "ean13", member_name: null, discount_now: { percent: 15, label: "15% op alles" },
+    next_discount: null, saving: { count: 6, target: 10, reward: "Gratis gebakje", unit: "visits" }, active: true };
+  assertEquals(loyaltyClass("338800", d, "https://x").programName, "Korenschoof Klantenkaart");
+  const o = loyaltyObject("338800", d);
+  assertEquals(o.barcode.type, "EAN_13");
+  assertEquals(o.loyaltyPoints?.balance.string, "6/10");
+  assertEquals(o.secondaryLoyaltyPoints?.balance.string, "15%");
+  assertEquals("accountName" in o, false);
+  assertEquals(loyaltyObject("338800", { ...d, barcode_type: "code128", number: "KS-000124" }).barcode.type, "CODE_128");
+  assertEquals(loyaltyObject("338800", { ...d, active: false }).state, "INACTIVE");
+});

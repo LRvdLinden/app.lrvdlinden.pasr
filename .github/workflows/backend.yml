@@ -94,6 +94,16 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/offers.json)
           head -c 500 /tmp/offers-result.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Beheer-acties schema failed HTTP $code"; exit 1; }
+      - name: Tickets en klantenkaart met barcode
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          # Gratis tickets voor events en de eigen klantenkaart met barcode (docs/tickets-klantenkaart.md)
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/20261127-tickets-klantenkaart.sql").read()}))' > /tmp/tickets.json
+          code=$(curl -s -o /tmp/tickets-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/tickets.json)
+          head -c 500 /tmp/tickets-result.txt; echo
+          [ "$code" -lt 300 ] || { echo "::error::Tickets/klantenkaart schema failed HTTP $code"; exit 1; }
       - name: Mails, anti-bot hook and Auth settings
         if: steps.check.outputs.skip != '1'
         env:
@@ -158,6 +168,9 @@ jobs:
           PTID: ${{ secrets.PASS_TYPE_ID }}
           PK: ${{ secrets.PASR_SUPABASE_KEY }}
         run: |
+          if curl -fsSL https://deno.land/install.sh | sh -s -- -y >/dev/null 2>&1; then
+            ~/.deno/bin/deno test --no-check -A supabase/functions/wallet-pass/ || { echo "::error::Tests of the wallet-pass function failed"; exit 1; }
+          fi
           supabase functions deploy wallet-pass --yes --project-ref "$REF" --no-verify-jwt --use-api
           if [ -n "$P12" ]; then
             supabase secrets set --yes --project-ref "$REF" \
@@ -278,6 +291,20 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/cm.json
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/community-mail" -H "Content-Type: application/json" -d '{"action":"run"}')
           [ "$code" = 403 ] && echo "::notice::community-mail is up and only answers the database." || echo "::warning::community-mail: unexpected HTTP $code"
+      - name: Mails bij tickets van events (event-mail)
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          if [ -x ~/.deno/bin/deno ]; then
+            ~/.deno/bin/deno test --no-check --allow-env supabase/functions/event-mail/ || { echo "::error::Tests of the event-mail function failed"; exit 1; }
+          fi
+          # Alleen de database roept hem aan (kop x-pasr-hook); de SMTP-secrets zijn dezelfde als die van group-invite
+          supabase functions deploy event-mail --yes --project-ref "$REF" --no-verify-jwt --use-api
+          python3 -c 'import json,os;print(json.dumps({"query":"update public.pasr_admin_config set tickets_url = '"'"'https://%s.supabase.co/functions/v1/event-mail'"'"' where id = 1" % os.environ["REF"]}))' > /tmp/tk.json
+          curl -sf -o /dev/null -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/tk.json
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/event-mail" -H "Content-Type: application/json" -d '{"action":"run"}')
+          [ "$code" = 403 ] && echo "::notice::event-mail is up and only answers the database." || echo "::warning::event-mail: unexpected HTTP $code"
       - name: Herinneringen per e-mail (reminder-mail)
         if: steps.check.outputs.skip != '1'
         run: |

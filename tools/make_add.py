@@ -6,7 +6,11 @@ Linkformaat (universele link / App Link naar de apps; zonder app opent deze pagi
     k = stempelkaart/klantenkaart van een zaak (pasr_business_cards.id, uuid)
     c = kortingsbon van een zaak                (pasr_business_coupons.id, uuid)
     a = actiecode van een zaak                  (pasr_business_promo_codes.id, uuid)
-    t = ticket uit de catalogus                 (pasr_stores.id, bijv. drakenboot-kids)
+    t = ticket uit de catalogus                 (pasr_stores.id, bijv. drakenboot-kids), of een gratis eventticket
+        (pasr_tk_tickets.id, uuid) met ?c=<code>: dan toont de pagina het ticket met QR-code (pasr_event_ticket_public)
+        en met &afmelden=1 de knop om af te melden (pasr_event_ticket_cancel)
+    m = klantenkaart met barcode van een zaak   (pasr_mc_cards.id, uuid; lid worden gaat in de app)
+    e = aanmelden voor een gratis event         (pasr_tk_events.id, uuid): eigen pagina /aanmelden/ (aanmeld_page)
     g = cadeaubon/cadeaukaart uit de catalogus  (pasr_stores.id, bijv. bol-cadeaukaart)
     s = winkelkaart uit de catalogus            (pasr_stores.id, bijv. ah)
 
@@ -27,7 +31,7 @@ from catalog_hub import site_nav, footer_links
 
 REPO = Path(__file__).resolve().parent.parent
 ROOT = REPO / "website"
-KINDS = "kcatgs"
+KINDS = "kcatgsme"
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{0,63}$")
 THEMES = ("zwart", "wit", "nachtblauw")
 
@@ -40,7 +44,7 @@ def badge_size(theme="zwart", compact=False):
 def add_url(kind, item_id):
     if kind not in KINDS or not ID_RE.match(str(item_id)):
         raise ValueError(f"ongeldig item {kind}/{item_id}")
-    return f"https://pasr.nl/add/{kind}/{str(item_id).lower() if kind in 'kca' else item_id}"
+    return f"https://pasr.nl/add/{kind}/{str(item_id).lower() if kind in 'kcame' else item_id}"
 
 
 def badge_html(kind, item_id, theme="zwart", compact=False, cls="pasr-add-badge"):
@@ -130,7 +134,58 @@ def page():
 <footer><div class="wrap"><span>&copy; Pasr · De zaak of uitgever bepaalt de voorwaarden van het item; Pasr bewaart het voor je.</span>
 <nav aria-label="Voettekst">{footer_links()}</nav></div></footer>
 <script src="/assets/account-config.js"></script>
+<script src="/assets/vendor/qrcode.js"></script>
 <script src="/assets/toevoegen.js"></script>
+</body></html>
+"""
+
+
+def aanmeld_page():
+    """pasr.nl/add/e/<event-id>: aanmelden voor een gratis event (pasr_event_public en pasr_event_register, anoniem).
+    Header in de kleur van het event, formulier met voornaam, achternaam, e-mail, geboortedatum (verplicht), ticketsoort en
+    aantal, daarna de bevestiging met de knop "Voeg toe aan Pasr" en "Open in Pasr". Script: /assets/aanmelden.js."""
+    return f"""<!doctype html>
+<html lang="nl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Aanmelden | Pasr</title>
+<meta name="description" content="Meld je gratis aan voor dit event. Je krijgt je ticket met QR-code per mail en in Pasr.">
+<meta name="robots" content="noindex,follow">
+<meta name="theme-color" content="#F4F3FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111020" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Aanmelden voor een event met Pasr"><meta property="og:image" content="https://pasr.nl/assets/og-share.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/catalog-hub.css">
+<link rel="stylesheet" href="/assets/toevoegen.css">
+<script src="/assets/consent.js" defer></script>
+</head><body class="add-page ev-page">
+<a class="skip" href="#ev-main">Naar het aanmelden</a>
+{site_nav("")}
+<main class="wrap ev" id="ev-main" data-pasr-event>
+  <section class="ev-head" id="ev-head" aria-labelledby="ev-title">
+    <div class="ev-headin">
+      <p class="ev-biz" id="ev-biz"><span class="ev-bizlogo" aria-hidden="true"></span><span>Even laden…</span></p>
+      <h1 id="ev-title">Aanmelden</h1>
+      <p class="ev-when" id="ev-when"></p>
+    </div>
+  </section>
+  <div class="ev-grid">
+    <section class="ev-info" id="ev-info" aria-label="Over het event"><div class="ta-card ta-loading" aria-hidden="true"></div></section>
+    <section class="ev-box" id="ev-box" aria-live="polite"></section>
+  </div>
+  <section class="ta-get ev-get" aria-labelledby="ev-get-title">
+    <h2 id="ev-get-title">Je ticket in Pasr</h2>
+    <p class="ta-small">Met Pasr (gratis, zonder reclame) heb je je ticket offline bij de hand, met een herinnering de dag ervoor. Na het aanmelden tik je op <i>Voeg toe aan Pasr</i>; je ticket staat ook in de mail.</p>
+    <div class="actions ta-badges">{APPLE} {ANDROID}</div>
+  </section>
+</main>
+<footer><div class="wrap"><span>&copy; Pasr · De organisator bepaalt de voorwaarden van het event; Pasr regelt de aanmelding en je ticket.</span>
+<nav aria-label="Voettekst">{footer_links()}</nav></div></footer>
+<script src="/assets/account-config.js"></script>
+<script src="/assets/vendor/qrcode.js"></script>
+<script src="/assets/aanmelden.js"></script>
 </body></html>
 """
 
@@ -139,8 +194,11 @@ def build():
     out = ROOT / "toevoegen"
     out.mkdir(exist_ok=True)
     (out / "index.html").write_text(page(), encoding="utf-8")
+    ev = ROOT / "aanmelden"
+    ev.mkdir(exist_ok=True)
+    (ev / "index.html").write_text(aanmeld_page(), encoding="utf-8")
     (out / "winkels.json").write_text(json.dumps(catalog_index(), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    return [out / "index.html", out / "winkels.json"]
+    return [out / "index.html", out / "winkels.json", ev / "index.html"]
 
 
 if __name__ == "__main__":

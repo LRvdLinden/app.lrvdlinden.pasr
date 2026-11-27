@@ -124,6 +124,7 @@ struct BusinessDetailView: View {
                 }
 
                 BusinessOffersSection(businessID: business.id, businessName: business.name)
+                BusinessTicketsSection(businessID: business.id, businessName: business.name)
 
                 if let staff = detail?.staff {
                     Section("Medewerkers") {

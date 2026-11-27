@@ -3,7 +3,10 @@
    het item, de downloadknoppen en "Al geïnstalleerd? Open in Pasr". Gemaakt door tools/make_add.py. */
 (function () {
   "use strict";
-  var KINDS = { k: "Stempelkaart", c: "Kortingsbon", a: "Actiecode", t: "Ticket", g: "Cadeaukaart", s: "Klantenkaart" };
+  var KINDS = { k: "Stempelkaart", c: "Kortingsbon", a: "Actiecode", t: "Ticket", g: "Cadeaukaart", s: "Klantenkaart", m: "Klantenkaart", e: "Event" };
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var QS = new URLSearchParams(location.search);
+  var CODE = /^[A-Za-z2-7]{20,40}$/.test(QS.get("c") || "") ? QS.get("c").toUpperCase() : null;   // gratis eventticket: /add/t/<id>?c=<code>
   var ID = /^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/;
   var STORE = "pasr.add.pending";
   var $ = function (id) { return document.getElementById(id); };
@@ -31,13 +34,13 @@
 
   // ---- welk item? /add/<soort>/<id>, /toevoegen/#<soort>/<id>, ?soort=&id=, of eerder onthouden
   function parse() {
-    var m = location.pathname.match(/^\/add\/([kcatgs])\/([^/?#]+)\/?$/);
-    if (!m) m = decodeURIComponent(location.hash.replace(/^#\/?/, "")).match(/^([kcatgs])\/([^/?#]+)$/);
+    var m = location.pathname.match(/^\/add\/([kcatgsme])\/([^/?#]+)\/?$/);
+    if (!m) m = decodeURIComponent(location.hash.replace(/^#\/?/, "")).match(/^([kcatgsme])\/([^/?#]+)$/);
     if (!m) {
       var q = new URLSearchParams(location.search);
       if (q.get("soort") && q.get("id")) m = [null, q.get("soort"), q.get("id")];
     }
-    if (m && KINDS[m[1]] && ID.test(m[2])) return { k: m[1], id: /^[kca]$/.test(m[1]) ? m[2].toLowerCase() : m[2], fresh: true };
+    if (m && KINDS[m[1]] && ID.test(m[2])) return { k: m[1], id: /^[kcame]$/.test(m[1]) || (m[1] === "t" && UUID.test(m[2])) ? m[2].toLowerCase() : m[2], fresh: true };
     var saved = store(true);
     if (saved && KINDS[saved.k] && ID.test(saved.id || "") && Date.now() - (saved.at || 0) < 30 * 864e5) return { k: saved.k, id: saved.id, fresh: false };
     return null;
@@ -78,6 +81,44 @@
       '<div class="ta-name">' + esc(s.n) + '</div><div class="ta-foot">' + esc(KINDS[kind]) + "</div></div>";
   }
 
+  // klantenkaart met barcode van een zaak (pasr_member_card_public): kleur, logo, korting nu en de doelen
+  function memberCard(c) {
+    var color = hex(c.color, "#6A5CFF"), now = c.discount_now, g = c.goals_summary || {};
+    var lines = (g.lines || []).slice(0, 3).map(function (l) { return "<li>" + esc(l) + "</li>"; }).join("");
+    return '<div class="ta-card ta-member" style="--c:' + color + (light(color) ? ";--t:#17162A" : "") + '">' + head(color, c.logo, c.business_name) +
+      '<div class="ta-name">' + esc(c.name) + "</div>" +
+      (now && Number(now.percent) > 0 ? '<span class="ta-chip">Nu ' + esc(Number(now.percent).toLocaleString("nl-NL")) + "% korting</span>" : "") +
+      (lines ? '<ul class="ta-lines">' + lines + "</ul>" : "") + '<div class="ta-bars" aria-hidden="true"></div></div>';
+  }
+  function dt(iso, o) { try { o.timeZone = "Europe/Amsterdam"; return new Intl.DateTimeFormat("nl-NL", o).format(new Date(iso)); } catch (e) { return ""; } }
+  // gratis eventticket (pasr_event_ticket_public, met de code als bewijs): eventkleur, houder, QR-code
+  function eventTicket(t) {
+    var e = t.event || {}, color = hex(e.color, "#6A5CFF"), qr = "";
+    var live = t.status === "registered" || t.status === "checked_in";
+    if (live && window.qrcode) { try { var q = window.qrcode(0, "M"); q.addData(CODE); q.make(); qr = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); } catch (x) { qr = ""; } }
+    var state = { waitlist: "Wachtlijst", cancelled: "Afgemeld", checked_in: "Gescand" }[t.status] || (e.status === "cancelled" ? "Afgelast" : "");
+    return '<div class="ta-card ta-evticket" style="--c:' + color + (light(color) ? ";--t:#17162A" : "") + '">' + head(color, e.business_logo, e.business_name) +
+      '<div class="ta-name">' + esc(e.name) + "</div>" +
+      '<div class="ta-foot" style="margin-top:0">' + esc(dt(e.starts_at, { weekday: "short", day: "numeric", month: "short" }) + " · " + dt(e.starts_at, { hour: "2-digit", minute: "2-digit" })) +
+      (t.holder_name ? " · " + esc(t.holder_name) : "") + (t.ticket_type ? " · " + esc(t.ticket_type) : "") + "</div>" +
+      (state ? '<span class="ta-state">' + esc(state) + "</span>" : "") +
+      (qr ? '<span class="ta-qr" role="img" aria-label="QR-code van je ticket">' + qr + '</span><span class="ta-code">' + esc(CODE.match(/.{1,4}/g).join(" ")) + "</span>" : "") + "</div>";
+  }
+  function cancelBox(item) {
+    var box = document.createElement("div");
+    box.className = "ta-cancelbox";
+    box.innerHTML = "<p>Kun je niet? Meld je af, dan gaat je plek naar iemand op de wachtlijst. Dit geldt voor alle tickets van je aanmelding.</p>" +
+      '<button class="btn btn-ghost" type="button" id="ta-cancel">Afmelden</button>';
+    $("ta-lead").after(box);
+    $("ta-cancel").addEventListener("click", function () {
+      if (!confirm("Weet je zeker dat je je afmeldt? Je tickets vervallen.")) return;
+      var b = this; b.disabled = true;
+      rpc("pasr_event_ticket_cancel", { p_ticket: item.id, p_code: CODE }).then(function () {
+        box.innerHTML = "<p><b>Je bent afgemeld.</b> Je tickets zijn niet meer geldig. Bedankt dat je je plek vrijgeeft.</p>";
+      }, function () { b.disabled = false; box.querySelector("p").textContent = "Afmelden lukte niet. Probeer het later nog eens."; });
+    });
+  }
+
   function show(item, html, title, lead, extra) {
     $("ta-item").innerHTML = html;
     $("ta-title").textContent = title;
@@ -96,6 +137,26 @@
 
   function load(item) {
     var name = KINDS[item.k].toLowerCase();
+    if (item.k === "m") {
+      return rpc("pasr_member_card_public", { p_card: item.id }).then(function (c) {
+        if (!c || !c.id) return fail(item, "Deze klantenkaart is niet (meer) online");
+        show(item, memberCard(c), "Word lid van " + (c.name || "deze klantenkaart"),
+          esc(c.business_name) + (c.business_city ? " in " + esc(c.business_city) : "") + " heeft een eigen klantenkaart met barcode. Lid worden gaat in de Pasr-app: je krijgt een eigen kaartnummer, " +
+          "en aan de kassa ziet de zaak je korting en spaarstand. Kies zelf of de zaak je naam mag zien.");
+      });
+    }
+    if (item.k === "t" && UUID.test(item.id) && CODE) {
+      return rpc("pasr_event_ticket_public", { p_ticket: item.id, p_code: CODE }).then(function (t) {
+        if (!t || !t.ticket_id || !t.event) return fail(item, "Dit ticket is niet gevonden");
+        var e = t.event, n = Number(t.tickets || 1);
+        show(item, eventTicket(t), "Je ticket voor " + e.name,
+          esc(e.business_name) + (e.address ? " · " + esc(e.address) : "") + ". " +
+          (t.status === "waitlist" ? "Je staat op de wachtlijst; komt er een plek vrij, dan krijg je een mail." :
+           t.status === "cancelled" ? "Dit ticket is afgemeld." :
+           (n > 1 ? "Je aanmelding heeft " + n + " tickets. " : "") + "Zet " + (n > 1 ? "ze" : "het") + " in Pasr voor een herinnering de dag ervoor en om offline te tonen; deze QR-code werkt ook zo bij de ingang."));
+        if (QS.get("afmelden") === "1" && (t.status === "registered" || t.status === "waitlist") && e.status !== "cancelled") cancelBox(item);
+      });
+    }
     if (item.k === "k") {
       return rpc("pasr_business_card", { p_card: item.id }).then(function (c) {
         if (!c || !c.id) return fail(item, "Deze stempelkaart is niet (meer) online");
@@ -133,12 +194,15 @@
     $("ta-item").innerHTML = '<div class="ta-card ta-empty"><span>pasr</span></div>';
     return;
   }
-  var link = "https://pasr.nl/add/" + item.k + "/" + item.id;
-  $("ta-kind").textContent = KINDS[item.k] + " · Voeg toe aan Pasr";
+  // aanmelden voor een event heeft een eigen pagina (als de rewrite in .htaccess niet actief is)
+  if (item.k === "e") { location.replace("/aanmelden/#" + item.id); return; }
+  var withCode = item.k === "t" && CODE && UUID.test(item.id);
+  var link = "https://pasr.nl/add/" + item.k + "/" + item.id + (withCode ? "?c=" + CODE : "");
+  $("ta-kind").textContent = (item.k === "m" ? "Klantenkaart van een zaak" : KINDS[item.k]) + " · Voeg toe aan Pasr";
   $("ta-link").textContent = link;
-  $("ta-open").href = "pasr://add/" + item.k + "/" + encodeURIComponent(item.id);
+  $("ta-open").href = "pasr://add/" + item.k + "/" + encodeURIComponent(item.id) + (withCode ? "?c=" + CODE : "");
   if (!item.fresh) $("ta-kind").textContent = KINDS[item.k] + " · eerder bekeken";
-  store(false, { k: item.k, id: item.id, at: Date.now() });
+  if (!withCode) store(false, { k: item.k, id: item.id, at: Date.now() });
   if (store(true)) $("ta-saved").hidden = false;
   $("ta-copybtn").addEventListener("click", function () {
     var b = this;

@@ -11,8 +11,8 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <script src="/assets/consent.js?v=77ae25ae" defer></script>
-  <link rel="stylesheet" href="/assets/style.css?v=932bd56f">
-  <link rel="stylesheet" href="/assets/catalog-hub.css">
+  <link rel="stylesheet" href="/assets/style.css?v=4b32fcb3">
+  <link rel="stylesheet" href="/assets/catalog-hub.css?v=b0dcec23">
   <script>
     // Deellink van een stempelkaart zonder eigen pagina (net gepubliceerd, staat er binnen het uur): de kaart via de
     // algemene pagina tonen, zodat de link altijd werkt.
@@ -20,8 +20,9 @@
       var m = location.pathname.match(/^\/zakelijk\/kaart\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
       if (m) location.replace("/zakelijk/kaart/?hier=1" + location.search.replace(/^\?/, "&") + "#" + m[1].toLowerCase());
       // "Voeg toe aan Pasr" (/add/<soort>/<id>) als de rewrite in .htaccess niet actief is: dezelfde terugvalpagina.
-      var a = location.pathname.match(/^\/add\/([kcatgs])\/([A-Za-z0-9][A-Za-z0-9-]{0,63})\/?$/);
-      if (a) location.replace("/toevoegen/#" + a[1] + "/" + a[2]);
+      var a = location.pathname.match(/^\/add\/([kcatgsme])\/([A-Za-z0-9][A-Za-z0-9-]{0,63})\/?$/);
+      if (a && a[1] === "e") location.replace("/aanmelden/#" + a[2]);
+      else if (a) location.replace("/toevoegen/" + location.search + "#" + a[1] + "/" + a[2]);
     })();
   </script>
 </head>

@@ -9,12 +9,12 @@
   "use strict";
   var THEMES = [["zwart", "Zwart"], ["wit", "Wit"], ["nachtblauw", "Nachtblauw"]];
   var SIZES = [["groot", "Groot", 52], ["compact", "Compact", 38]];
-  var KIND = { k: "stempelkaart", c: "kortingsbon", a: "actiecode", t: "ticket", g: "cadeaukaart", s: "kaart" };
+  var KIND = { k: "stempelkaart", c: "kortingsbon", a: "actiecode", t: "ticket", g: "cadeaukaart", s: "kaart", e: "event", m: "klantenkaart" };
   var state = { theme: "zwart", size: "groot" };
   try { var saved = JSON.parse(localStorage.getItem("pasr.badge.choice") || "null"); if (saved && saved.theme) state = saved; } catch (e) { /* geen opslag */ }
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function addUrl(kind, id) { return "https://pasr.nl/add/" + kind + "/" + (/^[kca]$/.test(kind) ? String(id).toLowerCase() : id); }
+  function addUrl(kind, id) { return "https://pasr.nl/add/" + kind + "/" + (/^[kcaem]$/.test(kind) ? String(id).toLowerCase() : id); }
   function file() { return state.theme + (state.size === "compact" ? "-compact" : ""); }
   function height() { return state.size === "compact" ? 38 : 52; }
   function snippet(kind, id) {
@@ -79,7 +79,9 @@
     var dlg = el("dialog", "pz-badge-dlg"); dlg.setAttribute("aria-labelledby", "pz-badge-title");
     var box = el("div", "pz-badge-in"); dlg.append(box);
     var top = el("div", "pz-badge-top"), t = el("div"), h = el("h2", "", "Knop voor je website"); h.id = "pz-badge-title";
-    t.append(h, el("p", "", "Klanten zetten je " + KIND[kind] + (name ? " “" + name + "”" : "") + " met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen."));
+    t.append(h, el("p", "", kind === "e"
+      ? "Klanten melden zich met één tik aan voor je event" + (name ? " “" + name + "”" : "") + " en krijgen hun ticket in Pasr en per mail. De link opent het aanmeldformulier op pasr.nl."
+      : "Klanten zetten je " + KIND[kind] + (name ? " “" + name + "”" : "") + " met één tik in Pasr. Zonder Pasr opent pasr.nl met de downloadknoppen."));
     var x = el("button", "pz-badge-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Sluiten"); x.addEventListener("click", function () { dlg.close(); });
     top.append(t, x);
     var opts = el("div", "pz-badge-opts");
@@ -145,7 +147,7 @@
     });
     app.querySelectorAll("[data-pasr-add]").forEach(function (item) {
       if (item.querySelector(".pz-badge-btn")) return;
-      var m = String(item.dataset.pasrAdd).match(/^([kcatgs]):([A-Za-z0-9-]{1,64})$/); if (!m) return;
+      var m = String(item.dataset.pasrAdd).match(/^([kcatgsem]):([A-Za-z0-9-]{1,64})$/); if (!m) return;
       var row = item.querySelector(".zk-actions") || item;
       row.append(button(m[1], m[2], item.dataset.pasrAddName || ""));
     });
