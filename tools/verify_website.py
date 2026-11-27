@@ -16,7 +16,7 @@ checks = {
     "support/index.html": ("ch-menu", "ch-support-hero"),
     "overstappen/klarna/index.html": ("ch-menu", "ch-move-hero"),
     "overstappen/supercards/index.html": ("ch-menu", "ch-move-hero"),
-    "zakelijk/index.html": ("zk-mobile-menu", "zv-hero"),
+    "zakelijk/index.html": ("zk-mobile-menu", "zc-hero"),
 }
 class Scripts(HTMLParser):
     def __init__(self):

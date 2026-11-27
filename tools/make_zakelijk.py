@@ -580,7 +580,7 @@ def page():
 {zv.usp()}
 {header()}
 
-  <main class="zk-home zv-home">
+  <main class="zk-home zc-home">
 {zv.hero(badges(), DEMO)}
 {zv.steps()}
 {zv.products()}
@@ -590,7 +590,7 @@ def page():
 {zv.dark_band()}
 
     <section class="wrap" id="faq" aria-labelledby="faq-title">
-      <div class="zv-heading"><h2 id="faq-title">Vragen</h2><span class="zv-underline" style="background:var(--iris)"></span></div>
+      <div class="zc-heading"><h2 id="faq-title">Vragen</h2><span class="zc-underline" style="background:var(--iris)"></span></div>
       <div class="faq">
 {faq}
       </div>

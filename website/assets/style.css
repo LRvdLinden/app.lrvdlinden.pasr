@@ -1131,3 +1131,41 @@ input::placeholder, textarea::placeholder { color:var(--ink-2); opacity:1; }
 .auth .badge { background:var(--action-bg); color:var(--action-ink); }
 .anchor.copied::after { color:var(--inverse-ink); background:var(--inverse-bg); }
 input[type=checkbox], input[type=radio], input[type=range] { accent-color:var(--iris); }
+
+/* Donker: de functieplaatjes krijgen een donkere tint in plaats van pastel (zelfde kleurfamilie). */
+@media (prefers-color-scheme: dark) {
+:root:not([data-theme="light"]) .fv-gift, :root:not([data-theme="light"]) .fv-guide { background: linear-gradient(135deg, #3A2A2A, #33262B); }
+:root:not([data-theme="light"]) .fv-scan, :root:not([data-theme="light"]) .fv-photos, :root:not([data-theme="light"]) .fv-record, :root:not([data-theme="light"]) .fv-bday { background: linear-gradient(135deg, #3B2530, #30212B); }
+:root:not([data-theme="light"]) .fv-watch, :root:not([data-theme="light"]) .fv-remind { background: linear-gradient(135deg, #16332B, #1B3B33); }
+:root:not([data-theme="light"]) .fv-cloud, :root:not([data-theme="light"]) .fv-history, :root:not([data-theme="light"]) .fv-sort, :root:not([data-theme="light"]) .fv-slim { background: linear-gradient(135deg, #1C2A45, #222F4D); }
+:root:not([data-theme="light"]) .fv-types { background: linear-gradient(135deg, #2A2550, #2F2958); }
+:root:not([data-theme="light"]) .fv-stamps { background: linear-gradient(135deg, #3A2C22, #33271F); }
+:root:not([data-theme="light"]) .fv-code { background: linear-gradient(135deg, #23213A, #23213A); }
+}
+:root[data-theme="dark"] .fv-gift, :root[data-theme="dark"] .fv-guide { background: linear-gradient(135deg, #3A2A2A, #33262B); }
+:root[data-theme="dark"] .fv-scan, :root[data-theme="dark"] .fv-photos, :root[data-theme="dark"] .fv-record, :root[data-theme="dark"] .fv-bday { background: linear-gradient(135deg, #3B2530, #30212B); }
+:root[data-theme="dark"] .fv-watch, :root[data-theme="dark"] .fv-remind { background: linear-gradient(135deg, #16332B, #1B3B33); }
+:root[data-theme="dark"] .fv-cloud, :root[data-theme="dark"] .fv-history, :root[data-theme="dark"] .fv-sort, :root[data-theme="dark"] .fv-slim { background: linear-gradient(135deg, #1C2A45, #222F4D); }
+:root[data-theme="dark"] .fv-types { background: linear-gradient(135deg, #2A2550, #2F2958); }
+:root[data-theme="dark"] .fv-stamps { background: linear-gradient(135deg, #3A2C22, #33271F); }
+:root[data-theme="dark"] .fv-code { background: linear-gradient(135deg, #23213A, #23213A); }
+@media (prefers-color-scheme: dark) {
+:root:not([data-theme="light"]) .fv-flip { background: linear-gradient(135deg, #2A2550, #3A2630); }
+:root:not([data-theme="light"]) .fv-share { background: linear-gradient(135deg, #24213B, #2D2850); }
+:root:not([data-theme="light"]) .fv-logos { background: linear-gradient(135deg, #16332B, #1B3B33); }
+:root:not([data-theme="light"]) .fv-near { filter: brightness(.62) saturate(.9); }
+:root:not([data-theme="light"]) .fv-history .fv-bal { color: #F2F1FF; }
+:root:not([data-theme="light"]) .fv-history .fv-bal small { color: #B9B6D6; }
+}
+:root[data-theme="dark"] .fv-flip { background: linear-gradient(135deg, #2A2550, #3A2630); }
+:root[data-theme="dark"] .fv-share { background: linear-gradient(135deg, #24213B, #2D2850); }
+:root[data-theme="dark"] .fv-logos { background: linear-gradient(135deg, #16332B, #1B3B33); }
+:root[data-theme="dark"] .fv-near { filter: brightness(.62) saturate(.9); }
+:root[data-theme="dark"] .fv-history .fv-bal { color: #F2F1FF; }
+:root[data-theme="dark"] .fv-history .fv-bal small { color: #B9B6D6; }
+@media (prefers-color-scheme: dark) {
+:root:not([data-theme="light"]) .fv-slim .sl { background: rgba(255,255,255,.07); }
+:root:not([data-theme="light"]) .fv-slim .lbl { color: #B9B6D6; }
+}
+:root[data-theme="dark"] .fv-slim .sl { background: rgba(255,255,255,.07); }
+:root[data-theme="dark"] .fv-slim .lbl { color: #B9B6D6; }
