@@ -1,6 +1,8 @@
 package app.lrvdlinden.pasrzakelijk.push
 
 import app.lrvdlinden.pasrzakelijk.core.Prefs
+import app.lrvdlinden.pasrzakelijk.data.BusinessStore
+import app.lrvdlinden.pasrzakelijk.data.CommunityRouter
 import app.lrvdlinden.pasrzakelijk.data.DeviceRegistry
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -23,6 +25,11 @@ class PushService : FirebaseMessagingService() {
         val data = message.data
         val title = message.notification?.title ?: data["title"] ?: "Pasr Zakelijk"
         val body = message.notification?.body ?: data["body"] ?: return
-        Push.show(this, title, body, data["business_id"], data["url"])
+        val type = data["type"]
+        Push.show(this, title, body, data["business_id"], data["url"], type, data["campaign"])
+        // nieuwe uitnodiging of antwoord voor een gezamenlijke actie: badge meteen bijwerken
+        if (type != null && type in CommunityRouter.pushTypes) {
+            scope.launch(Dispatchers.Main) { BusinessStore.current?.let { CommunityRouter.refreshCount(it) } }
+        }
     }
 }

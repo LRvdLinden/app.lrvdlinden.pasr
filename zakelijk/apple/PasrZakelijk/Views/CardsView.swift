@@ -16,6 +16,8 @@ struct CardsView: View {
     @State private var marketing = false
     @State private var locations = false
     @State private var community = false
+    @State private var router = CommunityRouter.shared
+    @State private var modals = ModalTracker.shared
     @State private var offers: [[String: Any]] = []
     @State private var codes: [[String: Any]] = []
     @State private var offerError: String?
@@ -99,6 +101,15 @@ struct CardsView: View {
                 Task { await loadOffers() }
             }
             .onChange(of: coupons) { _, open in if !open { Task { await loadOffers() } } }
+            // melding of uitnodigingslink voor een gezamenlijke actie: Samenwerkingen openen (pas na splash en slot)
+            .onChange(of: modals.locked ? nil : router.focus, initial: true) { _, focus in
+                if focus != nil { community = true }
+            }
+            .onChange(of: community) { _, open in
+                guard !open else { return }
+                router.focus = nil
+                Task { await router.refreshCount(business: business) }
+            }
             .onChange(of: promoCodes) { _, open in if !open { Task { await loadOffers() } } }
             .confirmationDialog(showingTrash ? "Definitief verwijderen?" : "Verwijderen?", isPresented: $confirm, titleVisibility: .visible) {
                 Button(showingTrash ? "Definitief verwijderen" : "Verwijderen", role: .destructive) {
@@ -113,7 +124,21 @@ struct CardsView: View {
             .toolbar {
                 BusinessPicker()
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Samenwerkingen", systemImage: "person.3") { community = true }
+                    Button { community = true } label: {
+                        Image(systemName: router.inviteCount > 0 ? "person.3.fill" : "person.3")
+                            .overlay(alignment: .topTrailing) {
+                                if router.inviteCount > 0 {
+                                    Text(verbatim: "\(router.inviteCount)")
+                                        .font(.caption2.bold()).foregroundStyle(.white)
+                                        .padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
+                                        .background(Capsule().fill(Theme.coral))
+                                        .offset(x: 10, y: -8)
+                                }
+                            }
+                    }
+                    .accessibilityLabel(router.inviteCount > 0
+                        ? Text("Samenwerkingen, \(router.inviteCount) uitnodigingen")
+                        : Text("Samenwerkingen"))
                     Button("Vestigingen", systemImage: "mappin.and.ellipse") { locations = true }
                     Button("Marketingkalender", systemImage: "calendar") { marketing = true }
                     Button("Kortingsbonnen", systemImage: "ticket") { coupons = true }

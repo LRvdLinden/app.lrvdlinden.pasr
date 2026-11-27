@@ -59,6 +59,9 @@ struct RootView: View {
 struct MainTabs: View {
     let business: Business
     @AppStorage("ui.tab") private var tab = "scan"
+    @State private var router = CommunityRouter.shared
+    @State private var modals = ModalTracker.shared
+    @State private var accepting = false
 
     var body: some View {
         TabView(selection: $tab) {
@@ -69,6 +72,7 @@ struct MainTabs: View {
                 CardsView(business: business)
                     .tabItem { Label("Acties", systemImage: "tag") }
                     .tag("cards")
+                    .badge(router.inviteCount)
                 BusinessPromotionHub(business: business)
                     .tabItem { Label("Promotie", systemImage: "photo.on.rectangle") }
                     .tag("promotion")
@@ -85,6 +89,48 @@ struct MainTabs: View {
         }
         .onAppear {
             if !business.isOwner && !["scan", "settings"].contains(tab) { tab = "scan" }
+        }
+        // gezamenlijke acties: melding of geaccepteerde link opent Samenwerkingen onder Acties (alleen eigenaar)
+        .onChange(of: router.focus, initial: true) { _, focus in
+            guard focus != nil else { return }
+            if business.isOwner { tab = "cards" } else { router.focus = nil }
+        }
+        .task(id: business.id) { await router.refreshCount(business: business) }
+        .busyWhile(router.pendingToken != nil)
+        .alert("Uitnodiging voor een gezamenlijke actie",
+               isPresented: Binding(get: { router.pendingToken != nil && !modals.locked && !accepting },
+                                    set: { if !$0 && !accepting { router.pendingToken = nil } })) {
+            if business.isOwner {
+                Button("Meedoen") {
+                    let token = router.pendingToken
+                    accepting = true
+                    Task { await acceptToken(token) }
+                }
+                Button("Niet nu", role: .cancel) { router.pendingToken = nil }
+            } else {
+                Button("OK", role: .cancel) { router.pendingToken = nil }
+            }
+        } message: {
+            if business.isOwner {
+                Text("Doet \(business.name) mee aan deze gezamenlijke actie? Klantgegevens worden niet tussen ondernemingen gedeeld.")
+            } else {
+                Text("Alleen de eigenaar van de zaak kan een uitnodiging voor een gezamenlijke actie accepteren.")
+            }
+        }
+    }
+
+    /// Uitnodigingslink (https://pasr.nl/zakelijk/uitnodiging/?t=TOKEN) accepteren voor de gekozen zaak.
+    @MainActor private func acceptToken(_ token: String?) async {
+        defer { accepting = false; router.pendingToken = nil }
+        guard let token else { return }
+        do {
+            let r = try await Account.shared.rpc("pasr_business_community_accept_token",
+                                                 ["p_business": business.id, "p_token": token])
+            router.focus = CommunityRouter.Focus(kind: "community_active", campaign: JSONObject(r)?.string("campaign_id"),
+                                                 notice: String(localized: "Je onderneming doet nu mee aan de gezamenlijke actie."))
+        } catch {
+            router.focus = CommunityRouter.Focus(kind: "community_error", campaign: nil,
+                                                 notice: error.localizedDescription, failed: true)
         }
     }
 }

@@ -202,7 +202,10 @@ fun CardsScreen(business: Business) {
     var actionCardChoices by remember { mutableStateOf(false) }
     val context = LocalContext.current
     ScreenScaffold(L("Acties"), actions = {
-        TextButton(onClick = { community = true }) { Text("Samenwerken", color = Pz.accent) }
+        TextButton(onClick = { community = true }) {
+            val invites = app.lrvdlinden.pasrzakelijk.data.CommunityRouter.inviteCount
+            Text(if (invites > 0) L("Samenwerken") + " ($invites)" else L("Samenwerken"), color = Pz.accent)
+        }
         TextButton(onClick = { locations = true }) { Text("Vestigingen", color = Pz.accent) }
         TextButton(onClick = { marketing = true }) { Text("Marketing", color = Pz.accent) }
         TextButton(onClick = { coupons = true }) { Text("Kortingsbonnen", color = Pz.accent) }
@@ -409,7 +412,16 @@ fun CardsScreen(business: Business) {
     if (promoCodes) PromoCodesDialog(business.id) { promoCodes = false; reload++ }
     if (marketing) BusinessMarketingDialog(business) { marketing = false }
     if (locations) BusinessLocationsDialog(business) { locations = false }
-    if (community) BusinessCommunityDialog(business) { community = false }
+    // melding of uitnodigingslink voor een gezamenlijke actie: Samenwerken openen (pas na splash en slot)
+    val communityFocus = app.lrvdlinden.pasrzakelijk.data.CommunityRouter.focus
+    val shellLocked = app.lrvdlinden.pasrzakelijk.ui.ShellState.locked
+    LaunchedEffect(communityFocus?.stamp, shellLocked) {
+        if (communityFocus != null && !shellLocked) { community = true }
+    }
+    if (community) BusinessCommunityDialog(business) {
+        community = false
+        app.lrvdlinden.pasrzakelijk.data.CommunityRouter.focus = null
+    }
 }
 
 @Composable

@@ -48,5 +48,9 @@
   "Klantenbinding · laatste 30/90 dagen": "Customer loyalty · last 30/90 days",
   "Alleen geverifieerde servergegevens; dit is geen omzetmeting.": "Verified server data only; this is not revenue data.",
   "Nieuw aanmaken": "Create new",
-  "Acties": "Actions"
+  "Acties": "Actions",
+  "Controleer de naam, beloning, winkels en looptijd.": "Check the name, reward, shops and duration.",
+  "Looptijd in dagen (1–366)": "Duration in days (1–366)",
+  "Samenwerken": "Collaborate",
+  "Verschillende winkels (2–20)": "Different shops (2–20)"
 }

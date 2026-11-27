@@ -56,6 +56,7 @@ import app.lrvdlinden.pasrzakelijk.core.L
 import app.lrvdlinden.pasrzakelijk.core.Prefs
 import app.lrvdlinden.pasrzakelijk.data.Account
 import app.lrvdlinden.pasrzakelijk.data.Business
+import app.lrvdlinden.pasrzakelijk.data.CommunityRouter
 import app.lrvdlinden.pasrzakelijk.data.BusinessStore
 import app.lrvdlinden.pasrzakelijk.data.DeviceRegistry
 import app.lrvdlinden.pasrzakelijk.ui.cards.CardsScreen
@@ -127,6 +128,50 @@ fun MainTabs(business: Business, initialTab: String? = null) {
         mutableStateOf((initialTab ?: Prefs.string("ui.tab", "scan")).let { k -> tabs.firstOrNull { it.key == k } ?: Tab.Scan })
     }
     NotificationPermissionAsk()
+    val scope = rememberCoroutineScope()
+    // gezamenlijke acties: badge, melding of geaccepteerde link opent Samenwerken onder Acties (alleen eigenaar)
+    LaunchedEffect(business.id) { CommunityRouter.refreshCount(business) }
+    val focus = CommunityRouter.focus
+    LaunchedEffect(focus?.stamp) {
+        if (focus == null) return@LaunchedEffect
+        if (business.isOwner) { selected = Tab.Cards; Prefs.putString("ui.tab", Tab.Cards.key) } else { CommunityRouter.focus = null }
+    }
+    var accepting by remember { mutableStateOf(false) }
+    val token = CommunityRouter.pendingToken
+    if (token != null && !ShellState.locked && !accepting) {
+        val dismiss = { CommunityRouter.pendingToken = null }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = dismiss,
+            title = { Text(L("Uitnodiging voor een gezamenlijke actie")) },
+            text = {
+                Text(if (business.isOwner) L("Doet %@ mee aan deze gezamenlijke actie? Klantgegevens worden niet tussen ondernemingen gedeeld.", business.name)
+                     else L("Alleen de eigenaar van de zaak kan een uitnodiging voor een gezamenlijke actie accepteren."))
+            },
+            confirmButton = {
+                if (business.isOwner) androidx.compose.material3.TextButton(onClick = {
+                    accepting = true
+                    scope.launch {
+                        try {
+                            val r = Account.rpc("pasr_business_community_accept_token", org.json.JSONObject()
+                                .put("p_business", business.id).put("p_token", token)) as? org.json.JSONObject
+                            CommunityRouter.focus = CommunityRouter.Focus("community_active",
+                                r?.optString("campaign_id")?.takeIf { it.isNotBlank() && it != "null" },
+                                L("Je onderneming doet nu mee aan de gezamenlijke actie."))
+                        } catch (e: Exception) {
+                            CommunityRouter.focus = CommunityRouter.Focus("community_error", null,
+                                e.message ?: L("Er ging iets mis. Probeer het opnieuw."), failed = true)
+                        }
+                        CommunityRouter.pendingToken = null
+                        accepting = false
+                    }
+                }) { Text(L("Meedoen"), color = Pz.accent) }
+                else androidx.compose.material3.TextButton(onClick = dismiss) { Text(L("OK"), color = Pz.accent) }
+            },
+            dismissButton = {
+                if (business.isOwner) androidx.compose.material3.TextButton(onClick = dismiss) { Text(L("Niet nu"), color = Pz.accent) }
+            },
+        )
+    }
     Column(Modifier.fillMaxSize().background(Pz.bg)) {
         Box(Modifier.weight(1f)) {
             when (selected) {
@@ -143,7 +188,12 @@ fun MainTabs(business: Business, initialTab: String? = null) {
                 NavigationBarItem(
                     selected = tab == selected,
                     onClick = { selected = tab; Prefs.putString("ui.tab", tab.key) },
-                    icon = { Icon(tab.icon, null) },
+                    icon = {
+                        val count = if (tab == Tab.Cards) CommunityRouter.inviteCount else 0
+                        if (count > 0) androidx.compose.material3.BadgedBox(badge = {
+                            androidx.compose.material3.Badge { Text("$count") }
+                        }) { Icon(tab.icon, null) } else Icon(tab.icon, null)
+                    },
                     label = { Text(L(tab.title), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Pz.accent, selectedTextColor = Pz.accent,

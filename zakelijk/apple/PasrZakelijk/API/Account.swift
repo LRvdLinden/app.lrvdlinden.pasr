@@ -195,6 +195,9 @@ struct APIError: LocalizedError {
             text = String(localized: "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.")
         } else if let mapped = hintText(message.trimmingCharacters(in: .whitespaces), details: details, message: "") {
             text = mapped   // oudere functies: de code staat in message ("not_found", "bad_name", …)
+        } else if let k = ["invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner"].first(where: has),
+                  let mapped = hintText(k, details: details, message: "") {
+            text = mapped   // gezamenlijke acties: code ergens in de melding
         } else if code == "P0002" {
             text = String(localized: "Deze code is niet bekend. Laat de klant de kaart opnieuw tonen of typ de code over.")
         } else if code == "28000" {
@@ -235,6 +238,14 @@ struct APIError: LocalizedError {
             return String(localized: "Alleen de laatste actie bij deze klant kan ongedaan worden gemaakt.")
         case "invite_invalid":
             return String(localized: "Deze uitnodiging bestaat niet (meer). Vraag de eigenaar om een nieuwe.")
+        case "invite_required":
+            return String(localized: "Meedoen aan deze gezamenlijke actie kan alleen op uitnodiging van de organisator.")
+        case "already_participant":
+            return String(localized: "Deze zaak doet al mee aan deze gezamenlijke actie.")
+        case "invite_not_found":
+            return String(localized: "Deze uitnodiging bestaat niet (meer). Vraag de organisator om een nieuwe.")
+        case "invite_expired":
+            return String(localized: "Deze uitnodiging is verlopen. Vraag de organisator om een nieuwe.")
         case "invite_own":
             return String(localized: "Dit is een uitnodiging voor je eigen zaak.")
         case "staff_limit":

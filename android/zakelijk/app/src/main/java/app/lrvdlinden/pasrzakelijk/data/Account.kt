@@ -202,6 +202,9 @@ object Account {
 
 /** Nette teksten bij wat de server zegt (zelfde regels als APIError.from in de iOS-app). */
 object ApiErrors {
+    /** Foutcodes van de gezamenlijke acties (uitnodigingen), ook als ze midden in de melding staan. */
+    private val communityCodes = listOf("invite_required", "already_participant", "invite_not_found", "invite_expired", "not_owner")
+
     fun from(status: Int, code: String, message: String, hint: String = "", details: String = ""): ApiError {
         hintText(hint, details)?.let { return ApiError(it, status) }
         val s = "$code $message"
@@ -214,6 +217,7 @@ object ApiErrors {
             has("email_address_invalid") || has("validation_failed") -> L("Dit e-mailadres klopt niet.")
             status == 429 || has("rate_limit") -> L("Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.")
             hintText(message.trim(), details) != null -> hintText(message.trim(), details)!!
+            communityCodes.any { has(it) } -> hintText(communityCodes.first { has(it) }, details)!!
             code == "P0002" -> L("Deze code is niet bekend. Laat de klant de kaart opnieuw tonen of typ de code over.")
             code == "28000" -> L("Je bent uitgelogd. Log opnieuw in.")
             message.length > 12 && message.contains(" ") && !Regex("[a-z]+_[a-z]+").containsMatchIn(message) -> message
@@ -240,6 +244,10 @@ object ApiErrors {
         "undo_expired" -> L("Ongedaan maken kan alleen binnen 2 minuten.")
         "undo_not_latest" -> L("Alleen de laatste actie bij deze klant kan ongedaan worden gemaakt.")
         "invite_invalid" -> L("Deze uitnodiging bestaat niet (meer). Vraag de eigenaar om een nieuwe.")
+        "invite_required" -> L("Meedoen aan deze gezamenlijke actie kan alleen op uitnodiging van de organisator.")
+        "already_participant" -> L("Deze zaak doet al mee aan deze gezamenlijke actie.")
+        "invite_not_found" -> L("Deze uitnodiging bestaat niet (meer). Vraag de organisator om een nieuwe.")
+        "invite_expired" -> L("Deze uitnodiging is verlopen. Vraag de organisator om een nieuwe.")
         "invite_own" -> L("Dit is een uitnodiging voor je eigen zaak.")
         "staff_limit" -> L("Je hebt al 25 medewerkers. Trek er eerst één in.")
         "bad_settings" -> L("Deze instellingen kloppen niet.")

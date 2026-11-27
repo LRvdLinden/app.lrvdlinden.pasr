@@ -61,6 +61,11 @@ final class BusinessStore {
     }
 
     func handle(url: URL) {
+        // uitnodiging voor een gezamenlijke actie: https://pasr.nl/zakelijk/uitnodiging/?t=TOKEN
+        if Self.isInvite(url), let token = CommunityRouter.token(in: url) {
+            CommunityRouter.shared.pendingToken = token
+            return
+        }
         if Self.isInvite(url) {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             let code = url.fragment ?? items.first(where: { $0.name == "code" })?.value
