@@ -22,7 +22,7 @@ import { zipSync, strToU8 } from "npm:fflate@0.8.2";
 import { ICONS } from "./icons.ts";
 import {
   applePassToken, businessStand, type Card, isSerial, isToken, open, route, type Route, sameText, seal, stampFields,
-  stored, tagFor, tokenHash,
+  stored, tagFor, ticketPass, tokenHash,
 } from "./passkit.ts";
 
 const WWDR_URL = "https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer";
@@ -484,8 +484,10 @@ async function buildPass(card: Card, ws: { url: string; token: string } | null =
     }));
   }
 
+  // ticket: een echte eventTicket-pas (merkkleur, logo, evenementvelden, gegroepeerd per evenement)
+  const final = kind === "ticket" ? ticketPass(pass, card) : pass;
   const files: Record<string, Uint8Array> = {
-    "pass.json": strToU8(JSON.stringify(pass)),
+    "pass.json": strToU8(JSON.stringify(final)),
     "icon.png": await asset("icon.png"),
     "icon@2x.png": await asset("icon@2x.png"),
     "icon@3x.png": await asset("icon@3x.png"),

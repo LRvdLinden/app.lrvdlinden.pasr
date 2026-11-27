@@ -56,7 +56,29 @@ export type Guide = {
   earn?: string; perks?: string; program_url?: string;
   /** Verjaardagsvoordeel (1.0.3), bijv. "Gratis taartje in je verjaardagsmaand"; alleen als de officiële site het noemt. */
   birthday?: string;
+} & TicketEvent;
+
+/** Evenementgegevens van een ticket-sjabloon (1.0.5), ook in pasr_stores.guide: de app tekent er het ticket mee
+ *  (zoals een eventTicket in Apple Wallet) en de Wallet-pas krijgt dezelfde velden. Alles optioneel. */
+export type TicketEvent = {
+  /** Titel op het ticket, bijv. "Drakenboot 2027". */
+  event?: string;
+  /** Korte naam naast het logo, bijv. "Drakenboot". */
+  brand?: string;
+  /** Eerste en (bij meerdaagse evenementen) laatste dag, YYYY-MM-DD. */
+  date?: string; end_date?: string;
+  /** Toegang van/tot, HH:MM (tot mag na middernacht vallen, bijv. 01:00). */
+  doors?: string; ends?: string;
+  venue?: string; city?: string; address?: string;
+  /** Soort ticket (bijv. "Early Bird") en een korte toelichting (bijv. "t/m 14 jaar"). */
+  ticket_type?: string; ticket_note?: string;
+  /** Officiële site of infopagina van het evenement (https). */
+  info_url?: string;
+  /** Tekst- en labelkleur op de merkkleur (#RRGGBB); leeg = automatisch wit of zwart. */
+  text_hex?: string; label_hex?: string;
 };
+
+export const TICKET_TEXT = { event: 60, brand: 30, venue: 60, city: 40, address: 120, ticket_type: 30, ticket_note: 40 } as const;
 
 /** Gids controleren: korte teksten, true/false, https-URL zonder login, datum YYYY-MM-DD. Leeg object -> null. */
 export function cleanGuide(v: unknown): { ok: true; value: Guide | null } | { ok: false; error: string } {
@@ -78,6 +100,35 @@ export function cleanGuide(v: unknown): { ok: true; value: Guide | null } | { ok
     const page = cleanBalancePage({ store_id: "xx", url });
     if (!page.ok) return { ok: false, error: "bad_guide_url" };
     g[k] = page.value.url;
+  }
+  for (const [k, max] of Object.entries(TICKET_TEXT) as [keyof typeof TICKET_TEXT, number][]) {
+    const t = str(b[k], max).replace(/\s+/g, " ");
+    if (t) g[k] = t;
+  }
+  for (const k of ["date", "end_date"] as const) {
+    const d = str(b[k], 10);
+    if (!d) continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || isNaN(Date.parse(d))) return { ok: false, error: "bad_guide_date" };
+    g[k] = d;
+  }
+  if (g.date && g.end_date && g.end_date < g.date) return { ok: false, error: "bad_guide_date" };
+  for (const k of ["doors", "ends"] as const) {
+    const t = str(b[k], 5);
+    if (!t) continue;
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) return { ok: false, error: "bad_guide_time" };
+    g[k] = t;
+  }
+  for (const k of ["text_hex", "label_hex"] as const) {
+    const h = str(b[k], 7);
+    if (!h) continue;
+    if (!/^#[0-9a-fA-F]{6}$/.test(h)) return { ok: false, error: "bad_color" };
+    g[k] = h.toUpperCase();
+  }
+  const info = str(b.info_url, 300);
+  if (info) {
+    const page = cleanBalancePage({ store_id: "xx", url: info });
+    if (!page.ok) return { ok: false, error: "bad_guide_url" };
+    g.info_url = page.value.url;
   }
   const checked = str(b.checked, 10);
   if (checked) {

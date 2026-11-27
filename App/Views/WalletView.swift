@@ -328,6 +328,15 @@ struct WalletView: View {
                                                        set: { new in pageID = new }),
                                          angle: flipAngle, width: width)
                             .matchedGeometryEffect(id: first.id, in: namespace)
+                    } else if card.kind == .ticket {
+                        // ticket: hoog, zoals in Apple Wallet (kop, QR-code, Route en Informatie); niet omdraaien
+                        TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in
+                            TicketFaceView(card: card)
+                        }
+                            .frame(width: width)
+                            .matchedGeometryEffect(id: card.id, in: namespace)
+                            .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
+                            .onTapGesture { deselect() }
                     } else {
                         // tijdelijke kaart: elke 15 seconden opnieuw tekenen, zodat de code op het einde verdwijnt
                         TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in

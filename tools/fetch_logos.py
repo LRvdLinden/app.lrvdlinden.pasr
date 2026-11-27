@@ -13,6 +13,9 @@ card colour and whether the logo should be drawn white/black for contrast (gener
 
 Existing files are kept unless --all is given. Writes tools/logos-missing.txt and tools/logo-styles.json.
 --styles only regenerates StoreLogoStyles.swift (e.g. after changing template colours).
+--tickets fetches, with the same steps, the logo and brand colour of every event site in
+supabase/catalog/new_tickets.json into supabase/catalog/ticket_brands.json (not into the app: event tickets come
+from the catalogue). supabase/catalog/ticket_brands.py puts them in the beheer where a ticket has no logo yet.
 """
 import colorsys
 import concurrent.futures as cf
@@ -517,7 +520,69 @@ def fetch(domain):
     return None
 
 
+TICKETS_JSON = ROOT / "supabase" / "catalog" / "new_tickets.json"
+TICKET_BRANDS = ROOT / "supabase" / "catalog" / "ticket_brands.json"
+
+
+def theme_colour(domain):
+    """The event site's own brand colour (<meta name="theme-color">), if it says one."""
+    for home in (f"https://www.{domain}/", f"https://{domain}/"):
+        try:
+            r = S.get(home, timeout=12)
+        except Exception:
+            continue
+        if not r.ok:
+            continue
+        for tag in re.findall(r"<meta\b[^>]*>", r.text[:400_000], re.I):
+            if re.search(r'name\s*=\s*["\']?(theme-color|msapplication-TileColor)', tag, re.I):
+                m = re.search(r'content\s*=\s*["\']?\s*#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b', tag)
+                if m:
+                    h = m.group(1)
+                    h = "".join(c * 2 for c in h) if len(h) == 3 else h
+                    h = "#" + h.upper()
+                    if h not in ("#FFFFFF", "#000000"):
+                        return h
+        break
+    return None
+
+
+def tickets():
+    """Logo and brand colour of each event site (header logo first, then the usual steps). Nothing is made up: what
+    can't be fetched stays out, and the app then shows the event's initials in the ticket colour."""
+    import base64
+    rows = json.loads(TICKETS_JSON.read_text())
+    out = json.loads(TICKET_BRANDS.read_text()) if TICKET_BRANDS.exists() else {}
+    only = [a for a in sys.argv[1:] if not a.startswith("--")]
+    for domain in sorted({r["domain"] for r in rows if r.get("domain")}):
+        if only and domain not in only:
+            continue
+        if domain in out and "--all" not in sys.argv:
+            print("kept    " + domain, flush=True)
+            continue
+        img = site_logo(domain) or fetch(domain)
+        entry = {}
+        if img:
+            clean, meta = process(img)
+            clean.thumbnail((SIZE * 2, SIZE), Image.LANCZOS)
+            buf = io.BytesIO()
+            clean.save(buf, "PNG", optimize=True)
+            if buf.tell() <= 280_000:
+                entry["logo"] = base64.b64encode(buf.getvalue()).decode()
+            card = meta.get("bg") if meta.get("bg") and chroma(meta["bg"]) else None
+            entry["card"] = card or theme_colour(domain)
+        else:
+            entry["card"] = theme_colour(domain)
+        entry = {k: v for k, v in entry.items() if v}
+        if entry:
+            out[domain] = entry
+        print(("ok      " if entry.get("logo") else "MISSING ") + domain + (f" {entry.get('card')}" if entry.get("card") else ""), flush=True)
+    TICKET_BRANDS.write_text(json.dumps(dict(sorted(out.items())), indent=1) + "\n")
+
+
 def main():
+    if "--tickets" in sys.argv:
+        tickets()
+        return
     OUT.mkdir(parents=True, exist_ok=True)
     redo = "--all" in sys.argv
     only = [a for a in sys.argv[1:] if not a.startswith("--")]

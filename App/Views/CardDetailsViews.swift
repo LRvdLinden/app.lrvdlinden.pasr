@@ -313,14 +313,22 @@ struct CardInfoSheet: View {
                 Link(destination: url) { Label("Naar \(shop)", systemImage: "cart") }
             }
         case .ticket:
-            if let date = details.eventDate { LabeledContent("Datum", value: date.formatted(date: .long, time: .shortened)) }
-            if let venue = details.venue, !venue.isEmpty {
-                LabeledContent("Locatie", value: venue)
-                if let url = URL(string: "maps://?q=" + (venue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")) {
-                    Link(destination: url) { Label("Open in Kaarten", systemImage: "map") }
-                }
+            // evenementgegevens uit de catalogus, aangevuld met wat je zelf bij de kaart invulde
+            let ticket = card.ticketInfo
+            LabeledContent("Evenement", value: ticket.title)
+            if let type = ticket.type {
+                LabeledContent("Ticket", value: [type, ticket.note].compactMap { $0 }.joined(separator: " · "))
             }
-            if let seat = details.seat, !seat.isEmpty { LabeledContent("Plaats", value: seat) }
+            if let date = ticket.dateText { LabeledContent("Datum", value: date) }
+            if let time = ticket.timeText { LabeledContent("Toegang", value: time) }
+            if let place = ticket.place { LabeledContent("Locatie", value: place) }
+            if let seat = ticket.seat { LabeledContent("Plaats", value: seat) }
+            if let route = ticket.routeURL {
+                Link(destination: route) { Label("Route", systemImage: "map") }
+            }
+            if let info = ticket.info {
+                Link(destination: info) { Label("Informatie", systemImage: "info.circle") }
+            }
         case .subscription:
             if let cost = details.cost {
                 LabeledContent("Kosten", value: cost.formatted(.currency(code: card.currencyCode ?? "EUR")) + " " + details.periodValue.title)

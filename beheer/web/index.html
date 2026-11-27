@@ -205,6 +205,25 @@
               <span class="muted sm">Wordt bijgesneden tot kaartformaat (1,586:1, 640 px breed, JPEG). Gaat in de app voor op logo en kleur; een eigen voorkant van de gebruiker gaat daar weer voor.</span></label>
             <label class="se-wide">Andere namen (komma's)<input id="seAliases" type="text" placeholder="bijv. kwantum wonen" autocomplete="off"></label>
           </div>
+          <fieldset id="seTicket" class="se-guide hidden">
+            <legend>Evenement <span class="muted sm">(ticket in de app en op de Wallet-pas; alleen van de officiële site, onbekend leeg laten)</span></legend>
+            <div class="se-grid">
+              <label>Titel op het ticket<input id="seTEvent" type="text" maxlength="60" placeholder="bijv. Drakenboot 2027" autocomplete="off"></label>
+              <label>Naam naast het logo<input id="seTBrand" type="text" maxlength="30" placeholder="bijv. Drakenboot" autocomplete="off"></label>
+              <label>Soort ticket<input id="seTType" type="text" maxlength="30" placeholder="bijv. Early Bird" autocomplete="off"></label>
+              <label>Toelichting<input id="seTNote" type="text" maxlength="40" placeholder="bijv. t/m 14 jaar" autocomplete="off"></label>
+              <label>Datum<input id="seTDate" type="date"></label>
+              <label>Laatste dag (meerdaags)<input id="seTEndDate" type="date"></label>
+              <label>Toegang vanaf<input id="seTDoors" type="time"></label>
+              <label>Toegang tot<input id="seTEnds" type="time"></label>
+              <label>Locatie<input id="seTVenue" type="text" maxlength="60" placeholder="bijv. Zwitsalpark" autocomplete="off"></label>
+              <label>Plaats<input id="seTCity" type="text" maxlength="40" placeholder="bijv. Apeldoorn" autocomplete="off"></label>
+              <label class="se-wide">Adres voor de route (optioneel)<input id="seTAddress" type="text" maxlength="120" autocomplete="off"></label>
+              <label class="se-wide">Website of infopagina (https)<input id="seTInfo" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
+              <label>Tekstkleur (leeg = automatisch)<input id="seTText" type="text" maxlength="7" placeholder="#FFFFFF" autocomplete="off" spellcheck="false"></label>
+              <label>Labelkleur (leeg = automatisch)<input id="seTLabel" type="text" maxlength="7" placeholder="#FFFFFF" autocomplete="off" spellcheck="false"></label>
+            </div>
+          </fieldset>
           <fieldset id="seGuide" class="se-guide hidden">
             <legend><span id="seGTitle">Gids</span> <span class="muted sm">(in de app en op pasr.nl; alleen officiële bronnen, onbekend leeg laten)</span></legend>
             <div class="se-grid">
@@ -422,6 +441,6 @@
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script src="vendor/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="admin.js?v=zakelijke-accounts"></script>
+<script src="admin.js?v=tickets-evenement"></script>
 </body>
 </html>

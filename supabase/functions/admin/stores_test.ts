@@ -96,3 +96,17 @@ Deno.test("evenementticket blijft een ticket in de catalogus", () => {
   const r = cleanStore({ name: "Voorbeeld evenement", domain: "example.com", card_hex: "#123456", category: "Evenementen", kind: "ticket", format: "qr" });
   ok(r.ok && r.value.kind === "ticket" && r.value.format === "qr" && r.value.category === "Evenementen", JSON.stringify(r));
 });
+
+Deno.test("ticket: evenementgegevens in de gids", () => {
+  const r = cleanGuide({
+    event: "  Drakenboot   2027 ", brand: "Drakenboot", date: "2027-06-18", doors: "17:00", ends: "01:00",
+    venue: "Zwitsalpark", city: "Apeldoorn", ticket_type: "KIDS Early Bird", ticket_note: "t/m 14 jaar",
+    info_url: "https://www.drakenboot.nl/tickets", text_hex: "#ffffff", onbekend: "weg",
+  });
+  ok(r.ok && r.value?.event === "Drakenboot 2027" && r.value.text_hex === "#FFFFFF" && r.value.doors === "17:00", JSON.stringify(r));
+  ok(r.ok && !("onbekend" in (r.value ?? {})), "onbekende sleutel weg");
+  ok(!cleanGuide({ doors: "25:00" }).ok, "geen tijd");
+  ok(!cleanGuide({ date: "2027-06-18", end_date: "2027-06-17" }).ok, "einde voor begin");
+  ok(!cleanGuide({ info_url: "http://example.com" }).ok, "alleen https");
+  ok(!cleanGuide({ text_hex: "wit" }).ok, "geen kleur");
+});

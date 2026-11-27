@@ -883,6 +883,7 @@
     $("seGBirthday").value = g.birthday || "";
     $("seGOnline").value = typeof g.online === "boolean" ? String(g.online) : "";
     $("seGStore").value = typeof g.store === "boolean" ? String(g.store) : "";
+    TICKET_FIELDS.forEach(([id, key]) => { $(id).value = g[key] || ""; });
     guideVisible();
     $("seSwatches").replaceChildren();
     $("seRequests").textContent = requestIds.length ? `Na publiceren worden ${requestIds.length === 1 ? "1 aanvraag" : requestIds.length + " aanvragen"} gesloten als toegevoegd.` : "";
@@ -901,10 +902,16 @@
   $("seClose").addEventListener("click", () => { $("storeEditor").classList.add("hidden"); editing = null; });
   ["seName", "seColor", "seKind"].forEach((id) => $(id).addEventListener("input", preview));
   $("seKind").addEventListener("change", preview);
-  /** Gids: bij een cadeaukaart de cadeaubon-gids, bij een klantenkaart de programmagids (zo spaar je, voordelen). */
+  /** Evenementvelden van een ticket (pasr_stores.guide, zie TicketEvent in supabase/functions/admin/stores.ts). */
+  const TICKET_FIELDS = [["seTEvent", "event"], ["seTBrand", "brand"], ["seTType", "ticket_type"], ["seTNote", "ticket_note"],
+    ["seTDate", "date"], ["seTEndDate", "end_date"], ["seTDoors", "doors"], ["seTEnds", "ends"], ["seTVenue", "venue"],
+    ["seTCity", "city"], ["seTAddress", "address"], ["seTInfo", "info_url"], ["seTText", "text_hex"], ["seTLabel", "label_hex"]];
+  /** Gids: bij een cadeaukaart de cadeaubon-gids, bij een klantenkaart de programmagids (zo spaar je, voordelen);
+   *  bij een ticket de evenementgegevens. */
   function guideVisible() {
     const kind = $("seKind").value;
     $("seGuide").classList.toggle("hidden", kind === "ticket");
+    $("seTicket").classList.toggle("hidden", kind !== "ticket");
     $("seGTitle").textContent = kind === "voucher" ? "Cadeaubon-gids" : "Programmagids";
     $("seGHowLabel").textContent = kind === "voucher" ? "Zo wissel je hem in (1 tot 3 zinnen)" : "Zo kom je aan de kaart (1 zin)";
     document.querySelectorAll("#seGuide [data-gkind]").forEach((n) => n.classList.toggle("hidden", n.dataset.gkind !== kind));
@@ -915,7 +922,16 @@
   });
   /** Gids uit het formulier (alleen de velden van deze soort kaart); leeg = null (wissen). */
   function guideBody() {
-    if ($("seKind").value === "ticket") return null;
+    if ($("seKind").value === "ticket") {
+      const e = {};
+      TICKET_FIELDS.forEach(([id, key]) => {
+        let v = $(id).value.trim();
+        if (key === "text_hex" || key === "label_hex") v = v.toUpperCase();
+        if (key === "info_url" && v && !v.includes("://")) v = "https://" + v;
+        if (v) e[key] = v;
+      });
+      return Object.keys(e).length ? e : null;
+    }
     const g = {}, t = (id) => $(id).value.trim(), b = (id) => ($(id).value === "" ? undefined : $(id).value === "true");
     if ($("seKind").value === "voucher") {
       if (t("seGValidity")) g.validity = t("seGValidity");

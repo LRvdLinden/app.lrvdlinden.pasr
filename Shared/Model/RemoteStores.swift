@@ -19,6 +19,8 @@ enum RemoteStores {
         /// Kaartontwerp (sinds build 41): de versie (updated_at uit het beheer) van de voorkant van deze cadeaukaart;
         /// nil = geen ontwerp. De afbeelding zelf staat als bestand naast de logo's (cover-<id>.img), niet in de JSON.
         var cover: String?
+        /// Ticket (sinds 1.0.5): evenementgegevens uit de gids (titel, datum, tijden, locatie, soort ticket, huisstijl).
+        var event: TicketEvent?
     }
 
     nonisolated(unsafe) private static var coverCache: [String: Data] = [:]

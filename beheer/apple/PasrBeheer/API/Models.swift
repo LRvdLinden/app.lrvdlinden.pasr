@@ -184,10 +184,67 @@ struct StoreGuide: Codable, Hashable {
     var checked: String?
     /// Verjaardagsvoordeel (1.0.3), alleen als de officiële site het noemt.
     var birthday: String?
+    /// Ticket (Pasr 1.0.5): evenementgegevens voor de ticketweergave en de Wallet-pas (TicketEvent in stores.ts).
+    var event: String?, brand: String?, date: String?, end_date: String?, doors: String?, ends: String?
+    var venue: String?, city: String?, address: String?, ticket_type: String?, ticket_note: String?, info_url: String?
+    var text_hex: String?, label_hex: String?
+
+    /// De evenementvelden op volgorde, met hun titel in het formulier.
+    static let ticketKeys: [(key: String, title: String)] = [
+        ("event", "Titel op het ticket"), ("brand", "Naam naast het logo"), ("ticket_type", "Soort ticket"),
+        ("ticket_note", "Toelichting, bijv. t/m 14 jaar"), ("date", "Datum (JJJJ-MM-DD)"), ("end_date", "Laatste dag (meerdaags)"),
+        ("doors", "Toegang vanaf (UU:MM)"), ("ends", "Toegang tot (UU:MM)"), ("venue", "Locatie"), ("city", "Plaats"),
+        ("address", "Adres voor de route"), ("info_url", "Website of infopagina (https)"),
+        ("text_hex", "Tekstkleur #RRGGBB (leeg = automatisch)"), ("label_hex", "Labelkleur #RRGGBB (leeg = automatisch)"),
+    ]
+
+    subscript(ticket key: String) -> String? {
+        get {
+            switch key {
+            case "event": return event
+            case "brand": return brand
+            case "date": return date
+            case "end_date": return end_date
+            case "doors": return doors
+            case "ends": return ends
+            case "venue": return venue
+            case "city": return city
+            case "address": return address
+            case "ticket_type": return ticket_type
+            case "ticket_note": return ticket_note
+            case "info_url": return info_url
+            case "text_hex": return text_hex
+            case "label_hex": return label_hex
+            default: return nil
+            }
+        }
+        set {
+            switch key {
+            case "event": event = newValue
+            case "brand": brand = newValue
+            case "date": date = newValue
+            case "end_date": end_date = newValue
+            case "doors": doors = newValue
+            case "ends": ends = newValue
+            case "venue": venue = newValue
+            case "city": city = newValue
+            case "address": address = newValue
+            case "ticket_type": ticket_type = newValue
+            case "ticket_note": ticket_note = newValue
+            case "info_url": info_url = newValue
+            case "text_hex": text_hex = newValue
+            case "label_hex": label_hex = newValue
+            default: break
+            }
+        }
+    }
 
     init() {}
 
-    private enum K: String, CodingKey { case validity, online, store, shipping, earn, perks, program_url, how, terms_url, checked, birthday }
+    private enum K: String, CodingKey {
+        case validity, online, store, shipping, earn, perks, program_url, how, terms_url, checked, birthday
+        case event, brand, date, end_date, doors, ends, venue, city, address, ticket_type, ticket_note, info_url, text_hex, label_hex
+    }
 
     init(from decoder: Decoder) throws {
         guard let c = try? decoder.container(keyedBy: K.self) else { return }
@@ -196,6 +253,7 @@ struct StoreGuide: Codable, Hashable {
         validity = s(.validity); online = b(.online); store = b(.store); shipping = s(.shipping)
         earn = s(.earn); perks = s(.perks); program_url = s(.program_url)
         how = s(.how); terms_url = s(.terms_url); checked = s(.checked); birthday = s(.birthday)
+        for (key, _) in Self.ticketKeys { if let k = K(rawValue: key) { self[ticket: key] = s(k) } }
     }
 
     var isEmpty: Bool { self == StoreGuide() }
@@ -214,6 +272,7 @@ struct StoreGuide: Codable, Hashable {
         if let terms_url { d["terms_url"] = terms_url }
         if let checked { d["checked"] = checked }
         if let birthday { d["birthday"] = birthday }
+        for (key, _) in Self.ticketKeys { if let v = self[ticket: key] { d[key] = v } }
         return d
     }
 }

@@ -17,6 +17,10 @@ on:
         description: "Only test these domains (space separated) and show what each address returns"
         type: string
         default: ""
+      tickets:
+        description: "Event tickets: fetch logo and brand colour of the event sites in supabase/catalog/new_tickets.json"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,14 +40,17 @@ jobs:
       - run: pip install -q requests pillow cairosvg
       - if: ${{ inputs.debug != '' && inputs.debug != null }}
         run: python tools/fetch_logos.py --debug ${{ inputs.debug }}
-      - if: ${{ inputs.debug == '' || inputs.debug == null }}
+      - if: ${{ (inputs.debug == '' || inputs.debug == null) && !inputs.tickets }}
         run: python tools/fetch_logos.py ${{ inputs.all && '--all' || '' }}
+      - if: ${{ inputs.tickets }}
+        run: python tools/fetch_logos.py --tickets ${{ inputs.all && '--all' || '' }}
       - name: Commit logos
         if: ${{ inputs.debug == '' || inputs.debug == null }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add App/StoreLogos Shared/Model/StoreLogoStyles.swift Shared/Model/StoreColourHistory.swift tools/logos-missing.txt tools/logo-styles.json tools/colour-history.json
+          if [ -f supabase/catalog/ticket_brands.json ]; then git add supabase/catalog/ticket_brands.json; fi
           if git diff --cached --quiet; then echo "No new logos."; exit 0; fi
           git commit -m "Winkellogo's bijgewerkt"
           git pull --rebase -q

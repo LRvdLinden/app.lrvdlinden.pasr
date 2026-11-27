@@ -7,7 +7,12 @@ import json, os, re, sys, urllib.request
 from pathlib import Path
 
 KEYS = {"validity": str, "online": bool, "store": bool, "how": str, "shipping": str, "earn": str, "perks": str,
-        "program_url": str, "terms_url": str, "checked": str, "birthday": str}
+        "program_url": str, "terms_url": str, "checked": str, "birthday": str,
+        # ticket (1.0.5): evenementgegevens voor de ticketweergave en de Wallet-pas (zie TicketEvent in stores.ts)
+        "event": str, "brand": str, "date": str, "end_date": str, "doors": str, "ends": str, "venue": str,
+        "city": str, "address": str, "ticket_type": str, "ticket_note": str, "info_url": str,
+        "text_hex": str, "label_hex": str}
+TICKET_TEXT = {"event": 60, "brand": 30, "venue": 60, "city": 40, "address": 120, "ticket_type": 30, "ticket_note": 40}
 
 
 def check(guides):
@@ -20,9 +25,22 @@ def check(guides):
             assert isinstance(v, KEYS[k]), f"{sid}.{k}: verkeerd type"
         for k, n in (("validity", 80), ("how", 400), ("shipping", 200), ("earn", 400), ("perks", 400), ("birthday", 160), ("program_url", 300), ("terms_url", 300)):
             assert len(g.get(k, "")) <= n, f"{sid}.{k}: te lang"
-        for k in ("terms_url", "program_url"):
+        for k in ("terms_url", "program_url", "info_url"):
             if k in g:
                 assert g[k].startswith("https://"), f"{sid}.{k}: geen https"
+        for k, n in TICKET_TEXT.items():
+            assert len(g.get(k, "")) <= n, f"{sid}.{k}: te lang"
+        for k in ("date", "end_date"):
+            if k in g:
+                assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", g[k]), f"{sid}.{k}: geen YYYY-MM-DD"
+        if "date" in g and "end_date" in g:
+            assert g["end_date"] >= g["date"], f"{sid}: einddatum voor begindatum"
+        for k in ("doors", "ends"):
+            if k in g:
+                assert re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", g[k]), f"{sid}.{k}: geen HH:MM"
+        for k in ("text_hex", "label_hex"):
+            if k in g:
+                assert re.fullmatch(r"#[0-9A-F]{6}", g[k]), f"{sid}.{k}: geen #RRGGBB (hoofdletters)"
         if "checked" in g:
             assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", g["checked"]), f"{sid}.checked: geen YYYY-MM-DD"
 

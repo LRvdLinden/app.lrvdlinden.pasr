@@ -65,7 +65,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun TicketGroupFace(card: Card, modifier: Modifier = Modifier) {
-    CardFace(card, modifier, compact = true)
+    TicketFace(card, modifier, compact = true)
 }
 
 /** Detail van een kaart; hoort de kaart bij een groep tickets, dan veeg je tussen de tickets van die groep. */

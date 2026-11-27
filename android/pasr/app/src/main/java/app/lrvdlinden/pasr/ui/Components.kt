@@ -92,6 +92,11 @@ fun dateText(ms: Long): String =
 /** Voorkant van een kaart: echte merkkleur, schoon logo, geen randen (stijl SuperCards). */
 @Composable
 fun CardFace(card: Card, modifier: Modifier = Modifier, compact: Boolean = false) {
+    // een ticket ziet eruit als een ticket (zoals eventTicket in Apple Wallet), niet als een klantenkaart
+    if (card.kind == CardKind.TICKET && card.cover == null) {
+        TicketFace(card, modifier, compact = compact)
+        return
+    }
     val logo = remember(card.id, card.logo, card.templateID, card.website) { Catalog.logo(card) }
     val style = remember(card.id, card.templateID, card.logo) { Catalog.styleFor(card) }
     val cover = remember(card.id, card.cover, card.templateID) { Catalog.coverBitmap(card) }
