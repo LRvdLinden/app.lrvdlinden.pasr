@@ -104,7 +104,9 @@ extension Array where Element == Card {
     /// The snapshot the widgets read, in de gekozen volgorde (standaard A tot Z).
     func widgetSnapshot(order: CardOrder = .az, distances: [UUID: Double] = [:]) -> ([WidgetCard], [String: Data]) {
         var logos: [String: Data] = [:]
-        let cards = filter { $0.deletedAt == nil && !$0.isTemporary }.ordered(order, distances: distances).map { card -> WidgetCard in
+        // tickets voor hetzelfde evenement op dezelfde dag naast elkaar (TicketGroups.swift); elk houdt zijn eigen code
+        let cards = filter { $0.deletedAt == nil && !$0.isTemporary }.ordered(order, distances: distances)
+            .stackItems().flatMap(\.cards).map { card -> WidgetCard in
             if let logo = card.logoData { logos[card.id.uuidString] = logo }
             var details = card.details
             details.captions = nil

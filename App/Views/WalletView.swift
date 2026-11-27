@@ -14,7 +14,9 @@ struct WalletView: View {
         _openCardID = openCardID
     }
 
+    /// Het item vooraan (bij een groep tickets: het id van het eerste ticket) en het ticket dat je nu ziet.
     @State private var selectedID: UUID?
+    @State private var pageID: UUID?
     /// Filter naast de plusknop (blijft bewaard): alle, favorieten, klantenkaarten, cadeaukaarten, privé, gedeeld, tijdelijk.
     @AppStorage("pasr.walletFilter") private var filterRaw = WalletFilter.all.rawValue
     private var groups = GroupService.shared
@@ -78,17 +80,31 @@ struct WalletView: View {
 
     private var filter: WalletFilter { WalletFilter(rawValue: filterRaw) ?? .all }
 
-    private var visibleCards: [Card] {
-        let sorted = cards.ordered(cardOrder, distances: distances).filter { filter.matches($0) }
+    /// De stapel: tickets voor hetzelfde evenement op dezelfde dag zijn één item (TicketGroups.swift). Een groep staat
+    /// erin als één van zijn tickets bij het filter en de zoekterm past.
+    private var visibleItems: [CardStackItem] {
+        let items = cards.ordered(cardOrder, distances: distances).stackItems()
         let query = search.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return sorted }
-        return sorted.filter {
-            $0.storeName.localizedCaseInsensitiveContains(query) || $0.number.contains(query)
-                || $0.note.localizedCaseInsensitiveContains(query)
+        return items.filter { item in
+            item.cards.contains { card in
+                filter.matches(card) && (query.isEmpty || card.storeName.localizedCaseInsensitiveContains(query)
+                    || card.number.contains(query) || card.note.localizedCaseInsensitiveContains(query))
+            }
         }
     }
 
-    private var selectedCard: Card? { cards.first { $0.id == selectedID } }
+    /// Het item vooraan: een losse kaart of de hele groep tickets.
+    private var selectedItem: CardStackItem? {
+        guard let selectedID else { return nil }
+        return cards.alphabetical().stackItems().first { $0.contains(selectedID) }
+    }
+
+    /// De kaart die je nu ziet (bij een groep: het ticket waar je naartoe veegde).
+    private var selectedCard: Card? {
+        guard let selectedID else { return nil }
+        let id = pageID ?? selectedID
+        return cards.first { $0.id == id } ?? cards.first { $0.id == selectedID }
+    }
 
     var body: some View {
         NavigationStack {
@@ -97,7 +113,7 @@ struct WalletView: View {
                 ZStack {
                     if cards.isEmpty {
                         emptyState
-                    } else if visibleCards.isEmpty && filter != .all {
+                    } else if visibleItems.isEmpty && filter != .all {
                         filteredEmpty
                     } else {
                         stack(width: width)
@@ -105,7 +121,8 @@ struct WalletView: View {
                             .allowsHitTesting(selectedID == nil)
                     }
                     if let card = selectedCard {
-                        forward(card, width: min(geo.size.width - 24, 470), height: geo.size.height)
+                        forward(card, group: selectedItem.flatMap { $0.isGroup ? $0.cards : nil },
+                                width: min(geo.size.width - 24, 470), height: geo.size.height)
                     }
                     if selectedID == nil, !search.trimmingCharacters(in: .whitespaces).isEmpty, !matchingReceipts.isEmpty {
                         receiptMatches
@@ -222,23 +239,29 @@ struct WalletView: View {
     }
 
     private func openRequestedCard(_ id: UUID?) {
-        guard let id, let card = cards.first(where: { $0.id == id }) else { return }
+        guard let id, cards.contains(where: { $0.id == id }),
+              let item = cards.alphabetical().stackItems().first(where: { $0.contains(id) }) else { return }
         openCardID = nil
         sheet = nil
-        if selectedID != id { select(card) }
+        // een ticket uit een groep: de groep vooraan, op dat ticket
+        if selectedID != item.id || (pageID ?? selectedID) != id { select(item, page: id) }
     }
 
     // MARK: Stack
 
     private func stack(width: CGFloat) -> some View {
         let height = width / Brand.cardAspect
-        let list = visibleCards
+        let list = visibleItems
         return ScrollView {
             ZStack(alignment: .top) {
-                ForEach(Array(list.enumerated()), id: \.element.id) { index, card in
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, item in
+                    let card = item.first
                     Group {
-                        if selectedID == card.id {
+                        if selectedID == item.id {
                             Color.clear
+                        } else if item.isGroup {
+                            TicketGroupStackFace(item: item)
+                                .matchedGeometryEffect(id: item.id, in: namespace)
                         } else {
                             CardFaceView(appearance: CardAppearance(card), showsCode: false)
                                 .matchedGeometryEffect(id: card.id, in: namespace)
@@ -247,10 +270,11 @@ struct WalletView: View {
                     .frame(width: width, height: height)
                     .offset(y: CGFloat(index) * peek)
                     .zIndex(Double(index))
-                    .onTapGesture { select(card) }
-                    .contextMenu { cardMenu(card) }
+                    .onTapGesture { select(item) }
+                    .contextMenu { if item.isGroup { groupMenu(item) } else { cardMenu(card) } }
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityHint(Text("Haalt de kaart naar voren"))
+                    .accessibilityHint(item.isGroup ? Text("Opent de tickets; veeg naar links of rechts voor het volgende ticket")
+                                                    : Text("Haalt de kaart naar voren"))
                 }
             }
             .frame(height: CGFloat(max(list.count - 1, 0)) * peek + height + 24, alignment: .top)
@@ -275,9 +299,17 @@ struct WalletView: View {
         Button(role: .destructive) { deleting = card } label: { Label("Verwijder", systemImage: "trash") }
     }
 
+    /// Contextmenu van een groep tickets: openen, of per ticket wijzigen.
+    @ViewBuilder private func groupMenu(_ item: CardStackItem) -> some View {
+        Button { select(item) } label: { Label("Open \(item.countText)", systemImage: "ticket") }
+        ForEach(item.cards) { card in
+            Button { sheet = .edit(card) } label: { Label("Wijzig \(card.storeName)", systemImage: "pencil") }
+        }
+    }
+
     // MARK: Card brought forward
 
-    private func forward(_ card: Card, width: CGFloat, height: CGFloat) -> some View {
+    private func forward(_ card: Card, group: [Card]?, width: CGFloat, height: CGFloat) -> some View {
         ZStack {
             Rectangle()
                 .fill(.black.opacity(0.45))
@@ -289,14 +321,23 @@ struct WalletView: View {
             // in een ScrollView: met "Laatst gebruikt" en grote tekst past het niet altijd op het scherm
             ScrollView {
                 VStack(spacing: 22) {
-                    // tijdelijke kaart: elke 15 seconden opnieuw tekenen, zodat de code op het einde verdwijnt
-                    TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in
-                        FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
+                    if let group, let first = group.first {
+                        // groep tickets: horizontaal vegen naar het volgende ticket, elk met zijn eigen code
+                        TicketGroupPager(cards: group,
+                                         page: Binding(get: { pageID ?? first.id },
+                                                       set: { new in pageID = new }),
+                                         angle: flipAngle, width: width)
+                            .matchedGeometryEffect(id: first.id, in: namespace)
+                    } else {
+                        // tijdelijke kaart: elke 15 seconden opnieuw tekenen, zodat de code op het einde verdwijnt
+                        TimelineView(.periodic(from: .now, by: card.isTemporary ? 15 : 3600)) { _ in
+                            FlipCardView(appearance: CardAppearance(card), angle: flipAngle)
+                        }
+                            .frame(width: width, height: width / Brand.cardAspect)
+                            .matchedGeometryEffect(id: card.id, in: namespace)
+                            .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
+                            .onTapGesture { deselect() }
                     }
-                        .frame(width: width, height: width / Brand.cardAspect)
-                        .matchedGeometryEffect(id: card.id, in: namespace)
-                        .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
-                        .onTapGesture { deselect() }
 
                     HStack(spacing: 14) {
                         actionButton(card.isFavorite ? "star.fill" : "star",
@@ -373,31 +414,34 @@ struct WalletView: View {
         }
     }
 
-    private func select(_ card: Card) {
-        if card.isLocked {
+    /// Een losse kaart of een groep tickets naar voren (bij een groep op `page`, anders het eerste ticket).
+    private func select(_ item: CardStackItem, page: UUID? = nil) {
+        let shown = item.cards.first { $0.id == page } ?? item.first
+        if item.cards.contains(where: \.isLocked) {
             Task {
                 guard await Biometrics.authenticate(reason: String(localized: "Bevestig dat jij het bent om de code te tonen.")) else { return }
-                bringForward(card)
+                bringForward(shown, item: item)
             }
         } else {
-            bringForward(card)
+            bringForward(shown, item: item)
         }
     }
 
-    private func bringForward(_ card: Card) {
+    private func bringForward(_ card: Card, item: CardStackItem? = nil) {
+        pageID = item?.isGroup == true ? card.id : nil
         // telt voor de volgorde "Meest gebruikt"; in Laatst gebruikt komt pas iets na "Ja" bij het sluiten
         card.markUsed()
         withAnimation(.snappy) { usePrompt = nil }
         codeVisible = 0
         codeVisibleSince = nil
-        let id = card.id
+        let id = item?.id ?? card.id
         Task { @MainActor in
             // de barcode staat in beeld zodra de kaart is omgedraaid
             try? await Task.sleep(for: .milliseconds(reduceMotion ? 350 : 900))
             if selectedID == id, scenePhase == .active { codeVisibleSince = .now }
         }
         flipAngle = 0
-        withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.82)) { selectedID = card.id }
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.82)) { selectedID = item?.id ?? card.id }
         // Once it's in front, turn it over to show the code.
         withAnimation(reduceMotion ? .easeInOut(duration: 0.15).delay(0.15) : .spring(response: 0.62, dampingFraction: 0.78).delay(0.28)) { flipAngle = 180 }
     }
@@ -409,7 +453,7 @@ struct WalletView: View {
         let visible = codeVisible + (codeVisibleSince.map { Date.now.timeIntervalSince($0) } ?? 0)
         codeVisible = 0
         codeVisibleSince = nil
-        if let card = cards.first(where: { $0.id == id }) {
+        if let card = cards.first(where: { $0.id == (pageID ?? id) }) {
             Task { @MainActor in
                 let decision = await UseCapture.decide(for: card, visible: visible)
                 guard decision.ask, selectedID == nil || selectedID == id else { return }   // niet over een andere kaart heen
@@ -420,7 +464,7 @@ struct WalletView: View {
         withAnimation(.easeInOut(duration: 0.32)) { flipAngle = 0 }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.4, dampingFraction: 0.86)) { selectedID = nil; pageID = nil }
         }
     }
 
