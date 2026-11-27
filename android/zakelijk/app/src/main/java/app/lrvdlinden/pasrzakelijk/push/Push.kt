@@ -29,6 +29,9 @@ object Push {
     const val CHANNEL = "zakelijk"
     const val EXTRA_BUSINESS = "pasr.business_id"
     const val EXTRA_URL = "pasr.url"
+    /** Gezamenlijke acties: community_invite | community_invite_answered | community_active | community_removed. */
+    const val EXTRA_TYPE = "pasr.type"
+    const val EXTRA_CAMPAIGN = "pasr.campaign"
     /** https-link uit een getikte melding die de app zelf niet kent; AppShell opent hem in Custom Tabs na het slot. */
     val pendingWeb = kotlinx.coroutines.flow.MutableStateFlow<android.net.Uri?>(null)
 
@@ -64,7 +67,8 @@ object Push {
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
 
     /** Melding tonen (ook als de app open is). */
-    fun show(context: Context, title: String, body: String, businessId: String?, url: String?) {
+    fun show(context: Context, title: String, body: String, businessId: String?, url: String?,
+             type: String? = null, campaign: String? = null) {
         val link = url?.takeIf { (it.startsWith("https://", ignoreCase = true) || it.startsWith("pasrzakelijk://")) && it.length <= 500 }
         ensureChannel(context)
         if (needsPermission(context)) return
@@ -72,6 +76,8 @@ object Push {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             businessId?.let { putExtra(EXTRA_BUSINESS, it) }
             link?.let { putExtra(EXTRA_URL, it) }
+            type?.takeIf { it.length <= 64 }?.let { putExtra(EXTRA_TYPE, it) }
+            campaign?.takeIf { it.length <= 64 }?.let { putExtra(EXTRA_CAMPAIGN, it) }
         }
         val pending = PendingIntent.getActivity(
             context, (System.currentTimeMillis() and 0xFFFFFF).toInt(), open,

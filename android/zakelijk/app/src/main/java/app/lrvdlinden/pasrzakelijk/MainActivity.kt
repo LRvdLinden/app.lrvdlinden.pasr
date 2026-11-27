@@ -10,6 +10,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.fragment.app.FragmentActivity
 import app.lrvdlinden.pasrzakelijk.core.I18n
 import app.lrvdlinden.pasrzakelijk.data.BusinessStore
+import app.lrvdlinden.pasrzakelijk.data.CommunityRouter
 import app.lrvdlinden.pasrzakelijk.push.Push
 import app.lrvdlinden.pasrzakelijk.ui.AppShell
 import app.lrvdlinden.pasrzakelijk.ui.LocalDark
@@ -47,6 +48,14 @@ class MainActivity : FragmentActivity() {
     private fun handle(intent: Intent?) {
         intent ?: return
         BusinessStore.handle(intent.data)
+        // gezamenlijke acties: eigen melding (pasr.type) of systeemmelding op de achtergrond (FCM-data als extra's)
+        val type = intent.getStringExtra(Push.EXTRA_TYPE) ?: intent.getStringExtra("type")
+        if (type != null && type in CommunityRouter.pushTypes) {
+            val business = intent.getStringExtra(Push.EXTRA_BUSINESS) ?: intent.getStringExtra("business_id")
+            business?.let { BusinessStore.select(it) }
+            CommunityRouter.route(type, intent.getStringExtra(Push.EXTRA_CAMPAIGN) ?: intent.getStringExtra("campaign"))
+            return
+        }
         // link uit een melding: een uitnodiging opent in de app, een andere https-link in Custom Tabs (na het slot)
         intent.getStringExtra(Push.EXTRA_URL)?.let { android.net.Uri.parse(it) }?.let { uri ->
             if (BusinessStore.isAppLink(uri)) BusinessStore.handle(uri)

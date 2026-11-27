@@ -1,6 +1,22 @@
 {
   "sourceLanguage": "nl",
   "strings": {
+    "%@ is uitgenodigd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ has been invited."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is uitgenodigd."
+          }
+        }
+      }
+    },
     "%@ kan dan geen stempels meer zetten voor %@.": {
       "localizations": {
         "en": {
@@ -29,6 +45,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@: %lld van %lld stempels"
+          }
+        }
+      }
+    },
+    "%lld deelnemende zaken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld participating businesses"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld deelnemende zaken"
           }
         }
       }
@@ -385,6 +417,86 @@
         }
       }
     },
+    "Actie stoppen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop campaign"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actie stoppen"
+          }
+        }
+      }
+    },
+    "Actie stoppen?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop campaign?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actie stoppen?"
+          }
+        }
+      }
+    },
+    "Actief": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actief"
+          }
+        }
+      }
+    },
+    "Actienaam": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Campaign name"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actienaam"
+          }
+        }
+      }
+    },
+    "Acties van je zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business's campaigns"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acties van je zaak"
+          }
+        }
+      }
+    },
     "Adres (straat, huisnummer, plaats)": {
       "localizations": {
         "en": {
@@ -397,6 +509,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adres (straat, huisnummer, plaats)"
+          }
+        }
+      }
+    },
+    "Afgelopen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgelopen"
           }
         }
       }
@@ -429,6 +557,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afkoeltijd: zo lang moet een klant wachten voor de volgende stempel. Bij scannen kies je zelf het aantal stempels, tot het maximum."
+          }
+        }
+      }
+    },
+    "Alleen de eigenaar van de zaak kan een uitnodiging voor een gezamenlijke actie accepteren.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the business owner can accept an invitation to a joint campaign."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen de eigenaar van de zaak kan een uitnodiging voor een gezamenlijke actie accepteren."
           }
         }
       }
@@ -493,6 +637,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Annuleer"
+          }
+        }
+      }
+    },
+    "Annuleren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuleren"
           }
         }
       }
@@ -609,6 +769,38 @@
         }
       }
     },
+    "Beloning uitgegeven: %@. Een tweede inwisseling is niet mogelijk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reward issued: %@. It cannot be redeemed a second time."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloning uitgegeven: %@. Een tweede inwisseling is niet mogelijk."
+          }
+        }
+      }
+    },
+    "Beloning: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reward: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beloning: %@"
+          }
+        }
+      }
+    },
     "Beloningen": {
       "localizations": {
         "en": {
@@ -621,6 +813,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Beloningen"
+          }
+        }
+      }
+    },
+    "Benodigde verschillende winkels: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Different shops required: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benodigde verschillende winkels: %lld"
           }
         }
       }
@@ -685,6 +893,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bewerken"
+          }
+        }
+      }
+    },
+    "Bezoek %lld verschillende deelnemende winkels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visit %lld different participating shops"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezoek %lld verschillende deelnemende winkels"
+          }
+        }
+      }
+    },
+    "Bezoeken bij deze zaak tellen daarna niet meer mee voor klanten. De zaak krijgt hiervan een melding.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visits to this business will no longer count for customers. The business will be notified."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezoeken bij deze zaak tellen daarna niet meer mee voor klanten. De zaak krijgt hiervan een melding."
+          }
+        }
+      }
+    },
+    "Bezoeken bij jouw zaak tellen daarna niet meer mee voor klanten.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visits to your business will no longer count for customers."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezoeken bij jouw zaak tellen daarna niet meer mee voor klanten."
+          }
+        }
+      }
+    },
+    "Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you scan a customer, you automatically see whether they have earned a joint reward."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend."
           }
         }
       }
@@ -785,6 +1057,54 @@
         }
       }
     },
+    "De actie is gestopt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The campaign has been stopped."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De actie is gestopt."
+          }
+        }
+      }
+    },
+    "De actie start zodra genoeg zaken meedoen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The campaign starts as soon as enough businesses take part."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De actie start zodra genoeg zaken meedoen."
+          }
+        }
+      }
+    },
+    "De actie verdwijnt bij klanten en alle deelnemende zaken. Uitgegeven beloningen blijven geregistreerd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The campaign disappears for customers and all participating businesses. Issued rewards remain recorded."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De actie verdwijnt bij klanten en alle deelnemende zaken. Uitgegeven beloningen blijven geregistreerd."
+          }
+        }
+      }
+    },
     "De kaart is nog niet vol. Inwisselen kan pas bij een volle kaart.": {
       "localizations": {
         "en": {
@@ -817,6 +1137,54 @@
         }
       }
     },
+    "De organisator ziet dat je zaak niet meedoet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The organiser will see that your business is not taking part."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De organisator ziet dat je zaak niet meedoet."
+          }
+        }
+      }
+    },
+    "De uitnodiging en de link werken daarna niet meer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The invitation and the link will stop working."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De uitnodiging en de link werken daarna niet meer."
+          }
+        }
+      }
+    },
+    "De zaak krijgt een melding en beslist zelf of zij meedoet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The business gets a notification and decides for itself whether to take part."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De zaak krijgt een melding en beslist zelf of zij meedoet."
+          }
+        }
+      }
+    },
     "Deel de QR-code of hang de flyer op.": {
       "localizations": {
         "en": {
@@ -845,6 +1213,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deel de QR-code of maak een A4-flyer voor op de toonbank."
+          }
+        }
+      }
+    },
+    "Delen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delen"
           }
         }
       }
@@ -961,6 +1345,38 @@
         }
       }
     },
+    "Deze uitnodiging bestaat niet (meer). Vraag de organisator om een nieuwe.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invitation no longer exists. Ask the organiser for a new one."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze uitnodiging bestaat niet (meer). Vraag de organisator om een nieuwe."
+          }
+        }
+      }
+    },
+    "Deze uitnodiging is verlopen. Vraag de organisator om een nieuwe.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invitation has expired. Ask the organiser for a new one."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze uitnodiging is verlopen. Vraag de organisator om een nieuwe."
+          }
+        }
+      }
+    },
     "Deze week": {
       "localizations": {
         "en": {
@@ -973,6 +1389,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deze week"
+          }
+        }
+      }
+    },
+    "Deze zaak doet al mee aan deze gezamenlijke actie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This business is already taking part in this joint campaign."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze zaak doet al mee aan deze gezamenlijke actie."
           }
         }
       }
@@ -1149,6 +1581,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dit mag je niet (meer) bij deze zaak. Vraag de eigenaar."
+          }
+        }
+      }
+    },
+    "Doe mee met onze gezamenlijke Pasr-actie \"%@\".": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join our joint Pasr campaign \"%@\"."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doe mee met onze gezamenlijke Pasr-actie \"%@\"."
+          }
+        }
+      }
+    },
+    "Doen mee: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taking part: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doen mee: %@"
+          }
+        }
+      }
+    },
+    "Doet %@ mee aan deze gezamenlijke actie? Klantgegevens worden niet tussen ondernemingen gedeeld.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Will %@ take part in this joint campaign? Customer data is not shared between businesses."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doet %@ mee aan deze gezamenlijke actie? Klantgegevens worden niet tussen ondernemingen gedeeld."
+          }
+        }
+      }
+    },
+    "Doet mee": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taking part"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doet mee"
           }
         }
       }
@@ -1489,6 +1985,22 @@
         }
       }
     },
+    "Geen zaken gevonden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No businesses found"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen zaken gevonden"
+          }
+        }
+      }
+    },
     "Gegevens van de zaak wijzigen": {
       "localizations": {
         "en": {
@@ -1533,6 +2045,102 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gegevens wijzigen"
+          }
+        }
+      }
+    },
+    "Gestopt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopped"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestopt"
+          }
+        }
+      }
+    },
+    "Geweigerd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declined"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geweigerd"
+          }
+        }
+      }
+    },
+    "Gezamenlijke actie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joint campaign"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezamenlijke actie"
+          }
+        }
+      }
+    },
+    "Gezamenlijke acties": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joint campaigns"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezamenlijke acties"
+          }
+        }
+      }
+    },
+    "Gezamenlijke beloning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joint reward"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezamenlijke beloning"
+          }
+        }
+      }
+    },
+    "Gezamenlijke beloning controleren en uitgeven": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check and issue joint reward"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezamenlijke beloning controleren en uitgeven"
           }
         }
       }
@@ -1985,6 +2593,22 @@
         }
       }
     },
+    "Je beslist zelf of je zaak meedoet. Klantgegevens worden niet tussen ondernemingen gedeeld.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You decide whether your business takes part. Customer data is not shared between businesses."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je beslist zelf of je zaak meedoet. Klantgegevens worden niet tussen ondernemingen gedeeld."
+          }
+        }
+      }
+    },
     "Je e-mailadres blijft privé.": {
       "localizations": {
         "en": {
@@ -2049,6 +2673,118 @@
         }
       }
     },
+    "Je nodigt zelf zaken uit; zij beslissen of ze meedoen. De actie start voor klanten zodra het minimum aantal zaken meedoet. Klanten verzamelen een bezoek met een stempel bij elke deelnemende zaak. Klantgegevens worden niet tussen ondernemingen gedeeld.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You invite businesses yourself; they decide whether to take part. The campaign starts for customers once the minimum number of businesses takes part. Customers collect a visit with a stamp at each participating business. Customer data is not shared between businesses."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je nodigt zelf zaken uit; zij beslissen of ze meedoen. De actie start voor klanten zodra het minimum aantal zaken meedoet. Klanten verzamelen een bezoek met een stempel bij elke deelnemende zaak. Klantgegevens worden niet tussen ondernemingen gedeeld."
+          }
+        }
+      }
+    },
+    "Je onderneming doet niet meer mee aan deze actie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business no longer takes part in this campaign."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je onderneming doet niet meer mee aan deze actie."
+          }
+        }
+      }
+    },
+    "Je onderneming doet nu mee aan %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business now takes part in %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je onderneming doet nu mee aan %@."
+          }
+        }
+      }
+    },
+    "Je onderneming doet nu mee aan de gezamenlijke actie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business now takes part in the joint campaign."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je onderneming doet nu mee aan de gezamenlijke actie."
+          }
+        }
+      }
+    },
+    "Je onderneming neemt deel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business is taking part"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je onderneming neemt deel"
+          }
+        }
+      }
+    },
+    "Je onderneming neemt deel · %lldx uitgegeven": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business is taking part · issued %lld×"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je onderneming neemt deel · %lldx uitgegeven"
+          }
+        }
+      }
+    },
+    "Je onderneming neemt nu deel.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business is now taking part."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je onderneming neemt nu deel."
+          }
+        }
+      }
+    },
     "Je website is gewijzigd. Pasr kan het logo en de kleuren opnieuw ophalen en op je kaarten zetten.": {
       "localizations": {
         "en": {
@@ -2061,6 +2797,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Je website is gewijzigd. Pasr kan het logo en de kleuren opnieuw ophalen en op je kaarten zetten."
+          }
+        }
+      }
+    },
+    "Je zaak doet niet meer mee aan deze gezamenlijke actie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business no longer takes part in this joint campaign."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je zaak doet niet meer mee aan deze gezamenlijke actie."
+          }
+        }
+      }
+    },
+    "Je zaak doet nog niet mee aan een gezamenlijke actie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your business is not taking part in a joint campaign yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je zaak doet nog niet mee aan een gezamenlijke actie"
           }
         }
       }
@@ -2321,6 +3089,22 @@
         }
       }
     },
+    "Kopiëren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiëren"
+          }
+        }
+      }
+    },
     "Kwartaal": {
       "localizations": {
         "en": {
@@ -2433,6 +3217,22 @@
         }
       }
     },
+    "Lidcode bij de kassa (PZ…)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Member code at the till (PZ…)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lidcode bij de kassa (PZ…)"
+          }
+        }
+      }
+    },
     "Link delen": {
       "localizations": {
         "en": {
@@ -2445,6 +3245,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Link delen"
+          }
+        }
+      }
+    },
+    "Link gekopieerd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link copied."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link gekopieerd."
           }
         }
       }
@@ -2541,6 +3357,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Logo weghalen"
+          }
+        }
+      }
+    },
+    "Loopt tot %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs until %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loopt tot %@"
+          }
+        }
+      }
+    },
+    "Looptijd: %lld dagen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration: %lld days"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looptijd: %lld dagen"
           }
         }
       }
@@ -2705,6 +3553,70 @@
         }
       }
     },
+    "Meedoen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take part"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meedoen"
+          }
+        }
+      }
+    },
+    "Meedoen (open voor zaken in jouw plaats)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take part (open to businesses in your town)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meedoen (open voor zaken in jouw plaats)"
+          }
+        }
+      }
+    },
+    "Meedoen aan deze gezamenlijke actie kan alleen op uitnodiging van de organisator.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can only take part in this joint campaign when invited by the organiser."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meedoen aan deze gezamenlijke actie kan alleen op uitnodiging van de organisator."
+          }
+        }
+      }
+    },
+    "Meedoen kan alleen op uitnodiging van de organisator.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taking part is by invitation of the organiser only."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meedoen kan alleen op uitnodiging van de organisator."
+          }
+        }
+      }
+    },
     "Meer": {
       "localizations": {
         "en": {
@@ -2813,6 +3725,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minder"
+          }
+        }
+      }
+    },
+    "Minimum aantal zaken: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum number of businesses: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum aantal zaken: %lld"
           }
         }
       }
@@ -2961,6 +3889,22 @@
         }
       }
     },
+    "Nieuwe gezamenlijke actie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New joint campaign"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe gezamenlijke actie"
+          }
+        }
+      }
+    },
     "Nieuwe kaart": {
       "localizations": {
         "en": {
@@ -3037,6 +3981,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nog geen gegevens in deze periode"
+          }
+        }
+      }
+    },
+    "Nog geen gezamenlijke acties": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No joint campaigns yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen gezamenlijke acties"
           }
         }
       }
@@ -3121,6 +4081,22 @@
         }
       }
     },
+    "Nog niemand uitgenodigd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody invited yet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog niemand uitgenodigd"
+          }
+        }
+      }
+    },
     "Nog niets gebeurd": {
       "localizations": {
         "en": {
@@ -3133,6 +4109,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nog niets gebeurd"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         }
       }
@@ -3297,6 +4289,22 @@
         }
       }
     },
+    "Open voor zaken in dezelfde plaats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open to businesses in the same town"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open voor zaken in dezelfde plaats"
+          }
+        }
+      }
+    },
     "Opgeslagen": {
       "localizations": {
         "en": {
@@ -3421,6 +4429,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Optic ID"
+          }
+        }
+      }
+    },
+    "Organisator": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organiser"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organisator"
+          }
+        }
+      }
+    },
+    "Organisator: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organiser: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organisator: %@"
           }
         }
       }
@@ -3665,6 +4705,22 @@
         }
       }
     },
+    "QR-code van de uitnodigingslink": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code of the invitation link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR-code van de uitnodigingslink"
+          }
+        }
+      }
+    },
     "Richt de camera op de QR-code van je klant": {
       "localizations": {
         "en": {
@@ -3677,6 +4733,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Richt de camera op de QR-code van je klant"
+          }
+        }
+      }
+    },
+    "Samenwerking gestart. Nodig nu zaken uit om mee te doen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collaboration started. Now invite businesses to take part."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samenwerking gestart. Nodig nu zaken uit om mee te doen."
+          }
+        }
+      }
+    },
+    "Samenwerking starten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start collaboration"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samenwerking starten"
+          }
+        }
+      }
+    },
+    "Samenwerkingen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collaborations"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samenwerkingen"
+          }
+        }
+      }
+    },
+    "Samenwerkingen, %lld uitnodigingen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collaborations, %lld invitations"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samenwerkingen, %lld uitnodigingen"
           }
         }
       }
@@ -3777,6 +4897,22 @@
         }
       }
     },
+    "Sluiten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sluiten"
+          }
+        }
+      }
+    },
     "Spaar bij %@": {
       "localizations": {
         "en": {
@@ -3805,6 +4941,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Spaar bij %@ met de digitale stempelkaart."
+          }
+        }
+      }
+    },
+    "Status per zaak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status per business"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status per zaak"
           }
         }
       }
@@ -4049,6 +5201,22 @@
         }
       }
     },
+    "Uitnodigen via link of QR": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite via link or QR"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodigen via link of QR"
+          }
+        }
+      }
+    },
     "Uitnodiging": {
       "localizations": {
         "en": {
@@ -4097,6 +5265,54 @@
         }
       }
     },
+    "Uitnodiging geweigerd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation declined."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging geweigerd."
+          }
+        }
+      }
+    },
+    "Uitnodiging ingetrokken.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation revoked."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging ingetrokken."
+          }
+        }
+      }
+    },
+    "Uitnodiging intrekken?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoke invitation?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging intrekken?"
+          }
+        }
+      }
+    },
     "Uitnodiging klaar": {
       "localizations": {
         "en": {
@@ -4109,6 +5325,134 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uitnodiging klaar"
+          }
+        }
+      }
+    },
+    "Uitnodiging verstuurd naar %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation sent to %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging verstuurd naar %@"
+          }
+        }
+      }
+    },
+    "Uitnodiging voor een gezamenlijke actie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation to a joint campaign"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging voor een gezamenlijke actie"
+          }
+        }
+      }
+    },
+    "Uitnodiging weigeren?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline invitation?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodiging weigeren?"
+          }
+        }
+      }
+    },
+    "Uitnodigingen (%lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitations (%lld)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodigingen (%lld)"
+          }
+        }
+      }
+    },
+    "Uitnodigingslink": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodigingslink"
+          }
+        }
+      }
+    },
+    "Uitnodigingslink maken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create invitation link"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitnodigingslink maken"
+          }
+        }
+      }
+    },
+    "Uitstappen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitstappen"
+          }
+        }
+      }
+    },
+    "Uitstappen?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitstappen?"
           }
         }
       }
@@ -4257,6 +5601,22 @@
         }
       }
     },
+    "Verwijderen uit actie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from campaign"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijderen uit actie"
+          }
+        }
+      }
+    },
     "Vindbaar in Pasr": {
       "localizations": {
         "en": {
@@ -4269,6 +5629,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vindbaar in Pasr"
+          }
+        }
+      }
+    },
+    "Voor zaken die je niet kunt vinden of die Pasr Zakelijk nog niet gebruiken. Met een e-mailadres stuurt Pasr de uitnodiging ook per mail.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For businesses you cannot find or that don't use Pasr Business yet. With an email address, Pasr also sends the invitation by email."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voor zaken die je niet kunt vinden of die Pasr Zakelijk nog niet gebruiken. Met een e-mailadres stuurt Pasr de uitnodiging ook per mail."
           }
         }
       }
@@ -4397,6 +5773,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "W"
+          }
+        }
+      }
+    },
+    "Wacht op %lld van %lld zaken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for %lld of %lld businesses"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wacht op %lld van %lld zaken"
+          }
+        }
+      }
+    },
+    "Wacht op %lld van %lld zaken · start binnenkort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for %lld of %lld businesses · starting soon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wacht op %lld van %lld zaken · start binnenkort"
           }
         }
       }
@@ -4577,6 +5985,22 @@
         }
       }
     },
+    "Weigeren": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weigeren"
+          }
+        }
+      }
+    },
     "Werk je bij een zaak? Open de uitnodigingslink die je van de eigenaar kreeg, of plak de code hier.": {
       "localizations": {
         "en": {
@@ -4637,6 +6061,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zaak geblokkeerd"
+          }
+        }
+      }
+    },
+    "Zaak verwijderd uit de actie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Business removed from the campaign."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaak verwijderd uit de actie."
+          }
+        }
+      }
+    },
+    "Zaak verwijderen uit de actie?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove business from the campaign?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaak verwijderen uit de actie?"
+          }
+        }
+      }
+    },
+    "Zaken uitnodigen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite businesses"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaken uitnodigen"
+          }
+        }
+      }
+    },
+    "Zaken zoeken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find businesses"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaken zoeken"
           }
         }
       }
@@ -4753,6 +6241,22 @@
         }
       }
     },
+    "Zoek op naam of plaats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search by name or town"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek op naam of plaats"
+          }
+        }
+      }
+    },
     "Zoveel stempels tegelijk mag niet. Pas het maximum aan in Instellingen.": {
       "localizations": {
         "en": {
@@ -4813,6 +6317,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "eigenaar"
+          }
+        }
+      }
+    },
+    "gezamenlijke beloning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "joint reward"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gezamenlijke beloning"
           }
         }
       }

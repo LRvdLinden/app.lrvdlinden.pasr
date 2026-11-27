@@ -131,6 +131,12 @@ final class ZakelijkAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
     /// Ook tonen terwijl de app open is.
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // nieuwe uitnodiging of antwoord voor een gezamenlijke actie: badge meteen bijwerken
+        if let type = notification.request.content.userInfo["type"] as? String, CommunityRouter.pushTypes.contains(type) {
+            Task { @MainActor in
+                if let business = BusinessStore.shared.current { await CommunityRouter.shared.refreshCount(business: business) }
+            }
+        }
         completionHandler([.banner, .list, .sound])
     }
 
@@ -139,9 +145,18 @@ final class ZakelijkAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
         let link = (info["url"] as? String).flatMap(URL.init(string:)).flatMap { $0.scheme?.lowercased() == "https" ? $0 : nil }
+        // gezamenlijke acties: type community_invite | community_invite_answered | community_active | community_removed
+        let type = info["type"] as? String
+        let campaign = (info["campaign"] as? String) ?? (info["campaign"] as? NSNumber)?.stringValue
+        let businessID = info["business_id"] as? String
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
-                if let link { NotificationLink.shared.pending = link }
+                if let type, CommunityRouter.pushTypes.contains(type) {
+                    if let businessID, !businessID.isEmpty { BusinessStore.shared.select(businessID) }
+                    CommunityRouter.shared.route(type: type, campaign: campaign)
+                } else if let link {
+                    NotificationLink.shared.pending = link
+                }
             }
             completionHandler()
         }

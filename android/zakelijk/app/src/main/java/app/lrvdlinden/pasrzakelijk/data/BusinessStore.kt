@@ -71,6 +71,8 @@ object BusinessStore {
     fun handle(uri: Uri?) {
         uri ?: return
         if (!isAppLink(uri)) return
+        // uitnodiging voor een gezamenlijke actie: https://pasr.nl/zakelijk/uitnodiging/?t=TOKEN
+        CommunityRouter.token(uri)?.let { CommunityRouter.pendingToken = it; return }
         val code = (uri.fragment ?: runCatching { uri.getQueryParameter("code") }.getOrNull())?.trim()
         if (!code.isNullOrEmpty() && code.length <= 80) pendingInvite = code
     }
