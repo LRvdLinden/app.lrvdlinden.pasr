@@ -348,19 +348,152 @@
  }
 
  async function communityView(root,b,rpc){
-   // Eigenaar: starten, deelnemen, uitstappen, stoppen (alleen initiatiefnemer) en uitgeven.
+   // Gezamenlijke acties op uitnodiging (docs/community-invites.md).
+   // Eigenaar: uitnodigingen beantwoorden, actie starten, zaken uitnodigen (zoeken, e-mail, link/QR), status per zaak,
+   // intrekken, deelnemer verwijderen, instellingen (open voor de eigen plaats, minimum), stoppen, uitstappen.
    // Medewerker: alleen de acties van de eigen zaak en uitgeven (bij het scannen verschijnt de beloning ook vanzelf).
    var owner=!b.role||b.role==="owner";
-   root.innerHTML='<div class="zd-ptitle"><div><h2>Samenwerkingen</h2><p class="zd-sub">Gezamenlijke beloningen voor bezoeken bij verschillende winkels. Elke ondernemer kiest zelf om deel te nemen; er worden geen klantgegevens tussen winkels gedeeld. Bij het scannen van een klant zie je vanzelf of die een gezamenlijke beloning heeft verdiend.</p></div></div>'+
+   var open={};   // id van de actie -> beheerpaneel open
+   function err(e,fallback){var m=window.PasrCommunityError&&window.PasrCommunityError(e);return m||(e&&e.message)||fallback||"Dat lukte niet.";}
+   function date(v){var d=new Date(v);return isNaN(d)?"":d.toLocaleDateString("nl-NL",{day:"numeric",month:"long",year:"numeric"});}
+   var STATE={waiting:["Wacht op deelnemers","wait"],active:["Actief","on"],ended:["Afgelopen",""],cancelled:["Gestopt",""]};
+   var STATUS={invited:["Uitgenodigd","wait"],accepted:["Doet mee","on"],declined:["Geweigerd",""],revoked:["Ingetrokken",""]};
+   function pill(map,key){var s=map[key]||[key||"",""];return '<span class="zk-pill '+s[1]+'">'+escape(s[0])+'</span>';}
+   root.innerHTML='<div class="zd-ptitle"><div><h2>Samenwerkingen</h2><p class="zd-sub">Gezamenlijke beloningen voor bezoeken bij verschillende zaken. Je nodigt zelf de zaken uit waarmee je samenwerkt; een actie start zodra genoeg zaken meedoen. Er worden geen klantgegevens tussen zaken gedeeld. Bij het scannen zie je vanzelf of een klant een gezamenlijke beloning heeft verdiend.</p></div></div>'+
+     '<p class="pz2-notice" id="pz2CommunityMsg" role="status" aria-live="polite"></p>'+
+     (owner?'<section class="pz2-panel" id="pz2Invites" hidden><h3>Uitnodigingen</h3><p>Andere zaken nodigen je uit voor hun gezamenlijke actie.</p><div id="pz2InviteList"></div></section>'+
+       '<section class="pz2-panel" id="pz2Open" hidden><h3>Open acties in je plaats</h3><p>Deze acties staan open voor zaken in jouw plaats. Meedoen kan zonder uitnodiging.</p><div id="pz2OpenList"></div></section>':'')+
      '<div class="pz2-grid">'+(owner?'<section class="pz2-panel"><h3>Nieuwe gezamenlijke actie</h3><form class="pz2-form" id="pz2CommunityCreate">'+
      field("Actienaam","name","")+field("Beloning","reward","")+
-     '<div class="pz2-fields">'+field("Verschillende winkels nodig (2–20)","required","3","number")+
-     field("Looptijd in dagen (1–366)","days","60","number")+'</div>'+
+     '<div class="pz2-fields">'+field("Verschillende zaken nodig voor de beloning (2–20)","required","3","number")+
+     field("Looptijd in dagen (1–366)","days","60","number")+field("Start bij minimaal zoveel deelnemende zaken (2–30)","min","2","number")+'</div>'+
+     toggle("Open voor zaken in mijn plaats","open_city",false,"Uit: alleen zaken die jij uitnodigt doen mee. Aan: zaken uit je eigen plaats kunnen ook zelf meedoen.")+
      '<p class="pz2-notice" role="status"></p><button type="submit" class="zk-btn">Samenwerking starten</button></form></section>':'')+
-     '<section class="pz2-panel"><h3>'+(owner?"Beschikbare samenwerkingen":"Acties van je zaak")+'</h3><p class="pz2-notice" id="pz2CommunityMsg" role="status"></p><div id="pz2CommunityList" role="status">Laden…</div></section></div>';
+     '<section class="pz2-panel"><h3>'+(owner?"Jouw samenwerkingen":"Acties van je zaak")+'</h3><div id="pz2CommunityList" role="status">Laden…</div></section></div>';
    var form=$("#pz2CommunityCreate",root),list=$("#pz2CommunityList",root),msg=$("#pz2CommunityMsg",root);
    function say(text,ok){msg.textContent=text;msg.dataset.ok=ok?"true":"false";}
-   function date(v){var d=new Date(v);return isNaN(d)?"":d.toLocaleDateString("nl-NL",{day:"numeric",month:"long",year:"numeric"});}
+   function call(fn,args,done){return rpc(fn,args,true).then(function(r){if(done)say(done,true);return r;},function(e){say(err(e),false);throw e;});}
+
+   async function loadInvites(){
+     if(!owner)return;
+     var box=$("#pz2Invites",root),out=$("#pz2InviteList",root);
+     var rows=[];try{rows=await rpc("pasr_business_community_my_invites",{p_business:b.id},true);}catch(e){rows=[];}
+     box.hidden=!(Array.isArray(rows)&&rows.length);
+     if(box.hidden)return;
+     out.innerHTML=rows.map(function(x){
+       var names=Array.isArray(x.participant_names)?x.participant_names:[];
+       return '<article class="pz2-planned"><strong>'+escape(x.title)+'</strong>'+
+         '<small>Van '+escape([x.initiator_name,x.initiator_city].filter(Boolean).join(", "))+' · '+escape(date(x.starts_at))+' t/m '+escape(date(x.ends_at))+'</small>'+
+         '<p>'+escape(x.reward)+(x.required?' na bezoeken bij '+escape(x.required)+' verschillende zaken':'')+'</p>'+
+         (names.length?'<small>Doen mee: '+escape(names.join(", "))+'</small>':'')+
+         '<div class="pz2-inline"><button class="zk-btn sm" type="button" data-accept="'+escape(x.invite_id)+'">Accepteren</button>'+
+         '<button class="zk-btn ghost sm" type="button" data-decline="'+escape(x.invite_id)+'">Weigeren</button></div></article>';
+     }).join("");
+     out.querySelectorAll("[data-accept],[data-decline]").forEach(function(btn){
+       btn.addEventListener("click",async function(){
+         var yes=btn.hasAttribute("data-accept"),id=btn.getAttribute(yes?"data-accept":"data-decline");
+         if(!yes&&!confirm("Uitnodiging weigeren? De organisator ziet dat je niet meedoet."))return;
+         btn.disabled=true;
+         try{await call("pasr_business_community_respond",{p_business:b.id,p_invite:id,p_accept:yes},yes?"Je doet nu mee aan deze actie.":"Uitnodiging geweigerd.");refreshAll();}
+         catch(e){btn.disabled=false;}
+       });
+     });
+   }
+
+   async function loadOpen(){
+     if(!owner)return;
+     var box=$("#pz2Open",root),out=$("#pz2OpenList",root);
+     var rows=[];try{rows=await rpc("pasr_business_community_open",{p_business:b.id},true);}catch(e){rows=[];}
+     box.hidden=!(Array.isArray(rows)&&rows.length);
+     if(box.hidden)return;
+     out.innerHTML=rows.map(function(x){
+       return '<article class="pz2-planned"><strong>'+escape(x.name)+' '+pill(STATE,x.state)+'</strong>'+
+         '<small>Van '+escape([x.lead_business,x.lead_city].filter(Boolean).join(", "))+' · '+escape(x.accepted_count)+' van minimaal '+escape(x.min_participants)+' zaken · tot '+escape(date(x.ends_at))+'</small>'+
+         '<p>'+escape(x.reward)+'</p><button class="zk-btn ghost sm" type="button" data-join="'+escape(x.id)+'">Meedoen met mijn zaak</button></article>';
+     }).join("");
+     out.querySelectorAll("[data-join]").forEach(function(btn){
+       btn.addEventListener("click",async function(){
+         if(!confirm("Met jouw zaak meedoen aan deze actie?"))return;
+         btn.disabled=true;
+         try{await call("pasr_business_community_join",{p_business:b.id,p_campaign:btn.dataset.join},"Je zaak doet nu mee.");refreshAll();}
+         catch(e){btn.disabled=false;}
+       });
+     });
+   }
+
+   // Beheerpaneel van de organisator: uitnodigen, statuslijst, intrekken, verwijderen, instellingen.
+   async function manage(box,c){
+     box.innerHTML='<div class="pz2-manage">'+
+       '<h4>Zaken uitnodigen</h4>'+
+       '<form class="pz2-inline" data-search><label class="pz2-field">Zoek op naam of plaats<input name="q" type="search" maxlength="60" autocomplete="off" placeholder="Bijv. bakkerij of Apeldoorn"></label><button class="zk-btn ghost sm" type="submit">Zoeken</button></form>'+
+       '<div class="pz2-results" data-results></div>'+
+       '<form class="pz2-inline" data-mail><label class="pz2-field">Zaak nog niet in Pasr? Stuur een uitnodiging per e-mail<input name="email" type="email" maxlength="200" autocomplete="off" placeholder="info@zaak.nl (leeg = alleen link en QR-code)"></label><button class="zk-btn ghost sm" type="submit">Uitnodiging maken</button></form>'+
+       '<div data-link></div>'+
+       '<h4>Status per zaak</h4><div data-status>Laden…</div>'+
+       '<h4>Instellingen</h4><form class="pz2-form" data-settings>'+
+       toggle("Open voor zaken in mijn plaats","open_city",c.open_same_city,"Zaken uit "+(c.lead_city||"je plaats")+" kunnen zonder uitnodiging meedoen.")+
+       '<div class="pz2-inline">'+field("Start bij minimaal zoveel zaken (2–30)","min",String(c.min_participants||2),"number")+'<button class="zk-btn ghost sm" type="submit">Opslaan</button></div></form></div>';
+     var results=$("[data-results]",box),linkBox=$("[data-link]",box),status=$("[data-status]",box);
+     async function loadStatus(){
+       var rows=[];
+       try{rows=await rpc("pasr_business_community_invites",{p_business:b.id,p_campaign:c.id},true);}catch(e){status.textContent=err(e);return;}
+       status.innerHTML=rows.length?'<ul class="pz2-invitees">'+rows.map(function(x){
+         var who=escape(x.name)+(x.city?' <small>'+escape(x.city)+'</small>':'')+(x.organizer?' <small>(organisator)</small>':'');
+         var act=x.status==="invited"?'<button class="zk-btn ghost sm" type="button" data-revoke="'+escape(x.invite_id)+'">Intrekken</button>':
+           (x.status==="accepted"&&!x.organizer&&x.business_id?'<button class="zk-btn ghost sm danger" type="button" data-remove="'+escape(x.business_id)+'">Verwijderen</button>':'');
+         var exp=x.status==="invited"&&x.expires_at?'<small>Link geldig tot '+escape(date(x.expires_at))+'</small>':'';
+         return '<li><span class="who">'+who+exp+'</span>'+pill(STATUS,x.status)+act+'</li>';
+       }).join("")+'</ul>':'<p>Nog niemand uitgenodigd.</p>';
+       status.querySelectorAll("[data-revoke]").forEach(function(btn){btn.addEventListener("click",async function(){
+         if(!confirm("Uitnodiging intrekken?"))return;btn.disabled=true;
+         try{await call("pasr_business_community_revoke",{p_business:b.id,p_invite:btn.dataset.revoke},"Uitnodiging ingetrokken.");loadStatus();}catch(e){btn.disabled=false;}
+       });});
+       status.querySelectorAll("[data-remove]").forEach(function(btn){btn.addEventListener("click",async function(){
+         if(!confirm("Deze zaak uit de actie halen? Bezoeken bij die zaak tellen dan niet meer mee."))return;btn.disabled=true;
+         try{await call("pasr_business_community_remove",{p_business:b.id,p_campaign:c.id,p_target:btn.dataset.remove},"Zaak verwijderd uit de actie.");refreshAll();}catch(e){btn.disabled=false;}
+       });});
+     }
+     $("[data-search]",box).addEventListener("submit",async function(e){
+       e.preventDefault();var q=String(new FormData(e.target).get("q")||"").trim();
+       results.textContent="Zoeken…";
+       var rows=[];try{rows=await rpc("pasr_business_community_search",{p_business:b.id,p_campaign:c.id,p_query:q},true);}catch(x){results.textContent=err(x);return;}
+       results.innerHTML=rows.length?'<ul class="pz2-invitees">'+rows.map(function(x){
+         var logo=/^data:image\/(png|jpeg);base64,/.test(x.logo_url||"")?'<img src="'+escape(x.logo_url)+'" alt="">':'<span class="mono" aria-hidden="true">'+escape(String(x.name||"?").charAt(0).toUpperCase())+'</span>';
+         var can=!x.invite_status||x.invite_status==="declined"||x.invite_status==="revoked";
+         return '<li><span class="logo">'+logo+'</span><span class="who">'+escape(x.name)+(x.city?' <small>'+escape(x.city)+'</small>':'')+'</span>'+
+           (x.invite_status?pill(STATUS,x.invite_status):'')+(can?'<button class="zk-btn sm" type="button" data-invite="'+escape(x.business_id)+'">Uitnodigen</button>':'')+'</li>';
+       }).join("")+'</ul>':'<p>Geen zaken gevonden. Staat de zaak nog niet in Pasr? Stuur dan een uitnodiging per e-mail of deel de link.</p>';
+       results.querySelectorAll("[data-invite]").forEach(function(btn){btn.addEventListener("click",async function(){
+         btn.disabled=true;
+         try{await call("pasr_business_community_invite",{p_business:b.id,p_campaign:c.id,p_target:btn.dataset.invite},"Uitnodiging verstuurd.");btn.replaceWith(document.createRange().createContextualFragment(pill(STATUS,"invited")));loadStatus();}
+         catch(x){btn.disabled=false;}
+       });});
+     });
+     $("[data-mail]",box).addEventListener("submit",async function(e){
+       e.preventDefault();var email=String(new FormData(e.target).get("email")||"").trim(),btn=e.target.querySelector("button");
+       if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){say("Dit e-mailadres klopt niet.",false);return;}
+       btn.disabled=true;
+       try{
+         var r=await call("pasr_business_community_invite_email",{p_business:b.id,p_campaign:c.id,p_email:email||null},email?"Uitnodiging gemaild.":"Uitnodigingslink gemaakt.");
+         var qr=window.PasrQrSvg?window.PasrQrSvg(r.link):"";
+         linkBox.innerHTML='<div class="zd-invite">'+(qr?'<div class="qr" role="img" aria-label="QR-code van de uitnodiging">'+qr+'</div>':'')+
+           '<div><p><b>Uitnodiging klaar.</b> '+(email?"We hebben hem gemaild naar "+escape(email)+". ":"")+'Deel de link of laat de QR-code scannen. Hij werkt 14 dagen, voor één zaak.</p>'+
+           '<div class="zk-link">'+escape(r.link)+'</div><p><button class="zk-btn ghost sm" type="button" data-copy>Link kopiëren</button></p></div></div>';
+         $("[data-copy]",linkBox).addEventListener("click",function(){
+           if(navigator.clipboard)navigator.clipboard.writeText(r.link).then(function(){say("Link gekopieerd.",true);},function(){prompt("Kopieer de link",r.link);});
+           else prompt("Kopieer de link",r.link);
+         });
+         e.target.reset();loadStatus();
+       }catch(x){/* melding staat er al */}finally{btn.disabled=false;}
+     });
+     $("[data-settings]",box).addEventListener("submit",async function(e){
+       e.preventDefault();var f=new FormData(e.target),min=Number(f.get("min"));
+       if(!Number.isInteger(min)||min<2||min>30){say("Het minimum is 2 tot 30 zaken.",false);return;}
+       try{await call("pasr_business_community_settings",{p_business:b.id,p_campaign:c.id,p_open_same_city:f.has("open_city"),p_min_participants:min},"Instellingen opgeslagen.");refreshAll();}catch(x){}
+     });
+     loadStatus();
+   }
+
    async function refresh(){
      try{
        var rows=await rpc("pasr_business_community_list",{p_business:b.id},true);
@@ -368,31 +501,42 @@
        list.innerHTML=rows.length?rows.map(function(c){
          var names=Array.isArray(c.participant_names)?c.participant_names:[];
          var lead=[c.lead_business,c.lead_city].filter(Boolean).join(", ");
-         return '<article class="pz2-planned"><strong>'+escape(c.name)+(c.is_lead?' · <small>initiatiefnemer</small>':'')+'</strong>'+
-           '<small>Initiatief: '+escape(lead)+' · '+escape(c.participants)+' deelnemers · geldig tot '+escape(date(c.ends_at))+'</small>'+
-           (names.length?'<small>Deelnemers: '+escape(names.join(", "))+'</small>':'')+
-           '<p>'+escape(c.reward)+' na bezoeken bij '+escape(c.required)+' verschillende winkels</p>'+
-           (c.joined?'<small>Je onderneming neemt deel'+(c.claims_here?' · '+escape(c.claims_here)+'× uitgegeven':'')+'</small>'+
+         var live=c.state==="waiting"||c.state==="active",org=c.role==="owner"||c.is_lead;
+         var mine=owner&&org&&live;
+         return '<article class="pz2-planned" data-id="'+escape(c.id)+'"><strong>'+escape(c.name)+' '+pill(STATE,c.state)+(org?' <small>organisator</small>':'')+'</strong>'+
+           '<small>Initiatief: '+escape(lead)+' · '+escape(c.accepted_count)+' van minimaal '+escape(c.min_participants)+' zaken · '+(c.open_same_city?'open voor '+escape(c.lead_city||"de eigen plaats"):'alleen op uitnodiging')+' · tot '+escape(date(c.ends_at))+'</small>'+
+           (names.length?'<small>Doen mee: '+escape(names.join(", "))+'</small>':'')+
+           (mine&&c.pending_invites?'<small>'+escape(c.pending_invites)+' uitnodiging'+(c.pending_invites===1?'':'en')+' open</small>':'')+
+           '<p>'+escape(c.reward)+' na bezoeken bij '+escape(c.required)+' verschillende zaken</p>'+
+           (c.state==="waiting"?'<small>De actie start zodra '+escape(c.min_participants)+' zaken meedoen. Tot dan zien klanten hem niet.</small>':'')+
+           (c.state==="active"?'<small>Je zaak neemt deel'+(c.claims_here?' · '+escape(c.claims_here)+'× uitgegeven':'')+'</small>'+
              '<label class="pz2-field">Lidcode bij de kassa<input data-member="'+escape(c.id)+'" placeholder="PZ…" maxlength="40" autocomplete="off"></label>'+
-             '<button class="zk-btn sm" type="button" data-claim="'+escape(c.id)+'">Beloning controleren en uitgeven</button>'+
-             (owner?(c.is_lead?' <button class="zk-btn ghost sm" type="button" data-cancel="'+escape(c.id)+'">Actie stoppen</button>':
-               ' <button class="zk-btn ghost sm" type="button" data-leave="'+escape(c.id)+'">Uitstappen</button>'):''):
-             (owner?'<button class="zk-btn ghost sm" type="button" data-join="'+escape(c.id)+'">Met mijn onderneming deelnemen</button>':''))+
-           '</article>';
-       }).join(""):'<p>'+(owner?"Er zijn nog geen gezamenlijke acties.":"Je zaak doet nog niet mee aan een gezamenlijke actie.")+'</p>';
+             '<button class="zk-btn sm" type="button" data-claim="'+escape(c.id)+'">Beloning controleren en uitgeven</button>':'')+
+           (owner&&live?'<div class="pz2-inline">'+(mine?'<button class="zk-btn ghost sm" type="button" data-manage="'+escape(c.id)+'" aria-expanded="'+(open[c.id]?"true":"false")+'">Uitnodigen en deelnemers</button>'+
+               '<button class="zk-btn ghost sm" type="button" data-cancel="'+escape(c.id)+'">Actie stoppen</button>':
+             '<button class="zk-btn ghost sm" type="button" data-leave="'+escape(c.id)+'">Uitstappen</button>')+'</div>':'')+
+           '<div data-panel="'+escape(c.id)+'"'+(open[c.id]?'':' hidden')+'></div></article>';
+       }).join(""):'<p>'+(owner?"Je doet nog niet mee aan een gezamenlijke actie. Start er een, of accepteer een uitnodiging.":"Je zaak doet nog niet mee aan een gezamenlijke actie.")+'</p>';
        function action(attr,fn,question,done){
          list.querySelectorAll("["+attr+"]").forEach(function(btn){
            btn.addEventListener("click",async function(){
              if(!confirm(question))return;
              btn.disabled=true;
-             try{await rpc(fn,{p_business:b.id,p_campaign:btn.getAttribute(attr)},true);say(done,true);refresh();}
-             catch(e){say(e.message||"Dat lukte niet.",false);btn.disabled=false;}
+             try{await call(fn,{p_business:b.id,p_campaign:btn.getAttribute(attr)},done);refreshAll();}
+             catch(e){btn.disabled=false;}
            });
          });
        }
-       action("data-join","pasr_business_community_join","Met jouw onderneming deelnemen?","Je onderneming neemt nu deel.");
        action("data-leave","pasr_business_community_leave","Uitstappen? Bezoeken bij jouw zaak tellen daarna niet meer mee voor klanten.","Je onderneming doet niet meer mee aan deze actie.");
        action("data-cancel","pasr_business_community_cancel","Actie stoppen? De actie verdwijnt bij klanten en alle deelnemende zaken. Uitgegeven beloningen blijven geregistreerd.","De actie is gestopt.");
+       list.querySelectorAll("[data-manage]").forEach(function(btn){
+         var id=btn.dataset.manage,box=list.querySelector('[data-panel="'+id+'"]'),c=rows.filter(function(x){return x.id===id;})[0];
+         if(open[id])manage(box,c);
+         btn.addEventListener("click",function(){
+           open[id]=!open[id];box.hidden=!open[id];btn.setAttribute("aria-expanded",open[id]?"true":"false");
+           if(open[id])manage(box,c);else box.innerHTML="";
+         });
+       });
        list.querySelectorAll("[data-claim]").forEach(function(btn){
          btn.addEventListener("click",async function(){
            var id=btn.dataset.claim,entry=list.querySelector('[data-member="'+id+'"]');
@@ -404,26 +548,30 @@
              var result=await rpc("pasr_business_community_claim",
                {p_campaign:id,p_business:b.id,p_member_code:code},true);
              say("Beloning uitgegeven: "+(result.reward||"gezamenlijke beloning"),true);refresh();
-           }catch(e){say(e.message||"Deze beloning kan niet worden uitgegeven.",false);btn.disabled=false;}
+           }catch(e){say(err(e,"Deze beloning kan niet worden uitgegeven."),false);btn.disabled=false;}
          });
        });
-     }catch(e){list.textContent="Samenwerkingen konden niet worden geladen: "+(e.message||"onbekend");}
+     }catch(e){list.textContent="Samenwerkingen konden niet worden geladen: "+err(e,"onbekend");}
    }
+   function refreshAll(){loadInvites();loadOpen();refresh();}
    if(form)form.addEventListener("submit",async function(e){
      e.preventDefault();var f=new FormData(form),name=String(f.get("name")||"").trim(),
-       reward=String(f.get("reward")||"").trim(),required=Number(f.get("required")),days=Number(f.get("days"));
+       reward=String(f.get("reward")||"").trim(),required=Number(f.get("required")),days=Number(f.get("days")),min=Number(f.get("min"));
      if(name.length<3||name.length>80||reward.length<3||reward.length>120||
         !Number.isInteger(required)||required<2||required>20||
-        !Number.isInteger(days)||days<1||days>366){
-       notice(form,"Controleer naam, beloning, aantal winkels en looptijd.",false);return;
+        !Number.isInteger(days)||days<1||days>366||!Number.isInteger(min)||min<2||min>30){
+       notice(form,"Controleer naam, beloning, aantal zaken, minimum en looptijd.",false);return;
      }
      var btn=form.querySelector("button[type=submit]");btn.disabled=true;
      try{
-       await rpc("pasr_business_community_create",{p_business:b.id,p_name:name,p_reward:reward,p_required:required,p_days:days},true);
-       form.reset();notice(form,"Samenwerking gestart. Andere ondernemingen kunnen nu deelnemen.",true);refresh();
-     }catch(e){notice(form,e.message||"Opslaan mislukt.",false);}finally{btn.disabled=false;}
+       var r=await rpc("pasr_business_community_create",{p_business:b.id,p_name:name,p_reward:reward,p_required:required,p_days:days,
+         p_open_same_city:f.has("open_city"),p_min_participants:min},true);
+       form.reset();notice(form,"Samenwerking aangemaakt. Nodig nu de zaken uit waarmee je samenwerkt.",true);
+       if(r&&r.id)open[r.id]=true;
+       refresh();
+     }catch(e){notice(form,err(e,"Opslaan mislukt."),false);}finally{btn.disabled=false;}
    });
-   refresh();
+   refreshAll();
  }
  window.PasrLoyalty2={settings:settingsView,coupons:couponDashboard,insights:insightsView,marketing:marketingView,locations:locationsView,community:communityView,publicPage:publicPage};
 })();

@@ -82,7 +82,9 @@ jobs:
         if: steps.check.outputs.skip != '1'
         run: |
           set -euo pipefail
-          python3 -c 'import json;print(json.dumps({"query":open("supabase/loyalty-community.sql").read()}))' > /tmp/community.json
+          # Gezamenlijke acties en de uitnodigingen erbij in één verzoek: de uitnodigingen vervangen een paar functies
+          # van loyalty-community.sql (create, join, list, progress, claim), zo is er geen moment met de oude regels.
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/loyalty-community.sql").read() + "\n" + open("supabase/20261127-community-invites.sql").read()}))' > /tmp/community.json
           code=$(curl -s -o /tmp/community-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/community.json)
           head -c 500 /tmp/community-result.txt; echo
@@ -262,6 +264,20 @@ jobs:
           fi
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/group-invite" -H "Content-Type: application/json" -d '{}')
           [ "$code" = 401 ] && echo "::notice::group-invite is up and asks for a login." || echo "::warning::group-invite: unexpected HTTP $code"
+      - name: Mails bij gezamenlijke acties (community-mail)
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          if [ -x ~/.deno/bin/deno ]; then
+            ~/.deno/bin/deno test --no-check --allow-env supabase/functions/community-mail/ || { echo "::error::Tests of the community-mail function failed"; exit 1; }
+          fi
+          # Alleen de database roept hem aan (kop x-pasr-hook); de SMTP-secrets zijn dezelfde als die van group-invite
+          supabase functions deploy community-mail --yes --project-ref "$REF" --no-verify-jwt --use-api
+          python3 -c 'import json,os;print(json.dumps({"query":"update public.pasr_admin_config set community_url = '"'"'https://%s.supabase.co/functions/v1/community-mail'"'"' where id = 1" % os.environ["REF"]}))' > /tmp/cm.json
+          curl -sf -o /dev/null -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/cm.json
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/community-mail" -H "Content-Type: application/json" -d '{"action":"run"}')
+          [ "$code" = 403 ] && echo "::notice::community-mail is up and only answers the database." || echo "::warning::community-mail: unexpected HTTP $code"
       - name: Herinneringen per e-mail (reminder-mail)
         if: steps.check.outputs.skip != '1'
         run: |

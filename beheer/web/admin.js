@@ -1433,14 +1433,82 @@
       if ((d.campaigns || []).length) box.append(el("h4", null, "Gezamenlijke acties"));
       for (const x of d.campaigns || []) {
         const off = x.cancelled_at || new Date(x.ends_at).getTime() < now;
-        box.append(line(`${x.name} · ${x.reward}`,
-          `${x.lead ? "organisator" : "deelnemer"} · ${x.cancelled_at ? "geannuleerd" : off ? "afgelopen" : "actief"} · ${num(x.participants)}/${num(x.required_businesses)} zaken · ${num(x.claims)} beloningen`,
-          off || !x.lead ? null : stopBtn("campaign", x, "Annuleren", "Deze gezamenlijke actie")));
+        const r = line(`${x.name} · ${x.reward}`,
+          `${x.lead ? "organisator" : "deelnemer"} · ${x.cancelled_at ? "geannuleerd" : off ? "afgelopen" : "loopt"} · ${num(x.participants)} zaken doen mee · ${num(x.required_businesses)} nodig voor de beloning · ${num(x.claims)} beloningen`,
+          off || !x.lead ? null : stopBtn("campaign", x, "Annuleren", "Deze gezamenlijke actie"));
+        const more = el("button", "btn sm", "Uitnodigingen en deelnemers"); more.type = "button";
+        more.setAttribute("aria-expanded", "false");
+        r.append(more);
+        box.append(r);
+        let sub = null;
+        more.addEventListener("click", () => {
+          if (sub) { sub.remove(); sub = null; more.setAttribute("aria-expanded", "false"); return; }
+          sub = communityBox(b, x.id, load);
+          r.after(sub);
+          more.setAttribute("aria-expanded", "true");
+        });
       }
       if ((d.locations || []).length) box.append(el("h4", null, "Vestigingen"));
       for (const x of d.locations || []) box.append(line(x.name, `${x.address || "geen adres"}${x.active ? "" : " · inactief"}`));
       if (!(d.coupons || []).length && !(d.promo_codes || []).length && !(d.campaigns || []).length && !(d.locations || []).length)
         box.append(el("p", "muted", "Nog geen acties."));
+    }
+    load();
+    return box;
+  }
+
+  /** Gezamenlijke actie: status, deelnemers (verwijderen) en uitnodigingen (intrekken). Zelfde als PasrBeheer en LRbeheer. */
+  function communityBox(b, id, reloadOffers) {
+    const box = el("div", "biz-community");
+    box.append(el("p", "muted sm", "Laden…"));
+    const day = (v) => v ? new Date(v).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" }) : "—";
+    const STATE = { waiting: "wacht op deelnemers", active: "actief", ended: "afgelopen", cancelled: "gestopt" };
+    const STATUS = { invited: "uitgenodigd", accepted: "doet mee", declined: "geweigerd", revoked: "ingetrokken" };
+    async function load() {
+      let d;
+      try { d = await api("community_detail", { id }); }
+      catch (err) { box.replaceChildren(el("p", "err", err.message)); return; }
+      const c = d.campaign || {};
+      const live = c.state === "waiting" || c.state === "active";
+      box.replaceChildren(el("p", "muted sm",
+        `${STATE[c.state] || c.state} · ${num(c.accepted_count)} van minimaal ${num(c.min_participants)} zaken · ` +
+        `${c.open_same_city ? "open voor zaken uit dezelfde plaats" : "alleen op uitnodiging"} · ${day(c.starts_at)} t/m ${day(c.ends_at)}`));
+      box.append(el("h4", null, "Deelnemers"));
+      for (const p of d.participants || []) {
+        const r = el("div", "biz-line");
+        r.append(el("span", null, `${p.name}${p.city ? " · " + p.city : ""}`), el("span", "muted sm", `${p.organizer ? "organisator · " : ""}sinds ${day(p.accepted_at)}`));
+        if (live && !p.organizer) {
+          const k = el("button", "btn sm danger", "Verwijderen"); k.type = "button";
+          k.addEventListener("click", async () => {
+            if (!(await ask("Deelnemer verwijderen?", `${p.name} doet daarna niet meer mee aan ${c.name}. De zaak krijgt een mail en een melding.`, "Verwijderen"))) return;
+            k.disabled = true;
+            try { await api("community_remove", { campaign_id: id, business_id: p.business_id }); toast(`${p.name} verwijderd uit ${c.name}`); load(); reloadOffers && reloadOffers(); }
+            catch (err) { toast(err.message); k.disabled = false; }
+          });
+          r.append(k);
+        }
+        box.append(r);
+      }
+      const inv = (d.invites || []).filter((x) => !x.organizer);
+      box.append(el("h4", null, "Uitnodigingen"));
+      if (!inv.length) box.append(el("p", "muted sm", "Nog geen uitnodigingen."));
+      for (const x of inv) {
+        const r = el("div", "biz-line");
+        const expired = x.status === "invited" && x.expires_at && new Date(x.expires_at).getTime() < Date.now();
+        r.append(el("span", null, `${x.name}${x.city ? " · " + x.city : ""}${x.link && !x.business_id ? " (link)" : ""}`),
+          el("span", "muted sm", `${expired ? "verlopen" : STATUS[x.status] || x.status} · ${day(x.created_at)}${x.email && x.business_id ? " · " + x.email : ""}`));
+        if (live && x.status === "invited" && !expired) {
+          const k = el("button", "btn sm danger", "Intrekken"); k.type = "button";
+          k.addEventListener("click", async () => {
+            if (!(await ask("Uitnodiging intrekken?", `De uitnodiging voor ${c.name} vervalt. De ontvanger krijgt een mail${x.business_id ? " en een melding" : ""}.`, "Intrekken"))) return;
+            k.disabled = true;
+            try { await api("community_revoke", { invite_id: x.invite_id }); toast("Uitnodiging ingetrokken"); load(); }
+            catch (err) { toast(err.message); k.disabled = false; }
+          });
+          r.append(k);
+        }
+        box.append(r);
+      }
     }
     load();
     return box;

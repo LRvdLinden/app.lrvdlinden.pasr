@@ -339,6 +339,11 @@ struct BusinessOffersSection: View {
                     row("Samen: \(m.name) · \(m.reward)",
                         "\(m.lead ? "organisator" : "deelnemer") · \(m.cancelled_at != nil ? "geannuleerd" : off ? "afgelopen" : "actief") · \(m.participants ?? 0)/\(m.required_businesses) zaken · \(m.claims ?? 0) beloningen",
                         off || !m.lead ? nil : ("campaign", m.id, "Gezamenlijke actie annuleren"))
+                    NavigationLink {
+                        CommunityCampaignView(campaignID: m.id, title: m.name, onChanged: { Task { await load() } })
+                    } label: {
+                        Label("Uitnodigingen en deelnemers", systemImage: "person.2").font(.caption)
+                    }
                 }
                 ForEach(o.locations ?? []) { l in
                     row("Vestiging: \(l.name)", (l.address.flatMap { $0.isEmpty ? nil : $0 } ?? "geen adres") + (l.active ? "" : " · inactief"), nil)

@@ -11,8 +11,13 @@ begin
   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Winkelstraatpas','Gratis koek',2,30);
  campaign := (result->>'id')::uuid;
  if campaign is null then raise exception 'Community campaign not created'; end if;
+ -- Sinds 27-11-2026 alleen op uitnodiging: de organisator nodigt uit, de andere zaak accepteert.
+ perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
+ if jsonb_array_length(public.pasr_business_community_progress()) <> 0 then raise exception 'Waiting campaign visible to customer'; end if;
+ perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);
+ result := public.pasr_business_community_invite('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',campaign,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')::jsonb;
  perform set_config('app.user_id','22222222-2222-4222-8222-222222222222',true);
- perform public.pasr_business_community_join('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',campaign);
+ perform public.pasr_business_community_respond('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',(result->>'invite_id')::uuid,true);
  perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
  progress:=public.pasr_business_community_progress();
  if jsonb_array_length(progress) <> 1 then raise exception 'Community progress not visible'; end if;
@@ -106,11 +111,13 @@ begin
  end;
  perform public.pasr_business_community_leave(b,campaign);
  perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
+ -- Na uitstappen doet alleen de organisator nog mee: onder het minimum, dus de klant ziet de actie niet meer.
  progress := public.pasr_business_community_progress();
- if (progress->0->>'visited')::int <> 1 or jsonb_array_length(progress->0->'businesses') <> 1
- then raise exception 'Leaving business still counted: %',progress; end if;
- if (progress->0->'businesses'->0->>'visited')::boolean is not true or progress->0->>'ends_at' is null
- then raise exception 'Customer business list wrong: %',progress; end if;
+ if jsonb_array_length(progress) <> 0 then raise exception 'Campaign below minimum still visible: %',progress; end if;
+ perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);
+ perform public.pasr_business_community_settings(a,campaign,null,2);
+ if public.pasr_business_community_list(a)->0->>'state' <> 'waiting' then raise exception 'State should be waiting'; end if;
+ perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
  begin
   perform public.pasr_business_community_list(a);
   raise exception 'Customer could list business campaigns';
@@ -123,9 +130,26 @@ begin
  end;
 
  perform set_config('app.user_id','22222222-2222-4222-8222-222222222222',true);
- perform public.pasr_business_community_join(b,campaign);
+ begin
+  perform public.pasr_business_community_join(b,campaign);
+  raise exception 'Joined without invitation';
+ exception when sqlstate '42501' then null;
+ end;
+ perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);
+ perform public.pasr_business_community_invite(a,campaign,b);
+ perform set_config('app.user_id','22222222-2222-4222-8222-222222222222',true);
+ perform public.pasr_business_community_join(b,campaign);   -- met een uitnodiging telt meedoen als accepteren
+ perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
+ progress := public.pasr_business_community_progress();
+ if jsonb_array_length(progress) <> 1 or jsonb_array_length(progress->0->'businesses') <> 2 then raise exception 'Rejoined campaign wrong: %',progress; end if;
+ -- bezoeken bij de opnieuw toegetreden zaak tellen pas vanaf het nieuwe meedoen
+ if (progress->0->>'visited')::int <> 1 or progress->0->>'ends_at' is null
+ then raise exception 'Customer business list wrong: %',progress; end if;
  perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);
  second := (public.pasr_business_community_create(a,'Kerstroute','Gratis chocolademelk',2,20)->>'id')::uuid;
+ perform public.pasr_business_community_invite(a,second,b);
+ perform set_config('app.user_id','22222222-2222-4222-8222-222222222222',true);
+ perform public.pasr_business_community_respond(b,(select invite_id from public.pasr_business_community_my_invites(b) limit 1),true);
  perform set_config('app.user_id','33333333-3333-4333-8333-333333333333',true);
  if jsonb_array_length(public.pasr_business_community_progress()) <> 2 then raise exception 'Second campaign not visible'; end if;
  perform set_config('app.user_id','11111111-1111-4111-8111-111111111111',true);

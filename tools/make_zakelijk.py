@@ -430,9 +430,9 @@ def head(title, desc, url, *, app_id=APP_ID, robots="noindex, nofollow", og_titl
 SCRIPTS = '''  <script src="/assets/account-config.js"></script>
   <script src="/assets/vendor/qrcode.js"></script>
 {jsqr}  <script src="/assets/promo.js"></script>
-  <script src="/assets/loyalty2.js?v=zakelijk-samen-2"></script>
+  <script src="/assets/loyalty2.js?v=zakelijk-uitnodigen-1"></script>
   <script src="/assets/promo-codes-business.js?v=zakelijk-verwijderd-1"></script>
-  <script src="/assets/zakelijk.js?v=zakelijk-samen-2"></script>'''
+  <script src="/assets/zakelijk.js?v=zakelijk-uitnodigen-1"></script>'''
 JSQR = '  <script src="/assets/vendor/jsqr.min.js"></script>\n'
 APP_PAGES = [
     ("dashboard", "Dashboard | Pasr voor ondernemers", "Beheer de stempelkaarten van je zaak.", "Dashboard", "zk-dashboard",
@@ -443,7 +443,7 @@ APP_PAGES = [
      '<main class="wrap zk-join" id="zk-join" aria-live="polite"><p class="zk-empty">Laden…</p></main>', False, PASR_APP_ID, ""),
     ("flyer", "Promotiemateriaal | Pasr Zakelijk", "Socialmediabanners, Stories en flyers voor je stempelkaart in Licht en Donker.", "Promotiemateriaal", "zk-flyer",
      '<main class="wrap" id="zk-flyer"><p class="zk-empty">Laden…</p></main>', False, APP_ID, ""),
-    ("uitnodiging", "Uitnodiging | Pasr Zakelijk", "Je bent uitgenodigd om stempels te geven met Pasr Zakelijk.", "Uitnodiging", "zk-invite",
+    ("uitnodiging", "Uitnodiging | Pasr Zakelijk", "Je bent uitgenodigd voor Pasr Zakelijk: als medewerker, of met je zaak voor een gezamenlijke actie.", "Uitnodiging", "zk-invite",
      '<main class="wrap zk-dash" id="zk-app" aria-live="polite"><p class="zk-empty">Laden…</p></main>', False, APP_ID, ""),
 ]
 

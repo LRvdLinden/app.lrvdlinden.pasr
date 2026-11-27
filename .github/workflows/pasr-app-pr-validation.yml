@@ -119,16 +119,32 @@ jobs:
             supabase/loyalty-campaign.sql \
             supabase/loyalty-retention.sql \
             supabase/loyalty-community.sql \
+            supabase/20261127-community-invites.sql \
             supabase/loyalty-vip.sql \
             supabase/20261124-promo-codes.sql \
             supabase/20261124-app-only-discount-management.sql \
             supabase/20261124-deletion.sql \
             supabase/tests/loyalty_smoke.sql \
-            supabase/tests/promo_smoke.sql; do
+            supabase/tests/promo_smoke.sql \
+            supabase/tests/community_invites_smoke.sql; do
             echo "::group::SQL $file"
             psql -h localhost -U postgres -d pasr_test -v ON_ERROR_STOP=1 -f "$file"
             echo "::endgroup::"
           done
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Mails and push of the Supabase functions (same tests as the Backend workflow)
+        run: |
+          python3 supabase/templates/build.py
+          git diff --exit-code -- supabase/functions/*/template.ts supabase/templates/
+          deno test --no-check --allow-env supabase/functions/admin/ supabase/functions/community-mail/ \
+            supabase/functions/reminder-mail/ supabase/functions/group-invite/
 
   backend-syntax:
     runs-on: ubuntu-latest
@@ -141,7 +157,7 @@ jobs:
           /tmp/pasr-sql/bin/python - <<'PY'
           from pathlib import Path
           from pglast import parse_sql
-          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql','20261124-deletion.sql'):
+          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql','20261124-deletion.sql','20261127-community-invites.sql','tests/community_invites_smoke.sql'):
               path=Path('supabase')/name
               if path.exists():
                   parse_sql(path.read_text())
