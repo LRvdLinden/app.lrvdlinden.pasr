@@ -14,7 +14,7 @@ NEUTRAL = "#2B2F3A"
 def check(brands):
     for domain, b in brands.items():
         assert re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)+", domain), f"ongeldig domein {domain!r}"
-        assert set(b) <= {"logo", "card"}, f"{domain}: onbekende sleutel"
+        assert set(b) <= {"logo", "card", "replace"}, f"{domain}: onbekende sleutel"
         if "card" in b:
             assert re.fullmatch(r"#[0-9A-F]{6}", b["card"]), f"{domain}.card: geen #RRGGBB"
         if "logo" in b:
@@ -35,14 +35,16 @@ def main():
     if "--check" in sys.argv or not (ref and token) or not brands:
         print(f"Ticketmerken: {len(brands)} in ticket_brands.json, bestand in orde.")
         return
-    values = ",\n".join(f"({lit(d)}, {lit(b.get('logo'))}, {lit(b.get('card'))})" for d, b in sorted(brands.items()))
+    # "replace": true = aangeleverd door Léon (officieel logo): vervangt een bestaand logo.
+    values = ",\n".join(f"({lit(d)}, {lit(b.get('logo'))}, {lit(b.get('card'))}, {'true' if b.get('replace') else 'false'})" for d, b in sorted(brands.items()))
     sql = (f"update public.pasr_stores s set\n"
-           f"  logo = coalesce(s.logo, b.logo),\n"
+           f"  logo = case when b.replace and b.logo is not null then b.logo else coalesce(s.logo, b.logo) end,\n"
            f"  card_hex = case when upper(s.card_hex) = '{NEUTRAL}' and b.card is not null then b.card else s.card_hex end,\n"
            f"  updated_at = now()\n"
-           f"from (values\n{values}\n) as b(domain, logo, card)\n"
+           f"from (values\n{values}\n) as b(domain, logo, card, replace)\n"
            f"where s.kind = 'ticket' and s.domain = b.domain\n"
-           f"  and ((s.logo is null and b.logo is not null) or (upper(s.card_hex) = '{NEUTRAL}' and b.card is not null))\n"
+           f"  and ((s.logo is null and b.logo is not null) or (b.replace and b.logo is not null and s.logo is distinct from b.logo)\n"
+           f"       or (upper(s.card_hex) = '{NEUTRAL}' and b.card is not null))\n"
            f"returning s.id;")
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", method="POST",
                                  data=json.dumps({"query": sql}).encode(),

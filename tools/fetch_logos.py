@@ -556,6 +556,9 @@ def tickets():
     for domain in sorted({r["domain"] for r in rows if r.get("domain")}):
         if only and domain not in only:
             continue
+        if out.get(domain, {}).get("replace"):
+            print("manual  " + domain + " (officieel logo, met de hand aangeleverd)", flush=True)
+            continue
         if domain in out and "--all" not in sys.argv:
             print("kept    " + domain, flush=True)
             continue
