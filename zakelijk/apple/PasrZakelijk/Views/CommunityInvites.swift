@@ -1,6 +1,8 @@
 import SwiftUI
 import Observation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Uitnodigingen voor gezamenlijke acties: wat er vanuit een melding of link geopend moet worden, en hoeveel
 /// openstaande uitnodigingen de zaak heeft (badge bij Acties en Samenwerkingen).
@@ -192,9 +194,9 @@ struct CommunityInviteManagerView: View {
 
             Section {
                 TextField("E-mailadres (optioneel)", text: $email)
-                    .keyboardType(.emailAddress)
+                    .keyboard(.email)
                     .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
+                    .capitalization(.never)
                     .autocorrectionDisabled()
                 Button("Uitnodigingslink maken", systemImage: "link") { Task { await makeLink() } }
                     .disabled(busy || !emailOK)
@@ -225,7 +227,7 @@ struct CommunityInviteManagerView: View {
             }
         }
         .navigationTitle("Zaken uitnodigen")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .task { await loadInvites() }
         .refreshable { await loadInvites() }
         .task(id: query) {

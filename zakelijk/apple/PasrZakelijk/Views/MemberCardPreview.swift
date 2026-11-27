@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 import CoreImage.CIFilterBuiltins
 
 /// Barcode als afbeelding: QR, Code 128 of EAN-13 (EAN-13 zelf getekend; Core Image kent hem niet).
@@ -37,6 +39,7 @@ enum Barcode {
         bits += "101"
         let module: CGFloat = 4, quiet: CGFloat = 9 * 4, height: CGFloat = 160
         let size = CGSize(width: CGFloat(bits.count) * module + quiet * 2, height: height)
+        #if os(iOS)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
             UIColor.white.setFill()
@@ -46,6 +49,17 @@ enum Barcode {
                 ctx.fill(CGRect(x: quiet + CGFloat(i) * module, y: 0, width: module, height: height))
             }
         }
+        #else
+        guard let ctx = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+        ctx.fill(CGRect(origin: .zero, size: size))
+        ctx.setFillColor(CGColor(gray: 0, alpha: 1))
+        for (i, bit) in bits.enumerated() where bit == "1" {
+            ctx.fill(CGRect(x: quiet + CGFloat(i) * module, y: 0, width: module, height: height))
+        }
+        return ctx.makeImage().map { NSImage(cgImage: $0) }
+        #endif
     }
 }
 

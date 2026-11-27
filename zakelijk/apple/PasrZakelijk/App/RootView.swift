@@ -13,8 +13,13 @@ struct RootView: View {
                 loadingView
             } else if let business = store.current {
                 if business.isApproved {
+                    #if os(macOS)
+                    MacMainView(business: business)
+                        .id(business.id)
+                    #else
                     MainTabs(business: business)
                         .id(business.id)
+                    #endif
                 } else {
                     PendingView(business: business)
                 }
@@ -62,6 +67,7 @@ struct MainTabs: View {
     @State private var router = CommunityRouter.shared
     @State private var modals = ModalTracker.shared
     @State private var accepting = false
+    @State private var navigator = AppNavigator.shared
 
     var body: some View {
         TabView(selection: $tab) {
@@ -89,6 +95,12 @@ struct MainTabs: View {
         }
         .onAppear {
             if !business.isOwner && !["scan", "settings"].contains(tab) { tab = "scan" }
+        }
+        // link uit een widget of melding: naar het juiste tabblad
+        .onChange(of: navigator.request, initial: true) { _, target in
+            guard let target else { return }
+            navigator.request = nil
+            tab = Self.tab(for: target.section, owner: business.isOwner)
         }
         // gezamenlijke acties: melding of geaccepteerde link opent Samenwerkingen onder Acties (alleen eigenaar)
         .onChange(of: router.focus, initial: true) { _, focus in
@@ -119,6 +131,21 @@ struct MainTabs: View {
         }
     }
 
+    /// Tabblad bij een onderdeel van het dashboard (widgets gebruiken dezelfde ids als de Mac-app en pasr.nl).
+    static func tab(for section: ZakelijkSection, owner: Bool) -> String {
+        guard owner else { return section == .instellingen ? "settings" : "scan" }
+        switch section {
+        case .scannen: return "scan"
+        case .vandaag, .inzichten: return "overview"
+        case .promotiemateriaal: return "promotion"
+        case .medewerkers: return "staff"
+        case .instellingen: return "settings"
+        case .stempelkaarten, .klantenkaarten, .tickets, .kortingsbonnen, .actiecodes, .gezamenlijkeActies, .beloningen,
+             .marketing, .vestigingen:
+            return "cards"
+        }
+    }
+
     /// Uitnodigingslink (https://pasr.nl/zakelijk/uitnodiging/?t=TOKEN) accepteren voor de gekozen zaak.
     @MainActor private func acceptToken(_ token: String?) async {
         defer { accepting = false; router.pendingToken = nil }
@@ -139,9 +166,16 @@ struct MainTabs: View {
 struct BusinessPicker: ToolbarContent {
     @Environment(BusinessStore.self) private var store
 
+    #if os(macOS)
+    static let isMac = true
+    #else
+    static let isMac = false
+    #endif
+
     var body: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            if store.businesses.count > 1, let current = store.current {
+        ToolbarItem(placement: .barLeading) {
+            // op de Mac staat de zaakkiezer in de werkbalk van het venster (MacToolbar)
+            if !Self.isMac, store.businesses.count > 1, let current = store.current {
                 Menu {
                     ForEach(store.businesses) { b in
                         Button {

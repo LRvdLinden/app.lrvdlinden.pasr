@@ -67,8 +67,8 @@ struct BusinessLocationsView: View {
                 if let message { Section { Text(message).font(.subheadline) } }
             }
             .navigationTitle("Vestigingen")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() } } }
+            .inlineTitle()
+            .toolbar { ToolbarItem(placement: .confirmationAction) { DoneButton() } }
             .task { await load() }
             .refreshable { await load() }
         }

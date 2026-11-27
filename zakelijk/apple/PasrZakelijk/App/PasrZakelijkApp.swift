@@ -1,5 +1,6 @@
 import SwiftUI
 
+#if os(iOS)
 @main
 struct PasrZakelijkApp: App {
     @UIApplicationDelegateAdaptor(ZakelijkAppDelegate.self) private var appDelegate
@@ -78,6 +79,7 @@ struct AppShell: View {
             guard scenePhase == .active, account.isSignedIn else { return }
             await ZakelijkPush.refreshIfAllowed()
             await DeviceRegistry.registerIfNeeded()
+            await WidgetSync.refresh()
         }
         // Beoordelingsvraag alleen op een rustig moment: niet tijdens splash, slot, inloggen, wachten op goedkeuring,
         // een uitnodiging, een sheet of dialoog, of terwijl er een klant geholpen wordt.
@@ -116,6 +118,7 @@ extension AppShell {
         #endif
     }
 }
+#endif
 
 /// Houdt bij of er een sheet open staat of de scanner bezig is (geen beoordelingsvraag op zo'n moment).
 @MainActor
@@ -134,6 +137,7 @@ final class ModalTracker {
 private struct TrackModal: ViewModifier {
     func body(content: Content) -> some View {
         content
+            .macSheetFrame()
             .onAppear { ModalTracker.shared.openCount += 1 }
             .onDisappear { ModalTracker.shared.openCount = max(0, ModalTracker.shared.openCount - 1) }
     }

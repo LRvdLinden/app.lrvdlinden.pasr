@@ -49,7 +49,7 @@ struct BusinessCouponsView: View {
                         Button("Annuleer bewerken") { editingID = nil; title = ""; description = "" }
                     }
                     TextField("Naam actie", text: $title)
-                        .textInputAutocapitalization(.sentences)
+                        .capitalization(.sentences)
                     TextField("Omschrijving / voorwaarden", text: $description, axis: .vertical)
                         .lineLimit(2...4)
                     Picker("Korting", selection: $type) {
@@ -57,9 +57,9 @@ struct BusinessCouponsView: View {
                         Text("Percentage (%)").tag("percent")
                     }
                     TextField(type == "amount" ? "Kortingsbedrag €" : "Percentage", text: $amount)
-                        .keyboardType(.decimalPad)
+                        .keyboard(.decimal)
                     TextField("Minimale besteding €", text: $minimum)
-                        .keyboardType(.decimalPad)
+                        .keyboard(.decimal)
                     DatePicker("Begindatum", selection: $start, displayedComponents: .date)
                     DatePicker("Einddatum", selection: $end, in: start..., displayedComponents: .date)
                     Stepper("Maximaal \(count) bonnen", value: $count, in: 1...100000)
@@ -103,7 +103,7 @@ struct BusinessCouponsView: View {
                     Text("Controleer of de korting daadwerkelijk wordt gegeven. De code kan daarna nooit opnieuw gebruikt worden.")
                         .font(.footnote).foregroundStyle(.secondary)
                     TextField("PC-code van de klant", text: $code)
-                        .textInputAutocapitalization(.characters)
+                        .capitalization(.characters)
                         .autocorrectionDisabled()
                     Button("Controleer bon") { Task { await checkCode() } }
                         .disabled(busy || !code.uppercased().hasPrefix("PC"))
@@ -117,9 +117,9 @@ struct BusinessCouponsView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Kortingsbonnen")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar { ToolbarItem(placement: .confirmationAction) {
-                Button("Klaar") { dismiss() }
+                DoneButton()
             } }
             .confirmationDialog("Kortingscoupon verwijderen?", isPresented: Binding(
                 get: { removeID != nil }, set: { if !$0 { removeID = nil } }), titleVisibility: .visible) {

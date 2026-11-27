@@ -6,10 +6,64 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E72B0C97AF98C008B20013E2 /* PasrZakelijkWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6B0695FBDBB4B9C6A6B89FD2 /* PasrZakelijkWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		28C2D11DD196DB28C9B5886E /* PasrZakelijkMacWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DF2A5D30B96AE1D99BCAA358 /* PasrZakelijkMacWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E534BF4282C6386A2F57F9C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1502C1089A2BBF8EDB196F07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0ED878A93CD683DB0CC43C2;
+			remoteInfo = PasrZakelijkWidgets;
+		};
+		B5A40009C84DF482DF226FFA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1502C1089A2BBF8EDB196F07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5D08EB5B17796A2A8A98C9A1;
+			remoteInfo = PasrZakelijkMacWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3804C35C908B2C0CD484404B /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E72B0C97AF98C008B20013E2 /* PasrZakelijkWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A8B9929428381AC4C7FDB460 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				28C2D11DD196DB28C9B5886E /* PasrZakelijkMacWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		401E8E0532DE5EE38C041DC2 /* PasrZakelijk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "PasrZakelijk.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B0695FBDBB4B9C6A6B89FD2 /* PasrZakelijkWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "PasrZakelijkWidgets.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A793A2FCC82899B92491A4FD /* Pasr Zakelijk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pasr Zakelijk.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DF2A5D30B96AE1D99BCAA358 /* PasrZakelijkMacWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "PasrZakelijkMacWidgets.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF4169284E9F1BBEE464CF87 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F4615DD5987369DAE264EBF2 /* PasrZakelijk.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrZakelijk.entitlements"; sourceTree = "<group>"; };
+		378A28933F5F9FABD682F88A /* PasrZakelijkWidgets-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "PasrZakelijkWidgets-Info.plist"; sourceTree = "<group>"; };
+		3E4087674B4F96DD26385199 /* PasrZakelijkWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrZakelijkWidgets.entitlements"; sourceTree = "<group>"; };
+		B9C513472A002309F6DF239D /* PasrZakelijkMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrZakelijkMac.entitlements"; sourceTree = "<group>"; };
+		7B8310DE77D2A4F2A319F7A0 /* PasrZakelijkMacWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "PasrZakelijkMacWidgets.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -18,10 +72,46 @@
 			path = PasrZakelijk;
 			sourceTree = "<group>";
 		};
+		A25D9C1B6B029A0E208E2178 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		3471220D58CF377013B6327F /* Widgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Widgets;
+			sourceTree = "<group>";
+		};
+		15E6B83C742D723E34A6198A /* Mac */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Mac;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C1CA02686A4DCA4E805B9469 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E047EF2FD1BB5DA3EB6E5D99 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5F787DD043D97F946D358C16 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		02A7CB1DEB50ECDA66287C97 = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -35,6 +125,9 @@
 			isa = PBXGroup;
 			children = (
 				12926E3A7BD17E17283C3CF1 /* PasrZakelijk */,
+				A25D9C1B6B029A0E208E2178 /* Shared */,
+				3471220D58CF377013B6327F /* Widgets */,
+				15E6B83C742D723E34A6198A /* Mac */,
 				CDA16F8EA575E6CF06B94C44 /* Config */,
 				FBC5D84F47951F190FA656DF /* Products */,
 			);
@@ -45,6 +138,10 @@
 			children = (
 				BF4169284E9F1BBEE464CF87 /* Info.plist */,
 				F4615DD5987369DAE264EBF2 /* PasrZakelijk.entitlements */,
+				378A28933F5F9FABD682F88A /* PasrZakelijkWidgets-Info.plist */,
+				3E4087674B4F96DD26385199 /* PasrZakelijkWidgets.entitlements */,
+				B9C513472A002309F6DF239D /* PasrZakelijkMac.entitlements */,
+				7B8310DE77D2A4F2A319F7A0 /* PasrZakelijkMacWidgets.entitlements */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -53,6 +150,9 @@
 			isa = PBXGroup;
 			children = (
 				401E8E0532DE5EE38C041DC2 /* PasrZakelijk.app */,
+				6B0695FBDBB4B9C6A6B89FD2 /* PasrZakelijkWidgets.appex */,
+				A793A2FCC82899B92491A4FD /* Pasr Zakelijk.app */,
+				DF2A5D30B96AE1D99BCAA358 /* PasrZakelijkMacWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,13 +167,16 @@
 				F863940CC739DA8DBCD1FDFB /* Sources */,
 				C1CA02686A4DCA4E805B9469 /* Frameworks */,
 				26EEFE608B4AA3F64B9BB92C /* Resources */,
+				3804C35C908B2C0CD484404B /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				074ADB80D1634483E64CE96D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				12926E3A7BD17E17283C3CF1 /* PasrZakelijk */,
+				A25D9C1B6B029A0E208E2178 /* Shared */,
 			);
 			name = PasrZakelijk;
 			packageProductDependencies = (
@@ -81,6 +184,78 @@
 			productName = PasrZakelijk;
 			productReference = 401E8E0532DE5EE38C041DC2 /* PasrZakelijk.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C0ED878A93CD683DB0CC43C2 /* PasrZakelijkWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14C567EAC97C39E4EFABCB6C /* Build configuration list for PBXNativeTarget "PasrZakelijkWidgets" */;
+			buildPhases = (
+				AC3746AAC119932914AE4AB7 /* Sources */,
+				E047EF2FD1BB5DA3EB6E5D99 /* Frameworks */,
+				6F2CBD92A2703F9EA8B38051 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3471220D58CF377013B6327F /* Widgets */,
+				A25D9C1B6B029A0E208E2178 /* Shared */,
+			);
+			name = PasrZakelijkWidgets;
+			packageProductDependencies = (
+			);
+			productName = PasrZakelijkWidgets;
+			productReference = 6B0695FBDBB4B9C6A6B89FD2 /* PasrZakelijkWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		063291D173DC4AD6A2E2D59F /* PasrZakelijkMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26CB3D8075BA549CF2DDC2FD /* Build configuration list for PBXNativeTarget "PasrZakelijkMac" */;
+			buildPhases = (
+				0C23D8B0F6854F00C18AD2BF /* Sources */,
+				5F787DD043D97F946D358C16 /* Frameworks */,
+				554EC3369B168E65E1CB8EC3 /* Resources */,
+				A8B9929428381AC4C7FDB460 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D7E101CDFA3F2900652E630F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				12926E3A7BD17E17283C3CF1 /* PasrZakelijk */,
+				A25D9C1B6B029A0E208E2178 /* Shared */,
+				15E6B83C742D723E34A6198A /* Mac */,
+			);
+			name = PasrZakelijkMac;
+			packageProductDependencies = (
+			);
+			productName = PasrZakelijkMac;
+			productReference = A793A2FCC82899B92491A4FD /* Pasr Zakelijk.app */;
+			productType = "com.apple.product-type.application";
+		};
+		5D08EB5B17796A2A8A98C9A1 /* PasrZakelijkMacWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F9E53BC5F157D2A462AC53CF /* Build configuration list for PBXNativeTarget "PasrZakelijkMacWidgets" */;
+			buildPhases = (
+				6CF98B5FA5F3E6E51A686949 /* Sources */,
+				02A7CB1DEB50ECDA66287C97 /* Frameworks */,
+				A696970CC17A6C73838775D5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3471220D58CF377013B6327F /* Widgets */,
+				A25D9C1B6B029A0E208E2178 /* Shared */,
+			);
+			name = PasrZakelijkMacWidgets;
+			packageProductDependencies = (
+			);
+			productName = PasrZakelijkMacWidgets;
+			productReference = DF2A5D30B96AE1D99BCAA358 /* PasrZakelijkMacWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -93,6 +268,15 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					1A7D71FC6204F9C3E9551C15 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					C0ED878A93CD683DB0CC43C2 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					063291D173DC4AD6A2E2D59F = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					5D08EB5B17796A2A8A98C9A1 = {
 						CreatedOnToolsVersion = 26.0;
 					};
 				};
@@ -113,12 +297,36 @@
 			projectRoot = "";
 			targets = (
 				1A7D71FC6204F9C3E9551C15 /* PasrZakelijk */,
+				C0ED878A93CD683DB0CC43C2 /* PasrZakelijkWidgets */,
+				063291D173DC4AD6A2E2D59F /* PasrZakelijkMac */,
+				5D08EB5B17796A2A8A98C9A1 /* PasrZakelijkMacWidgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		26EEFE608B4AA3F64B9BB92C = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F2CBD92A2703F9EA8B38051 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		554EC3369B168E65E1CB8EC3 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A696970CC17A6C73838775D5 = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +343,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AC3746AAC119932914AE4AB7 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0C23D8B0F6854F00C18AD2BF = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6CF98B5FA5F3E6E51A686949 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		074ADB80D1634483E64CE96D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0ED878A93CD683DB0CC43C2 /* PasrZakelijkWidgets */;
+			targetProxy = E534BF4282C6386A2F57F9C5 /* PBXContainerItemProxy */;
+		};
+		D7E101CDFA3F2900652E630F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5D08EB5B17796A2A8A98C9A1 /* PasrZakelijkMacWidgets */;
+			targetProxy = B5A40009C84DF482DF226FFA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2F3987AEB1D63DA64E1AE434 /* Debug */ = {
@@ -154,6 +396,7 @@
 				GCC_OPTIMIZATION_LEVEL = "0";
 				IPHONEOS_DEPLOYMENT_TARGET = "17.0";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = "14.0";
 				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -176,6 +419,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				IPHONEOS_DEPLOYMENT_TARGET = "17.0";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = "14.0";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = "5.0";
 				VALIDATE_PRODUCT = YES;
@@ -262,6 +506,194 @@
 			};
 			name = Release;
 		};
+		5194122C4211709C3608AE28 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "21";
+				DEVELOPMENT_TEAM = EU3UY476T6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PasrZakelijkWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
+				IPHONEOS_DEPLOYMENT_TARGET = "17.0";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "1.0.4";
+				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
+				PRODUCT_NAME = PasrZakelijkWidgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		19CA97876382136CF81ECA07 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "21";
+				DEVELOPMENT_TEAM = EU3UY476T6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PasrZakelijkWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
+				IPHONEOS_DEPLOYMENT_TARGET = "17.0";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "1.0.4";
+				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
+				PRODUCT_NAME = PasrZakelijkWidgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E00652F068CECC2E5C97AC77 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "21";
+				DEVELOPMENT_TEAM = EU3UY476T6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© LRvdLinden";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "14.0";
+				MARKETING_VERSION = "1.0.4";
+				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk;
+				PRODUCT_MODULE_NAME = PasrZakelijk;
+				PRODUCT_NAME = "Pasr Zakelijk";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		FC8C78CFF831A292D6A39E52 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "21";
+				DEVELOPMENT_TEAM = EU3UY476T6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Pasr Zakelijk gebruikt de camera om de QR-code van de stempelkaart van je klant te scannen.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© LRvdLinden";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "14.0";
+				MARKETING_VERSION = "1.0.4";
+				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk;
+				PRODUCT_MODULE_NAME = PasrZakelijk;
+				PRODUCT_NAME = "Pasr Zakelijk";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		66F3A8DF639A9F13E407C4C1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMacWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "21";
+				DEVELOPMENT_TEAM = EU3UY476T6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PasrZakelijkWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "14.0";
+				MARKETING_VERSION = "1.0.4";
+				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
+				PRODUCT_NAME = PasrZakelijkMacWidgets;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		67D312F56941D2B22B81485F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMacWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "21";
+				DEVELOPMENT_TEAM = EU3UY476T6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PasrZakelijkWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pasr Zakelijk";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "14.0";
+				MARKETING_VERSION = "1.0.4";
+				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
+				PRODUCT_NAME = PasrZakelijkMacWidgets;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -279,6 +711,33 @@
 			buildConfigurations = (
 				141E9690FEA0436BE405118A /* Debug */,
 				D36EBB623E8B11233D112F51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14C567EAC97C39E4EFABCB6C /* Build configuration list for PBXNativeTarget "PasrZakelijkWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5194122C4211709C3608AE28 /* Debug */,
+				19CA97876382136CF81ECA07 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		26CB3D8075BA549CF2DDC2FD /* Build configuration list for PBXNativeTarget "PasrZakelijkMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E00652F068CECC2E5C97AC77 /* Debug */,
+				FC8C78CFF831A292D6A39E52 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F9E53BC5F157D2A462AC53CF /* Build configuration list for PBXNativeTarget "PasrZakelijkMacWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				66F3A8DF639A9F13E407C4C1 /* Debug */,
+				67D312F56941D2B22B81485F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 import PhotosUI
 
 /// Acties → Klantenkaarten: eigen klantenkaart met barcode (eigenaar). Scannen gaat via Scannen.
@@ -124,7 +126,7 @@ struct MemberCardEditorView: View {
                 actions
             }
             .navigationTitle(isNew ? Text("Nieuwe klantenkaart") : Text("Klantenkaart bewerken"))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -186,7 +188,7 @@ struct MemberCardEditorView: View {
             .pickerStyle(.segmented)
             if card.barcodeType != "ean13" {
                 TextField("Voorvoegsel kaartnummer (bijv. KS-)", text: $card.prefix)
-                    .textInputAutocapitalization(.characters)
+                    .capitalization(.characters)
                     .autocorrectionDisabled()
                     .onChange(of: card.prefix) { _, v in if v.count > 8 { card.prefix = String(v.prefix(8)) } }
             }
@@ -344,7 +346,7 @@ struct PeriodEditorView: View {
                 }
             }
             .navigationTitle(Text("Kortingsperiode"))
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {

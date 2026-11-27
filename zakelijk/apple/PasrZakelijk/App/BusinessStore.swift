@@ -38,6 +38,8 @@ final class BusinessStore {
                 .sorted { ($0.role == .owner ? 0 : 1, $0.name.lowercased()) < ($1.role == .owner ? 0 : 1, $1.name.lowercased()) }
             if !businesses.contains(where: { $0.id == selectedID }) { selectedID = businesses.first?.id ?? "" }
             error = nil
+            // widgets (Vandaag, Komend event, Te doen) bijwerken, zonder het laden op te houden
+            Task { await WidgetSync.refresh() }
         } catch {
             self.error = error.localizedDescription
         }
@@ -45,6 +47,7 @@ final class BusinessStore {
     }
 
     func reset() {
+        if !businesses.isEmpty { WidgetSync.clear() }
         businesses = []
         loaded = false
         error = nil
@@ -53,7 +56,7 @@ final class BusinessStore {
 
     /// Een link uit Safari, Berichten of de camera.
     /// Kent de app deze link zelf (uitnodiging voor medewerkers)?
-    func handles(url: URL) -> Bool { Self.isInvite(url) }
+    func handles(url: URL) -> Bool { Self.isInvite(url) || ZakelijkLink.parse(url) != nil }
 
     private static func isInvite(_ url: URL) -> Bool {
         (url.scheme == "pasrzakelijk" && (url.host() == "uitnodiging" || url.path().contains("uitnodiging")))
@@ -61,6 +64,15 @@ final class BusinessStore {
     }
 
     func handle(url: URL) {
+        // widget of melding: pasrzakelijk://open/<onderdeel>?zaak=<id>&id=<item>
+        if let target = ZakelijkLink.parse(url) {
+            if let id = target.business, businesses.isEmpty || businesses.contains(where: { $0.id == id }) { select(id) }
+            if target.section == .gezamenlijkeActies, let campaign = target.item {
+                CommunityRouter.shared.route(type: "community_invite", campaign: campaign)
+            }
+            AppNavigator.shared.request = target
+            return
+        }
         // uitnodiging voor een gezamenlijke actie: https://pasr.nl/zakelijk/uitnodiging/?t=TOKEN
         if Self.isInvite(url), let token = CommunityRouter.token(in: url) {
             CommunityRouter.shared.pendingToken = token

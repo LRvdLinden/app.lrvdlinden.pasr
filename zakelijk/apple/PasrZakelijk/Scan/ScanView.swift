@@ -23,6 +23,16 @@ struct ScanView: View {
 
     private var eventFilterKey: String { "pasr.scan.event." + business.id }
 
+    /// Typen pauzeert de camera op iOS. Op de Mac blijft het veld klaar voor een USB-barcodescanner (die typt de code
+    /// en drukt op Enter), dus daar loopt de camera gewoon door.
+    private var typingPauses: Bool {
+        #if os(macOS)
+        false
+        #else
+        typing
+        #endif
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 14) {
@@ -44,14 +54,14 @@ struct ScanView: View {
             .padding(16)
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Scannen")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
                 BusinessPicker()
                 if !events.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) { eventMenu }
+                    ToolbarItem(placement: .barTrailing) { eventMenu }
                 }
                 if Torch.isAvailable && QRScanner.isAvailable {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .barTrailing) {
                         Button {
                             torch.toggle()
                             Torch.set(torch)
@@ -93,7 +103,7 @@ struct ScanView: View {
             cameraDenied = [.denied, .restricted].contains(AVCaptureDevice.authorizationStatus(for: .video))
         }
         // niet rustig (geen beoordelingsvraag) zolang er een klant geholpen wordt: code typen, zoeken of resultaat open
-        .onChange(of: result != nil || ticketScan != nil || memberScan != nil || busy || typing, initial: true) { _, active in ModalTracker.shared.scanning = active }
+        .onChange(of: result != nil || ticketScan != nil || memberScan != nil || busy || typingPauses, initial: true) { _, active in ModalTracker.shared.scanning = active }
         .onDisappear { ModalTracker.shared.scanning = false }
         .onChange(of: scenePhase) { _, phase in if phase != .active && torch { torch = false; Torch.set(false) } }
         .onDisappear { if torch { torch = false; Torch.set(false) } }
@@ -102,7 +112,7 @@ struct ScanView: View {
     @ViewBuilder private var camera: some View {
         if QRScanner.isAvailable && !cameraDenied {
             ZStack {
-                QRScanner(paused: result != nil || ticketScan != nil || memberScan != nil || couponCode != nil || busy || typing || ModalTracker.shared.locked) { code in
+                QRScanner(paused: result != nil || ticketScan != nil || memberScan != nil || couponCode != nil || busy || typingPauses || ModalTracker.shared.locked) { code in
                     Task { await look(code) }
                 }
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
@@ -121,7 +131,7 @@ struct ScanView: View {
                      ? "Geef Pasr Zakelijk toegang tot de camera in Instellingen, of typ de code van de klant hieronder."
                      : "Dit apparaat kan hier geen QR-codes scannen. Typ de code van de klant hieronder.")
             } actions: {
-                if cameraDenied, let url = URL(string: UIApplication.openSettingsURLString) {
+                if cameraDenied, let url = SystemSettings.cameraPrivacyURL {
                     Link("Open Instellingen", destination: url)
                 }
             }
@@ -143,13 +153,29 @@ struct ScanView: View {
     private var manualEntry: some View {
         HStack(spacing: 10) {
             TextField("Of typ de code (PZ…)", text: $manual)
-                .textInputAutocapitalization(.characters)
+                .capitalization(.characters)
                 .autocorrectionDisabled()
                 .font(.body.monospaced())
                 .focused($typing)
                 .submitLabel(.search)
                 .onSubmit { Task { await lookManual() } }
                 .fieldStyle()
+            #if os(macOS)
+            Button {
+                if let text = UIPasteboard.general.string, !text.isEmpty {
+                    manual = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    Task { await lookManual() }
+                }
+            } label: {
+                Image(systemName: "doc.on.clipboard")
+                    .font(.headline)
+                    .frame(width: 50, height: 50)
+                    .background(Theme.card2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(Text("Plak code"))
+            .accessibilityLabel(Text("Plak code"))
+            #endif
             Button {
                 Task { await lookManual() }
             } label: {
@@ -161,7 +187,14 @@ struct ScanView: View {
             }
             .disabled(manual.trimmingCharacters(in: .whitespaces).isEmpty || busy)
             .accessibilityLabel(Text("Zoek code"))
+            #if os(macOS)
+            .buttonStyle(.plain)
+            #endif
         }
+        #if os(macOS)
+        // klaar voor een USB-barcodescanner (toetsenbord): het veld heeft meteen de focus
+        .onAppear { typing = true }
+        #endif
     }
 
     private var eventTitle: String? {
@@ -202,7 +235,9 @@ struct ScanView: View {
             errorTick += 1
             return
         }
+        #if os(iOS)
         typing = false
+        #endif
         await look(manual)
     }
 

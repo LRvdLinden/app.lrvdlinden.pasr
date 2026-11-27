@@ -1,9 +1,11 @@
 import SwiftUI
-import UIKit
 import UserNotifications
 import Observation
-#if canImport(SafariServices)
+#if os(iOS)
+import UIKit
 import SafariServices
+#else
+import AppKit
 #endif
 
 /// Pushmeldingen van Pasr Zakelijk (iOS). De app vraagt één keer toestemming, op een rustig moment nadat je zaak is
@@ -26,14 +28,23 @@ enum ZakelijkPush {
         }
         UserDefaults.standard.set(true, forKey: askedKey)
         let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
-        if granted { UIApplication.shared.registerForRemoteNotifications() }
+        if granted { registerRemote() }
     }
 
     /// Bij het starten: met toestemming opnieuw aanmelden bij Apple (tokens kunnen veranderen).
     static func refreshIfAllowed() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
+        registerRemote()
+    }
+
+    /// Aanmelden bij APNs (iOS en macOS; zelfde bundle-id, dus hetzelfde APNs-topic).
+    private static func registerRemote() {
+        #if os(iOS)
         UIApplication.shared.registerForRemoteNotifications()
+        #else
+        NSApplication.shared.registerForRemoteNotifications()
+        #endif
     }
 
     static func didRegister(token: Data) {
@@ -87,7 +98,7 @@ enum DeviceRegistry {
         let last = UserDefaults.standard.double(forKey: atKey)
         if !force, Date.now.timeIntervalSince1970 - last < 86_400, UserDefaults.standard.string(forKey: stampKey) == stamp { return }
         var body: [String: Any] = ["p_device": deviceID, "p_app": "zakelijk", "p_platform": "ios", "p_version": version,
-                                   "p_build": build, "p_os": "iOS \(UIDevice.current.systemVersion)"]
+                                   "p_build": build, "p_os": DeviceInfo.osLine]
         if let region = Locale.current.region?.identifier, region.count == 2 { body["p_country"] = region }
         var ok = false
         if let token {
@@ -114,6 +125,7 @@ final class NotificationLink {
     var pending: URL?
 }
 
+#if os(iOS)
 /// Appdelegate: APNs-token ontvangen en tikken op meldingen afhandelen.
 final class ZakelijkAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
@@ -143,22 +155,33 @@ final class ZakelijkAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
     // Met een completion handler (niet async): dan roept iOS de afhandeling op de hoofdthread aan.
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        let info = response.notification.request.content.userInfo
+        ZakelijkNotificationRouter.open(response.notification.request.content.userInfo)
+        completionHandler()
+    }
+}
+#endif
+
+/// Tik op een melding (iOS en Mac): gezamenlijke acties naar Samenwerkingen, een widget-/app-link naar het juiste scherm,
+/// andere https-links in de browser.
+enum ZakelijkNotificationRouter {
+    static func open(_ info: [AnyHashable: Any]) {
         let link = (info["url"] as? String).flatMap(URL.init(string:)).flatMap { $0.scheme?.lowercased() == "https" ? $0 : nil }
         // gezamenlijke acties: type community_invite | community_invite_answered | community_active | community_removed
         let type = info["type"] as? String
         let campaign = (info["campaign"] as? String) ?? (info["campaign"] as? NSNumber)?.stringValue
         let businessID = info["business_id"] as? String
+        let appLink = (info["app_url"] as? String).flatMap(URL.init(string:)).flatMap { $0.scheme == "pasrzakelijk" ? $0 : nil }
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
                 if let type, CommunityRouter.pushTypes.contains(type) {
                     if let businessID, !businessID.isEmpty { BusinessStore.shared.select(businessID) }
                     CommunityRouter.shared.route(type: type, campaign: campaign)
+                } else if let app = appLink {
+                    BusinessStore.shared.handle(url: app)
                 } else if let link {
                     NotificationLink.shared.pending = link
                 }
             }
-            completionHandler()
         }
     }
 }
@@ -168,7 +191,7 @@ struct IdentifiedURL: Identifiable {
     var id: String { url.absoluteString }
 }
 
-#if canImport(SafariServices)
+#if os(iOS)
 /// Safari in de app (SFSafariViewController) voor links uit meldingen.
 struct SafariView: UIViewControllerRepresentable {
     let url: URL

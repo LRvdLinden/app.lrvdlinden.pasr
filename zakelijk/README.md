@@ -7,6 +7,8 @@ Bundle ID `app.lrvdlinden.pasrzakelijk`, versie 1.0.2 (build 7). Beheer van onde
 | Map | Inhoud |
 |---|---|
 | `apple/` | Xcode-project `PasrZakelijk.xcodeproj` (maak opnieuw met `python3 zakelijk/apple/make_project.py`; versie en build staan bovenin dat script) |
+| `apple/Mac/` | Native Mac-app (scheme `PasrZakelijkMac`): zijbalk, vensters, menubalk, camera-scanner |
+| `apple/Widgets/` + `apple/Shared/` | Widgets voor iOS en macOS en de gedeelde cache/links |
 | `apple/tools/make_strings.py` | Schrijft `Localizable.xcstrings` en `InfoPlist.xcstrings` (nl = ontwikkeltaal, Engels uit `apple/tools/strings_en.json`) |
 | `appstore/` | App Store-content: screenshots nl-NL en en-US (iPhone en iPad), productpagina-beelden, teksten, privacy en review-notities |
 
@@ -70,3 +72,29 @@ zijn beschikbaar. De echte kaartgegevens, officiële Pasr-stempel en persoonlijk
 QR-link blijven behouden. In de iOS-app opent dit in een Safari-sheet;
 op Android in Custom Tabs. Conceptkaarten zijn via het web-dashboard zonder QR
 te bekijken. De bestaande A4-flyer blijft printbaar.
+
+## Mac-app en widgets (1.0.4, build 21)
+
+Native SwiftUI-app voor macOS 14+ (geen Catalyst), target en scheme `PasrZakelijkMac`, **zelfde bundle-id**
+`app.lrvdlinden.pasrzakelijk` als iOS (universal purchase: één app in App Store Connect met het platform macOS erbij).
+Alle schermen en de API komen uit `apple/PasrZakelijk/` (kleine iOS/Mac-laag in `Core/Platform.swift`); alleen de
+Mac-schil staat in `apple/Mac/`:
+
+- Zijbalk zoals het dashboard op pasr.nl: Vandaag · Scannen · Klantenbinding (Stempelkaarten, Klantenkaarten, Tickets,
+  Kortingsbonnen, Actiecodes, Gezamenlijke acties, Beloningen) · Groei (Inzichten, Marketingkalender, Promotiemateriaal)
+  · Je zaak (Vestigingen, Medewerkers, Instellingen). Medewerkers zien alleen Scannen en Instellingen.
+- Werkbalk met zaakkiezer, zoeken (⌘F), Scannen (eigen venster, ⇧⌘S) en Nieuw (⌘N); menu Zaak met ⌘1…⌘7;
+  meerdere hoofdvensters (⌥⌘N); Instellingen (⌘,).
+- Scannen: camera (ingebouwd, USB of iPhone als Continuity-camera, Vision voor QR/Aztec/Code 128/EAN-13), code typen,
+  plakken of een USB-barcodescanner (typt in het veld en drukt Enter). Zelfde resultaatschermen als iOS.
+- Meldingen: APNs op de Mac met hetzelfde topic; het apparaat meldt zich als `p_platform: "ios"` met `p_os: "macOS …"`
+  (de server kent alleen ios/android). Zonder APNs-token: lokale melding bij een nieuwe uitnodiging na verversen.
+
+Widgets (iOS en macOS, `PasrZakelijkWidgets` / `PasrZakelijkMacWidgets`, bundle-id `app.lrvdlinden.pasrzakelijk.widgets`):
+**Vandaag** (klein/middel), **Komend event** (klein/middel) en **Te doen** (middel/groot), met zaakkeuze bij het bewerken.
+De app bewaart een cache in app group `group.app.lrvdlinden.pasrzakelijk` na elk laden/verversen; de widgets lezen alleen
+die cache (geen sessie of netwerk in de widget). Een tik opent `pasrzakelijk://open/<onderdeel>?zaak=<id>`.
+
+In het developer portal: app group `group.app.lrvdlinden.pasrzakelijk` aanmaken en aanzetten bij de App ID's
+`app.lrvdlinden.pasrzakelijk` en `app.lrvdlinden.pasrzakelijk.widgets`; bij de Mac ook Push Notifications. Mac-iconen:
+`python3 zakelijk/apple/tools/make_mac_icon.py` (uit het iOS-icoon).

@@ -1,5 +1,9 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Huisstijl van Pasr (zelfde kleuren als de app Pasr en pasr.nl), met mint als accent voor "Zakelijk".
 enum Theme {
@@ -56,10 +60,18 @@ extension Color {
         func comps(_ v: UInt32) -> (CGFloat, CGFloat, CGFloat) {
             (CGFloat((v >> 16) & 0xFF) / 255, CGFloat((v >> 8) & 0xFF) / 255, CGFloat(v & 0xFF) / 255)
         }
+        #if os(iOS)
         self.init(uiColor: UIColor { trait in
             let (r, g, b) = comps(trait.userInterfaceStyle == .dark ? dark : light)
             return UIColor(red: r, green: g, blue: b, alpha: 1)
         })
+        #else
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let (r, g, b) = comps(isDark ? dark : light)
+            return NSColor(srgbRed: r, green: g, blue: b, alpha: 1)
+        })
+        #endif
     }
 
     init(hex: String) {
@@ -85,7 +97,11 @@ extension Color {
     /// "#RRGGBB" van deze kleur (sRGB).
     func hexString() -> String {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        #if os(iOS)
         UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
+        #else
+        (NSColor(self).usingColorSpace(.sRGB) ?? .black).getRed(&r, green: &g, blue: &b, alpha: &a)
+        #endif
         func c(_ v: CGFloat) -> Int { Int((max(0, min(1, v)) * 255).rounded()) }
         return String(format: "#%02X%02X%02X", c(r), c(g), c(b))
     }

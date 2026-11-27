@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 /// Alle databasefuncties van Pasr Zakelijk (supabase/schema.sql, blok "zakelijk 1.0"). Rechten controleert de server.
 @MainActor
@@ -185,13 +184,7 @@ enum BusinessAPI {
     }
 
     /// Korte naam van dit apparaat voor het logboek ("iPhone", "iPad"); geen persoonlijke naam.
-    static var deviceName: String {
-        #if targetEnvironment(simulator)
-        return "Simulator"
-        #else
-        return UIDevice.current.model
-        #endif
-    }
+    static var deviceName: String { DeviceInfo.model }
 }
 
 /// Klantcode uit wat de camera of het toetsenbord oplevert: "PZ…", of een link met de code erin.
