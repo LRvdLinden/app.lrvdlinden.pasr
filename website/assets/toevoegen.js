@@ -52,7 +52,7 @@
     return fetch(cfg.url.replace(/\/$/, "") + "/rest/v1/rpc/" + name, {
       method: "POST", headers: { apikey: cfg.key, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(body || {})
-    }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); });
+    }).then(function (r) { if (!r.ok) { var x = new Error("http " + r.status); x.status = r.status; throw x; } return r.json(); });
   }
 
   // ---- weergave van het item (zelfde opbouw als de kaarten in de app: kleur en logo van de zaak)
@@ -104,17 +104,27 @@
       (state ? '<span class="ta-state">' + esc(state) + "</span>" : "") +
       (qr ? '<span class="ta-qr" role="img" aria-label="QR-code van je ticket">' + qr + '</span><span class="ta-code">' + esc(CODE.match(/.{1,4}/g).join(" ")) + "</span>" : "") + "</div>";
   }
+  // Afmelden (/add/t/<id>?c=<code>&afmelden=1). Anti-bot zoals pasr.nl/account: verborgen veld "website" en de tijd
+  // sinds de knop er staat; bot = we tonen "afgemeld" maar sturen niets. De tijd gaat mee als p_fill_ms
+  // (20261127-antibot-forms.sql); kent de server die nog niet, dan zonder.
   function cancelBox(item) {
-    var box = document.createElement("div");
+    var box = document.createElement("div"), shown = Date.now();
+    var okHtml = "<p><b>Je bent afgemeld.</b> Je tickets zijn niet meer geldig. Bedankt dat je je plek vrijgeeft.</p>";
     box.className = "ta-cancelbox";
     box.innerHTML = "<p>Kun je niet? Meld je af, dan gaat je plek naar iemand op de wachtlijst. Dit geldt voor alle tickets van je aanmelding.</p>" +
+      '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" id="ta-website" name="website" tabindex="-1" autocomplete="off"></label></div>' +
       '<button class="btn btn-ghost" type="button" id="ta-cancel">Afmelden</button>';
     $("ta-lead").after(box);
     $("ta-cancel").addEventListener("click", function () {
       if (!confirm("Weet je zeker dat je je afmeldt? Je tickets vervallen.")) return;
+      var fill = Date.now() - shown, bot = !!$("ta-website").value || fill < 1500;   // inclusief het lezen van de vraag
       var b = this; b.disabled = true;
-      rpc("pasr_event_ticket_cancel", { p_ticket: item.id, p_code: CODE }).then(function () {
-        box.innerHTML = "<p><b>Je bent afgemeld.</b> Je tickets zijn niet meer geldig. Bedankt dat je je plek vrijgeeft.</p>";
+      if (bot) { box.innerHTML = okHtml; return; }
+      var body = { p_ticket: item.id, p_code: CODE };
+      rpc("pasr_event_ticket_cancel", { p_ticket: item.id, p_code: CODE, p_fill_ms: Math.min(fill, 2147483647) })
+        .catch(function (x) { if (x && x.status === 404) return rpc("pasr_event_ticket_cancel", body); throw x; })
+        .then(function () {
+        box.innerHTML = okHtml;
       }, function () { b.disabled = false; box.querySelector("p").textContent = "Afmelden lukte niet. Probeer het later nog eens."; });
     });
   }

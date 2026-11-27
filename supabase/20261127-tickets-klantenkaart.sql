@@ -689,8 +689,12 @@ begin
     'cancel_message', e.cancel_message);
 end $$;
 
+-- p_hp en p_fill_ms (anti-bot, 20261127-antibot-forms.sql): het verborgen veld "website" en de invultijd in ms van
+-- pasr.nl/add/e/…; achteraan met een standaardwaarde, zodat de apps (7 parameters) gewoon blijven werken. De oude
+-- variant met 7 parameters gaat weg: twee varianten naast elkaar maakt de aanroep met 7 namen dubbelzinnig.
+drop function if exists public.pasr_event_register(uuid, text, text, text, date, uuid, integer);
 create or replace function public.pasr_event_register(p_event uuid, p_first_name text, p_last_name text, p_email text,
-  p_birth_date date, p_ticket_type uuid, p_count integer) returns json
+  p_birth_date date, p_ticket_type uuid, p_count integer, p_hp text default null, p_fill_ms integer default null) returns json
 language plpgsql security definer set search_path = '' as $$
 declare
   e public.pasr_tk_events; tt public.pasr_tk_ticket_types; v_first text := trim(coalesce(p_first_name, ''));
@@ -698,6 +702,14 @@ declare
   v_count integer := coalesce(p_count, 1); v_status text; v_reg uuid; v_tid uuid; v_code text; v_list jsonb := '[]'::jsonb;
   v_have integer; v_free integer; i integer; v_first_link text;
 begin
+  -- bot (honeypot ingevuld of sneller dan een mens): niets aanmaken en niets mailen, wel een gewoon antwoord
+  if coalesce(btrim(p_hp), '') <> '' or (p_fill_ms is not null and p_fill_ms < 2000) then
+    if to_regprocedure('public.pasr_form_bot(text,text)') is not null then
+      perform public.pasr_form_bot('event_register', case when coalesce(btrim(p_hp), '') <> '' then 'honeypot' else 'too_fast' end);
+    end if;
+    return json_build_object('status', 'registered', 'tickets', '[]'::json, 'add_link', null, 'registration_id', null,
+      'event_id', p_event);
+  end if;
   if char_length(v_first) not between 1 and 60 or char_length(v_last) not between 1 and 60
      or char_length(v_email) not between 3 and 200 or v_email !~ '^[^@\s<>"'',;]+@[^@\s<>"'',;]+\.[^@\s<>"'',;]+$'
      or p_birth_date is null or p_birth_date < date '1900-01-01' or p_birth_date > current_date
@@ -706,6 +718,10 @@ begin
   end if;
   if to_regprocedure('public.pasr_web_rate_hit(text,integer,integer)') is not null and auth.uid() is null then
     perform public.pasr_web_rate_hit('event_register', 30, 200000);
+  end if;
+  -- en per e-mailadres (gehasht), over alle events samen
+  if to_regprocedure('public.pasr_form_rate_hit(text,text,integer)') is not null and auth.uid() is null then
+    perform public.pasr_form_rate_hit('event_register_mail', v_email, 10);
   end if;
   select * into e from public.pasr_tk_events where id = p_event for update;
   if e.id is null or e.status = 'draft'
@@ -806,10 +822,23 @@ begin
 end $$;
 
 -- Extra (openbaar, met de code): zelf afmelden. Alle tickets van de aanmelding vervallen; de wachtlijst schuift door.
-create or replace function public.pasr_event_ticket_cancel(p_ticket uuid, p_code text) returns json
+-- p_hp en p_fill_ms: anti-bot zoals bij pasr_event_register (oude variant met 2 parameters gaat weg).
+drop function if exists public.pasr_event_ticket_cancel(uuid, text);
+create or replace function public.pasr_event_ticket_cancel(p_ticket uuid, p_code text, p_hp text default null,
+  p_fill_ms integer default null) returns json
 language plpgsql security definer set search_path = '' as $$
 declare t public.pasr_tk_tickets; n integer;
 begin
+  if coalesce(btrim(p_hp), '') <> '' or (p_fill_ms is not null and p_fill_ms < 1000) then
+    if to_regprocedure('public.pasr_form_bot(text,text)') is not null then
+      perform public.pasr_form_bot('event_ticket_cancel', case when coalesce(btrim(p_hp), '') <> '' then 'honeypot' else 'too_fast' end);
+    end if;
+    return json_build_object('cancelled', 0, 'promoted', 0);
+  end if;
+  -- rem per internetadres: de code raden kost zo te veel pogingen
+  if to_regprocedure('public.pasr_web_rate_hit(text,integer,integer)') is not null and auth.uid() is null then
+    perform public.pasr_web_rate_hit('event_ticket_cancel', 30, 50000);
+  end if;
   select * into t from public.pasr_tk_tickets where id = p_ticket for update;
   if t.id is null or t.code <> upper(trim(coalesce(p_code, ''))) then perform public.pasr_tk_err('invalid_code'); end if;
   update public.pasr_tk_tickets set status = 'cancelled', cancelled_at = now()
@@ -1523,9 +1552,9 @@ grant execute on function public.pasr_tk_mail_due(integer), public.pasr_tk_mail_
 revoke all on function public.pasr_business_event_save(uuid, jsonb), public.pasr_business_events(uuid),
   public.pasr_business_event_registrations(uuid, uuid), public.pasr_business_event_cancel(uuid, uuid, text),
   public.pasr_business_event_registration_cancel(uuid, uuid), public.pasr_business_ticket_scan(uuid, text, uuid),
-  public.pasr_event_public(uuid), public.pasr_event_register(uuid, text, text, text, date, uuid, integer),
+  public.pasr_event_public(uuid), public.pasr_event_register(uuid, text, text, text, date, uuid, integer, text, integer),
   public.pasr_my_event_tickets(), public.pasr_event_ticket_claim(uuid, text), public.pasr_event_ticket_public(uuid, text),
-  public.pasr_event_ticket_cancel(uuid, text),
+  public.pasr_event_ticket_cancel(uuid, text, text, integer),
   public.pasr_business_member_card_save(uuid, jsonb), public.pasr_business_member_cards(uuid),
   public.pasr_business_member_card_scan(uuid, text), public.pasr_business_member_card_visit(uuid, text, integer),
   public.pasr_business_member_card_redeem(uuid, text), public.pasr_member_card_public(uuid),
@@ -1541,6 +1570,6 @@ grant execute on function public.pasr_business_event_save(uuid, jsonb), public.p
   public.pasr_business_member_card_redeem(uuid, text), public.pasr_member_card_join(uuid, boolean),
   public.pasr_my_member_cards(), public.pasr_member_card_leave(uuid), public.pasr_member_card_notify(uuid, boolean)
   to authenticated;
-grant execute on function public.pasr_event_public(uuid), public.pasr_event_register(uuid, text, text, text, date, uuid, integer),
-  public.pasr_event_ticket_public(uuid, text), public.pasr_event_ticket_cancel(uuid, text), public.pasr_member_card_public(uuid)
+grant execute on function public.pasr_event_public(uuid), public.pasr_event_register(uuid, text, text, text, date, uuid, integer, text, integer),
+  public.pasr_event_ticket_public(uuid, text), public.pasr_event_ticket_cancel(uuid, text, text, integer), public.pasr_member_card_public(uuid)
   to anon, authenticated;

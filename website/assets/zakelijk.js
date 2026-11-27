@@ -293,7 +293,12 @@
   }
 
   // ---- inloggen, account maken, wachtwoord vergeten (bestaande Pasr-accountflow) ----
+  // Anti-bot (zoals pasr.nl/account): verborgen veld "website" en de invultijd. Bot = we doen alsof het gelukt is
+  // (inloggen: dezelfde melding als een fout wachtwoord) en sturen niets naar de server.
+  var HP_HTML = '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
+  function isBot(form, since, min) { var hp = form.querySelector('input[name="website"]'); return !!(hp && hp.value) || Date.now() - since < min; }
   function loginView(mode) {
+    var shownAt = Date.now();
     var shown = performance.now();
     var signup = mode === "signup", forgot = mode === "forgot";
     dashRoot().innerHTML =
@@ -305,7 +310,7 @@
       '<label for="zkEmail">E-mailadres</label><input id="zkEmail" type="email" autocomplete="email" required>' +
       (forgot ? "" : '<label for="zkPw">Wachtwoord</label><input id="zkPw" type="password" autocomplete="' + (signup ? "new-password" : "current-password") + '" minlength="8" required' + (signup ? ' aria-describedby="zkPwHelp"' : "") + ">" +
         (signup ? '<small id="zkPwHelp" class="zd-help">Minstens 8 tekens.</small>' : "")) +
-      (signup ? '<div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" id="zkWebsite" tabindex="-1" autocomplete="off"></label></div>' : "") +
+      HP_HTML.replace('name="website"', 'name="website" id="zkWebsite"') +
       '<button class="zk-btn" type="submit">' + (signup ? "Account maken" : forgot ? "Stuur mail" : "Inloggen") + '</button><p class="zk-msg" id="zkMsg" role="status" aria-live="polite"></p></form>' +
       '<p class="switch">' +
       (signup ? 'Al een account? <a href="#inloggen">Inloggen</a>' : forgot ? '<a href="#inloggen">Terug naar inloggen</a>' : 'Nog geen account? <a href="#account">Gratis aanmelden</a> · <a href="#vergeten">Wachtwoord vergeten?</a>') + "</p></section>";
@@ -314,6 +319,15 @@
       var msg = $("#zkMsg"), btn = ev.target.querySelector("button");
       var email = $("#zkEmail").value.trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $("#zkEmail").focus(); return setMsg(msg, "Dit e-mailadres klopt niet."); }
+      var checkEmail = function () {
+        dashRoot().innerHTML = '<section class="auth ok zd-auth"><div class="badge">' + ICON.mail + "</div><h1>Check je mail</h1><p>We hebben een mail gestuurd naar " + esc(email) +
+          '. Tik op de knop in die mail om je e-mailadres te bevestigen. Kom daarna terug en log hier in om je zaak aan te melden.</p><p><a class="zk-btn" href="#inloggen">Naar inloggen</a></p></section>';
+      };
+      if (isBot(ev.target, shownAt, signup ? 3000 : 1500)) {   // bot: doe alsof, stuur niets
+        if (forgot) return setMsg(msg, "Als er een account met dit adres is, staat er nu een mail in je inbox.", true);
+        if (signup) { if (!$("#zkName").value.trim() || $("#zkPw").value.length < 8) return setMsg(msg, "Vul alle velden in."); return checkEmail(); }
+        return setMsg(msg, "E-mailadres of wachtwoord klopt niet.");
+      }
       btn.disabled = true;
       try {
         if (forgot) {
@@ -324,10 +338,8 @@
           if (!name) { btn.disabled = false; $("#zkName").focus(); return setMsg(msg, "Vul je voornaam in."); }
           if (pw.length < 8) { btn.disabled = false; $("#zkPw").focus(); return setMsg(msg, "Kies een wachtwoord van minstens 8 tekens."); }
           var data = { first_name: name, fill_ms: Math.round(performance.now() - shown), app: "zakelijk" };
-          var hp = $("#zkWebsite").value; if (hp) data.hp = hp;
           await http("auth/v1/signup?redirect_to=" + encodeURIComponent("https://pasr.nl/bevestigen/"), { email: email, password: pw, data: data });
-          dashRoot().innerHTML = '<section class="auth ok zd-auth"><div class="badge">' + ICON.mail + "</div><h1>Check je mail</h1><p>We hebben een mail gestuurd naar " + esc(email) +
-            '. Tik op de knop in die mail om je e-mailadres te bevestigen. Kom daarna terug en log hier in om je zaak aan te melden.</p><p><a class="zk-btn" href="#inloggen">Naar inloggen</a></p></section>';
+          checkEmail();
         } else {
           keep(await http("auth/v1/token?grant_type=password", { email: email, password: $("#zkPw").value }));
           navState();
@@ -1713,13 +1725,15 @@
         '<div class="actions"><a class="btn btn-primary" href="pasr://zakelijk?ref=' + encodeURIComponent(referral || "") + '#' + esc(id) + '">Open in Pasr</a><a class="btn btn-ghost" href="' + APP_STORE + '" rel="noopener">Pasr voor iPhone</a><a class="btn btn-ghost" href="/android/">Pasr voor Android</a></div>' +
         '<p class="note">Geen app? <button class="zk-btn sm" id="jJoin" type="button">Gebruik de kaart in je browser</button></p>' +
         (referral ? '<p class="zd-help">Vriendenactie: de bonus komt pas na je eerste aankoop. Log in met je Pasr-account.</p>' +
-        '<form id="jReferralLogin" class="zk-form" style="max-width:410px"><label>E-mail<input name="email" type="email" required></label>' +
-        '<label>Wachtwoord<input name="password" type="password" required></label><button class="zk-btn ghost" type="submit">Inloggen</button></form>' : '') +
+        '<form id="jReferralLogin" class="zk-form" style="max-width:410px"><label>E-mail<input name="email" type="email" autocomplete="email" required></label>' +
+        '<label>Wachtwoord<input name="password" type="password" autocomplete="current-password" required></label>' + HP_HTML + '<button class="zk-btn ghost" type="submit">Inloggen</button></form>' : '') +
+        '<span id="jHp">' + HP_HTML + "</span>" +
         '<p class="zk-msg" id="jMsg" role="status"></p>' +
         '<p class="note" style="font-size:14px">Je krijgt een anonieme lidcode; Pasr vraagt geen naam of e-mailadres. <a href="/privacy/#stempelkaarten-van-ondernemers">Privacy</a></p>';
-      var loginForm = $("#jReferralLogin");
+      var loginForm = $("#jReferralLogin"), shownAt = Date.now();
       if (loginForm) loginForm.addEventListener("submit", async function (ev) {
         ev.preventDefault();
+        if (isBot(loginForm, shownAt, 1500)) return setMsg($("#jMsg"), "E-mailadres of wachtwoord klopt niet.");   // bot: niets versturen
         try {
           keep(await http("auth/v1/token?grant_type=password", {
             email: loginForm.elements.email.value.trim(), password: loginForm.elements.password.value
@@ -1730,6 +1744,8 @@
       });
       $("#jJoin").addEventListener("click", async function (ev) {
         ev.target.disabled = true;
+        // bot: er gaat niets naar de server en er komt geen melding; de knop werkt na even weer
+        if (isBot($("#jHp"), shownAt, 800)) return setTimeout(function () { ev.target.disabled = false; }, 1500);
         try {
           var m;
           if (referral) {
