@@ -3,11 +3,12 @@ import SwiftUI
 /// Tabblad Mail: Inbox, Nieuwe mail en Nieuwsbrief. Concepten blijven bewaard (alleen in het geheugen) als je wisselt van onderdeel.
 struct MailView: View {
     enum Part: String, CaseIterable, Identifiable {
-        case inbox, compose, newsletter
+        case inbox, sent, compose, newsletter
         var id: String { rawValue }
         var title: LocalizedStringKey {
             switch self {
             case .inbox: "Inbox"
+            case .sent: "Verzonden"
             case .compose: "Nieuwe mail"
             case .newsletter: "Nieuwsbrief"
             }
@@ -28,7 +29,8 @@ struct MailView: View {
             .padding(.horizontal, 16).padding(.vertical, 8)
             Group {
                 switch part {
-                case .inbox: MailInboxView(status: status, reloadStatus: reloadStatus)
+                case .inbox: MailInboxView(box: "inbox", status: status, reloadStatus: reloadStatus)
+                case .sent: MailInboxView(box: "sent", status: status, reloadStatus: reloadStatus)
                 case .compose: MailComposeView(status: status, draft: drafts.compose)
                 case .newsletter: MailNewsletterView(status: status, draft: drafts.newsletter)
                 }
