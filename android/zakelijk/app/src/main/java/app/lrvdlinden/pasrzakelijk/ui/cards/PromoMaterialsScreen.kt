@@ -56,11 +56,14 @@ fun PromoMaterialsScreen(business: Business) {
                     .put("reward",card.reward).put("published",card.published)
                     .put("join_url",card.joinURL))
         }.toMutableList()
+        val base=business.cards.firstOrNull { it.color.isNotBlank() }
+        val baseColor=base?.color ?: "#6A5CFF"
+        val baseLogo=base?.logo ?: ""
         try {
             val rows=Account.rpc("pasr_business_coupon_list",JSONObject().put("p_business",business.id)) as? JSONArray
             for(i in 0 until (rows?.length() ?: 0)){
                 val row=rows?.optJSONObject(i) ?: continue
-                row.put("kind","coupon").put("business",business.name).put("color","#6A5CFF")
+                row.put("kind","coupon").put("business",business.name).put("color",baseColor).put("logo",baseLogo)
                 choices.add(PromotionChoice("coupon:"+row.optString("id"),"Kortingscoupon",row.optString("title"),row))
             }
         }catch(e:Exception){error="Kortingscoupons laden mislukt: "+e.message}
@@ -68,10 +71,30 @@ fun PromoMaterialsScreen(business: Business) {
             val rows=Account.rpc("pasr_business_promo_list",JSONObject().put("p_business",business.id)) as? JSONArray
             for(i in 0 until (rows?.length() ?: 0)){
                 val row=rows?.optJSONObject(i) ?: continue
-                row.put("kind","code").put("business",business.name).put("color","#6A5CFF")
+                row.put("kind","code").put("business",business.name).put("color",baseColor).put("logo",baseLogo)
                 choices.add(PromotionChoice("code:"+row.optString("id"),"Actiecode",row.optString("title"),row))
             }
         }catch(e:Exception){error="Actiecodes laden mislukt: "+e.message}
+        try {
+            val rows=Account.rpc("pasr_business_events",JSONObject().put("p_business",business.id)) as? JSONArray
+            val now=System.currentTimeMillis()
+            val events=mutableListOf<JSONObject>()
+            for(i in 0 until (rows?.length() ?: 0)){
+                val row=rows?.optJSONObject(i) ?: continue
+                if(row.optString("status")=="cancelled")continue
+                val ends=runCatching{java.time.OffsetDateTime.parse(row.optString("ends_at")).toInstant().toEpochMilli()}.getOrNull() ?: continue
+                if(ends<now)continue
+                events.add(row)
+            }
+            events.sortedBy{runCatching{java.time.OffsetDateTime.parse(it.optString("starts_at")).toInstant().toEpochMilli()}.getOrDefault(0L)}.forEach{ row ->
+                val ev=JSONObject().put("kind","event").put("id",row.optString("id")).put("name",row.optString("name"))
+                    .put("title",row.optString("name")).put("address",row.optString("address"))
+                    .put("starts_at",row.optString("starts_at")).put("ends_at",row.optString("ends_at"))
+                    .put("status",row.optString("status")).put("business",business.name)
+                    .put("color",row.optString("color").ifBlank{baseColor}).put("logo",baseLogo)
+                choices.add(PromotionChoice("event:"+row.optString("id"),"Ticket (event)",row.optString("name"),ev))
+            }
+        }catch(e:Exception){error="Events laden mislukt: "+e.message}
         products=choices;busy=false
     }
 
@@ -79,7 +102,7 @@ fun PromoMaterialsScreen(business: Business) {
         if(selected==null){
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
                 verticalArrangement=Arrangement.spacedBy(12.dp)){
-                Text("Kies een stempelkaart, kortingscoupon of actiecode. Maak social posts, Stories, banners of flyers in Licht en Donker.",color=Pz.text)
+                Text("Kies een stempelkaart, kortingscoupon, actiecode of gratis event (ticket). Maak social posts, Stories, banners of flyers in Licht en Donker.",color=Pz.text)
                 if(busy)CircularProgressIndicator(color=Pz.accent)
                 error?.let { Text(it,color=Pz.coral) }
                 products.forEach { product ->

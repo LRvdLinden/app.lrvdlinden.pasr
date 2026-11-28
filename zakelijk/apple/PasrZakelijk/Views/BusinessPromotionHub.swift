@@ -7,7 +7,7 @@ import Photos
 import AppKit
 #endif
 
-/// Centraal promotiemateriaal voor stempelkaarten, coupons en actiecodes.
+/// Centraal promotiemateriaal voor stempelkaarten, coupons, actiecodes en gratis events (tickets).
 struct BusinessPromotionHub: View {
     let business: Business
     @State private var products: [PromoProduct] = []
@@ -19,7 +19,7 @@ struct BusinessPromotionHub: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Kies eerst de actieve stempelkaart, kortingscoupon of actiecode. Maak daarna social posts, stories, webban­ners of flyers in Licht en Donker.")
+                    Text("Kies eerst de actieve stempelkaart, kortingscoupon, actiecode of een gratis event (ticket). Maak daarna social posts, stories, webban­ners of flyers in Licht en Donker.")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
                 if loading { ProgressView("Zakelijke acties laden…") }
@@ -39,7 +39,7 @@ struct BusinessPromotionHub: View {
                         }
                     }
                     if !loading && products.isEmpty {
-                        Text("Maak eerst een stempelkaart, kortingscoupon of actiecode.")
+                        Text("Maak eerst een stempelkaart, kortingscoupon, actiecode of event.")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -63,6 +63,9 @@ struct BusinessPromotionHub: View {
     @MainActor private func load() async {
         loading = true
         defer { loading = false }
+        let base = business.cards.first(where: { !$0.color.isEmpty })
+        let baseColor = base?.color ?? "#6A5CFF"
+        let baseLogo = base?.logo ?? ""
         products = business.cards.map { card in
             PromoProduct(id: "card:\(card.id)", kind: "card", title: card.name, business: business.name,
                          fields: ["kind": "card", "id": card.id, "name": card.name, "business": business.name,
@@ -72,6 +75,7 @@ struct BusinessPromotionHub: View {
         }
         async let coupons = Account.shared.rpc("pasr_business_coupon_list", ["p_business": business.id])
         async let codes = Account.shared.rpc("pasr_business_promo_list", ["p_business": business.id])
+        async let eventRows = Account.shared.rpc("pasr_business_events", ["p_business": business.id])
         do {
             let couponData = try await coupons
             if let rows = couponData as? [[String: Any]] {
@@ -80,7 +84,8 @@ struct BusinessPromotionHub: View {
                     var fields = row
                     fields["kind"] = "coupon"
                     fields["business"] = business.name
-                    fields["color"] = "#6A5CFF"
+                    fields["color"] = baseColor
+                    fields["logo"] = baseLogo
                     products.append(PromoProduct(id: "coupon:\(id)", kind: "coupon",
                         title: row["title"] as? String ?? "Kortingscoupon", business: business.name, fields: fields))
                 }
@@ -94,12 +99,39 @@ struct BusinessPromotionHub: View {
                     var fields = row
                     fields["kind"] = "code"
                     fields["business"] = business.name
-                    fields["color"] = "#6A5CFF"
+                    fields["color"] = baseColor
+                    fields["logo"] = baseLogo
                     products.append(PromoProduct(id: "code:\(id)", kind: "code",
                         title: row["title"] as? String ?? "Actiecode", business: business.name, fields: fields))
                 }
             }
         } catch { self.error = "Actiecodes konden niet worden geladen: \(error.localizedDescription)" }
+        do {
+            let eventData = try await eventRows
+            if let rows = eventData as? [[String: Any]] {
+                let parse: (Any?) -> Date? = { value in
+                    guard let text = value as? String else { return nil }
+                    let plain = ISO8601DateFormatter()
+                    let fractional = ISO8601DateFormatter()
+                    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                    return plain.date(from: text) ?? fractional.date(from: text)
+                }
+                let upcoming = rows.filter { row in
+                    guard (row["status"] as? String) != "cancelled", let end = parse(row["ends_at"]) else { return false }
+                    return end > Date()
+                }.sorted { (parse($0["starts_at"]) ?? .distantFuture) < (parse($1["starts_at"]) ?? .distantFuture) }
+                for row in upcoming {
+                    guard let id = row["id"] as? String else { continue }
+                    let name = row["name"] as? String ?? "Event"
+                    let fields: [String: Any] = ["kind": "event", "id": id, "name": name, "title": name,
+                        "address": row["address"] as? String ?? "", "starts_at": row["starts_at"] as? String ?? "",
+                        "ends_at": row["ends_at"] as? String ?? "", "status": row["status"] as? String ?? "published",
+                        "business": business.name, "color": (row["color"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? baseColor,
+                        "logo": baseLogo]
+                    products.append(PromoProduct(id: "event:\(id)", kind: "event", title: name, business: business.name, fields: fields))
+                }
+            }
+        } catch { self.error = "Events konden niet worden geladen: \(error.localizedDescription)" }
     }
 }
 
@@ -110,10 +142,10 @@ struct PromoProduct: Identifiable {
     let business: String
     let fields: [String: Any]
     var typeTitle: String {
-        switch kind { case "card": "Stempelkaart"; case "coupon": "Kortingscoupon"; default: "Actiecode" }
+        switch kind { case "card": "Stempelkaart"; case "coupon": "Kortingscoupon"; case "event": "Ticket (event)"; default: "Actiecode" }
     }
     var icon: String {
-        switch kind { case "card": "rectangle.stack"; case "coupon": "ticket"; default: "number" }
+        switch kind { case "card": "rectangle.stack"; case "coupon": "ticket"; case "event": "calendar"; default: "number" }
     }
 }
 

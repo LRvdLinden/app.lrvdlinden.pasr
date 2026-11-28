@@ -259,6 +259,12 @@
       '<div class="tk-reghead"><h3>Aanmeldingen</h3><label class="tk-search"><span class="sr-only">Zoek op naam of e-mail</span>' + h.ICON.search + '<input type="search" id="tkQ" placeholder="Zoek op naam of e-mail"></label></div>' +
       '<div id="tkRegs"><p class="zd3-muted">Laden…</p></div>' +
       '<p class="zd-help">Geboortedatum en e-mail zie alleen jij; ze staan niet op het ticket en niet in de QR-code. 30 dagen na het event worden ze gewist.</p></section>';
+    var promo = document.createElement("section"); promo.className = "zk-panel tk-promo"; panel.appendChild(promo);
+    if (window.PasrPromo) {
+      var first = (b.cards || []).filter(function (c) { return c.color; })[0] || {};
+      window.PasrPromo.mount(promo, { kind: "event", id: e.id, name: e.name, title: e.name, address: e.address || "", starts_at: e.starts_at, ends_at: e.ends_at,
+        status: e.status, business: b.name, color: e.color || first.color || "#6A5CFF", logo: first.logo || "" });
+    }
     $("#tkBack", panel).addEventListener("click", function () { st.sub = null; st.tkEvent = null; h.render(); });
     var ed = $("#tkEdit", panel); if (ed) ed.addEventListener("click", function () { st.sub = "tk-edit"; h.render(); });
     var sc = $("#tkScan", panel); if (sc) sc.addEventListener("click", function () { st.scanEvent = e.id; h.go("scannen"); });
