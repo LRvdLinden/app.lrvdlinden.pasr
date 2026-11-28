@@ -135,7 +135,7 @@ export function content(i: Item) {
         title: "Je zaak doet niet meer mee",
         intro: `${actor || "Pasr"} heeft ${business} uit de gezamenlijke actie ${q} gehaald. Bezoeken bij jouw zaak tellen niet meer mee voor deze actie; je eigen stempelkaarten werken gewoon door.`,
         rows: rows.filter((r) => r[0] !== "Doen mee"), button: "Naar je dashboard", link: DASHBOARD,
-        note: "Klopt dit niet? Neem contact op met de organisator, of mail support@pasr.nl.",
+        note: "Klopt dit niet? Neem contact op met de organisator, of mail zakelijk@pasr.nl.",
       };
     case "revoked":
       return {
@@ -143,7 +143,7 @@ export function content(i: Item) {
         title: "Uitnodiging ingetrokken",
         intro: `${actor || "Pasr"} heeft de uitnodiging voor de gezamenlijke actie ${q} ingetrokken. Je hoeft niets te doen.`,
         rows: rows.filter((r) => r[0] !== "Doen mee"), button: "Pasr voor ondernemers", link: "https://pasr.nl/zakelijk/",
-        note: "Vragen? Neem contact op met de organisator, of mail support@pasr.nl.",
+        note: "Vragen? Neem contact op met de organisator, of mail zakelijk@pasr.nl.",
       };
   }
 }

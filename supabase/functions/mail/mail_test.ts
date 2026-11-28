@@ -147,7 +147,7 @@ Deno.test("onderwerp, Message-ID, afzender, status", () => {
   eq(withName("Eigen Naam <a@b.nl>", "Pasr"), "Eigen Naam <a@b.nl>");
   const none = () => "";
   eq(fromFor("pasr", none), "Pasr <support@pasr.nl>");
-  eq(fromFor("zakelijk", none), "Pasr Zakelijk <support@pasr.nl>");
+  eq(fromFor("zakelijk", none), "Pasr Zakelijk <zakelijk@pasr.nl>");
   eq(fromFor("zakelijk", (k) => (k === "PASR_MAIL_FROM_ZAKELIJK" ? "ondernemers@pasr.nl" : "")), "Pasr Zakelijk <ondernemers@pasr.nl>");
   eq(fromFor("pasr", (k) => (k === "PASR_MAIL_FROM_PASR" ? "Pasr Hulp <hulp@pasr.nl>" : "")), "Pasr Hulp <hulp@pasr.nl>");
   eq([statusAfter("new", "support"), statusAfter("closed", "support"), statusAfter("pending", "contact"), statusAfter("closed", "contact")], ["pending", "closed", "open", "open"]);
@@ -204,7 +204,7 @@ Deno.test("alleen BCC: de To-kop toont de afzender zelf; geen To/CC van derden",
 
 Deno.test("ticketmail: onderwerp [#n], In-Reply-To, References, X-Pasr-Ticket, marker, bijlagen", async () => {
   const m = buildMessage({
-    ...base, brand: "zakelijk", kind: "reply", from: "Pasr Zakelijk <support@pasr.nl>", to: ["klant@x.nl"], cc: [], bcc: [], number: 1001,
+    ...base, brand: "zakelijk", kind: "reply", from: "Pasr Zakelijk <zakelijk@pasr.nl>", to: ["klant@x.nl"], cc: [], bcc: [], number: 1001,
     messageId: "<pasr-ticket-1001.abc123@pasr.nl>", inReplyTo: "<k1@x.nl>", references: ["<a@x.nl>", "<k1@x.nl>"],
     attachments: [{ name: "offerte.pdf", type: "application/pdf", data: new TextEncoder().encode("%PDF-1.4 test") }],
   });
@@ -340,4 +340,15 @@ Deno.test("handtekening: Team Pasr / Team Pasr Zakelijk onder de inhoud, boven d
   // buildMessage geeft de keuze door
   const mk = (signature?: boolean) => buildMessage({ brand: "pasr", kind: "mail", from: "Pasr <a@pasr.nl>", to: ["b@x.nl"], cc: [], bcc: [], subject: "S", markdown: "Hoi", messageId: "<1@x>", signature });
   ok(mk().html.includes("handtekening-pasr.jpg") && !mk(false).html.includes("handtekening-pasr.jpg"), "buildMessage");
+});
+
+Deno.test("zakelijkSmtp: eigen login alleen als beide secrets staan", async () => {
+  const { zakelijkSmtp, transportOptions } = await import("./send.ts");
+  const e = (m: Record<string, string>) => (k: string) => m[k] ?? "";
+  eq(zakelijkSmtp(e({})), false);
+  eq(zakelijkSmtp(e({ PASR_SMTP_ZAKELIJK_USER: "zakelijk@pasr.nl" })), false);
+  const env = e({ PASR_SMTP_HOST: "h", PASR_SMTP_USER: "support@pasr.nl", PASR_SMTP_PASSWORD: "a", PASR_SMTP_ZAKELIJK_USER: "zakelijk@pasr.nl", PASR_SMTP_ZAKELIJK_PASSWORD: "b" });
+  eq(zakelijkSmtp(env), true);
+  eq(transportOptions(env, "zakelijk").auth.user, "zakelijk@pasr.nl");
+  eq(transportOptions(env, "pasr").auth.user, "support@pasr.nl");
 });

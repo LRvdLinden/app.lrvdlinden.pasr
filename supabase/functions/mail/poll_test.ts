@@ -44,9 +44,9 @@ Deno.test("brievenbussen en eigen adressen", () => {
   eq(boxes(env({})), []);
   eq(boxes(E).map((b) => b.brand), ["pasr"]);
   eq(boxes(env({ PASR_IMAP_HOST: "h", PASR_IMAP_USER: "a@pasr.nl", PASR_IMAP_PASSWORD: "p", PASR_IMAP_ZAKELIJK_USER: "z@pasr.nl", PASR_IMAP_ZAKELIJK_PASSWORD: "q" })).map((b) => b.brand), ["pasr", "zakelijk"]);
-  ok(ownAddresses(E).includes("inbox@pasr.nl") && ownAddresses(E).includes("support@pasr.nl") && ownAddresses(E).includes("support@pasr.nl"));
+  ok(ownAddresses(E).includes("inbox@pasr.nl") && ownAddresses(E).includes("support@pasr.nl") && ownAddresses(E).includes("zakelijk@pasr.nl"));
   eq(replyToFor(E, "pasr"), "inbox@pasr.nl");
-  eq(replyToFor(env({}), "zakelijk"), "support@pasr.nl");
+  eq(replyToFor(env({}), "zakelijk"), "zakelijk@pasr.nl");
 });
 
 Deno.test("nieuwe mail van een klant wordt een ticket met de mail als eerste bericht", async () => {
