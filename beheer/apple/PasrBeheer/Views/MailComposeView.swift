@@ -58,7 +58,7 @@ struct MailComposeView: View {
 
             Section {
                 MailAttachmentsRows(attachments: $draft.attachments)
-            } header: { Text("Bijlagen") } footer: { Text("Samen hoogstens 10 MB.") }
+            } header: { Text("Bijlagen") } footer: { Text("Samen hoogstens 20 MB.") }
 
             Section("Voorbeeld") {
                 Toggle("Voorbeeld tonen", isOn: $showPreview)

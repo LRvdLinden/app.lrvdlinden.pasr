@@ -14,11 +14,13 @@ struct PushPrefs: Codable, Equatable {
     var deleted = true
     var bots = true
     var requests = true
+    /// Nieuw ticket of antwoord van een klant in Mail (soort `mail_ticket`).
+    var mail = true
 
-    var params: [String: Bool] { ["signups": signups, "confirmed": confirmed, "deleted": deleted, "bots": bots, "requests": requests] }
+    var params: [String: Bool] { ["signups": signups, "confirmed": confirmed, "deleted": deleted, "bots": bots, "requests": requests, "mail": mail] }
 
     init() {}
-    /// Oudere opgeslagen voorkeuren hebben nog geen "requests": dan de standaard.
+    /// Oudere opgeslagen voorkeuren hebben nog geen "requests" of "mail": dan de standaard.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         signups = try c.decodeIfPresent(Bool.self, forKey: .signups) ?? true
@@ -26,6 +28,7 @@ struct PushPrefs: Codable, Equatable {
         deleted = try c.decodeIfPresent(Bool.self, forKey: .deleted) ?? true
         bots = try c.decodeIfPresent(Bool.self, forKey: .bots) ?? true
         requests = try c.decodeIfPresent(Bool.self, forKey: .requests) ?? true
+        mail = try c.decodeIfPresent(Bool.self, forKey: .mail) ?? true
     }
 }
 

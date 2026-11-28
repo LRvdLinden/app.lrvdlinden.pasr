@@ -16,7 +16,7 @@ extension APIError {
         case "bad_body": return String(localized: "Schrijf een bericht.")
         case "bad_address": return String(localized: "Een of meer e-mailadressen kloppen niet.")
         case "too_many": return String(localized: "Te veel ontvangers (maximaal 200 per keer).")
-        case "too_large": return String(localized: "De bijlagen zijn samen te groot (maximaal 10 MB).")
+        case "too_large": return String(localized: "De bijlagen zijn samen te groot (maximaal 20 MB).")
         case "rate_limited": return String(localized: "Even wachten: er zijn te veel mails verstuurd. Probeer het zo opnieuw.")
         case "smtp_not_configured": return String(localized: "E-mail is op de server nog niet ingericht (PASR_SMTP_*).")
         case "not_found": return String(localized: "Niet gevonden.")
@@ -87,7 +87,37 @@ struct MailThread: Decodable, Identifiable, Hashable {
     let last_message_at: String?
     let unread: Bool?
     let preview: String?
+    // alleen in de lijst (`box`: inbox of sent)
+    let last_direction: String?
+    let to_preview: MailFlexText?
+    let to_count: Int?
+    let cc_count: Int?
+    let bcc_count: Int?
+    let attachments: MailFlexCount?
+    let sent_at: String?
     var id: Int { number }
+}
+
+/// Tekst of lijst van teksten (de server mag `to_preview` als string of als lijst sturen).
+struct MailFlexText: Decodable, Hashable {
+    let text: String
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let s = try? c.decode(String.self) { text = s }
+        else if let a = try? c.decode([String].self) { text = a.joined(separator: ", ") }
+        else { text = "" }
+    }
+}
+
+/// Aantal bijlagen: een getal of een lijst.
+struct MailFlexCount: Decodable, Hashable {
+    let count: Int
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let n = try? c.decode(Int.self) { count = n }
+        else if let a = try? c.decode([MailAttachment].self) { count = a.count }
+        else { count = 0 }
+    }
 }
 
 struct MailThreadList: Decodable {
@@ -257,7 +287,7 @@ struct MailDraftAttachment: Identifiable, Equatable {
 }
 
 enum MailLimits {
-    static let attachmentBytes = 10 * 1024 * 1024
+    static let attachmentBytes = 20 * 1024 * 1024
     static let recipients = 200
 }
 

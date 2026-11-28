@@ -116,7 +116,7 @@ struct MailBodyEditor: View {
     }
 }
 
-/// Bijlagen kiezen (bestanden of foto's), samen hoogstens 10 MB.
+/// Bijlagen kiezen (bestanden of foto's), samen hoogstens 20 MB.
 struct MailAttachmentsRows: View {
     @Binding var attachments: [MailDraftAttachment]
     @State private var photos: [PhotosPickerItem] = []
@@ -144,7 +144,7 @@ struct MailAttachmentsRows: View {
                 Button { importing = true } label: { Label("Bestand", systemImage: "doc.badge.plus") }
                 PhotosPicker(selection: $photos, maxSelectionCount: 10, matching: .images) { Label("Foto", systemImage: "photo") }
                 Spacer()
-                Text(verbatim: Self.size(total) + " / 10 MB").font(.caption.monospacedDigit())
+                Text(verbatim: Self.size(total) + " / 20 MB").font(.caption.monospacedDigit())
                     .foregroundStyle(total > MailLimits.attachmentBytes ? Theme.coral : Theme.muted)
             }
             .buttonStyle(.bordered)
@@ -182,7 +182,7 @@ struct MailAttachmentsRows: View {
 
     private func add(_ data: Data, name: String, type: String) {
         if total + data.count > MailLimits.attachmentBytes {
-            message = String(localized: "De bijlagen zijn samen te groot (maximaal 10 MB).")
+            message = String(localized: "De bijlagen zijn samen te groot (maximaal 20 MB).")
             return
         }
         message = nil

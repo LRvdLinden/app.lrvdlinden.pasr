@@ -35,6 +35,8 @@ struct MailStatusBadge: View {
 }
 
 struct MailInboxView: View {
+    /// "inbox" of "sent" (Verzonden).
+    let box: String
     let status: MailStatus?
     let reloadStatus: () async -> Void
 
@@ -57,8 +59,10 @@ struct MailInboxView: View {
     var body: some View {
         List {
             Section {
-                statusCard
-                filterBar
+                if box == "inbox" {
+                    statusCard
+                    filterBar
+                }
                 Picker("Merk", selection: $brandFilter) {
                     Text("Alle merken").tag("")
                     Text(verbatim: "Pasr").tag("pasr")
@@ -72,13 +76,13 @@ struct MailInboxView: View {
             Section {
                 if let error { Text(error).foregroundStyle(Theme.coral) }
                 ForEach(items) { t in
-                    NavigationLink(value: t.number) { MailThreadRow(thread: t) }
+                    NavigationLink(value: t.number) { MailThreadRow(thread: t, sent: box == "sent") }
                         .listRowBackground(Theme.card)
                         .onAppear { if t.id == items.last?.id { Task { await loadMore() } } }
                 }
                 if loaded && items.isEmpty && error == nil {
                     Text(LocalizedStringKey(!query.trimmingCharacters(in: .whitespaces).isEmpty ? "Geen mails gevonden."
-                         : filter == "active" ? "Geen openstaande mails." : "Geen mails."))
+                         : box == "sent" ? "Nog geen verzonden mails." : filter == "active" ? "Geen openstaande mails." : "Geen mails."))
                         .foregroundStyle(Theme.muted).listRowBackground(Theme.card)
                 }
                 if loading { HStack { Spacer(); ProgressView(); Spacer() }.listRowBackground(Color.clear) }
@@ -96,7 +100,7 @@ struct MailInboxView: View {
             MailThreadView(number: n) { await reloadAll() }
         }
         .refreshable { await reloadAll() }
-        .task(id: "\(filter)|\(brandFilter)|\(query)|\(session.refreshTick)") {
+        .task(id: "\(box)|\(filter)|\(brandFilter)|\(query)|\(session.refreshTick)") {
             if loaded { try? await Task.sleep(for: .milliseconds(300)) }
             if Task.isCancelled { return }
             await reloadAll()
@@ -177,7 +181,7 @@ struct MailInboxView: View {
     private func fetch(page p: Int, replace: Bool) async {
         loading = true
         defer { loading = false }
-        var params: [String: Any] = ["status": filter, "q": query.trimmingCharacters(in: .whitespaces), "page": p, "page_size": pageSize]
+        var params: [String: Any] = ["box": box, "status": box == "sent" ? "all" : filter, "q": query.trimmingCharacters(in: .whitespaces), "page": p, "page_size": pageSize]
         if !brandFilter.isEmpty { params["brand"] = brandFilter }
         do {
             let r = try await session.call("mail_thread_list", params, as: MailThreadList.self)
@@ -220,6 +224,7 @@ struct MailInboxView: View {
 
 struct MailThreadRow: View {
     let thread: MailThread
+    var sent = false
 
     var body: some View {
         let t = thread
@@ -231,17 +236,42 @@ struct MailThreadRow: View {
                     .foregroundStyle(unread ? Color.white : Theme.muted)
                 MailBrandBadge(brand: t.brand)
                 Spacer()
-                MailStatusBadge(status: t.status)
+                if let n = t.attachments?.count, n > 0 {
+                    Label { Text(verbatim: "\(n)") } icon: { Image(systemName: "paperclip") }
+                        .font(.caption).foregroundStyle(Theme.muted)
+                }
+                if !sent { MailStatusBadge(status: t.status) }
             }
             Text(verbatim: t.subject ?? "").font(.body.weight(unread ? .bold : .semibold)).lineLimit(2)
-            Text(verbatim: [t.contact_name, t.contact_email].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                .font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
+            if sent { sentLines(t) }
+            if !sent {
+                Text(verbatim: [t.contact_name, t.contact_email].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                    .font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
+            }
             if let p = t.preview, !p.isEmpty {
                 Text(verbatim: p).font(.caption).foregroundStyle(Theme.muted).lineLimit(2)
             }
-            Text(Fmt.ago(t.last_message_at)).font(.caption).foregroundStyle(Theme.muted)
+            HStack(spacing: 6) {
+                if !sent && t.last_direction == "out" {
+                    Label("Beantwoord", systemImage: "arrowshape.turn.up.left").font(.caption).foregroundStyle(Theme.muted)
+                }
+                Text(Fmt.ago(sent ? (t.sent_at ?? t.last_message_at) : t.last_message_at)).font(.caption).foregroundStyle(Theme.muted)
+            }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Verzonden: aan (eerste adressen), aantal in cc en bcc (de bcc-adressen zelf zijn er niet).
+    @ViewBuilder private func sentLines(_ t: MailThread) -> some View {
+        let n = t.to_count ?? 0
+        VStack(alignment: .leading, spacing: 2) {
+            if let p = t.to_preview?.text, !p.isEmpty {
+                (Text("Aan: ") + Text(verbatim: p + (n > 1 ? " +\(n - 1)" : ""))).font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
+            }
+            if (t.cc_count ?? 0) > 0 || (t.bcc_count ?? 0) > 0 {
+                Text("cc \(t.cc_count ?? 0) · bcc \(t.bcc_count ?? 0)").font(.caption).foregroundStyle(Theme.muted)
+            }
+        }
     }
 }
 
@@ -370,8 +400,17 @@ struct MailThreadView: View {
                 Text(verbatim: f).font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
             }
             if out {
-                let n = (m.to?.count ?? 0), c = (m.cc?.count ?? 0), b = (m.bcc_count ?? 0)
-                Text("Aan \(n) · cc \(c) · bcc \(b)").font(.caption).foregroundStyle(Theme.muted)
+                VStack(alignment: .leading, spacing: 2) {
+                    if let to = m.to, !to.isEmpty {
+                        (Text("Aan: ") + Text(verbatim: to.joined(separator: ", "))).font(.caption).foregroundStyle(Theme.muted)
+                    }
+                    if let cc = m.cc, !cc.isEmpty {
+                        (Text("CC: ") + Text(verbatim: cc.joined(separator: ", "))).font(.caption).foregroundStyle(Theme.muted)
+                    }
+                    if let b = m.bcc_count, b > 0 {
+                        (b == 1 ? Text("BCC: 1 adres") : Text("BCC: \(b) adressen")).font(.caption).foregroundStyle(Theme.muted)
+                    }
+                }
             }
             Text(verbatim: m.body_text ?? "").font(.subheadline).textSelection(.enabled)
             if let e = m.error, !e.isEmpty {

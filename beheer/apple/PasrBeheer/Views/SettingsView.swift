@@ -32,6 +32,7 @@ struct SettingsView: View {
                     Toggle("Account verwijderd", isOn: pref(\.deleted))
                     Toggle("Bot tegengehouden (max. 1 per uur)", isOn: pref(\.bots))
                     Toggle("Winkel aangevraagd of nieuwe ondernemer", isOn: pref(\.requests))
+                    Toggle("Nieuwe mail", isOn: pref(\.mail))
                     Button {
                         Task {
                             testState = "Versturen…"
