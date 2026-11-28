@@ -8,7 +8,7 @@
 // Nooit loggen: adressen, onderwerpen, inhoud, wachtwoorden.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { adminOk, sameText } from "./auth.ts";
-import { runCampaign, continueCampaigns } from "./campaign.ts";
+import { runCampaign, continueCampaigns, withSignatureFlag } from "./campaign.ts";
 import { BRAND_STYLE, type Kind, renderMail } from "./layout.ts";
 import {
   type Attachment, type Brand, BRAND_FROM, chunk, fromFor, LIMITS, newMessageId, randomId, statusAfter, toBase64, tooLarge,
@@ -142,7 +142,7 @@ async function handle(action: string, b: Record<string, unknown>, viaCron: boole
       const built = buildMessage({
         brand, kind: "reply", from: fromFor(brand, env), replyTo: replyToFor(env, brand), to: [meta.contact_email], cc: v.value.cc, bcc: v.value.bcc,
         subject: meta.subject, markdown: v.value.body_md, number: v.value.number, messageId, inReplyTo: meta.ids.at(-1), references: meta.ids,
-        attachments: v.value.attachments,
+        attachments: v.value.attachments, signature: v.value.signature,
       });
       const res = await withTransport((send) => send(built, brand));
       if (!res.ok) return json({ error: "send_failed", code: res.code ?? "error" }, 502);
@@ -186,7 +186,7 @@ async function handle(action: string, b: Record<string, unknown>, viaCron: boole
           const to = i === 0 ? c.to : [], cc = i === 0 ? c.cc : [];
           const m = buildMessage({
             brand: c.brand, kind, from: fromFor(c.brand, env), replyTo: replyToFor(env, c.brand), to, cc, bcc: groups[i],
-            subject: c.subject, markdown: c.body_md, number, messageId: id, attachments: c.attachments, unsub,
+            subject: c.subject, markdown: c.body_md, number, messageId: id, attachments: c.attachments, unsub, signature: c.signature,
           });
           const r = await send(m, c.brand);
           const n = to.length + cc.length + groups[i].length;
@@ -226,6 +226,7 @@ async function handle(action: string, b: Record<string, unknown>, viaCron: boole
       const m = renderMail({
         brand: v.value.brand, kind, subject: v.value.subject || "Voorbeeld", markdown: v.value.body_md,
         unsubUrl: kind === "news" || kind === "invite" ? genericUnsubPage(v.value.brand === "zakelijk" ? "owners" : "users") : undefined,
+        signature: v.value.signature,
         vars: { voornaam: typeof b.voornaam === "string" ? b.voornaam.slice(0, 40) : undefined },
       });
       return json({ html: m.html, text: m.text });
@@ -238,7 +239,7 @@ async function handle(action: string, b: Record<string, unknown>, viaCron: boole
       const brand = v.value.brand;
       const built = buildMessage({
         brand, kind: "news", from: fromFor(brand, env), replyTo: replyToFor(env, brand), to: [v.value.to], cc: [], bcc: [], subject: `[Test] ${v.value.subject}`,
-        markdown: v.value.body_md, messageId: newMessageId(null, randomId()), unsub: { page: genericUnsubPage(brand === "zakelijk" ? "owners" : "users") },
+        markdown: v.value.body_md, messageId: newMessageId(null, randomId()), unsub: { page: genericUnsubPage(brand === "zakelijk" ? "owners" : "users") }, signature: v.value.signature,
       });
       const r = await withTransport((send) => send(built, brand));
       return r.ok ? json({ ok: true }) : json({ error: "send_failed", code: r.code ?? "error" }, 502);
@@ -256,7 +257,7 @@ async function handle(action: string, b: Record<string, unknown>, viaCron: boole
       const count = await call<number>("pasr_mail_audience_count", { p_audience: c.audience });
       if (count < 1) return fail("no_recipients");
       const camp = await call<{ id: number; created: boolean; status: string; recipients: number; sent: number; failed: number }>("pasr_mail_campaign_create", {
-        p_brand: c.brand, p_audience: c.audience, p_subject: c.subject, p_body_md: c.body_md, p_request: c.request_id, p_recipients: count,
+        p_brand: c.brand, p_audience: c.audience, p_subject: c.subject, p_body_md: withSignatureFlag(c.body_md, c.signature), p_request: c.request_id, p_recipients: count,
       });
       // dezelfde aanvraag (dubbele tik): de bestaande campagne, niets opnieuw versturen
       if (!camp.created) return json({ ok: true, campaign_id: camp.id, recipients: camp.recipients, sent: camp.sent, failed: camp.failed, status: camp.status, duplicate: true });

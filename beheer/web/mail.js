@@ -365,6 +365,12 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       b.addEventListener("click", () => fn(ta)); bar.append(b);
     }
     const hint = el("p", "muted sm", "Placeholder {{voornaam}} wordt de voornaam van de ontvanger (leeg: “daar”).");
+    // handtekening: standaard aan; de naam volgt het gekozen merk
+    const sigLab = el("label", "se-check mx-sig"); const sigBox = el("input"); sigBox.type = "checkbox"; sigBox.checked = true;
+    const sigTxt = el("span"); sigLab.append(sigBox, sigTxt);
+    const sigName = () => ((o.getBrand ? o.getBrand() : "pasr") === "zakelijk" ? "Team Pasr Zakelijk" : "Team Pasr");
+    const syncSig = () => { sigTxt.textContent = `Handtekening ${sigName()} toevoegen`; };
+    syncSig(); sigBox.addEventListener("change", () => { clearTimeout(timer); refresh(); if (o.onSignature) o.onSignature(); });
     // voorbeeld
     const pv = el("div", "mx-preview");
     const pvHead = el("div", "mx-pv-head");
@@ -385,21 +391,22 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       if (pvView === "html") mountPreview(host, last.html, theme); else txt.textContent = last.text || "";
     }
     async function refresh() {
+      syncSig();
       const body = ta.value.trim(), my = ++seq;
       if (!body) { last = null; if (host.shadowRoot) host.shadowRoot.replaceChildren(); txt.textContent = ""; say(state, "Het voorbeeld verschijnt zodra je iets schrijft."); subj.textContent = ""; return; }
       say(state, "Voorbeeld bijwerken…");
       try {
         const subject = (o.getSubject && o.getSubject()) || "";
-        const r = await call("preview", { body_md: ta.value, brand: o.getBrand ? o.getBrand() : "pasr", subject });
+        const r = await call("preview", { body_md: ta.value, brand: o.getBrand ? o.getBrand() : "pasr", subject, signature: sigBox.checked });
         if (my !== seq) return;
         last = r; say(state, ""); subj.textContent = subject ? "Onderwerp: " + subject : ""; draw();
       } catch (e) { if (my === seq && e.status !== 401) say(state, "Voorbeeld niet beschikbaar: " + errMsg(e)); }
     }
     const schedule = () => { clearTimeout(timer); timer = setTimeout(refresh, 450); };
     ta.addEventListener("input", schedule);
-    root.append(lab, bar, ta, hint, pv);
+    root.append(lab, bar, ta, hint, sigLab, pv);
     return {
-      root, ta, refresh: schedule, now: refresh,
+      root, ta, refresh: schedule, now: refresh, signature: () => sigBox.checked,
       get: () => ta.value, set: (v) => { ta.value = v; schedule(); },
       focus: () => ta.focus(), clear: () => { ta.value = ""; schedule(); },
     };
@@ -465,7 +472,7 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       if (!subject.value.trim()) { say(msg, ERR.bad_subject); subject.focus(); return; }
       if (!ed.get().trim()) { say(msg, ERR.bad_body); ed.focus(); return; }
       testBtn.disabled = true;
-      try { await call("test", { body_md: ed.get(), brand, subject: subject.value.trim(), to: a }); say(msg, "Testmail verstuurd.", true); toast("Testmail verstuurd."); }
+      try { await call("test", { body_md: ed.get(), brand, subject: subject.value.trim(), to: a, signature: ed.signature() }); say(msg, "Testmail verstuurd.", true); toast("Testmail verstuurd."); }
       catch (e) { if (e.status !== 401) say(msg, errMsg(e)); }
       finally { testBtn.disabled = false; }
     });
@@ -480,14 +487,14 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       if (all > MAX_CALL || B.length > MAX_CALL) { say(msg, ERR.too_many); return; }
       if (!subject.value.trim()) { say(msg, ERR.bad_subject); subject.focus(); return; }
       if (!ed.get().trim()) { say(msg, ERR.bad_body); ed.focus(); return; }
-      const rows = [["Merk", BRANDS[brand]], ["Onderwerp", subject.value.trim()],
+      const rows = [["Merk", BRANDS[brand]], ["Onderwerp", subject.value.trim()], ["Handtekening", ed.signature() ? (brand === "zakelijk" ? "Team Pasr Zakelijk" : "Team Pasr") : "Geen"],
         ["Ontvangers", `${plural(all, "adres", "adressen")} (Aan ${num(T.length)}, CC ${num(C.length)}, BCC ${num(B.length)})`]];
       if (att.count()) rows.push(["Bijlagen", `${plural(att.count(), "bestand", "bestanden")}, ${fmtSize(att.size())}`]);
       const note = B.length > MAX_BCC_MAIL ? `Meer dan ${MAX_BCC_MAIL} BCC-adressen: de server verstuurt dit in meerdere mails. ` : "";
       if (!(await confirmDialog("Mail versturen?", rows, note + "Antwoorden komen terug in de Inbox. Dit kan niet worden teruggedraaid.", "Versturen"))) { sendBtn.focus(); return; }
       busy = true; sendBtn.disabled = true;
       try {
-        const r = await call("compose", { to: T, cc: C, bcc: B, subject: subject.value.trim(), body_md: ed.get(), brand, attachments: att.payload(), thread: true });
+        const r = await call("compose", { to: T, cc: C, bcc: B, subject: subject.value.trim(), body_md: ed.get(), brand, attachments: att.payload(), thread: true, signature: ed.signature() });
         const txt = `Verstuurd: ${num(r.sent ?? 0)}${r.failed ? `, mislukt: ${num(r.failed)}` : ""}${r.number ? ` (ticket #${r.number})` : ""}.`;
         say(msg, txt, !r.failed); toast(txt);
         if (!r.failed || r.sent) msg.append(document.createTextNode(" "), sentLink(r.number));
@@ -580,7 +587,7 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       if (!subject.value.trim()) { say(msg, ERR.bad_subject); subject.focus(); return; }
       if (!ed.get().trim()) { say(msg, ERR.bad_body); ed.focus(); return; }
       testBtn.disabled = true;
-      try { await call("test", { body_md: ed.get(), brand, subject: subject.value.trim(), to: a }); say(msg, "Testmail verstuurd.", true); toast("Testmail verstuurd."); }
+      try { await call("test", { body_md: ed.get(), brand, subject: subject.value.trim(), to: a, signature: ed.signature() }); say(msg, "Testmail verstuurd.", true); toast("Testmail verstuurd."); }
       catch (e) { if (e.status !== 401) say(msg, errMsg(e)); }
       finally { testBtn.disabled = false; }
     });
@@ -594,12 +601,12 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       try { n = (await call("campaign_audience", { audience })).count || 0; count.textContent = num(n); }
       catch (err) { if (err.status !== 401) say(msg, errMsg(err)); return; }
       if (!n) { say(msg, ERR.no_recipients); return; }
-      const rows = [["Doelgroep", AUD[audience][0]], ["Ontvangers", plural(n, "persoon", "personen")], ["Merk", BRANDS[brand]], ["Onderwerp", subject.value.trim()]];
+      const rows = [["Doelgroep", AUD[audience][0]], ["Ontvangers", plural(n, "persoon", "personen")], ["Merk", BRANDS[brand]], ["Onderwerp", subject.value.trim()], ["Handtekening", ed.signature() ? (brand === "zakelijk" ? "Team Pasr Zakelijk" : "Team Pasr") : "Geen"]];
       if (att.count()) rows.push(["Bijlagen", `${plural(att.count(), "bestand", "bestanden")}, ${fmtSize(att.size())}`]);
       if (!(await confirmDialog("Nieuwsbrief versturen?", rows, "Elke mail krijgt een eigen afmeldlink; afgemelde adressen worden overgeslagen. Dit kan niet worden teruggedraaid.", "Versturen"))) { sendBtn.focus(); return; }
       busy = true; sendBtn.disabled = true;
       try {
-        const r = await call("campaign_send", { audience, brand, subject: subject.value.trim(), body_md: ed.get(), request_id: requestId, attachments: att.payload() });
+        const r = await call("campaign_send", { audience, brand, subject: subject.value.trim(), body_md: ed.get(), request_id: requestId, attachments: att.payload(), signature: ed.signature() });
         const txt = `Nieuwsbrief wordt verstuurd naar ${num(r.recipients ?? n)} ${((r.recipients ?? n) === 1) ? "persoon" : "personen"}.`;
         say(msg, txt, true); toast(txt);
         subject.value = ""; ed.clear(); att.clear(); requestId = crypto.randomUUID();
@@ -869,11 +876,11 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
             if (!checkRecipients([cc, bcc], msg)) return;
             if (!ed.get().trim()) { say(msg, ERR.bad_body); ed.focus(); return; }
             const C = cc.valid(), B = bcc.valid();
-            const rows = [["Merk", BRANDS[brand]], ["Ticket", "#" + t.number], ["Ontvangers", `${plural(1 + C.length + B.length, "adres", "adressen")} (klant${C.length ? `, CC ${num(C.length)}` : ""}${B.length ? `, BCC ${num(B.length)}` : ""})`],
+            const rows = [["Merk", BRANDS[brand]], ["Ticket", "#" + t.number], ["Handtekening", ed.signature() ? (brand === "zakelijk" ? "Team Pasr Zakelijk" : "Team Pasr") : "Geen"], ["Ontvangers", `${plural(1 + C.length + B.length, "adres", "adressen")} (klant${C.length ? `, CC ${num(C.length)}` : ""}${B.length ? `, BCC ${num(B.length)}` : ""})`],
               ["Status daarna", after.options[after.selectedIndex].text]];
             if (att.count()) rows.push(["Bijlagen", `${plural(att.count(), "bestand", "bestanden")}, ${fmtSize(att.size())}`]);
             if (!(await confirmDialog("Antwoord versturen?", rows, "Dit kan niet worden teruggedraaid.", "Versturen"))) return;
-            const x = await call("thread_reply", { number: t.number, body_md: ed.get(), brand, cc: C, bcc: B, attachments: att.payload(), status: after.value });
+            const x = await call("thread_reply", { number: t.number, body_md: ed.get(), brand, cc: C, bcc: B, attachments: att.payload(), status: after.value, signature: ed.signature() });
             toast(x.email_sent === false ? "Antwoord opgeslagen, maar de mail is niet verstuurd." : "Antwoord verstuurd.");
           }
           await openThread(t.number, kind === "reply" ? "Antwoord verstuurd." : null); loadList(); if (!sent) loadStatus();

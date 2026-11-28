@@ -304,3 +304,40 @@ Deno.test("base64: blokken geven dezelfde uitkomst als btoa, ook voor 20 MB (sne
   eq(parseAttachments([{ name: "x", data_b64: "AA\nAA" }]).ok, true, "regeleinden mogen");
   eq(parseAttachments([{ name: "x", data_b64: "A$AA" }]), { ok: false, error: "bad_attachment" });
 });
+
+Deno.test("handtekening: Team Pasr / Team Pasr Zakelijk onder de inhoud, boven de voet; uit te zetten; platte tekst", () => {
+  const p = renderMail({ brand: "pasr", kind: "news", subject: "S", markdown: "Hoi", unsubUrl: "https://pasr.nl/afmelden/?k=nieuws" });
+  const z = renderMail({ brand: "zakelijk", kind: "mail", subject: "S", markdown: "Hoi" });
+  ok(p.html.includes('<a href="https://pasr.nl/" style="text-decoration:none"><img src="https://pasr.nl/assets/handtekening-pasr.jpg" width="600" height="150" alt="Team Pasr"'), "Pasr-handtekening");
+  ok(!p.html.includes("handtekening-pasr-zakelijk") && !p.html.includes("Team Pasr Zakelijk"), "Pasr niet zakelijk");
+  ok(z.html.includes('<a href="https://pasr.nl/zakelijk/" style="text-decoration:none"><img src="https://pasr.nl/assets/handtekening-pasr-zakelijk.jpg"') && z.html.includes('alt="Team Pasr Zakelijk"'), "zakelijk");
+  ok(!z.html.includes("handtekening-pasr.jpg"), "zakelijk niet Pasr");
+  ok(/display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:12px/.test(p.html), "responsief");
+  const i = p.html.indexOf("handtekening-pasr.jpg");
+  ok(p.html.indexOf("Hoi") < i && i < p.html.indexOf("Meld je hier af"), "tussen inhoud en voet");
+  ok(p.text.indexOf("Team Pasr\nhttps://pasr.nl/") > p.text.indexOf("Hoi") && p.text.indexOf("Team Pasr\n") < p.text.indexOf("Geen mails meer?"), "platte tekst vóór de afmeldregel");
+  ok(z.text.includes("Team Pasr Zakelijk\nhttps://pasr.nl/zakelijk/"), "platte tekst zakelijk");
+  for (const kind of ["reply", "mail", "news", "invite"] as const) {
+    ok(renderMail({ brand: "pasr", kind, subject: "S", markdown: "x", unsubUrl: "https://pasr.nl/afmelden/" }).html.includes("handtekening-pasr.jpg"), `standaard aan bij ${kind}`);
+  }
+  const uit = renderMail({ brand: "zakelijk", kind: "mail", subject: "S", markdown: "Hoi", signature: false });
+  ok(!uit.html.includes("handtekening") && !uit.text.includes("Team Pasr"), "signature false laat hem weg");
+  // geen ongeschoonde waarden: niets uit de invoer belandt in de handtekening
+  const x = renderMail({ brand: "pasr", kind: "mail", subject: '"><script>1</script>', markdown: "<img src=x onerror=1>" });
+  ok(!x.html.includes("<script>") && !x.html.includes("<img src=x"), "ge-escaped");
+  // aanvragen: standaard true, alleen false zet uit
+  const base = { to: "a@x.nl", subject: "S", body_md: "Hoi" };
+  const c = (extra: Record<string, unknown>) => { const v = parseCompose({ ...base, ...extra }); return v.ok && v.value.signature; };
+  eq([c({}), c({ signature: true }), c({ signature: false }), c({ signature: "false" })], [true, true, false, false]);
+  const r = (extra: Record<string, unknown>) => { const v = parseReply({ number: 1, body_md: "Hoi", ...extra }); return v.ok && v.value.signature; };
+  eq([r({}), r({ signature: false })], [true, false]);
+  const t = (extra: Record<string, unknown>) => { const v = parseTest({ ...base, to: "a@x.nl", ...extra }); return v.ok && v.value.signature; };
+  eq([t({}), t({ signature: false })], [true, false]);
+  const pv = (extra: Record<string, unknown>) => { const v = parsePreview({ body_md: "Hoi", ...extra }); return v.ok && v.value.signature; };
+  eq([pv({}), pv({ signature: false })], [true, false]);
+  const cp = (extra: Record<string, unknown>) => { const v = parseCampaign({ audience: "users", subject: "S", body_md: "Hoi", request_id: "123e4567-e89b-42d3-a456-426614174000", ...extra }); return v.ok && v.value.signature; };
+  eq([cp({}), cp({ signature: false })], [true, false]);
+  // buildMessage geeft de keuze door
+  const mk = (signature?: boolean) => buildMessage({ brand: "pasr", kind: "mail", from: "Pasr <a@pasr.nl>", to: ["b@x.nl"], cc: [], bcc: [], subject: "S", markdown: "Hoi", messageId: "<1@x>", signature });
+  ok(mk().html.includes("handtekening-pasr.jpg") && !mk(false).html.includes("handtekening-pasr.jpg"), "buildMessage");
+});

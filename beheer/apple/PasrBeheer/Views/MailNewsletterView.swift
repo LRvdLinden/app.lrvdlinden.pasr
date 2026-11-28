@@ -52,15 +52,18 @@ struct MailNewsletterView: View {
                 if let from = status?.from(draft.brand) { Text(verbatim: String(localized: "Afzender: ") + from) }
             }
 
-            Section("Bericht") { MailBodyEditor(text: $draft.body) }
+            Section("Bericht") {
+                MailBodyEditor(text: $draft.body)
+                MailSignatureToggle(isOn: $draft.signature, brand: draft.brand)
+            }
 
             Section("Voorbeeld") {
                 Toggle("Voorbeeld tonen", isOn: $showPreview)
-                if showPreview { MailPreviewSection(markdown: draft.body, brand: draft.brand, subject: draft.subject) }
+                if showPreview { MailPreviewSection(markdown: draft.body, brand: draft.brand, subject: draft.subject, signature: draft.signature) }
             }
 
             Section("Testmail") {
-                MailTestRow(address: $draft.testAddress, markdown: draft.body, brand: draft.brand, subject: draft.subject)
+                MailTestRow(address: $draft.testAddress, markdown: draft.body, brand: draft.brand, subject: draft.subject, signature: draft.signature)
             }
 
             Section {
@@ -115,7 +118,7 @@ struct MailNewsletterView: View {
         .confirmationDialog("Nieuwsbrief versturen?", isPresented: $confirming, titleVisibility: .visible) {
             Button("Versturen naar \(Fmt.n(count ?? 0)) ontvangers") { Task { await send() } }
         } message: {
-            Text(String(localized: "\(MailLabels.audience(draft.audience)), als \(draft.brand.title). Dit kan niet worden teruggedraaid.") )
+            Text(String(localized: "\(MailLabels.audience(draft.audience)), als \(draft.brand.title). Dit kan niet worden teruggedraaid.") + signatureNote(draft.signature, draft.brand))
         }
         .confirmationDialog("Verzenden annuleren?", isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }), titleVisibility: .visible) {
             Button("Annuleren", role: .destructive) { if let c = cancelling { Task { await cancel(c) } } }
@@ -153,7 +156,7 @@ struct MailNewsletterView: View {
         sending = true; result = nil; error = nil
         defer { sending = false }
         let p: [String: Any] = ["audience": draft.audience, "brand": draft.brand.rawValue, "subject": subjectText,
-                                "body_md": bodyText, "request_id": draft.requestID]
+                                "body_md": bodyText, "request_id": draft.requestID, "signature": draft.signature]
         do {
             let r = try await session.call("mail_campaign_send", p, as: MailCampaignSendResponse.self, timeout: 90)
             result = String(localized: "De nieuwsbrief wordt verstuurd naar \(Fmt.n(r.recipients ?? 0)) ontvangers.")

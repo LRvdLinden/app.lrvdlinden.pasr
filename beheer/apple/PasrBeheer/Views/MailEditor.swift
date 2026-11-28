@@ -194,11 +194,33 @@ struct MailAttachmentsRows: View {
     }
 }
 
+/// Schakelaar voor de handtekening onder de mail (standaard aan); de naam volgt het gekozen merk.
+struct MailSignatureToggle: View {
+    @Binding var isOn: Bool
+    let brand: MailBrand
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Text(brand == .zakelijk ? "Handtekening Team Pasr Zakelijk toevoegen" : "Handtekening Team Pasr toevoegen")
+        }
+    }
+}
+
+/// Regel voor in de bevestiging: welke handtekening er onder de mail komt (leeg als hij uit staat).
+func signatureNote(_ on: Bool, _ brand: MailBrand) -> String {
+    on ? " " + String(localized: "Met handtekening \(brand.signatureName).") : ""
+}
+
+extension MailBrand {
+    /// Naam in de handtekening (Team Pasr of Team Pasr Zakelijk).
+    var signatureName: String { self == .zakelijk ? "Team Pasr Zakelijk" : "Team Pasr" }
+}
+
 /// Live voorbeeld: dezelfde renderer als bij het versturen (`mail_preview`), in een webweergave zonder JavaScript.
 struct MailPreviewSection: View {
     let markdown: String
     let brand: MailBrand
     let subject: String
+    var signature: Bool = true
     @EnvironmentObject private var session: Session
     @State private var html: String?
     @State private var error: String?
@@ -227,7 +249,7 @@ struct MailPreviewSection: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             if let error { Text(error).font(.caption).foregroundStyle(Theme.coral) }
         }
-        .task(id: "\(brand.rawValue)|\(subject)|\(markdown)") { await load() }
+        .task(id: "\(brand.rawValue)|\(subject)|\(markdown)|\(signature)") { await load() }
     }
 
     private func load() async {
@@ -237,7 +259,7 @@ struct MailPreviewSection: View {
         loading = true
         defer { loading = false }
         do {
-            let r = try await session.call("mail_preview", ["body_md": markdown, "brand": brand.rawValue, "subject": subject], as: MailPreviewResponse.self)
+            let r = try await session.call("mail_preview", ["body_md": markdown, "brand": brand.rawValue, "subject": subject, "signature": signature], as: MailPreviewResponse.self)
             html = r.html
             error = nil
         } catch is CancellationError {
@@ -252,6 +274,7 @@ struct MailTestRow: View {
     let markdown: String
     let brand: MailBrand
     let subject: String
+    var signature: Bool = true
     @EnvironmentObject private var session: Session
     @State private var sending = false
     @State private var state: String?
@@ -290,7 +313,8 @@ struct MailTestRow: View {
         defer { sending = false }
         do {
             try await session.call("mail_test", ["body_md": markdown, "brand": brand.rawValue,
-                                                 "subject": subject.trimmingCharacters(in: .whitespaces), "to": addr])
+                                                 "subject": subject.trimmingCharacters(in: .whitespaces), "to": addr,
+                                                 "signature": signature])
             good = true
             state = String(localized: "Testmail verstuurd. Hij komt zo binnen.")
         } catch is CancellationError {

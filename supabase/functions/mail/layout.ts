@@ -16,16 +16,20 @@ export { REPLY_MARKER };
 export type BrandStyle = {
   name: string; eyebrow: string; icon: string; site: string; siteLabel: string; accent: string; buttonFg: string;
   link: string; lightLink: string; theme: Theme; fromName: string;
+  /** handtekening: naam (alt en platte tekst), afbeelding op pasr.nl/assets en de pagina waar hij naartoe linkt */
+  signature: { name: string; image: string; url: string };
 };
 export const BRAND_STYLE: Record<Brand, BrandStyle> = {
   pasr: {
     name: "Pasr", eyebrow: "Bericht van Pasr", icon: `${SITE}/assets/mail-icon.png`, site: SITE, siteLabel: "pasr.nl",
     accent: "#6A5CFF", buttonFg: "#ffffff", link: "#6A5CFF", lightLink: "#4A3CE0", fromName: "Pasr",
+    signature: { name: "Team Pasr", image: `${SITE}/assets/handtekening-pasr.jpg`, url: `${SITE}/` },
     theme: { text: "#E9EAF0", heading: "#ffffff", muted: MUTED, link: "#8F86FF", accent: "#6A5CFF", buttonBg: "#6A5CFF", buttonFg: "#ffffff", codeBg: "#1C1F29", rule: "#262935" },
   },
   zakelijk: {
     name: "Pasr Zakelijk", eyebrow: "Pasr voor ondernemers", icon: `${SITE}/assets/mail-icon-zakelijk.png`, site: `${SITE}/zakelijk/`, siteLabel: "pasr.nl/zakelijk",
     accent: "#2ED3A6", buttonFg: "#0A0B10", link: "#2ED3A6", lightLink: "#0E7A5C", fromName: "Pasr Zakelijk",
+    signature: { name: "Team Pasr Zakelijk", image: `${SITE}/assets/handtekening-pasr-zakelijk.jpg`, url: `${SITE}/zakelijk/` },
     theme: { text: "#E9EAF0", heading: "#ffffff", muted: MUTED, link: "#2ED3A6", accent: "#2ED3A6", buttonBg: "#2ED3A6", buttonFg: "#0A0B10", codeBg: "#1C1F29", rule: "#262935" },
   },
 };
@@ -35,6 +39,8 @@ export type MailInput = {
   brand: Brand; subject: string; markdown: string; kind: Kind;
   /** afmeldlink (verplicht bij news en invite; de voet toont hem) */
   unsubUrl?: string; vars?: Vars; preheader?: string;
+  /** handtekening Team Pasr / Team Pasr Zakelijk onder de inhoud (standaard true; false laat hem weg) */
+  signature?: boolean;
 };
 export type MailOut = { subject: string; html: string; text: string };
 
@@ -43,6 +49,13 @@ function lightCss(b: BrandStyle): string {
     `body,.pm-bg{background:#F4F3FF !important}.pm-panel{background:#ffffff !important}.pm-tx{color:#17162A !important}` +
     `.pm-h{color:#17162A !important}.pm-m,.pm-q{color:#6B6880 !important}.pm-a{color:${b.lightLink} !important}` +
     `.pm-code{background:#EEEDF8 !important}.pm-hr{background:#E3E5EC !important}.pm-wm{color:#17162A !important}}</style>`;
+}
+
+/** De handtekening als afbeelding (JPG 1200x300, getoond op 600x150; eigen donker vlak, dus goed in licht en donker). */
+export function signatureHtml(b: BrandStyle): string {
+  const g = b.signature;
+  return `<tr><td style="padding:20px 0 0"><a href="${esc(g.url)}" style="text-decoration:none"><img src="${esc(g.image)}" width="600" height="150" alt="${esc(g.name)}" ` +
+    `style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:12px;color:#ffffff;font-size:14px;font-weight:700"></a></td></tr>\n`;
 }
 
 /** De hele mail (HTML en platte tekst) in de stijl van het merk. */
@@ -61,6 +74,7 @@ export function renderMail(o: MailInput): MailOut {
     ? `<br>${o.kind === "invite" ? "Je krijgt deze mail omdat Pasr je uitnodigt om kennis te maken." : "Je krijgt deze nieuwsbrief van Pasr."} Geen mails meer? ` +
       `<a class="pm-a" href="${esc(o.unsubUrl)}" style="color:${MUTED}">Meld je hier af</a>.`
     : "";
+  const sig = o.signature !== false;
   const html = `<!doctype html>
 <html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${esc(subject)}</title>${lightCss(b)}</head>
@@ -76,7 +90,7 @@ ${marker}<tr><td style="padding:0 4px 22px"><table role="presentation" width="10
 <div style="height:6px;width:64px;border-radius:3px;background:${b.accent};font-size:0;line-height:0;margin:0 0 22px">&nbsp;</div>
 ${inner}
 </td></tr>
-<tr><td class="pm-m" style="padding:22px 6px 0;font-size:12px;line-height:18px;color:${MUTED}">
+${sig ? signatureHtml(b) : ""}<tr><td class="pm-m" style="padding:22px 6px 0;font-size:12px;line-height:18px;color:${MUTED}">
 <a class="pm-a" href="${b.site}" style="color:${MUTED}">${b.siteLabel}</a> · <a class="pm-a" href="${SITE}/privacy/" style="color:${MUTED}">Privacy</a> · <a class="pm-a" href="${SITE}/support/" style="color:${MUTED}">Hulp</a>${unsub}
 </td></tr>
 </table></td></tr></table>
@@ -84,6 +98,7 @@ ${inner}
   const text = [
     o.kind === "reply" ? REPLY_MARKER + "\n" : "",
     innerText, "",
+    sig ? `${b.signature.name}\n${b.signature.url}\n` : "",
     "--",
     `${b.name} · ${b.site}`,
     o.unsubUrl ? `Geen mails meer? Meld je af: ${o.unsubUrl}` : "",

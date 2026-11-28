@@ -26,9 +26,11 @@ function bodyOf(b: Record<string, unknown>): string | null {
   if (!s || s.length > LIMITS.bodyMd || markdownProblem(s)) return null;
   return s;
 }
+/** signature: standaard true; alleen false (of "false"/0) zet hem uit */
+export const signatureOf = (v: unknown): boolean => !(v === false || v === "false" || v === 0);
 const brandOf = (v: unknown, fallback: Brand = "pasr"): Brand | null => (v === undefined || v === null || v === "" ? fallback : isBrand(v) ? v : null);
 
-export type Compose = ComposeAddresses & { subject: string; body_md: string; brand: Brand; attachments: Attachment[]; thread: boolean };
+export type Compose = ComposeAddresses & { subject: string; body_md: string; brand: Brand; attachments: Attachment[]; thread: boolean; signature: boolean };
 export function parseCompose(b: Record<string, unknown>): Res<Compose> {
   const a = checkAddresses(b);
   if (!a.ok) return fail(a.error === "no_recipient" ? "bad_address" : a.error);
@@ -40,10 +42,10 @@ export function parseCompose(b: Record<string, unknown>): Res<Compose> {
   if (!brand) return fail("bad_brand");
   const att = parseAttachments(b.attachments);
   if (!att.ok) return fail(att.error);
-  return { ok: true, value: { ...a.value, subject, body_md: body, brand, attachments: att.list, thread: b.thread !== false } };
+  return { ok: true, value: { ...a.value, subject, body_md: body, brand, attachments: att.list, thread: b.thread !== false, signature: signatureOf(b.signature) } };
 }
 
-export type Reply = { number: number; body_md: string; brand: Brand | null; cc: string[]; bcc: string[]; attachments: Attachment[]; status: Status | null };
+export type Reply = { number: number; body_md: string; brand: Brand | null; cc: string[]; bcc: string[]; attachments: Attachment[]; status: Status | null; signature: boolean };
 export function parseReply(b: Record<string, unknown>): Res<Reply> {
   const number = cleanNumber(b.number);
   if (!number) return fail("bad_number");
@@ -59,7 +61,7 @@ export function parseReply(b: Record<string, unknown>): Res<Reply> {
   if (b.status !== undefined && b.status !== null && b.status !== "" && !isStatus(b.status)) return fail("bad_status");
   return { ok: true, value: {
     number, body_md: body, brand: b.brand === undefined || b.brand === null || b.brand === "" ? null : brand, cc: a.value.cc, bcc: a.value.bcc,
-    attachments: att.list, status: isStatus(b.status) ? b.status : null,
+    attachments: att.list, status: isStatus(b.status) ? b.status : null, signature: signatureOf(b.signature),
   } };
 }
 
@@ -82,7 +84,7 @@ export function parseNote(b: Record<string, unknown>): Res<{ number: number; tex
   return { ok: true, value: { number, text } };
 }
 
-export function parseTest(b: Record<string, unknown>): Res<{ to: string; subject: string; body_md: string; brand: Brand }> {
+export function parseTest(b: Record<string, unknown>): Res<{ to: string; subject: string; body_md: string; brand: Brand; signature: boolean }> {
   const to = typeof b.to === "string" ? b.to.trim().toLowerCase() : "";
   if (!validEmail(to)) return fail("bad_address");
   const subject = subjectOf(b);
@@ -91,15 +93,15 @@ export function parseTest(b: Record<string, unknown>): Res<{ to: string; subject
   if (!body) return fail("bad_body");
   const brand = brandOf(b.brand);
   if (!brand) return fail("bad_brand");
-  return { ok: true, value: { to, subject, body_md: body, brand } };
+  return { ok: true, value: { to, subject, body_md: body, brand, signature: signatureOf(b.signature) } };
 }
 
-export function parsePreview(b: Record<string, unknown>): Res<{ subject: string; body_md: string; brand: Brand }> {
+export function parsePreview(b: Record<string, unknown>): Res<{ subject: string; body_md: string; brand: Brand; signature: boolean }> {
   const body = typeof b.body_md === "string" ? b.body_md.replace(/\r\n?/g, "\n") : "";
   if (body.length > LIMITS.bodyMd || markdownProblem(body)) return fail("bad_body");
   const brand = brandOf(b.brand);
   if (!brand) return fail("bad_brand");
-  return { ok: true, value: { subject: cleanText(b.subject, LIMITS.subject), body_md: body, brand } };
+  return { ok: true, value: { subject: cleanText(b.subject, LIMITS.subject), body_md: body, brand, signature: signatureOf(b.signature) } };
 }
 
 export function parseThreadList(b: Record<string, unknown>): Res<{ status: string; q: string | null; brand: Brand | null; page: number; size: number; box: "inbox" | "sent" | "all" }> {
@@ -116,7 +118,7 @@ export function parseThreadList(b: Record<string, unknown>): Res<{ status: strin
   return { ok: true, value: { status: raw as string, q: q || null, brand, page, size, box } };
 }
 
-export type CampaignReq = { audience: Audience; brand: Brand; subject: string; body_md: string; request_id: string; attachments: Attachment[] };
+export type CampaignReq = { audience: Audience; brand: Brand; subject: string; body_md: string; request_id: string; attachments: Attachment[]; signature: boolean };
 /** Doelgroep users (standaard merk Pasr) of owners (standaard Pasr Zakelijk). list kan hier niet: losse adressen gaan via compose met BCC. */
 export function parseCampaign(b: Record<string, unknown>): Res<CampaignReq> {
   if (!isAudience(b.audience) || b.audience === "list") return fail("bad_audience");
@@ -130,7 +132,7 @@ export function parseCampaign(b: Record<string, unknown>): Res<CampaignReq> {
   if (!UUID.test(id)) return fail("bad_request_id");
   const att = parseAttachments(b.attachments);
   if (!att.ok) return fail(att.error);
-  return { ok: true, value: { audience: b.audience, brand, subject, body_md: body, request_id: id, attachments: att.list } };
+  return { ok: true, value: { audience: b.audience, brand, subject, body_md: body, request_id: id, attachments: att.list, signature: signatureOf(b.signature) } };
 }
 
 export function parseAudience(b: Record<string, unknown>): Res<"users" | "owners"> {

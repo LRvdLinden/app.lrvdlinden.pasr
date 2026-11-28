@@ -54,7 +54,10 @@ struct MailComposeView: View {
                 if let from = status?.from(draft.brand) { Text(verbatim: String(localized: "Afzender: ") + from) }
             }
 
-            Section("Bericht") { MailBodyEditor(text: $draft.body) }
+            Section("Bericht") {
+                MailBodyEditor(text: $draft.body)
+                MailSignatureToggle(isOn: $draft.signature, brand: draft.brand)
+            }
 
             Section {
                 MailAttachmentsRows(attachments: $draft.attachments)
@@ -62,11 +65,11 @@ struct MailComposeView: View {
 
             Section("Voorbeeld") {
                 Toggle("Voorbeeld tonen", isOn: $showPreview)
-                if showPreview { MailPreviewSection(markdown: draft.body, brand: draft.brand, subject: draft.subject) }
+                if showPreview { MailPreviewSection(markdown: draft.body, brand: draft.brand, subject: draft.subject, signature: draft.signature) }
             }
 
             Section("Testmail") {
-                MailTestRow(address: $draft.testAddress, markdown: draft.body, brand: draft.brand, subject: draft.subject)
+                MailTestRow(address: $draft.testAddress, markdown: draft.body, brand: draft.brand, subject: draft.subject, signature: draft.signature)
             }
 
             Section {
@@ -93,14 +96,14 @@ struct MailComposeView: View {
 
     private var confirmMessage: String {
         let t = draft.toList.valid.count, c = draft.ccList.valid.count, b = draft.bccList.valid.count
-        return String(localized: "\(total) adressen (aan \(t), cc \(c), bcc \(b)), als \(draft.brand.title). Dit kan niet worden teruggedraaid.")
+        return String(localized: "\(total) adressen (aan \(t), cc \(c), bcc \(b)), als \(draft.brand.title). Dit kan niet worden teruggedraaid.") + signatureNote(draft.signature, draft.brand)
     }
 
     private func send() async {
         guard canSend else { return }
         sending = true; result = nil; error = nil
         defer { sending = false }
-        var p: [String: Any] = ["subject": subjectText, "body_md": bodyText, "brand": draft.brand.rawValue, "thread": true,
+        var p: [String: Any] = ["subject": subjectText, "body_md": bodyText, "brand": draft.brand.rawValue, "thread": true, "signature": draft.signature,
                                 "to": draft.toList.valid]
         if !draft.ccList.valid.isEmpty { p["cc"] = draft.ccList.valid }
         if !draft.bccList.valid.isEmpty { p["bcc"] = draft.bccList.valid }
