@@ -58,6 +58,10 @@
 //   event_cancel     {id, message?}                 -> {ok}                   (event afgelasten; mail + push naar elke aanmelding)
 //   member_card_archive {id}                        -> {ok}                   (klantenkaart archiveren; scannen werkt niet meer)
 //   notify {kind: "tickets"} + x-pasr-hook          -> {sent}                 (push naar de Pasr-app van de klant uit de outbox)
+//   (Mail, 28-11-2026; zie docs/beheer-mail.md; alles wordt doorgestuurd naar de functie mail, verzoek tot 20 MB met bijlagen)
+//   mail_status · mail_poll · mail_thread_list · mail_thread_get · mail_thread_reply · mail_thread_status · mail_thread_note
+//   mail_compose {to, cc, bcc, subject, body_md, brand, attachments?} · mail_attachment · mail_preview · mail_test
+//   mail_campaign_audience · mail_campaign_send · mail_campaign_list · mail_campaign_cancel
 // Nooit loggen: wachtwoorden, tokens, sleutels, e-mailadressen, APNs-tokens.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
@@ -71,6 +75,7 @@ import { cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBu
 import { okLink, ownerMail } from "./owner_mail.ts";
 import { cleanDevices, communityPayload, type PushItem } from "./community.ts";
 import { ticketPayload, type TkItem, tkDevices } from "./tickets.ts";
+import { auditDetail, forwardBody, forwardToMail, isMailAction, MAIL_ACTIONS, mailKey, readBody } from "./mail.ts";
 // huisstijl: dezelfde code als de functie business-brand (SSRF-beveiligd ophalen, logo en kleur)
 import { cleanUrl } from "../business-brand/brand.ts";
 import { brand } from "../business-brand/fetch.ts";
@@ -567,12 +572,13 @@ Deno.serve(async (req) => {
 
   let body: Record<string, unknown>;
   try {
-    const text = await req.text();
-    // een winkel met logo (en kaartontwerp) mag groter zijn
-    if (text.length > 700_000) return json({ error: "too_large" }, 413);
+    // gewoon hoogstens 700 kB; een verzoek met bijlagen (mail_*) tot 20 MB, alleen met een geldig beheer-token
+    const read = await readBody(req, async () => { try { return await validToken(bearer(req.headers)); } catch { return false; } });
+    if ("error" in read) return json({ error: "too_large" }, 413);
+    const text = read.text;
     const b = JSON.parse(text || "{}");
     if (!b || typeof b !== "object" || Array.isArray(b)) return json({ error: "bad_json" }, 400);
-    if (text.length > 8192 && b.action !== "store_save" && b.action !== "business_card_save") return json({ error: "too_large" }, 413);
+    if (text.length > 8192 && b.action !== "store_save" && b.action !== "business_card_save" && !isMailAction(b.action)) return json({ error: "too_large" }, 413);
     body = b;
   } catch { return json({ error: "bad_json" }, 400); }
   const action = typeof body.action === "string" ? body.action : "";
@@ -630,6 +636,19 @@ Deno.serve(async (req) => {
 
     if (!(await validToken(bearer(req.headers)))) return json({ error: "unauthorized" }, 401);
     if (!authedOk(ipHash)) return json({ error: "rate_limited", retry_after: 60 }, 429, { "Retry-After": "60" });
+
+    // Pasr beheer › Mail (28-11-2026): doorsturen naar de functie mail (docs/beheer-mail.md)
+    if (isMailAction(action)) {
+      const key = await mailKey(tokenSecret());
+      if (!key) return json({ error: "not_configured" }, 503);
+      const f = await forwardToMail(`${env("SUPABASE_URL")}/functions/v1/mail`, key, forwardBody(action, body));
+      if (MAIL_ACTIONS[action].audit) {
+        let parsed: unknown = null;
+        try { parsed = JSON.parse(f.text); } catch { /* geen json */ }
+        await audit(action, ipHash, `${f.status} ${auditDetail(action, body, parsed)}`);
+      }
+      return new Response(f.text, { status: f.status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+    }
 
     switch (action) {
       case "logout_all": {

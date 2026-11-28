@@ -12,6 +12,10 @@ name: Backend
 #   PASS_CERT_P12 (the Pass Type ID certificate + key as .p12, base64), PASS_CERT_PASSWORD,
 #   PASS_TYPE_ID (default pass.nl.lrvdlinden.pasr), PASR_SUPABASE_KEY (the publishable key)
 # For push to Android (FCM HTTP v1, function admin): FIREBASE_SERVICE_ACCOUNT_JSON (service account JSON of the Firebase project).
+# For Pasr beheer › Mail (function mail: IMAP inbox + SMTP via the PASR_SMTP_* secrets above; see docs/beheer-mail.md):
+#   PASR_IMAP_HOST, PASR_IMAP_PORT (default 993), PASR_IMAP_USER, PASR_IMAP_PASSWORD  (the inbox replies come back in)
+#   PASR_MAIL_FROM_PASR, PASR_MAIL_FROM_ZAKELIJK (sender addresses; default support@pasr.nl / zakelijk@pasr.nl)
+#   PASR_MAIL_AGENTS (comma-separated staff addresses that may answer tickets by mail), optional PASR_MAIL_AUTHSERV, PASR_MAIL_AUTOREPLY
 # For "Opslaan in Google Wallet" (function google-wallet, Pasr for Android):
 #   GOOGLE_WALLET_ISSUER_ID (issuer id from the Google Pay & Wallet Console),
 #   GOOGLE_WALLET_SA_JSON (the service account's JSON key, as text or base64). Missing = the app hides the button.
@@ -120,6 +124,16 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/antibot.json)
           head -c 500 /tmp/antibot-result.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Anti-bot schema failed HTTP $code"; exit 1; }
+      - name: Beheer Mail (tickets, concepten, campagnes, afmelden)
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          # Tabellen, RPC's, afmeldtokens en de pg_cron-poll van de mailbox; herhaalbaar
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/20261128-beheer-mail.sql").read()}))' > /tmp/beheer-mail.json
+          code=$(curl -s -o /tmp/beheer-mail-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/beheer-mail.json)
+          head -c 500 /tmp/beheer-mail-result.txt; echo
+          [ "$code" -lt 300 ] || { echo "::error::Beheer-mail schema failed HTTP $code"; exit 1; }
       - name: Mails, anti-bot hook and Auth settings
         if: steps.check.outputs.skip != '1'
         env:
@@ -335,6 +349,53 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/m.json
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/reminder-mail" -H "Content-Type: application/json" -d '{"action":"run"}')
           [ "$code" = 403 ] && echo "::notice::reminder-mail is up and only answers the database." || echo "::warning::reminder-mail: unexpected HTTP $code"
+      - name: Beheer Mail (function mail)
+        if: steps.check.outputs.skip != '1'
+        env:
+          IMAP_HOST: ${{ secrets.PASR_IMAP_HOST }}
+          IMAP_PORT: ${{ secrets.PASR_IMAP_PORT }}
+          IMAP_USER: ${{ secrets.PASR_IMAP_USER }}
+          IMAP_PASS: ${{ secrets.PASR_IMAP_PASSWORD }}
+          S_HOST: ${{ secrets.PASR_SMTP_HOST }}
+          S_PORT: ${{ secrets.PASR_SMTP_PORT }}
+          S_USER: ${{ secrets.PASR_SMTP_USER }}
+          S_PASS: ${{ secrets.PASR_SMTP_PASSWORD }}
+          S_FROM: ${{ secrets.PASR_SMTP_FROM }}
+          FROM_PASR: ${{ secrets.PASR_MAIL_FROM_PASR }}
+          FROM_ZAK: ${{ secrets.PASR_MAIL_FROM_ZAKELIJK }}
+          AGENTS: ${{ secrets.PASR_MAIL_AGENTS }}
+          AUTHSERV: ${{ secrets.PASR_MAIL_AUTHSERV }}
+          AUTOREPLY: ${{ secrets.PASR_MAIL_AUTOREPLY }}
+        run: |
+          set -euo pipefail
+          if [ -x ~/.deno/bin/deno ]; then
+            ~/.deno/bin/deno test --no-check --allow-env --allow-net=127.0.0.1 supabase/functions/mail/ || { echo "::error::Tests of the mail function failed"; exit 1; }
+          fi
+          # Alleen de admin-functie (kop x-pasr-admin, afgeleid van PASR_TOKEN_SECRET) en pg_cron (x-pasr-cron) roepen hem aan; ?stop= is de één-klik-afmelding
+          supabase functions deploy mail --yes --project-ref "$REF" --no-verify-jwt --use-api
+          python3 -c 'import json,os;print(json.dumps({"query":"update public.pasr_admin_config set mail_url = '"'"'https://%s.supabase.co/functions/v1/mail'"'"' where id = 1" % os.environ["REF"]}))' > /tmp/mu.json
+          curl -sf -o /dev/null -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/mu.json
+          args=()
+          if [ -n "$IMAP_HOST" ] && [ -n "$IMAP_USER" ] && [ -n "$IMAP_PASS" ]; then
+            args+=("PASR_IMAP_HOST=$IMAP_HOST" "PASR_IMAP_PORT=${IMAP_PORT:-993}" "PASR_IMAP_USER=$IMAP_USER" "PASR_IMAP_PASSWORD=$IMAP_PASS")
+          else
+            echo "::warning::PASR_IMAP_HOST / _USER / _PASSWORD missing: Beheer Mail can send, but replies do not come back into the inbox."
+          fi
+          if [ -n "$S_HOST" ] && [ -n "$S_USER" ] && [ -n "$S_PASS" ]; then
+            args+=("PASR_SMTP_HOST=$S_HOST" "PASR_SMTP_PORT=${S_PORT:-465}" "PASR_SMTP_USER=$S_USER" "PASR_SMTP_PASSWORD=$S_PASS")
+            [ -z "$S_FROM" ] || args+=("PASR_SMTP_FROM=$S_FROM")
+          else
+            echo "::warning::PASR_SMTP_* missing: Beheer Mail cannot send mail yet."
+          fi
+          [ -z "$FROM_PASR" ] || args+=("PASR_MAIL_FROM_PASR=$FROM_PASR")
+          [ -z "$FROM_ZAK" ] || args+=("PASR_MAIL_FROM_ZAKELIJK=$FROM_ZAK")
+          if [ -n "$AGENTS" ]; then args+=("PASR_MAIL_AGENTS=$AGENTS"); else echo "::warning::PASR_MAIL_AGENTS missing: answering a ticket from your own mail app is switched off (the admin screen still works)."; fi
+          [ -z "$AUTHSERV" ] || args+=("PASR_MAIL_AUTHSERV=$AUTHSERV")
+          [ -z "$AUTOREPLY" ] || args+=("PASR_MAIL_AUTOREPLY=$AUTOREPLY")
+          if [ ${#args[@]} -gt 0 ]; then supabase secrets set --yes --project-ref "$REF" "${args[@]}" >/dev/null; fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$REF.supabase.co/functions/v1/mail" -H "Content-Type: application/json" -d '{"action":"status"}')
+          [ "$code" = 403 ] && echo "::notice::mail is up and only answers beheer." || echo "::warning::mail: unexpected HTTP $code"
       - name: Smoke test (Wallet pass and admin)
         if: steps.check.outputs.skip != '1'
         env:

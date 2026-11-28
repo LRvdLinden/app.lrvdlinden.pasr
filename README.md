@@ -204,6 +204,10 @@ De App Store-beoordelingsvraag (`App/Services/ReviewPrompt.swift`, via `requestR
 
 Dashboard op beheer.pasr.nl en de app Pasr Beheer (iPhone, iPad, Mac): zie [`beheer/README.md`](beheer/README.md).
 
+## Pasr beheer › Mail
+
+Tickets, losse mails (Aan, CC en BCC) en nieuwsbrieven naar gebruikers of ondernemers, met afmelden en een eigen mailbox voor antwoorden: zie [`docs/beheer-mail.md`](docs/beheer-mail.md). Backend: functie `mail`, acties `mail_*` in `admin`, `supabase/20261128-beheer-mail.sql`.
+
 ## Logo's
 
 Pasr levert geen logo's van winkels mee. Er zijn twee manieren om er een op een kaart te krijgen:
