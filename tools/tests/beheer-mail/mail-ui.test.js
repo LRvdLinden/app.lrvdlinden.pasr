@@ -28,7 +28,7 @@ const db = {
   ],
 };
 const sentItems = [
-  { number: 1004, subject: "Kennismaken met Pasr Zakelijk", status: "pending", brand: "zakelijk", contact_name: "", contact_email: "", last_message_at: new Date(Date.now() - 3600e3).toISOString(), sent_at: new Date(Date.now() - 3600e3).toISOString(), last_direction: "out", to_preview: "ontvanger@example.test", to_count: 1, cc_count: 1, bcc_count: 4, attachments: 1, error: null },
+  { number: 1004, subject: "Kennismaken met Pasr Zakelijk", status: "pending", brand: "pasr", contact_name: "", contact_email: "", last_message_at: new Date(Date.now() - 3600e3).toISOString(), sent_at: new Date(Date.now() - 3600e3).toISOString(), last_direction: "out", to_preview: "ontvanger@example.test", to_count: 1, cc_count: 1, bcc_count: 4, attachments: 1, error: null },
   { number: 1003, subject: "Re: Mijn pas werkt niet", status: "new", brand: "pasr", contact_name: "Sanne de Vries", contact_email: "sanne@example.test", last_message_at: new Date(Date.now() - 7200e3).toISOString(), sent_at: new Date(Date.now() - 7200e3).toISOString(), last_direction: "out", to_preview: "sanne@example.test", to_count: 1, cc_count: 0, bcc_count: 0, attachments: 0, error: "SMTP weigerde de mail" },
 ];
 const calls = [];
@@ -96,31 +96,28 @@ function handle(action, b) {
   const shot = async (n, full) => { if (shotsDir) { await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(150); await page.screenshot({ path: path.join(shotsDir, n + ".png"), fullPage: !!full }); } };
   const last = (a) => [...calls].reverse().find((c) => c.action === a);
 
-  await page.goto(base + "#mail");
+  await page.goto(base + "#mail-pasr");
   await page.waitForSelector("#view-mail:not(.hidden)");
   await page.waitForSelector(".mx-item");
   ok(await page.locator("#mailBadge").innerText() === "1", "menu-badge toont 1 ongelezen");
-  ok((await page.locator(".mx-item").count()) === 2, "inbox toont standaard de 2 actieve tickets");
+  ok((await page.locator(".mx-item").count()) === 1, "Support-postvak toont alleen de actieve tickets van Support");
+  ok(calls.some((c) => c.action === "mail_thread_list" && c.b.brand === "pasr" && c.b.box === "inbox"), "Support-postvak vraagt brand=pasr");
   ok((await page.locator("#mail-inbox .mx-status-t").innerText()).includes("IMAP"), "IMAP/SMTP-status zichtbaar");
   await shot("1-inbox-lijst");
 
   // filter, zoeken, ongelezen
   await page.click('.mx-filters button[data-f="all"]');
-  await page.waitForFunction(() => document.querySelectorAll(".mx-item").length === 3);
+  await page.waitForFunction(() => document.querySelectorAll(".mx-item").length === 2);
   ok(last("mail_thread_list").b.status === "all", "filter Alle vraagt status=all");
-  await page.fill('#mail-inbox input[type=search]', "zakelijk");
+  await page.fill('#mail-inbox input[type=search]', "bedankt");
   await page.waitForFunction(() => document.querySelectorAll(".mx-item").length === 1);
-  ok(last("mail_thread_list").b.q === "zakelijk", "zoeken stuurt q");
+  ok([...calls].reverse().find((c) => c.action === "mail_thread_list" && c.b.q).b.q === "bedankt", "zoeken stuurt q");
   await page.fill('#mail-inbox input[type=search]', "");
-  await page.waitForFunction(() => document.querySelectorAll(".mx-item").length === 3);
+  await page.waitForFunction(() => document.querySelectorAll(".mx-item").length === 2);
   await page.check("#mail-inbox .mx-unread input");
   ok((await page.locator(".mx-item").count()) === 1, "alleen ongelezen filtert");
   await page.uncheck("#mail-inbox .mx-unread input");
-  await page.selectOption("#mail-inbox select", "zakelijk");
-  await page.waitForFunction(() => document.querySelectorAll(".mx-item").length === 1);
-  ok(last("mail_thread_list").b.brand === "zakelijk", "merkfilter stuurt brand");
-  await page.selectOption("#mail-inbox select", "");
-  await page.waitForFunction(() => document.querySelectorAll(".mx-item").length === 3);
+  ok(await page.locator("#mail-inbox select").isHidden(), "merkfilter is verborgen: het postvak bepaalt het merk");
 
   // thread openen: veilige weergave
   await page.click('.mx-item:has-text("#1003")');
@@ -148,20 +145,19 @@ function handle(action, b) {
   ok(last("mail_preview").b.signature === true && (await page.locator(".mx-reply .mx-pv-host").evaluate((h) => h.shadowRoot.textContent)).includes("Team Pasr"), "voorbeeld toont de handtekening");
   const rcc = page.locator(".mx-reply .mx-addr").nth(0).locator("input");
   await rcc.fill("een@example.test, twee@example.test"); await rcc.press("Enter");
-  await page.click('.mx-reply .seg button:has-text("Pasr Zakelijk")');
   await page.click('.mx-reply button[type=submit]');
   await page.waitForSelector("#mailModal:not(.hidden)");
   const dtxt = await page.locator("#mailModal").innerText();
-  ok(dtxt.includes("Pasr Zakelijk") && dtxt.includes("3 adressen"), "bevestiging toont merk en aantal ontvangers");
-  ok(dtxt.includes("Team Pasr Zakelijk"), "bevestiging toont de handtekening");
-  ok((await page.locator(".mx-reply .mx-sig").innerText()).includes("Team Pasr Zakelijk"), "naam van de handtekening volgt het merk");
+  ok(dtxt.includes("Pasr") && dtxt.includes("3 adressen"), "bevestiging toont merk en aantal ontvangers");
+  ok(dtxt.includes("Team Pasr") && !dtxt.includes("Zakelijk"), "bevestiging toont de handtekening van Support");
+  ok((await page.locator(".mx-reply .mx-sig").innerText()).includes("Team Pasr") && !(await page.locator(".mx-reply .mx-sig").innerText()).includes("Zakelijk"), "naam van de handtekening volgt het postvak");
   await shot("3-bevestiging-antwoord");
   await page.click("#mmCancel");
   ok(!calls.some((c) => c.action === "mail_thread_reply"), "annuleren verstuurt niets");
   await page.click('.mx-reply button[type=submit]'); await page.click("#mmOk");
   await page.waitForFunction(() => document.querySelector("#toast") && /verstuurd/i.test(document.querySelector("#toast").textContent));
   const rep = last("mail_thread_reply").b;
-  ok(rep.number === 1003 && rep.brand === "zakelijk" && rep.cc.length === 2 && rep.status === "pending" && rep.signature === true, "thread_reply met merk, CC, status en handtekening");
+  ok(rep.number === 1003 && rep.brand === "pasr" && rep.cc.length === 2 && rep.status === "pending" && rep.signature === true, "thread_reply met merk, CC, status en handtekening");
   await page.waitForSelector('#mail-inbox .mx-notice', { timeout: 5000 }).catch(() => {});
   ok(await page.locator('#mail-inbox .mx-notice button:text-is("Bekijk in Verzonden")').isVisible(), "na antwoord: melding Bekijk in Verzonden");
   // notitie en status
@@ -239,18 +235,17 @@ function handle(action, b) {
   await page.click('#mail-compose button[type=submit]');
   ok((await page.locator("#mail-compose .mx-form > .err").innerText()).includes("rood"), "versturen geblokkeerd met ongeldig adres");
   await page.locator("#mail-compose .mx-addr").nth(2).locator(".mx-chip.bad button").click();
-  await page.click('#mail-compose .seg button:text-is("Pasr Zakelijk")');
   await page.click("#mail-compose .mx-sig input");
-  ok((await page.locator("#mail-compose .mx-sig").innerText()).includes("Team Pasr Zakelijk") && await page.locator("#mail-compose .mx-sig input").isChecked(), "nieuwe mail: naam volgt merk, weer aan");
+  ok((await page.locator("#mail-compose .mx-sig").innerText()).includes("Team Pasr") && await page.locator("#mail-compose .mx-sig input").isChecked(), "nieuwe mail: naam volgt merk, weer aan");
   await page.click('#mail-compose button[type=submit]');
   await page.waitForSelector("#mailModal:not(.hidden)");
   const ct = await page.locator("#mailModal").innerText();
-  ok(ct.includes("Pasr Zakelijk") && /5 adressen/.test(ct) && ct.includes("BCC 4") && ct.includes("1 bestand"), "bevestiging: merk, ontvangers, bijlagen");
+  ok(ct.includes("Pasr") && /5 adressen/.test(ct) && ct.includes("BCC 4") && ct.includes("1 bestand"), "bevestiging: merk, ontvangers, bijlagen");
   await shot("5-bevestiging-nieuwe-mail");
   await page.click("#mmOk");
   await page.waitForTimeout(400);
   const cb = last("mail_compose").b;
-  ok(cb.bcc.length === 4 && cb.to.length === 1 && cb.brand === "zakelijk" && cb.attachments.length === 1 && !!cb.attachments[0].data_b64 && cb.thread === true && cb.signature === true, "mail_compose met aan, BCC, merk, bijlage en handtekening");
+  ok(cb.bcc.length === 4 && cb.to.length === 1 && cb.brand === "pasr" && cb.attachments.length === 1 && !!cb.attachments[0].data_b64 && cb.thread === true && cb.signature === true, "mail_compose met aan, BCC, merk, bijlage en handtekening");
   ok(!(await page.evaluate(() => JSON.stringify(Object.assign({}, localStorage)))).includes("@"), "geen adressen in localStorage");
 
   // te groot: getal uit de server
@@ -274,7 +269,7 @@ function handle(action, b) {
   ok(last("mail_thread_list").b.box === "sent", "thread_list met box=sent");
   await page.waitForSelector("#mail-sent .mx-item");
   const sl = await page.locator("#mail-sent .mx-list").innerText();
-  ok((await page.locator("#mail-sent .mx-item").count()) === 2 && sl.includes("BCC 4") && sl.includes("CC 1") && sl.includes("1 bijlage") && sl.includes("Niet verstuurd") && sl.includes("Pasr Zakelijk"), "verzonden-lijst: aantallen, bijlage, merk en fout");
+  ok((await page.locator("#mail-sent .mx-item").count()) === 2 && sl.includes("BCC 4") && sl.includes("CC 1") && sl.includes("1 bijlage") && sl.includes("Niet verstuurd"), "verzonden-lijst: aantallen, bijlage, merk en fout");
   ok(!(await page.locator("#mail-sent .mx-filters").isVisible()), "geen statusfilter in Verzonden");
   await page.click('#mail-sent .mx-item:has-text("#1004")');
   await page.waitForSelector("#mail-sent .mx-msg");
@@ -286,28 +281,42 @@ function handle(action, b) {
   await page.click("#mtab-news");
   await page.waitForSelector("#mail-news .mx-audcount b");
   await page.waitForFunction(() => document.querySelector("#mail-news .mx-audcount b").textContent !== "–");
-  ok((await page.locator("#mail-news .mx-audcount b").innerText()) === "1.200", "doelgroep Gebruikers toont aantal");
-  await page.click('#mail-news .seg button:text-is("Ondernemers")');
-  await page.waitForFunction(() => document.querySelector("#mail-news .mx-audcount b").textContent === "48");
-  ok((await page.locator('#mail-news .mx-field:has(.mx-lab:text-is("Merk")) .seg button[aria-pressed=true]').innerText()) === "Pasr Zakelijk", "merk volgt doelgroep");
+  ok((await page.locator("#mail-news .mx-audcount b").innerText()) === "1.200", "Support: doelgroep Gebruikers toont aantal");
+  ok((await page.locator("#mail-news .mx-from").innerText()).includes("support@pasr.nl"), "nieuwsbrief Support gaat vanaf support@pasr.nl");
   ok((await page.locator("#mail-news .hist").count()) === 2, "campagne-overzicht");
   ok(await page.locator("#mail-news progress").count() === 1, "voortgang van lopende verzending");
   await page.locator("#mail-news input[type=text]").nth(0).fill("Kennismaken met Pasr Zakelijk");
   await page.fill("#mail-news .mx-editor textarea", "Hoi {{voornaam}},\n\nPasr Zakelijk voor jouw zaak.");
-  ok((await page.locator("#mail-news .mx-sig").innerText()).includes("Handtekening Team Pasr Zakelijk toevoegen") && await page.locator("#mail-news .mx-sig input").isChecked(), "nieuwsbrief: schakelaar met Team Pasr Zakelijk, standaard aan");
+  ok((await page.locator("#mail-news .mx-sig").innerText()).includes("Handtekening Team Pasr toevoegen") && await page.locator("#mail-news .mx-sig input").isChecked(), "nieuwsbrief: schakelaar met Team Pasr, standaard aan");
   await page.waitForTimeout(700);
   await shot("6-nieuwsbrief", true);
   await page.click('#mail-news button[type=submit]');
   await page.waitForSelector("#mailModal:not(.hidden)");
-  ok((await page.locator("#mailModal").innerText()).includes("48 personen"), "bevestiging toont aantal ontvangers");
+  ok((await page.locator("#mailModal").innerText()).includes("1.200 personen"), "bevestiging toont aantal ontvangers");
   await page.click("#mmOk"); await page.waitForTimeout(400);
   const cs = last("mail_campaign_send").b;
-  ok(cs.audience === "owners" && cs.brand === "zakelijk" && /^[0-9a-f-]{36}$/.test(cs.request_id), "campaign_send met doelgroep, merk en request_id");
+  ok(cs.audience === "users" && cs.brand === "pasr" && /^[0-9a-f-]{36}$/.test(cs.request_id), "campaign_send met doelgroep, merk en request_id");
   ok(cs.signature === true, "campaign_send stuurt signature mee");
   page.once("dialog", () => {});
   await page.click('#mail-news button:text-is("Annuleren")');
   await page.waitForSelector("#mailModal:not(.hidden)"); await page.click("#mmOk"); await page.waitForTimeout(300);
   ok(!!last("mail_campaign_cancel"), "lopende verzending annuleren");
+
+  // ---- Postvak Ondernemers: eigen adres, eigen tickets, eigen doelgroep ----
+  await page.click("#tab-mail-zakelijk");
+  await page.waitForFunction(() => document.getElementById("mailTitle").textContent === "Postvak Ondernemers");
+  await page.waitForSelector("#mail-inbox .mx-item");
+  ok((await page.locator("#mail-inbox .mx-item").count()) === 1 && (await page.locator("#mail-inbox .mx-list").innerText()).includes("#1002"), "Ondernemers-postvak toont alleen zakelijke tickets");
+  ok(calls.some((c) => c.action === "mail_thread_list" && c.b.brand === "zakelijk"), "Ondernemers-postvak vraagt brand=zakelijk");
+  await page.click("#tab-mailnews-zakelijk");
+  await page.waitForFunction(() => document.querySelector("#mail-news .mx-audcount b") && document.querySelector("#mail-news .mx-audcount b").textContent === "48");
+  ok((await page.locator("#mail-news .mx-from").innerText()).includes("zakelijk@pasr.nl"), "nieuwsbrief Ondernemers gaat vanaf zakelijk@pasr.nl");
+  await page.locator("#mail-news input[type=text]").nth(0).fill("Voor ondernemers");
+  await page.fill("#mail-news .mx-editor textarea", "Hoi {{voornaam}},\n\nNieuws.");
+  await page.click('#mail-news button[type=submit]');
+  await page.waitForSelector("#mailModal:not(.hidden)"); await page.click("#mmOk"); await page.waitForTimeout(400);
+  const cz = last("mail_campaign_send").b;
+  ok(cz.audience === "owners" && cz.brand === "zakelijk", "Ondernemers-nieuwsbrief: doelgroep owners, merk zakelijk");
 
   // ---- algemeen ----
   ok(dialogs === 0, "geen browserdialogen (eigen vensters)");
@@ -317,6 +326,7 @@ function handle(action, b) {
   ok(!overflow, "geen horizontale scroll (desktop)");
 
   // ---- mobiel ----
+  await page.click("#tab-mail-pasr"); await page.click("#mtab-sent"); await page.waitForSelector("#mail-sent .mx-item"); await page.click("#mail-sent .mx-item >> nth=0"); await page.waitForSelector("#mail-sent .mx-msg");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click("#mtab-sent"); await page.waitForSelector("#mail-sent .mx-layout .mx-detail"); if (await page.locator("#mail-sent .mx-back").isVisible()) await page.click("#mail-sent .mx-back"); await page.waitForSelector("#mail-sent .mx-item"); await shot("12-mobiel-verzonden"); await page.click("#mtab-inbox"); if (await page.locator("#mail-inbox .mx-back").isVisible()) await page.click("#mail-inbox .mx-back"); await page.waitForSelector(".mx-item");
   ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "geen horizontale scroll (mobiel, inbox)");

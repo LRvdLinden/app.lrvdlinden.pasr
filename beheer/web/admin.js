@@ -148,20 +148,50 @@
 
   // ---- tabs ----
   let tab = "overview";
+  const TABS = ["overview", "insights", "accounts", "stores", "news", "business", "settings", "mail-pasr", "mailnews-pasr", "mail-zakelijk", "mailnews-zakelijk"];
   function setTab(t) {
+    if (t === "mail") t = "mail-pasr";
+    if (!TABS.includes(t)) t = "overview";
     tab = t;
-    document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
-    document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== "view-" + t));
+    const isMail = t.startsWith("mail"), view = isMail ? "mail" : t;
+    document.querySelectorAll(".tabs button, .side-set").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+    document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== "view-" + view));
     if (t === "overview" || t === "insights") { skeleton(); if (stats) renderAll(); else loadStats(); }
+    if (t === "overview") loadAttention();
     if (t === "accounts") loadUsers(true);
     if (t === "settings") showSettings();
     if (t === "stores") loadStores();
     if (t === "news") loadNews();
     if (t === "business") loadBusinesses();
-    if (t === "mail" && window.PasrMail) window.PasrMail.show();
+    if (isMail && window.PasrMail) window.PasrMail.show(t.endsWith("zakelijk") ? "zakelijk" : "pasr", t.startsWith("mailnews") ? "news" : null);
     try { history.replaceState(null, "", "#" + t); } catch {}
+    window.scrollTo(0, 0);
   }
-  document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+  document.querySelectorAll(".tabs button, .side-set").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+  // ---- Vandaag: aandacht nodig ----
+  async function loadAttention() {
+    const box = $("attn"); if (!box) return;
+    const h = new Date().getHours();
+    $("hello").textContent = (h < 6 ? "Goedenacht" : h < 12 ? "Goedemorgen" : h < 18 ? "Goedemiddag" : "Goedenavond");
+    const items = [];
+    try { const all = (await api("businesses")).businesses || []; const n = all.filter((b) => b.status === "pending").length; bizBadge(n);
+      if (n) items.push([n === 1 ? "1 ondernemer wacht op goedkeuring" : `${num(n)} ondernemers wachten op goedkeuring`, "Controleer de aanmelding en keur goed.", "business", "Bekijken"]); } catch (e) { if (e.status === 401) return; }
+    if (window.PasrMail) {
+      try { const c = await window.PasrMail.counts();
+        if (c.pasr) items.push([c.pasr === 1 ? "1 ongelezen mail bij Support" : `${num(c.pasr)} ongelezen mails bij Support`, "support@pasr.nl", "mail-pasr", "Postvak openen"]);
+        if (c.zakelijk) items.push([c.zakelijk === 1 ? "1 ongelezen mail van ondernemers" : `${num(c.zakelijk)} ongelezen mails van ondernemers`, "zakelijk@pasr.nl", "mail-zakelijk", "Postvak openen"]); } catch (e) { if (e.status === 401) return; }
+    }
+    box.replaceChildren();
+    $("attnN").textContent = items.length ? plural(items.length, "ding", "dingen") : "";
+    if (!items.length) { box.append(el("p", "attn-ok", "Alles is bijgewerkt. Er wacht niets op jou.")); return; }
+    for (const [t1, t2, go, lab] of items) {
+      const row = el("div", "attn-it"), tx = el("div");
+      tx.append(el("b", null, t1), el("small", null, t2));
+      const b = el("button", "btn ghost sm", lab); b.type = "button"; b.addEventListener("click", () => setTab(go));
+      row.append(tx, b); box.append(row);
+    }
+  }
 
   // ---- statistieken (gedeeld door Overzicht en Insights) ----
   const METRICS = [
@@ -2108,7 +2138,7 @@
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
     const want = (location.hash || "").slice(1);
-    setTab(["overview", "insights", "accounts", "stores", "news", "business", "mail", "settings"].includes(want) ? want : "overview");
+    setTab(want || "overview");
     api("store_requests", { status: "open" }).then((r) => badge((r.groups || []).length)).catch(() => {});
     if (window.PasrMail) window.PasrMail.refreshBadge();
     api("businesses").then((r) => bizBadge((r.businesses || []).filter((b) => b.status === "pending").length)).catch(() => {});
