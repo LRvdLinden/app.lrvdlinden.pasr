@@ -546,3 +546,5 @@ a.btn { text-decoration: none; }
   .tabs { overflow-x: auto; scrollbar-width: none; }
   .tabs button { flex: 1 0 auto; min-width: 64px; padding: 7px 8px; }
 }
+.mx-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; background: rgba(46, 211, 166, .1); border: 1px solid rgba(46, 211, 166, .35); color: var(--mint); border-radius: 12px; padding: 8px 12px; font-weight: 600; }
+.err .btn { margin-left: 6px; vertical-align: middle; }

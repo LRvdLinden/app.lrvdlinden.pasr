@@ -11,7 +11,7 @@
   const $ = (id) => document.getElementById(id);
 
   // ---- constanten en teksten ----
-  const MAX_ATT = 10 * 1024 * 1024;       // totaal aan bijlagen per mail
+  const MAX_ATT = 20 * 1024 * 1024;       // totaal aan bijlagen per mail (ruw), zoals de backend
   const MAX_CALL = 200;                   // adressen per aanroep
   const MAX_BCC_MAIL = 50;                // BCC per mail (de server splitst of weigert daarboven)
   const BRANDS = { pasr: "Pasr", zakelijk: "Pasr Zakelijk" };
@@ -24,7 +24,6 @@
     bad_body: "Schrijf een bericht.",
     bad_address: "Eén of meer e-mailadressen zijn ongeldig.",
     too_many: "Te veel ontvangers in één keer (hoogstens 200 per verzending, 50 BCC per mail).",
-    too_large: "De bijlagen zijn samen te groot (hoogstens 10 MB).",
     rate_limited: "Even wachten: te veel mails in korte tijd. Probeer het over een paar minuten opnieuw.",
     smtp_not_configured: "E-mail versturen is nog niet ingesteld (PASR_SMTP_*).",
     imap_not_configured: "Mail ophalen is nog niet ingesteld (PASR_IMAP_*).",
@@ -36,7 +35,13 @@
     bad_status: "Onbekende status.",
     bad_attachment: "Een bijlage kon niet worden gebruikt.",
   };
-  const errMsg = (e) => ERR[e && e.code] || (e && e.message) || "Er ging iets mis.";
+  // too_large: het getal komt uit het antwoord van de server (bytes of MB), anders de vaste limiet van de UI
+function limitText(body) {
+  let v = null;
+  for (const k of ["max_bytes", "limit_bytes", "max_size", "limit", "max", "max_mb"]) if (body && typeof body[k] === "number") { v = k === "max_mb" ? body[k] * 1048576 : body[k] > 1000 ? body[k] : body[k] * 1048576; break; }
+  return fmtSize(v || MAX_ATT);
+}
+const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te groot (hoogstens ${limitText(e.body)}).` : ERR[e && e.code] || (e && e.message) || "Er ging iets mis.";
 
   // Alle mailacties via admin (actie mail_<naam>); fouten krijgen een eigen Nederlandse tekst.
   async function call(name, params) {
@@ -57,7 +62,7 @@
     }
     return out.filter(Boolean);
   }
-  const fmtSize = (n) => n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " MB" : n >= 1024 ? Math.round(n / 1024) + " kB" : n + " B";
+  const fmtSize = (n) => n >= 1048576 ? (n / 1048576).toFixed(1).replace(/\.0$/, "").replace(".", ",") + " MB" : n >= 1024 ? Math.round(n / 1024) + " kB" : n + " B";
   const fmtDT = (iso) => iso ? new Date(iso).toLocaleString("nl-NL", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
   const plural = (n, one, many) => `${num(n)} ${n === 1 ? one : many}`;
   let uid = 0;
@@ -182,14 +187,14 @@
     };
   }
 
-  // ---- bijlagen (bestandskeuze, slepen, base64, totaal hoogstens 10 MB) ----
+  // ---- bijlagen (bestandskeuze, slepen, base64, totaal hoogstens 20 MB) ----
   function attachments() {
     const files = []; // {name,type,size,data_b64,key}
     const id = nid("mx-file-");
     const root = el("div", "mx-field mx-att");
     root.append(el("span", "mx-lab", "Bijlagen"));
     const zone = el("label", "mx-drop"); zone.htmlFor = id;
-    zone.append(el("span", null, "Sleep bestanden hierheen of kies ze"), el("span", "muted sm", "Samen hoogstens 10 MB"));
+    zone.append(el("span", null, "Sleep bestanden hierheen of kies ze"), el("span", "muted sm", `Samen hoogstens ${fmtSize(MAX_ATT)}`));
     const input = el("input", "sr"); input.type = "file"; input.multiple = true; input.id = id;
     const list = el("ul", "mx-files");
     const info = msgBox("err sm");
@@ -215,7 +220,7 @@
     async function add(fileList) {
       say(info, "");
       for (const file of Array.from(fileList || [])) {
-        if (total() + file.size > MAX_ATT) { say(info, `"${file.name}" past er niet meer bij: bijlagen zijn samen hoogstens 10 MB.`); continue; }
+        if (total() + file.size > MAX_ATT) { say(info, `"${file.name}" past er niet meer bij: bijlagen zijn samen hoogstens ${fmtSize(MAX_ATT)}.`); continue; }
         if (!file.size) { say(info, `"${file.name}" is leeg en is overgeslagen.`); continue; }
         try {
           const data = await read(file);
@@ -413,6 +418,14 @@
     return seg(label, [["pasr", "Pasr"], ["zakelijk", "Pasr Zakelijk"]], initial, onChange);
   }
 
+  // knop "Bekijk in Verzonden" na het versturen
+  function sentLink(number) {
+    const b = el("button", "btn ghost sm", "Bekijk in Verzonden"); b.type = "button";
+    b.addEventListener("click", () => openSent(number));
+    return b;
+  }
+  const openSent = (number) => { showSub("sent"); if (number && parts.sent) parts.sent.open(number); };
+
   // ======================= subtab: Nieuwe mail =======================
   function buildCompose(host) {
     const form = el("form", "mx-form card"); form.noValidate = true; form.autocomplete = "off";
@@ -477,6 +490,7 @@
         const r = await call("compose", { to: T, cc: C, bcc: B, subject: subject.value.trim(), body_md: ed.get(), brand, attachments: att.payload(), thread: true });
         const txt = `Verstuurd: ${num(r.sent ?? 0)}${r.failed ? `, mislukt: ${num(r.failed)}` : ""}${r.number ? ` (ticket #${r.number})` : ""}.`;
         say(msg, txt, !r.failed); toast(txt);
+        if (!r.failed || r.sent) msg.append(document.createTextNode(" "), sentLink(r.number));
         if (!r.failed) { to.clear(); cc.clear(); bcc.clear(); subject.value = ""; ed.clear(); att.clear(); save(); }
       } catch (err) { if (err.status !== 401) say(msg, errMsg(err)); }
       finally { busy = false; sendBtn.disabled = false; }
@@ -597,11 +611,12 @@
   }
 
   // ======================= subtab: Inbox =======================
-  function buildInbox(host) {
+  function buildInbox(host, box) {
+    const sent = box === "sent";
     let filter = "active", brandF = "", q = "", unreadOnly = false, page = 0, total = 0, openNo = null, items = [];
     const PAGE = 25;
     // statusregel
-    const bar = el("div", "mx-status"); bar.setAttribute("aria-live", "polite");
+    const bar = el("div", "mx-status" + (sent ? " hidden" : "")); bar.setAttribute("aria-live", "polite");
     const dot = el("span", "dot"); const barTxt = el("span", "mx-status-t");
     const pollBtn = btn("Nu ophalen", "ghost sm", doPoll);
     bar.append(dot, barTxt, pollBtn);
@@ -612,12 +627,13 @@
     const brandSel = el("select"); brandSel.setAttribute("aria-label", "Merk");
     for (const [v, l] of [["", "Alle merken"], ["pasr", "Pasr"], ["zakelijk", "Pasr Zakelijk"]]) { const o = el("option", null, l); o.value = v; brandSel.append(o); }
     const unrLab = el("label", "se-check mx-unread"); const unr = el("input"); unr.type = "checkbox"; unrLab.append(unr, document.createTextNode(" Alleen ongelezen"));
+    if (sent) { fseg.classList.add("hidden"); unrLab.classList.add("hidden"); search.placeholder = "Zoek op onderwerp, tekst of ontvanger"; }
     tools.append(fseg, search, brandSel, unrLab);
     const err = el("div", "banner hidden"); err.setAttribute("role", "alert");
     // lijst en detail
     const layout = el("div", "mx-layout");
     const listCol = el("div", "mx-listcol");
-    const list = el("ul", "mx-list"); list.setAttribute("aria-label", "Tickets");
+    const list = el("ul", "mx-list"); list.setAttribute("aria-label", sent ? "Verzonden mails" : "Tickets");
     const pager = el("div", "mx-pager");
     const prev = btn("Vorige", "ghost sm", () => { if (page > 0) { page--; loadList(); } });
     const pageTxt = el("span", "muted sm"); pageTxt.setAttribute("aria-live", "polite");
@@ -685,11 +701,11 @@
       err.classList.add("hidden");
       list.setAttribute("aria-busy", "true");
       try {
-        const p = { status: filter, q, page, page_size: PAGE };
+        const p = { status: sent ? "all" : filter, q, page, page_size: PAGE, box: sent ? "sent" : "inbox" };
         if (brandF) p.brand = brandF;
         const r = await call("thread_list", p);
         items = r.items || []; total = r.total || 0;
-        if (r.counts) { renderFilters(r.counts); fseg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === filter))); setBadge(r.counts.unread); }
+        if (r.counts && !sent) { renderFilters(r.counts); fseg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === filter))); setBadge(r.counts.unread); }
         renderList();
       } catch (e) { if (e.status !== 401) { err.textContent = errMsg(e); err.classList.remove("hidden"); } }
       finally { list.removeAttribute("aria-busy"); }
@@ -702,6 +718,7 @@
         const li = el("li"); const b = el("button", "mx-item" + (t.unread ? " unread" : "") + (t.number === openNo ? " on" : "")); b.type = "button";
         if (t.number === openNo) b.setAttribute("aria-current", "true");
         const top = el("div", "mx-item-top");
+        if (sent) { sentItem(b, top, t); b.addEventListener("click", () => openThread(t.number)); li.append(b); list.append(li); continue; }
         if (t.unread) { const d = el("span", "udot"); d.setAttribute("role", "img"); d.setAttribute("aria-label", "Ongelezen"); top.append(d); }
         top.append(el("span", "num", "#" + t.number), el("span", "mx-when muted sm", ago(t.last_message_at)));
         const subj = el("div", "mx-subj", t.subject || "(geen onderwerp)");
@@ -719,8 +736,22 @@
       pager.classList.toggle("hidden", total <= PAGE);
     }
 
+    // Verzonden: lijstregel met aan/CC/BCC-aantallen, merk, datum, bijlagen en fout
+    function sentItem(b, top, t) {
+      top.append(el("span", "num", "#" + t.number), el("span", "mx-when muted sm", fmtDT(t.sent_at || t.last_message_at)));
+      const who = (t.to_preview ? "Aan: " + t.to_preview : "Aan: (alleen BCC)") + (t.to_count > 1 ? ` (+${num(t.to_count - 1)})` : "");
+      const counts = [`Aan ${num(t.to_count || 0)}`, `CC ${num(t.cc_count || 0)}`, `BCC ${num(t.bcc_count || 0)}`].join(" \u00b7 ");
+      const badges = el("div", "mx-badges");
+      badges.append(el("span", "badge brand " + t.brand, BRANDS[t.brand] || t.brand || ""));
+      const na = typeof t.attachments === "number" ? t.attachments : Array.isArray(t.attachments) ? t.attachments.length : 0;
+      if (na) badges.append(el("span", "badge", plural(na, "bijlage", "bijlagen")));
+      if (t.error) { const e = el("span", "badge bad", "Niet verstuurd"); e.title = String(t.error); badges.append(e); }
+      if (t.last_direction === "in") badges.append(el("span", "badge wait", "Er is geantwoord"));
+      b.append(top, el("div", "mx-subj", t.subject || "(geen onderwerp)"), el("div", "mx-who muted sm", who), el("div", "mx-prev muted sm", counts), badges);
+    }
+
     // detail
-    async function openThread(n) {
+    async function openThread(n, notice) {
       openNo = n;
       renderList();
       detail.replaceChildren(el("p", "muted", "Laden…"));
@@ -730,9 +761,10 @@
       catch (e) { if (e.status !== 401) detail.replaceChildren(el("p", "err", errMsg(e))); return; }
       if (openNo !== n) return;
       renderThread(r);
+      if (notice) { const nb = el("div", "mx-notice"); nb.setAttribute("role", "status"); nb.append(el("span", null, notice), sentLink(n)); detail.prepend(nb); }
       detail.focus({ preventScroll: false });
-      loadStatus(); // ongelezen-teller
-      const it = items.find((x) => x.number === n); if (it) { it.unread = false; renderList(); }
+      if (!sent) loadStatus(); // ongelezen-teller
+      const it = items.find((x) => x.number === n); if (it && !sent) { it.unread = false; renderList(); }
     }
     function renderThread(r) {
       const t = r.thread || {};
@@ -746,7 +778,7 @@
       const who = el("p", "muted sm");
       who.append(document.createTextNode((t.contact_name ? t.contact_name + " · " : "")));
       if (t.contact_email) { const a = el("a", null, t.contact_email); a.href = "mailto:" + encodeURIComponent(t.contact_email).replace(/%40/g, "@"); who.append(a); }
-      if (t.created_at) who.append(document.createTextNode(" · aangemaakt " + fmtDT(t.created_at)));
+      if (t.created_at) who.append(document.createTextNode((t.contact_name || t.contact_email ? " \u00b7 " : "") + "aangemaakt " + fmtDT(t.created_at)));
       head.append(h, meta, who);
       const thread = el("div", "mx-thread"); thread.setAttribute("aria-label", "Gesprek"); thread.setAttribute("role", "list");
       for (const m of r.messages || []) thread.append(messageEl(m));
@@ -844,7 +876,7 @@
             const x = await call("thread_reply", { number: t.number, body_md: ed.get(), brand, cc: C, bcc: B, attachments: att.payload(), status: after.value });
             toast(x.email_sent === false ? "Antwoord opgeslagen, maar de mail is niet verstuurd." : "Antwoord verstuurd.");
           }
-          await openThread(t.number); loadList(); loadStatus();
+          await openThread(t.number, kind === "reply" ? "Antwoord verstuurd." : null); loadList(); if (!sent) loadStatus();
         } catch (err) { if (err.status !== 401) say(msg, errMsg(err)); }
         finally { busy = false; go.disabled = false; }
       });
@@ -870,7 +902,7 @@
       return box;
     }
 
-    return { show: () => { loadStatus(); loadList(); } };
+    return { show: () => { if (!sent) loadStatus(); loadList(); }, open: (n) => { loadList(); return openThread(n); } };
   }
 
   // ======================= tab Mail =======================
@@ -881,7 +913,7 @@
     const tab = $("tab-mail"); if (tab) tab.setAttribute("aria-label", n ? `Mail, ${n} ongelezen` : "Mail");
   }
   let built = false, parts = {}, sub = "inbox";
-  const SUBS = ["inbox", "compose", "news"];
+  const SUBS = ["inbox", "sent", "compose", "news"];
   function showSub(s, focus) {
     sub = s;
     for (const k of SUBS) {
@@ -896,7 +928,8 @@
   }
   function build() {
     built = true;
-    parts.inbox = buildInbox($("mail-inbox"));
+    parts.inbox = buildInbox($("mail-inbox"), "inbox");
+    parts.sent = buildInbox($("mail-sent"), "sent");
     parts.compose = buildCompose($("mail-compose"));
     parts.news = buildNews($("mail-news"));
     SUBS.forEach((k, i) => {

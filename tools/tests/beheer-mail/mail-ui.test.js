@@ -27,6 +27,10 @@ const db = {
     { id: 3, brand: "pasr", audience: "users", subject: "Nieuw in Pasr", status: "sending", recipients: 1200, sent: 400, failed: 0, created_at: new Date(Date.now() - 3600e3).toISOString() },
   ],
 };
+const sentItems = [
+  { number: 1004, subject: "Kennismaken met Pasr Zakelijk", status: "pending", brand: "zakelijk", contact_name: "", contact_email: "", last_message_at: new Date(Date.now() - 3600e3).toISOString(), sent_at: new Date(Date.now() - 3600e3).toISOString(), last_direction: "out", to_preview: "ontvanger@example.test", to_count: 1, cc_count: 1, bcc_count: 4, attachments: 1, error: null },
+  { number: 1003, subject: "Re: Mijn pas werkt niet", status: "new", brand: "pasr", contact_name: "Sanne de Vries", contact_email: "sanne@example.test", last_message_at: new Date(Date.now() - 7200e3).toISOString(), sent_at: new Date(Date.now() - 7200e3).toISOString(), last_direction: "out", to_preview: "sanne@example.test", to_count: 1, cc_count: 0, bcc_count: 0, attachments: 0, error: "SMTP weigerde de mail" },
+];
 const calls = [];
 function handle(action, b) {
   calls.push({ action, b });
@@ -34,13 +38,15 @@ function handle(action, b) {
     case "mail_status": return { smtp: true, imap: true, brands: { pasr: { from: "Pasr <support@pasr.nl>" }, zakelijk: { from: "Pasr Zakelijk <zakelijk@pasr.nl>" } }, sync: { last_run: new Date(Date.now() - 120e3).toISOString(), last_error: null, fetched: 3, imported: 1 }, counts: { new: 1, open: 1, pending: 0, closed: 1, unread: db.threads.filter((t) => t.unread).length } };
     case "mail_poll": return { ok: true, fetched: 2, imported: 1, new_threads: 1, replies: 0, ignored: 1, rejected: 0 };
     case "mail_thread_list": {
+      if (b.box === "sent") { let it = sentItems; if (b.brand) it = it.filter((t) => t.brand === b.brand); if (b.q) it = it.filter((t) => (t.subject + t.to_preview).toLowerCase().includes(String(b.q).toLowerCase())); return { total: it.length, page: 0, items: it, counts: {} }; }
       let items = db.threads.filter((t) => (b.status === "active" ? t.status !== "closed" : b.status === "all" || !b.status ? true : t.status === b.status));
       if (b.brand) items = items.filter((t) => t.brand === b.brand);
       if (b.q) items = items.filter((t) => (t.subject + t.preview).toLowerCase().includes(String(b.q).toLowerCase()));
       return { total: items.length, page: b.page || 0, items, counts: { new: 1, open: 1, pending: 0, closed: 1, unread: db.threads.filter((t) => t.unread).length } };
     }
     case "mail_thread_get": {
-      const t = db.threads.find((x) => x.number === b.number); t.unread = false;
+      const t = db.threads.find((x) => x.number === b.number) || sentItems.find((x) => x.number === b.number); t.unread = false;
+      if (b.number === 1004) return { thread: { ...t, priority: "normal", created_at: t.sent_at }, messages: [{ id: "s1", direction: "out", from: "Pasr Zakelijk <zakelijk@pasr.nl>", to: ["ontvanger@example.test"], cc: ["kopie@example.test"], bcc_count: 4, subject: t.subject, body_html: "<h2>Welkom</h2><p>Hoi daar, leuk dat je er bent.</p>", body_text: "Welkom", attachments: [{ id: "a2", name: "folder.pdf", type: "application/pdf", size: 307200 }], created_at: t.sent_at }] };
       return { thread: { ...t, priority: "normal", created_at: t.last_message_at }, messages: [
         { id: "m1", direction: "in", from: t.contact_email, to: ["support@pasr.nl"], cc: [], bcc_count: 0, subject: t.subject, body_html: EVIL, body_text: "Hallo, een vraag over mijn pas.", attachments: [{ id: "a1", name: "scherm.png", type: "image/png", size: 2048 }], created_at: t.last_message_at },
         { id: "m2", direction: "out", from: "Pasr <support@pasr.nl>", to: [t.contact_email], cc: [], bcc_count: 2, subject: "Re: " + t.subject, body_html: "<p>Dank voor je bericht.</p>", body_text: "Dank voor je bericht.", attachments: [], created_at: t.last_message_at },
@@ -52,7 +58,7 @@ function handle(action, b) {
     case "mail_thread_status": case "mail_thread_note": return { ok: true };
     case "mail_preview": return { html: `<!doctype html><html><head><meta name="color-scheme" content="light dark"><style>body{margin:0;background:#F4F4F8}.card{background:#fff;color:#17162A;padding:24px;border-radius:16px;max-width:520px;margin:16px auto}.btn{display:inline-block;background:#6A5CFF;color:#fff;padding:10px 18px;border-radius:12px;text-decoration:none}@media (prefers-color-scheme: dark){body{background:#0F1016}.card{background:#1B1D27;color:#F2F1FA}}</style></head><body><div class="card"><p style="font-weight:700;color:#6A5CFF">${b.brand === "zakelijk" ? "Pasr voor ondernemers" : "Pasr"}</p><h1 style="font-size:22px">${String(b.subject || "Onderwerp").replace(/[<>&]/g, "")}</h1><p>${String(b.body_md || "").replace(/[<>&]/g, "").slice(0, 200)}</p><p><a class="btn" href="https://pasr.nl">Open Pasr</a></p></div></body></html>`, text: "Voorbeeldtekst\n" + (b.body_md || "") };
     case "mail_test": return { ok: true };
-    case "mail_compose": return { ok: true, sent: 1, failed: 0, number: 1004 };
+    case "mail_compose": if (b.subject === "TOOLARGE") return { __status: 413, error: "too_large", max_bytes: 20971520 }; return { ok: true, sent: 1, failed: 0, number: 1004 };
     case "mail_campaign_audience": return { count: b.audience === "owners" ? 48 : 1200 };
     case "mail_campaign_send": return { ok: true, campaign_id: 4, recipients: b.audience === "owners" ? 48 : 1200 };
     case "mail_campaign_list": return db.campaigns;
@@ -79,6 +85,7 @@ function handle(action, b) {
   await ctx.route("https://mock.supabase.co/functions/v1/admin", async (route) => {
     const body = JSON.parse(route.request().postData() || "{}"); const { action, ...rest } = body;
     const out = handle(action, rest);
+    if (out && out.__status) return route.fulfill({ status: out.__status, contentType: "application/json", body: JSON.stringify({ error: out.error, max_bytes: out.max_bytes }) });
     if (out === null) return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(out) });
   });
@@ -151,6 +158,8 @@ function handle(action, b) {
   await page.waitForFunction(() => document.querySelector("#toast") && /verstuurd/i.test(document.querySelector("#toast").textContent));
   const rep = last("mail_thread_reply").b;
   ok(rep.number === 1003 && rep.brand === "zakelijk" && rep.cc.length === 2 && rep.status === "pending", "thread_reply met merk, CC en status");
+  await page.waitForSelector('#mail-inbox .mx-notice', { timeout: 5000 }).catch(() => {});
+  ok(await page.locator('#mail-inbox .mx-notice button:text-is("Bekijk in Verzonden")').isVisible(), "na antwoord: melding Bekijk in Verzonden");
   // notitie en status
   await page.waitForSelector(".mx-msg");
   await page.click('.mx-reply .seg button:has-text("Interne notitie")');
@@ -209,9 +218,9 @@ function handle(action, b) {
   await page.setInputFiles("#mail-compose input[type=file]", [{ name: "folder.pdf", mimeType: "application/pdf", buffer: Buffer.alloc(300 * 1024, 1) }]);
   await page.waitForSelector("#mail-compose .mx-file");
   ok((await page.locator("#mail-compose .mx-files").innerText()).includes("folder.pdf"), "bijlage getoond met grootte");
-  await page.setInputFiles("#mail-compose input[type=file]", [{ name: "groot.bin", mimeType: "application/octet-stream", buffer: Buffer.alloc(10 * 1024 * 1024, 1) }]);
+  await page.setInputFiles("#mail-compose input[type=file]", [{ name: "groot.bin", mimeType: "application/octet-stream", buffer: Buffer.alloc(20 * 1024 * 1024, 1) }]);
   await page.waitForTimeout(500);
-  ok((await page.locator("#mail-compose .mx-att .err").innerText()).includes("10 MB") && (await page.locator("#mail-compose .mx-file:not(.total)").count()) === 1, "bijlagen boven 10 MB totaal geweigerd");
+  ok((await page.locator("#mail-compose .mx-att .err").innerText()).includes("20 MB") && (await page.locator("#mail-compose .mx-file:not(.total)").count()) === 1, "bijlagen boven 20 MB totaal geweigerd");
   await shot("4-nieuwe-mail", true);
   // testmail
   await page.fill("#mail-compose .mx-testrow input", "ik@example.test");
@@ -233,6 +242,35 @@ function handle(action, b) {
   const cb = last("mail_compose").b;
   ok(cb.bcc.length === 4 && cb.to.length === 1 && cb.brand === "zakelijk" && cb.attachments.length === 1 && !!cb.attachments[0].data_b64 && cb.thread === true, "mail_compose met aan, BCC, merk en bijlage");
   ok(!(await page.evaluate(() => JSON.stringify(Object.assign({}, localStorage)))).includes("@"), "geen adressen in localStorage");
+
+  // te groot: getal uit de server
+  await page.locator("#mail-compose input[type=text]").nth(3).fill("TOOLARGE");
+  await page.locator("#mail-compose .mx-addr").nth(0).locator("input").fill("x@example.test ");
+  await page.fill("#mail-compose .mx-editor textarea", "tekst");
+  await page.click('#mail-compose button[type=submit]'); await page.click("#mmOk");
+  await page.waitForTimeout(400);
+  ok((await page.locator("#mail-compose .mx-form > .err").innerText()).includes("hoogstens 20 MB"), "too_large toont de limiet uit de server");
+
+  // ---- Verzonden ----
+  await page.locator("#mail-compose .mx-addr").nth(0).locator(".mx-chip button").click();
+  await page.locator("#mail-compose input[type=text]").nth(3).fill("Nog een mail");
+  await page.locator("#mail-compose .mx-addr").nth(0).locator("input").fill("y@example.test ");
+  await page.click('#mail-compose button[type=submit]'); await page.click("#mmOk");
+  await page.waitForSelector('#mail-compose .err button:text-is("Bekijk in Verzonden")');
+  await shot("10-na-versturen-link", true);
+  await page.click('#mail-compose .err button:text-is("Bekijk in Verzonden")');
+  await page.waitForSelector("#mail-sent .mx-msg");
+  ok((await page.locator("#mtab-sent").getAttribute("aria-selected")) === "true", "knop opent het tabblad Verzonden met de thread");
+  ok(last("mail_thread_list").b.box === "sent", "thread_list met box=sent");
+  await page.waitForSelector("#mail-sent .mx-item");
+  const sl = await page.locator("#mail-sent .mx-list").innerText();
+  ok((await page.locator("#mail-sent .mx-item").count()) === 2 && sl.includes("BCC 4") && sl.includes("CC 1") && sl.includes("1 bijlage") && sl.includes("Niet verstuurd") && sl.includes("Pasr Zakelijk"), "verzonden-lijst: aantallen, bijlage, merk en fout");
+  ok(!(await page.locator("#mail-sent .mx-filters").isVisible()), "geen statusfilter in Verzonden");
+  await page.click('#mail-sent .mx-item:has-text("#1004")');
+  await page.waitForSelector("#mail-sent .mx-msg");
+  const sm = await page.locator("#mail-sent .mx-msg").first().innerText();
+  ok(sm.includes("kopie@example.test") && sm.includes("4 ontvangers") && !sm.includes("BCC kopie"), "thread: To en CC zichtbaar, BCC alleen aantal");
+  await shot("11-verzonden");
 
   // ---- Nieuwsbrief ----
   await page.click("#mtab-news");
@@ -268,13 +306,13 @@ function handle(action, b) {
 
   // ---- mobiel ----
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.click("#mtab-inbox"); if (await page.locator(".mx-back").isVisible()) await page.click(".mx-back"); await page.waitForSelector(".mx-item");
+  await page.click("#mtab-sent"); await page.waitForSelector("#mail-sent .mx-layout .mx-detail"); if (await page.locator("#mail-sent .mx-back").isVisible()) await page.click("#mail-sent .mx-back"); await page.waitForSelector("#mail-sent .mx-item"); await shot("12-mobiel-verzonden"); await page.click("#mtab-inbox"); if (await page.locator("#mail-inbox .mx-back").isVisible()) await page.click("#mail-inbox .mx-back"); await page.waitForSelector(".mx-item");
   ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "geen horizontale scroll (mobiel, inbox)");
   await shot("7-mobiel-inbox");
-  await page.click(".mx-item >> nth=0"); await page.waitForSelector(".mx-msg");
-  ok(await page.locator(".mx-back").isVisible() && !(await page.locator(".mx-list").isVisible()), "mobiel: detail vervangt de lijst met terugknop");
+  await page.click("#mail-inbox .mx-item >> nth=0"); await page.waitForSelector("#mail-inbox .mx-msg");
+  ok(await page.locator("#mail-inbox .mx-back").isVisible() && !(await page.locator("#mail-inbox .mx-list").isVisible()), "mobiel: detail vervangt de lijst met terugknop");
   await shot("8-mobiel-ticket", true);
-  await page.click(".mx-back");
+  await page.click("#mail-inbox .mx-back");
   await page.click("#mtab-compose");
   ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "geen horizontale scroll (mobiel, nieuwe mail)");
   await shot("9-mobiel-nieuwe-mail", true);

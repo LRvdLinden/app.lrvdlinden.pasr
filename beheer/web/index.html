@@ -327,10 +327,12 @@
       </div>
       <div class="mx-tabs" role="tablist" aria-label="Mail">
         <button type="button" role="tab" id="mtab-inbox" aria-controls="mail-inbox" aria-selected="true">Inbox</button>
+        <button type="button" role="tab" id="mtab-sent" aria-controls="mail-sent" aria-selected="false" tabindex="-1">Verzonden</button>
         <button type="button" role="tab" id="mtab-compose" aria-controls="mail-compose" aria-selected="false" tabindex="-1">Nieuwe mail</button>
         <button type="button" role="tab" id="mtab-news" aria-controls="mail-news" aria-selected="false" tabindex="-1">Nieuwsbrief</button>
       </div>
       <div id="mail-inbox" role="tabpanel" aria-labelledby="mtab-inbox"></div>
+      <div id="mail-sent" role="tabpanel" aria-labelledby="mtab-sent" class="hidden"></div>
       <div id="mail-compose" role="tabpanel" aria-labelledby="mtab-compose" class="hidden"></div>
       <div id="mail-news" role="tabpanel" aria-labelledby="mtab-news" class="hidden"></div>
     </section>
@@ -473,7 +475,7 @@
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script src="vendor/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="admin.js?v=mail"></script>
-<script src="mail.js?v=mail"></script>
+<script src="admin.js?v=mail2"></script>
+<script src="mail.js?v=mail2"></script>
 </body>
 </html>
