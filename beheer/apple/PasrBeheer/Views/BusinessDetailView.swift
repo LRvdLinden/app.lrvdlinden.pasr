@@ -8,7 +8,9 @@ struct BusinessDetailView: View {
     var onChanged: () -> Void = {}
     @EnvironmentObject private var session: Session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @State private var detail: BusinessDetail?
+    @State private var openingAsOwner = false
     @State private var error: String?
     @State private var cooldown = 5
     @State private var maxPerScan = 10
@@ -41,6 +43,14 @@ struct BusinessDetailView: View {
                     } else {
                         Text("Geen eigenaar: jij beheert deze zaak. Vul bij Bewerken een e-mailadres in om een eigenaar uit te nodigen.")
                             .font(.subheadline).foregroundStyle(Theme.muted)
+                    }
+                    if biz.has_owner != false {
+                        Button { Task { await openAsOwner() } } label: {
+                            HStack { Label("Open als ondernemer", systemImage: "person.badge.key"); if openingAsOwner { Spacer(); ProgressView() } }
+                        }
+                        .disabled(openingAsOwner)
+                        Text("Opent het dashboard van deze zaak in Pasr Zakelijk, namens de ondernemer. Dit staat in het logboek van de zaak.")
+                            .font(.footnote).foregroundStyle(Theme.muted)
                     }
                     if biz.has_owner == false && biz.unconfirmed_account == true {
                         Text("Er bestaat al een Pasr-account met dit adres, maar het e-mailadres is niet bevestigd.").font(.footnote).foregroundStyle(Theme.muted)
@@ -256,6 +266,23 @@ struct BusinessDetailView: View {
             saved = true
             onChanged()
             await load()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private struct ImpersonateResponse: Decodable { let token_hash: String }
+
+    /// Namens de ondernemer werken: een eenmalige sleutel, het dashboard opent in de browser.
+    private func openAsOwner() async {
+        openingAsOwner = true
+        defer { openingAsOwner = false }
+        do {
+            let r = try await session.call("business_impersonate", ["id": biz.id], as: ImpersonateResponse.self)
+            if let url = URL(string: "https://pasr.nl/zakelijk/dashboard/#beheer=" + r.token_hash) {
+                error = nil
+                openURL(url)
+            }
+        } catch let e as APIError where e.code == "not_confirmed" {
+            error = String(localized: "Het e-mailadres van de eigenaar is nog niet bevestigd.")
         } catch { self.error = error.localizedDescription }
     }
 

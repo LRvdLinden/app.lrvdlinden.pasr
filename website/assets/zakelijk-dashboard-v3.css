@@ -464,3 +464,9 @@ body.zd3-on #pasr-cookie-btn { left: auto; right: 16px; }
 }
 .mc-types .zd-help { display: block; margin-top: 8px; }
 .mc-logo .row { align-items: center; }
+
+/* Namens een ondernemer werken (vanuit Pasr beheer) */
+.zd-imp { position: sticky; top: 0; z-index: 60; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  padding: 10px 16px; background: #FFB547; color: #1A1204; font-weight: 600; }
+.zd-imp b { font-weight: 800; }
+.zd-imp .zk-btn { background: #1A1204; color: #fff; border-color: #1A1204; }

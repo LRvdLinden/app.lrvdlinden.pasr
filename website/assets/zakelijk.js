@@ -111,9 +111,24 @@
   window.PasrStampCard = stampCard;
 
   // ---------------------------------------------------------------- server
-  function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (e) { return null; } }
-  function saveSession(s) { try { s ? localStorage.setItem(SESSION_KEY, JSON.stringify(s)) : localStorage.removeItem(SESSION_KEY); } catch (e) { /* privévenster */ } }
+  // Namens een ondernemer (vanuit Pasr beheer): pasr.nl/zakelijk/dashboard/#beheer=<eenmalige sleutel>. Die sessie leeft alleen in dit tabblad
+  // (sessionStorage), zodat een eigen inlog in localStorage nooit wordt overschreven; stoppen wist hem.
+  var IMP_KEY = "pasr.zakelijk.imp", IMP = false, impTok = null;
+  (function () {
+    var m = /^#beheer=([A-Za-z0-9_-]{20,200})$/.exec(location.hash);
+    if (m) { try { sessionStorage.setItem(IMP_KEY, "1"); impTok = m[1]; } catch (e) { impTok = null; } try { history.replaceState(null, "", location.pathname); } catch (e) { /* */ } }
+    try { IMP = sessionStorage.getItem(IMP_KEY) === "1"; } catch (e) { IMP = false; }
+  })();
+  function sessStore() { return IMP ? sessionStorage : localStorage; }
+  function loadSession() { try { return JSON.parse(sessStore().getItem(SESSION_KEY) || "null"); } catch (e) { return null; } }
+  function saveSession(s) { try { s ? sessStore().setItem(SESSION_KEY, JSON.stringify(s)) : sessStore().removeItem(SESSION_KEY); } catch (e) { /* privévenster */ } }
   var session = loadSession();
+  function stopImp() {
+    try { sessionStorage.removeItem(IMP_KEY); sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* */ }
+    IMP = false; session = null;
+    try { window.close(); } catch (e) { /* */ }
+    location.replace("/zakelijk/dashboard/");
+  }
 
   async function http(path, body, token, method) {
     var headers = { "Content-Type": "application/json", apikey: cfg.key };
@@ -396,6 +411,7 @@
   }
   async function logout() {
     stopScanner();
+    if (IMP) return stopImp(); // nooit uitloggen op de server: dat zou ook de eigen sessies van de ondernemer beëindigen
     try { var t = await token(); if (t) await http("auth/v1/logout", {}, t); } catch (e) { /* toch uitloggen */ }
     session = null; saveSession(null); dash.me = null; dash.tab = null; dash.sub = null; store(BIZ_KEY, null);
     navState(); history.replaceState(null, "", location.pathname); render();
@@ -755,11 +771,12 @@
     var tab = tabs.filter(function (t) { return t.id === dash.tab; })[0], app = isApp(b);
     var side = tabs.filter(function (t) { return t.group !== "mobile" && t.group !== "none"; });
     shellOn(true); shellListeners();
-    dashRoot().innerHTML = '<div class="zd3 ' + (app ? "zd3--app" : "zd3--solo") + '">' + topbar(b, tabs) +
+    dashRoot().innerHTML = (IMP ? '<div class="zd-imp" role="status"><span>Je werkt namens <b>' + esc(b.name) + '</b> (via Pasr beheer). Alles wat je hier doet, doet de ondernemer.</span><button class="zk-btn sm" type="button" id="zdImpStop">Stoppen</button></div>' : "") + '<div class="zd3 ' + (app ? "zd3--app" : "zd3--solo") + '">' + topbar(b, tabs) +
       '<div class="zd3-body">' + (app ? sideNav(side) : "") + '<div class="zd3-main">' + (dash.tab === "vandaag" && b.status === "pending" ? "" : banner(b)) +
       '<section id="zd-panel" class="zd-panel zd3-panel" aria-label="' + esc(tab.label) + '" tabindex="-1"></section></div></div>' + (app ? tabBar() : "") + "</div>";
     document.title = tab.label + " · " + b.name + " | Pasr voor ondernemers";
     bindShell(b);
+    if (IMP && $("#zdImpStop")) $("#zdImpStop").addEventListener("click", stopImp);
     var panel = $("#zd-panel");
     if (b.status === "blocked" && b.role !== "owner") { panel.innerHTML = '<p class="zk-empty">Er is hier nu niets te doen.</p>'; return; }
     (VIEWS[tab.id] || function () {})(panel, b);
@@ -2202,7 +2219,12 @@
   if (page === "zk-dashboard") {
     window.addEventListener("hashchange", function () { if (!session || dash.me) render(); });
     window.addEventListener("popstate", function () { dash.sub = null; dash.edit = null; render(); });
-    render();
+    if (impTok && ready) {
+      var tk = impTok; impTok = null;
+      dashRoot().innerHTML = '<p class="zk-empty">Dashboard van de ondernemer openen…</p>';
+      http("auth/v1/verify", { type: "magiclink", token_hash: tk }).then(function (r) { keep(r); render(); })
+        .catch(function () { try { sessionStorage.removeItem(IMP_KEY); } catch (e) { /* */ } IMP = false; session = null; dashRoot().innerHTML = '<section class="auth err"><h1>Link verlopen</h1><p>De sleutel uit Pasr beheer werkt niet meer (eenmalig, kort geldig). Ga terug naar het beheer en kies opnieuw Open als ondernemer.</p></section>'; });
+    } else render();
   }
   if (page === "zk-join") joinPage();
   if (page === "zk-scan") scanPage();
