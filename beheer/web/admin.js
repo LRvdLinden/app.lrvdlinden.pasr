@@ -41,6 +41,7 @@
       case "already_confirmed": return "Dit account is al bevestigd.";
       case "rate_limited": return "Even wachten: te veel verzoeken.";
       case "not_found": return "Niet gevonden.";
+      case "confirm_mismatch": case "bad_confirm": return "De naam klopt niet.";
       case "bad_name": return "Vul een naam in.";
       case "bad_color": return "Kies een kaartkleur.";
       case "bad_domain": return "Dit is geen geldige website.";
@@ -1394,7 +1395,81 @@
       log.append(r);
     }
     box.prepend(ownerBox(z, () => { box.remove(); toggleBizDetail(row, b, btn); loadBusinesses(); }));
-    box.append(set, stats, offersBox(b), ticketsBox(b), staff, log);
+    box.append(set, stats, offersBox(b), ticketsBox(b), staff, log, dangerBox(z.name ? { ...b, name: z.name } : b));
+  }
+
+  // ---- Ondernemers: zaak permanent verwijderen (gevaarlijke zone) ----
+  /** Onderaan de details: blokkeren houdt alles, verwijderen haalt de zaak en alles eraan weg. */
+  function dangerBox(b) {
+    const box = el("div", "biz-danger");
+    const t = el("div");
+    t.append(el("h3", null, "Gevaarlijke zone"),
+      el("p", "muted", "Blokkeren zet de kaarten offline en houdt alle gegevens. Verwijderen haalt de zaak en alles eraan definitief weg."));
+    const x = el("button", "btn danger solid", "Verwijderen…"); x.type = "button";
+    x.addEventListener("click", () => openBizDelete(b));
+    box.append(t, x);
+    return box;
+  }
+  const plural = (n, one, many) => `${num(n)} ${Number(n) === 1 ? one : many}`;
+  /** Regels voor het venster uit business_delete_preview.counts; alleen wat er is. */
+  function deleteLines(c) {
+    const out = [];
+    if (c.cards) out.push(`${plural(c.cards, "stempelkaart", "stempelkaarten")} met ${plural(c.members, "lid", "leden")} (de kaart verdwijnt bij de klant bij het volgende verversen in Pasr)`);
+    if (c.staff) out.push(plural(c.staff, "medewerker (kan niet meer inloggen bij deze zaak)", "medewerkers (kunnen niet meer inloggen bij deze zaak)"));
+    if (c.events) out.push(`${plural(c.events, "event", "events")} met ${plural(c.tickets, "ticket", "tickets")}, inclusief de gegevens van de aanmeldingen`);
+    if (c.member_cards) out.push(`${plural(c.member_cards, "klantenkaart", "klantenkaarten")} met ${plural(c.member_card_members, "lid", "leden")}`);
+    if (c.offers) out.push(plural(c.offers, "kortingsbon of actiecode", "kortingsbonnen en actiecodes"));
+    if (c.campaigns) out.push(`${plural(c.campaigns, "gezamenlijke actie", "gezamenlijke acties")} van deze zaak (wordt geannuleerd, deelnemers krijgen geen bericht)`);
+    if (c.participations) out.push(`deelname aan ${plural(c.participations, "actie van een andere zaak", "acties van andere zaken")}`);
+    if (c.log) out.push(plural(c.log, "logregel", "logregels"));
+    return out;
+  }
+  async function openBizDelete(b) {
+    const q = (id) => $(id);
+    const form = q("bizDelForm"), input = q("bdInput"), ack = q("bdAck"), ok = q("bdOk"), err = q("bdErr");
+    let name = b.name, loaded = false, busy = false;
+    q("bdTitle").textContent = `${b.name} verwijderen?`;
+    q("bdIntro").textContent = "Laden…";
+    q("bdList").replaceChildren(); q("bdWarn").classList.add("hidden");
+    q("bdName").textContent = name; input.value = ""; ack.checked = false; err.textContent = "";
+    const sync = () => { ok.disabled = busy || !loaded || !ack.checked || input.value !== name; };
+    sync();
+    q("bizDel").classList.remove("hidden");
+    input.focus();
+    const close = () => { q("bizDel").classList.add("hidden"); form.onsubmit = null; q("bdCancel").onclick = null; input.oninput = ack.onchange = null; document.removeEventListener("keydown", esc); };
+    const esc = (e) => { if (e.key === "Escape" && !busy) close(); };
+    document.addEventListener("keydown", esc);
+    q("bdCancel").onclick = () => { if (!busy) close(); };
+    input.oninput = ack.onchange = sync;
+    try {
+      const d = await api("business_delete_preview", { id: b.id });
+      name = d.name; q("bdName").textContent = name;
+      const lines = deleteLines(d.counts || {});
+      q("bdIntro").textContent = `${name} wordt permanent verwijderd, met alles wat eraan hangt${d.status === "approved" ? ". De zaak is nu nog goedgekeurd en wordt direct geblokkeerd" : ""}. Dit kan niet ongedaan worden gemaakt:`;
+      q("bdList").replaceChildren(...(lines.length ? lines : ["De zaak zelf (er hangt verder niets aan)"]).map((t) => el("li", null, t)));
+      const w = [];
+      if ((d.counts || {}).upcoming_events) w.push(`Er ${d.counts.upcoming_events === 1 ? "staat" : "staan"} nog ${plural(d.counts.upcoming_events, "aankomend event", "aankomende events")} open. Aanmelders krijgen geen bericht; annuleer die eerst als je ze wilt laten weten dat het niet doorgaat.`);
+      w.push("De eigenaar krijgt geen e-mail. Het Pasr-account van de eigenaar en de medewerkers blijft bestaan.");
+      q("bdWarn").textContent = w.join(" "); q("bdWarn").classList.remove("hidden");
+      loaded = true; sync();
+    } catch (e) {
+      if (e.status === 404) { err.textContent = "Deze zaak bestaat niet meer."; toast("Zaak niet gevonden"); close(); loadBusinesses(); return; }
+      q("bdIntro").textContent = ""; err.textContent = e.message; return;
+    }
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      if (ok.disabled) return;
+      busy = true; sync(); err.textContent = "";
+      try {
+        const r = await api("business_delete", { id: b.id, confirm: input.value });
+        close();
+        toast(`${r.name || name} is verwijderd${r.campaigns_cancelled ? `, ${plural(r.campaigns_cancelled, "gezamenlijke actie", "gezamenlijke acties")} geannuleerd` : ""}`);
+        loadBusinesses();
+      } catch (e2) {
+        busy = false; sync();
+        err.textContent = e2.message;
+      }
+    };
   }
 
   /** Acties van de zaak: kortingsbonnen, actiecodes, gezamenlijke acties, vestigingen. Alleen aantallen, geen klantgegevens. */

@@ -11,6 +11,26 @@ export function cleanBusinessStatus(b: Record<string, unknown>): { ok: true; id:
   return { ok: true, id: b.id as string, status: b.status as BusinessStatus };
 }
 
+/** Zaak permanent verwijderen: {id, confirm}; confirm moet exact de zaaknaam zijn (de server vergelijkt met de naam in de database). */
+export function cleanBusinessDelete(b: Record<string, unknown>): { ok: true; id: string; confirm: string } | { ok: false; error: string } {
+  if (!isUuid(b.id)) return { ok: false, error: "bad_id" };
+  if (typeof b.confirm !== "string" || !b.confirm || b.confirm.length > 200) return { ok: false, error: "bad_confirm" };
+  return { ok: true, id: b.id as string, confirm: b.confirm };
+}
+
+/** Exacte naam (Unicode-gelijk, hoofdlettergevoelig, zonder opschonen van spaties). */
+export function confirmMatches(name: unknown, confirm: unknown): boolean {
+  return typeof name === "string" && typeof confirm === "string" && name.length > 0 && name.normalize("NFC") === confirm.normalize("NFC");
+}
+
+/** Korte auditregel zonder persoonsgegevens: zaak-id, naam en aantallen. */
+export function deleteAuditLine(id: string, name: string, counts: Record<string, unknown> | null | undefined): string {
+  const c = counts ?? {};
+  const n = (k: string) => (typeof c[k] === "number" ? c[k] as number : 0);
+  return `${id} "${name.replace(/\s+/g, " ").slice(0, 60)}" cards=${n("cards")} members=${n("members")} staff=${n("staff")} events=${n("events")} tickets=${n("tickets")} ` +
+    `mcards=${n("member_cards")} campaigns=${n("campaigns")} offers=${n("offers")}`;
+}
+
 const int = (v: unknown): number | null => {
   const n = typeof v === "string" && v.trim() !== "" ? Number(v) : v;
   return typeof n === "number" && Number.isInteger(n) ? n : null;
@@ -187,7 +207,7 @@ export function cleanCardInput(body: Record<string, unknown>):
 const DB_ERRORS: Record<string, number> = {
   not_found: 404, owner_taken: 409, has_owner: 409, not_approved: 409, card_limit: 409, test_limit: 409,
   bad_name: 400, bad_email: 400, bad_url: 400, bad_reward: 400, bad_color: 400, bad_total: 400, bad_logo: 400, bad_card: 400,
-  bad_business: 400, bad_settings: 400, bad_status: 400,
+  bad_business: 400, bad_settings: 400, bad_status: 400, bad_confirm: 400, confirm_mismatch: 400,
 };
 export function dbError(e: { message?: string; hint?: string | null } | null): { error: string; status: number } | null {
   if (!e) return null;

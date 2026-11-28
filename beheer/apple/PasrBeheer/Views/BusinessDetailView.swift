@@ -23,6 +23,7 @@ struct BusinessDetailView: View {
     @State private var confirmInvite = false
     @State private var inviteBusy = false
     @State private var confirmOwner = false
+    @State private var deleting = false
 
     private var biz: Business { detail?.business ?? business }
 
@@ -162,6 +163,18 @@ struct BusinessDetailView: View {
                         }
                     }
                 }
+
+                Section {
+                    Button { deleting = true } label: {
+                        Label("Verwijderen…", systemImage: "trash").font(.body.weight(.semibold)).foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .listRowBackground(Theme.coral)
+                } header: {
+                    Text("Gevaarlijke zone").foregroundStyle(Theme.coral)
+                } footer: {
+                    Text("Blokkeren zet de kaarten offline en houdt alle gegevens. Verwijderen haalt de zaak en alles eraan definitief weg.")
+                }
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
@@ -183,6 +196,9 @@ struct BusinessDetailView: View {
                 BusinessFormView(business: biz, onSaved: { _ in Task { await load(); onChanged() } },
                                  onNewCard: { _ in Task { try? await Task.sleep(for: .milliseconds(400)); newCard = true } })
                     .environmentObject(session)
+            }
+            .sheet(isPresented: $deleting) {
+                BusinessDeleteView(business: biz, onDeleted: { onChanged(); dismiss() }).environmentObject(session)
             }
             .confirmationDialog("Account bevestigen en eigenaar maken?", isPresented: $confirmOwner, titleVisibility: .visible) {
                 Button("Bevestigen") { Task { await confirmAccount() } }

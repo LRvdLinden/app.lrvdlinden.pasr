@@ -32,6 +32,9 @@
 //                    (alleen bij everyone); url: https, max 500, opent bij een tik. 409 duplicate = zelfde bericht net verstuurd.
 //   businesses       {}                             -> {businesses:[…zaak, cards, staff_count, last_event_at]}
 //   business_status  {id, status}                   -> {business}            (blocked = kaarten offline)
+//   business_delete_preview {id}                   -> {id, name, status, counts}  (wat er verdwijnt, alleen lezen)
+//   business_delete  {id, confirm}                  -> {deleted, id, name, counts, campaigns_cancelled}
+//                    PERMANENT: de zaak en alles eraan; confirm = exact de zaaknaam (400 confirm_mismatch), geen mail naar de eigenaar
 //   business_detail  {id, limit?, days?}            -> {business, staff, log, stats}
 //   business_settings {id, cooldown_minutes?, max_per_scan?} -> {business}
 //   business_staff_revoke {id}                      -> {ok}                   (medewerker intrekken)
@@ -72,7 +75,7 @@ import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
 import { chunks, cleanAudience, cleanNews, DUPLICATE_WINDOW_MS, newsFingerprint, newsPayload, type Target, uniqueTokens, wantsAndroid, wantsIos } from "./news.ts";
-import { cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, dbError } from "./business.ts";
+import { cleanBusinessDelete, cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, confirmMatches, dbError, deleteAuditLine } from "./business.ts";
 import { okLink, ownerMail } from "./owner_mail.ts";
 import { cleanDevices, communityPayload, type PushItem } from "./community.ts";
 import { ticketPayload, type TkItem, tkDevices } from "./tickets.ts";
@@ -985,6 +988,23 @@ Deno.serve(async (req) => {
         if (error) return json({ error: /not_found/.test(error.message) ? "not_found" : "server_error" }, /not_found/.test(error.message) ? 404 : 500);
         await audit("business_status", ipHash, `${v.id} ${v.status}`);
         return json({ business: data });
+      }
+      case "business_delete_preview": {
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_business_delete_preview", { p_business: body.id });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        return json(data);
+      }
+      case "business_delete": {
+        const v = cleanBusinessDelete(body);
+        if (!v.ok) return json({ error: v.error }, 400);
+        const pre = await db.rpc("pasr_admin_business_delete_preview", { p_business: v.id });
+        if (pre.error) { const m = dbError(pre.error); if (m) return json({ error: m.error }, m.status); throw new Error(pre.error.message); }
+        if (!confirmMatches(pre.data?.name, v.confirm)) return json({ error: "confirm_mismatch" }, 400);
+        const { data, error } = await db.rpc("pasr_admin_business_delete", { p_business: v.id });
+        if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
+        await audit("business_delete", ipHash, deleteAuditLine(v.id, String(data?.name ?? pre.data.name), data?.counts));
+        return json(data);
       }
       case "business_detail": {
         const v = cleanBusinessDetail(body);

@@ -381,6 +381,24 @@
   </div>
 </div>
 
+<!-- Zaak permanent verwijderen (gevaarlijke zone in de details van een zaak) -->
+<div id="bizDel" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bdTitle">
+  <form id="bizDelForm" class="modal-card" novalidate autocomplete="off">
+    <h2 id="bdTitle">Zaak verwijderen?</h2>
+    <p id="bdIntro" class="muted">Laden…</p>
+    <ul id="bdList" class="bd-list"></ul>
+    <p id="bdWarn" class="bd-warn hidden" role="note"></p>
+    <label class="bd-check"><input id="bdAck" type="checkbox"> <span>Ik begrijp dat dit definitief is en niet ongedaan kan worden gemaakt.</span></label>
+    <label class="bd-name">Typ de naam van de zaak om te bevestigen: <b id="bdName"></b>
+      <input id="bdInput" type="text" maxlength="200" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="bdErr"></label>
+    <div id="bdErr" class="err" role="alert"></div>
+    <div class="row-btns end">
+      <button id="bdCancel" class="btn ghost" type="button">Annuleren</button>
+      <button id="bdOk" class="btn danger solid" type="submit" disabled>Definitief verwijderen</button>
+    </div>
+  </form>
+</div>
+
 <!-- Mail versturen bevestigen -->
 <div id="mailModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="mmTitle">
   <div class="modal-card">

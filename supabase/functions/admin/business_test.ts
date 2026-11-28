@@ -1,4 +1,4 @@
-import { cleanBusinessDetail, cleanBusinessSettings } from "./business.ts";
+import { cleanBusinessDelete, cleanBusinessDetail, cleanBusinessSettings, confirmMatches, deleteAuditLine } from "./business.ts";
 const ok = (c: unknown, m: string) => { if (!c) throw new Error(m); };
 const ID = "8f1d3c3e-5a7b-4c2d-9e1f-0a1b2c3d4e5f";
 
@@ -87,4 +87,36 @@ Deno.test("databasefouten", () => {
   ok(dbError({ message: "not_found" })?.status === 404, "niet gevonden");
   ok(dbError({ message: "test_limit" })?.error === "test_limit", "hoogstens 10 testklanten");
   ok(dbError({ message: "iets anders" }) === null, "onbekend = serverfout");
+});
+
+Deno.test("zaak verwijderen: id en bevestiging verplicht", () => {
+  const v = cleanBusinessDelete({ id: ID, confirm: "Bakkerij Jansen" });
+  ok(v.ok && v.id === ID && v.confirm === "Bakkerij Jansen", "geldig");
+  ok(!cleanBusinessDelete({ id: "x", confirm: "a" }).ok, "id");
+  const noConfirm = cleanBusinessDelete({ id: ID });
+  ok(!noConfirm.ok && noConfirm.error === "bad_confirm", "zonder naam kan het niet");
+  ok(!cleanBusinessDelete({ id: ID, confirm: "" }).ok && !cleanBusinessDelete({ id: ID, confirm: 5 }).ok, "leeg of geen tekst");
+  ok(!cleanBusinessDelete({ id: ID, confirm: "x".repeat(201) }).ok, "te lang");
+});
+
+Deno.test("zaak verwijderen: de naam moet exact kloppen", () => {
+  ok(confirmMatches("Bakkerij Jansen", "Bakkerij Jansen"), "gelijk");
+  ok(!confirmMatches("Bakkerij Jansen", "bakkerij jansen"), "hoofdlettergevoelig");
+  ok(!confirmMatches("Bakkerij Jansen", "Bakkerij Jansen "), "geen losse spatie");
+  ok(!confirmMatches("Bakkerij Jansen", "Bakkerij"), "niet een stuk ervan");
+  ok(!confirmMatches("", ""), "lege naam telt nooit");
+  ok(!confirmMatches(undefined, "x") && !confirmMatches("x", undefined), "ontbrekend");
+  ok(confirmMatches("Caf\u00e9", "Cafe\u0301"), "Unicode-gelijk (é als losse accent)");
+});
+
+Deno.test("zaak verwijderen: auditregel zonder persoonsgegevens", () => {
+  const line = deleteAuditLine(ID, "Weg   Zaak", { cards: 2, members: 14, staff: 1, events: 3, tickets: 20, member_cards: 1, campaigns: 0, offers: 4, email: "iemand@voorbeeld.example" });
+  ok(line.startsWith(ID + ' "Weg Zaak" cards=2 members=14 staff=1 events=3 tickets=20 mcards=1 campaigns=0 offers=4'), line);
+  ok(!line.includes("@") && line.length < 300, "alleen id, naam en aantallen");
+  ok(deleteAuditLine(ID, "X", null).includes("cards=0"), "zonder aantallen");
+});
+
+Deno.test("zaak verwijderen: foutcodes uit de database", () => {
+  ok(dbError({ message: "not_found" })?.status === 404, "niet gevonden");
+  ok(dbError({ message: "x", hint: "confirm_mismatch" })?.status === 400, "naam klopt niet");
 });
