@@ -18,22 +18,24 @@ let zaken = [
   { id: A, name: NAME, city: "Apeldoorn", status: "approved", email: "eigenaar@voorbeeld.example", has_owner: true, staff_count: 2, listed: true, created_at: new Date().toISOString(), cards: [] },
   { id: B, name: "Fietsenmaker Wiel", city: "Deventer", status: "blocked", email: "wiel@voorbeeld.example", has_owner: true, staff_count: 0, listed: true, created_at: new Date().toISOString(), cards: [] },
 ];
-const counts = { cards: 2, members: 14, staff: 1, events: 3, upcoming_events: 1, tickets: 20, member_cards: 1, member_card_members: 5, campaigns: 1, participations: 2, offers: 4, log: 120 };
+const counts = { mail_participants: 5, owner_mail: true, cards: 2, members: 14, staff: 1, events: 3, upcoming_events: 1, tickets: 20, member_cards: 1, member_card_members: 5, campaigns: 1, participations: 2, offers: 4, log: 120 };
 const calls = [];
-let failDeleteOnce = false;
+let failDeleteOnce = false, mailMode = "ok";
 function handle(action, b) {
   calls.push({ action, b });
   switch (action) {
     case "businesses": return { businesses: zaken };
     case "business_detail": { const z = zaken.find((x) => x.id === b.id); return { business: z, staff: [], log: [], stats: { days: [], totals: {} } }; }
-    case "business_delete_preview": { const z = zaken.find((x) => x.id === b.id); return z ? { id: z.id, name: z.name, status: z.status, counts: z.id === A ? counts : { cards: 0, members: 0, staff: 0, events: 0, upcoming_events: 0, tickets: 0, member_cards: 0, member_card_members: 0, campaigns: 0, participations: 0, offers: 0, log: 0 } } : { __status: 404, error: "not_found" }; }
+    case "business_delete_preview": { const z = zaken.find((x) => x.id === b.id); return z ? { id: z.id, name: z.name, status: z.status, counts: z.id === A ? counts : { mail_participants: 0, owner_mail: false, cards: 0, members: 0, staff: 0, events: 0, upcoming_events: 0, tickets: 0, member_cards: 0, member_card_members: 0, campaigns: 0, participations: 0, offers: 0, log: 0 } } : { __status: 404, error: "not_found" }; }
     case "business_delete": {
       const z = zaken.find((x) => x.id === b.id);
       if (!z) return { __status: 404, error: "not_found" };
       if (failDeleteOnce) { failDeleteOnce = false; return { __status: 500, error: "server_error" }; }
       if (b.confirm !== z.name) return { __status: 400, error: "confirm_mismatch" };
       zaken = zaken.filter((x) => x.id !== b.id);
-      return { deleted: true, id: z.id, name: z.name, counts, campaigns_cancelled: z.id === A ? 1 : 0 };
+      const planned = (z.id === A ? 5 : 0) + (b.notify_owner === false ? 0 : 1);
+      const mails = mailMode === "fail" ? { sent: 1, failed: planned - 1, owner: "failed", participants: { sent: 1, failed: planned - 2 } } : { sent: planned, failed: 0, owner: b.notify_owner === false ? "off" : "sent", participants: { sent: planned, failed: 0 } };
+      return { deleted: true, id: z.id, name: z.name, counts, campaigns_cancelled: z.id === A ? 1 : 0, mails };
     }
     default: return {};
   }
@@ -87,9 +89,10 @@ function handle(action, b) {
   ok(/2 stempelkaarten met 14 leden/.test(text), "toont stempelkaarten en leden");
   ok(/3 events met 20 tickets, inclusief de gegevens van de aanmeldingen/.test(text), "toont events, tickets en dat aanmeldgegevens verdwijnen");
   ok(/1 medewerker/.test(text) && /1 klantenkaart met 5 leden/.test(text) && /4 kortingsbonnen en actiecodes/.test(text), "toont medewerkers, klantenkaarten, aanbiedingen");
-  ok(/1 gezamenlijke actie van deze zaak \(wordt geannuleerd/.test(text) && /deelname aan 2 acties van andere zaken/.test(text), "toont gezamenlijke acties");
+  ok(/1 gezamenlijke actie van deze zaak \(wordt geannuleerd, de deelnemers krijgen een mail\)/.test(text) && /deelname aan 2 acties van andere zaken/.test(text), "toont gezamenlijke acties");
   ok(/1 aankomend event open/.test(text), "waarschuwt voor aankomende events");
-  ok(/De eigenaar krijgt geen e-mail/.test(text), "zegt dat de eigenaar geen mail krijgt");
+  ok(await page.locator("#bdMail").isChecked() && await page.locator("#bdMail").isEnabled(), "schakelaar 'Stuur de eigenaar een mail' staat standaard aan");
+  ok(/5 deelnemers en organisatoren van gezamenlijke acties krijgen een mail/.test(text), "toont hoeveel deelnemers een mail krijgen");
   ok(/nog goedgekeurd en wordt direct geblokkeerd/.test(text), "goedgekeurde zaak wordt eerst geblokkeerd, dat staat erbij");
   ok(await page.locator("#bdOk").isDisabled(), "knop uit zonder bevestiging");
   await page.check("#bdAck");
@@ -129,9 +132,11 @@ function handle(action, b) {
   await page.waitForFunction(() => document.querySelectorAll("#bizList .acc").length === 1);
   const del = last("business_delete");
   ok(del.b.id === A && del.b.confirm === NAME, "business_delete krijgt id en de overgetypte naam");
+  ok(del.b.notify_owner === true, "notify_owner gaat mee (standaard aan)");
   ok(await page.locator("#bizDel").isHidden(), "venster sluit na succes");
   ok((await page.locator("#bizList").innerText()).includes("Fietsenmaker Wiel") && !(await page.locator("#bizList").innerText()).includes("De Gouden"), "terug naar de lijst zonder de verwijderde zaak, andere zaak blijft");
   ok(/is verwijderd, 1 gezamenlijke actie geannuleerd/.test(await page.locator("#toast").innerText()), "toast meldt het resultaat en de geannuleerde actie");
+  ok(/6 mails verstuurd/.test(await page.locator("#toast").innerText()), "toast meldt het aantal mails");
   ok(!(await page.locator(".biz-danger").count()), "details van de verwijderde zaak zijn weg");
 
   // geblokkeerde zaak zonder inhoud: korte lijst, geen waarschuwing voor events
@@ -141,10 +146,32 @@ function handle(action, b) {
   await page.waitForSelector("#bizDel:not(.hidden) #bdList li");
   const t2 = await page.locator("#bizDel").innerText();
   ok(/er hangt verder niets aan/.test(t2) && !/aankomend event/.test(t2) && !/nog goedgekeurd/.test(t2), "lege geblokkeerde zaak: geen overbodige waarschuwingen");
+  ok(await page.locator("#bdMail").isDisabled() && !(await page.locator("#bdMail").isChecked()) && /geen e-mailadres van de eigenaar bekend/.test(t2), "zonder eigenaarsadres: schakelaar uit en uitgelegd");
   await page.fill("#bdInput", "Fietsenmaker Wiel"); await page.check("#bdAck");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelectorAll("#bizList .acc").length === 0);
   ok(count("business_delete") === 3, "Enter in het veld verstuurt ook (na de zelfde controles)");
+  ok(last("business_delete").b.notify_owner === false, "zonder adres gaat notify_owner false mee");
+
+  // schakelaar uit: de eigenaar krijgt niets; mislukte mails blijven zichtbaar in het venster
+  zaken = [{ id: A, name: NAME, city: "Apeldoorn", status: "approved", has_owner: true, staff_count: 0, listed: true, created_at: new Date().toISOString(), cards: [] }];
+  await page.reload(); await page.waitForSelector("#view-business:not(.hidden)");
+  await page.click('#bizFilter button[data-status="all"]'); await page.waitForSelector("#bizList .acc");
+  await page.click('#bizList .acc button:has-text("Details")'); await page.waitForSelector(".biz-danger");
+  await page.click('.biz-danger button:has-text("Verwijderen…")'); await page.waitForSelector("#bizDel:not(.hidden) #bdList li");
+  await page.uncheck("#bdMail"); await page.check("#bdAck"); await page.fill("#bdInput", NAME);
+  mailMode = "fail";
+  await page.click("#bdOk");
+  await page.waitForFunction(() => /is verwijderd/.test(document.getElementById("bdTitle").textContent));
+  ok(last("business_delete").b.notify_owner === false, "schakelaar uit stuurt notify_owner false");
+  ok(await page.locator("#bizDel").isVisible(), "bij mislukte mails blijft het venster open met het resultaat");
+  const t3 = await page.locator("#bizDel").innerText();
+  ok(/1 van 5 mails zijn verstuurd; 4 zijn mislukt/.test(t3) && /ook de mail aan de eigenaar/.test(t3), "toont verstuurd en mislukt (en de eigenaarsmail): " + t3.replace(/\n/g, " | "));
+  await shot("6-mails-mislukt");
+  ok(await page.locator("#bdOk").innerText() === "Sluiten" && await page.locator("#bdCancel").isHidden(), "alleen Sluiten");
+  await page.click("#bdOk");
+  ok(await page.locator("#bizDel").isHidden(), "Sluiten sluit het venster");
+  mailMode = "ok";
 
   // mobiel: geen horizontale scroll in het venster
   zaken = [{ ...zaken[0] || { id: A, name: NAME, city: "Apeldoorn", status: "approved", has_owner: true, staff_count: 0, listed: true, created_at: new Date().toISOString(), cards: [] }, id: A, name: NAME, status: "approved" }];

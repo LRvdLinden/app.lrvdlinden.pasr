@@ -3,6 +3,8 @@
 -- Bewaakt: alles van de zaak is weg, geen enkele kolom verwijst nog naar de zaak, andere zaken blijven onaangetast.
 
 -- Wat de echte database wel heeft en de basisfixture niet.
+alter table auth.users add column if not exists email text;
+alter table public.pasr_businesses add column if not exists email text not null default '';
 create table if not exists public.pasr_business_staff (
  id uuid primary key default gen_random_uuid(),
  business_id uuid not null references public.pasr_businesses(id) on delete cascade,
