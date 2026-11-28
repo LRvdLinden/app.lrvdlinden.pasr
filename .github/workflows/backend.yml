@@ -134,6 +134,16 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/beheer-mail.json)
           head -c 500 /tmp/beheer-mail-result.txt; echo
           [ "$code" -lt 300 ] || { echo "::error::Beheer-mail schema failed HTTP $code"; exit 1; }
+      - name: Zaak permanent verwijderen (beheer)
+        if: steps.check.outputs.skip != '1'
+        run: |
+          set -euo pipefail
+          # RPC's pasr_admin_business_delete(_preview): de zaak en alles eraan; herhaalbaar
+          python3 -c 'import json;print(json.dumps({"query":open("supabase/20261128-business-delete.sql").read()}))' > /tmp/business-delete.json
+          code=$(curl -s -o /tmp/business-delete-result.txt -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/business-delete.json)
+          head -c 500 /tmp/business-delete-result.txt; echo
+          [ "$code" -lt 300 ] || { echo "::error::Business-delete schema failed HTTP $code"; exit 1; }
       - name: Mails, anti-bot hook and Auth settings
         if: steps.check.outputs.skip != '1'
         env:

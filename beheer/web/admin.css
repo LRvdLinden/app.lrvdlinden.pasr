@@ -548,3 +548,17 @@ a.btn { text-decoration: none; }
 }
 .mx-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; background: rgba(46, 211, 166, .1); border: 1px solid rgba(46, 211, 166, .35); color: var(--mint); border-radius: 12px; padding: 8px 12px; font-weight: 600; }
 .err .btn { margin-left: 6px; vertical-align: middle; }
+
+/* Ondernemers: zaak permanent verwijderen (gevaarlijke zone + venster) */
+.biz-danger { grid-column: 1 / -1; border: 1px solid rgba(255, 107, 87, .45); background: rgba(255, 107, 87, .06); border-radius: 14px;
+  padding: 14px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.biz-danger h3 { color: var(--coral); margin: 0 0 4px; }
+.biz-danger p { margin: 0; font-size: 13px; max-width: 60ch; }
+.btn.danger.solid { background: var(--coral); color: #fff; border-color: var(--coral); }
+.btn.danger.solid:disabled { opacity: .4; cursor: not-allowed; }
+.bd-list { margin: 0 0 12px; padding-left: 20px; font-size: 14px; display: grid; gap: 4px; }
+.bd-warn { background: rgba(255, 107, 87, .1); border: 1px solid rgba(255, 107, 87, .3); color: var(--coral); border-radius: 12px; padding: 10px 12px; font-size: 13px; margin: 0 0 12px; }
+.bd-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin-bottom: 12px; }
+.bd-check input { width: auto; flex: none; margin-top: 2px; }
+.bd-name { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.bd-name b { color: var(--text, inherit); word-break: break-word; user-select: all; }

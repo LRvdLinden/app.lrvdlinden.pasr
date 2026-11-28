@@ -132,12 +132,14 @@ jobs:
             supabase/20261127-tickets-klantenkaart.sql \
             supabase/20261127-antibot-forms.sql \
             supabase/20261128-beheer-mail.sql \
+            supabase/20261128-business-delete.sql \
             supabase/tests/loyalty_smoke.sql \
             supabase/tests/promo_smoke.sql \
             supabase/tests/community_invites_smoke.sql \
             supabase/tests/tickets_klantenkaart_smoke.sql \
             supabase/tests/antibot_forms_smoke.sql \
             supabase/tests/beheer_mail_smoke.sql \
+            supabase/tests/business_delete_smoke.sql \
             supabase/20261127-tickets-klantenkaart.sql \
             supabase/20261127-antibot-forms.sql \
             supabase/tests/antibot_forms_smoke.sql \
@@ -168,6 +170,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Every reference to pasr_businesses is cascade or set null (business delete)
+        run: python3 supabase/tests/business_delete_fk_check.py
       - name: Parse every new PostgreSQL migration
         run: |
           python3 -m venv /tmp/pasr-sql
@@ -175,7 +179,7 @@ jobs:
           /tmp/pasr-sql/bin/python - <<'PY'
           from pathlib import Path
           from pglast import parse_sql
-          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql','20261124-deletion.sql','20261127-community-invites.sql','tests/community_invites_smoke.sql','20261127-tickets-klantenkaart.sql','tests/tickets_klantenkaart_smoke.sql','20261127-antibot-forms.sql','tests/antibot_forms_smoke.sql','20261128-beheer-mail.sql','tests/beheer_mail_smoke.sql'):
+          for name in ('loyalty-community.sql','loyalty-retention.sql','loyalty-campaign.sql','loyalty-vip.sql','20261124-promo-codes.sql','20261124-app-only-discount-management.sql','20261124-deletion.sql','20261127-community-invites.sql','tests/community_invites_smoke.sql','20261127-tickets-klantenkaart.sql','tests/tickets_klantenkaart_smoke.sql','20261127-antibot-forms.sql','tests/antibot_forms_smoke.sql','20261128-beheer-mail.sql','tests/beheer_mail_smoke.sql','20261128-business-delete.sql','tests/business_delete_smoke.sql'):
               path=Path('supabase')/name
               if path.exists():
                   parse_sql(path.read_text())

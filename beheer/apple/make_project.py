@@ -8,7 +8,7 @@ import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-BUILD = "26"
+BUILD = "27"
 VERSION = "1.0.0"
 
 
