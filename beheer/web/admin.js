@@ -86,6 +86,9 @@
     }
   }
 
+  // Voor mail.js (tab Mail): dezelfde aanroep, meldingen en hulpfuncties.
+  window.PasrBeheerCore = { api: (a, p) => api(a, p), el, num, toast: (t) => toast(t), ago: (i) => ago(i) };
+
   // ---- melding en bevestigen ----
   let toastTimer;
   function toast(text) {
@@ -154,6 +157,7 @@
     if (t === "stores") loadStores();
     if (t === "news") loadNews();
     if (t === "business") loadBusinesses();
+    if (t === "mail" && window.PasrMail) window.PasrMail.show();
     try { history.replaceState(null, "", "#" + t); } catch {}
   }
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -2003,11 +2007,14 @@
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
     const want = (location.hash || "").slice(1);
-    setTab(["overview", "insights", "accounts", "stores", "news", "business", "settings"].includes(want) ? want : "overview");
+    setTab(["overview", "insights", "accounts", "stores", "news", "business", "mail", "settings"].includes(want) ? want : "overview");
     api("store_requests", { status: "open" }).then((r) => badge((r.groups || []).length)).catch(() => {});
+    if (window.PasrMail) window.PasrMail.refreshBadge();
     api("businesses").then((r) => bizBadge((r.businesses || []).filter((b) => b.status === "pending").length)).catch(() => {});
   }
-  if (token && expires > Date.now() && URL_ADMIN) start(); else signOut();
+  // pas starten als ook mail.js is geladen (die komt na dit bestand)
+  const boot = () => { if (token && expires > Date.now() && URL_ADMIN) start(); else signOut(); };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   // sessie verloopt: terug naar inloggen
   setInterval(() => { if (token && expires && expires <= Date.now()) signOut("Je sessie is verlopen. Log opnieuw in."); }, 60_000);
 })();
