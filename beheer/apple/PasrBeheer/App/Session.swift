@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Onderdelen (tabs op de iPhone, zijbalk op iPad en Mac).
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case overview, insights, accounts, stores, news, businesses, settings
+    case overview, insights, accounts, stores, news, businesses, mail, settings
     var id: String { rawValue }
 
     var title: String {
@@ -15,6 +15,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .stores: "Winkels"
         case .news: "Berichten"
         case .businesses: "Ondernemers"
+        case .mail: "Mail"
         case .settings: "Instellingen"
         }
     }
@@ -27,6 +28,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .stores: "storefront"
         case .news: "megaphone"
         case .businesses: "rectangle.stack.badge.person.crop"
+        case .mail: "envelope"
         case .settings: "gearshape"
         }
     }
@@ -40,6 +42,8 @@ final class Session: ObservableObject {
     @Published var loginMessage: String?
     @Published var section: AppSection = .overview
     @Published private(set) var refreshTick = 0
+    /// Ongelezen mails in de inbox van Mail (badge).
+    @Published var mailUnread = 0
 
     /// Vergrendelen met Face ID / Touch ID (standaard aan).
     @Published var lockEnabled: Bool { didSet { UserDefaults.standard.set(lockEnabled, forKey: Self.lockKey) } }
@@ -101,6 +105,8 @@ final class Session: ObservableObject {
         expiresAt = nil
         isLocked = false
         loginMessage = message
+        mailUnread = 0
+        MailDrafts.shared.reset()
     }
 
     func logoutAll() async throws {
@@ -110,13 +116,13 @@ final class Session: ObservableObject {
     }
 
     /// Actie met het token; bij 401 terug naar inloggen.
-    func call<T: Decodable>(_ action: String, _ params: [String: Any] = [:], as type: T.Type) async throws -> T {
+    func call<T: Decodable>(_ action: String, _ params: [String: Any] = [:], as type: T.Type, timeout: TimeInterval = 45) async throws -> T {
         if let exp = expiresAt, exp <= .now {
             logout("Je sessie is verlopen. Log opnieuw in.")
             throw APIError(code: "unauthorized", status: 401)
         }
         do {
-            return try await api.send(action, token: token, params: params, as: type)
+            return try await api.send(action, token: token, params: params, as: type, timeout: timeout)
         } catch let e as APIError where e.isUnauthorized {
             logout("Je sessie is verlopen. Log opnieuw in.")
             throw e
@@ -125,6 +131,12 @@ final class Session: ObservableObject {
 
     func call(_ action: String, _ params: [String: Any] = [:]) async throws {
         _ = try await call(action, params, as: OKResponse.self)
+    }
+
+    /// Aantal ongelezen mails voor de badge van het tabblad Mail (stil negeren als de server het nog niet kent).
+    func refreshMailBadge() async {
+        guard isSignedIn, !isLocked else { return }
+        if let s = try? await call("mail_status", as: MailStatus.self) { mailUnread = s.counts?.unread ?? 0 }
     }
 
     func requestRefresh() {
