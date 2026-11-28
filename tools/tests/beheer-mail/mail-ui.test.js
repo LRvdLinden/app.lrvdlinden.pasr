@@ -35,7 +35,7 @@ const calls = [];
 function handle(action, b) {
   calls.push({ action, b });
   switch (action) {
-    case "mail_status": return { smtp: true, imap: true, brands: { pasr: { from: "Pasr <support@pasr.nl>" }, zakelijk: { from: "Pasr Zakelijk <zakelijk@pasr.nl>" } }, sync: { last_run: new Date(Date.now() - 120e3).toISOString(), last_error: null, fetched: 3, imported: 1 }, counts: { new: 1, open: 1, pending: 0, closed: 1, unread: db.threads.filter((t) => t.unread).length } };
+    case "mail_status": return { smtp: true, imap: true, brands: { pasr: { from: "Pasr <support@pasr.nl>" }, zakelijk: { from: "Pasr Zakelijk <support@pasr.nl>" } }, sync: { last_run: new Date(Date.now() - 120e3).toISOString(), last_error: null, fetched: 3, imported: 1 }, counts: { new: 1, open: 1, pending: 0, closed: 1, unread: db.threads.filter((t) => t.unread).length } };
     case "mail_poll": return { ok: true, fetched: 2, imported: 1, new_threads: 1, replies: 0, ignored: 1, rejected: 0 };
     case "mail_thread_list": {
       if (b.box === "sent") { let it = sentItems; if (b.brand) it = it.filter((t) => t.brand === b.brand); if (b.q) it = it.filter((t) => (t.subject + t.to_preview).toLowerCase().includes(String(b.q).toLowerCase())); return { total: it.length, page: 0, items: it, counts: {} }; }
@@ -46,7 +46,7 @@ function handle(action, b) {
     }
     case "mail_thread_get": {
       const t = db.threads.find((x) => x.number === b.number) || sentItems.find((x) => x.number === b.number); t.unread = false;
-      if (b.number === 1004) return { thread: { ...t, priority: "normal", created_at: t.sent_at }, messages: [{ id: "s1", direction: "out", from: "Pasr Zakelijk <zakelijk@pasr.nl>", to: ["ontvanger@example.test"], cc: ["kopie@example.test"], bcc_count: 4, subject: t.subject, body_html: "<h2>Welkom</h2><p>Hoi daar, leuk dat je er bent.</p>", body_text: "Welkom", attachments: [{ id: "a2", name: "folder.pdf", type: "application/pdf", size: 307200 }], created_at: t.sent_at }] };
+      if (b.number === 1004) return { thread: { ...t, priority: "normal", created_at: t.sent_at }, messages: [{ id: "s1", direction: "out", from: "Pasr Zakelijk <support@pasr.nl>", to: ["ontvanger@example.test"], cc: ["kopie@example.test"], bcc_count: 4, subject: t.subject, body_html: "<h2>Welkom</h2><p>Hoi daar, leuk dat je er bent.</p>", body_text: "Welkom", attachments: [{ id: "a2", name: "folder.pdf", type: "application/pdf", size: 307200 }], created_at: t.sent_at }] };
       return { thread: { ...t, priority: "normal", created_at: t.last_message_at }, messages: [
         { id: "m1", direction: "in", from: t.contact_email, to: ["support@pasr.nl"], cc: [], bcc_count: 0, subject: t.subject, body_html: EVIL, body_text: "Hallo, een vraag over mijn pas.", attachments: [{ id: "a1", name: "scherm.png", type: "image/png", size: 2048 }], created_at: t.last_message_at },
         { id: "m2", direction: "out", from: "Pasr <support@pasr.nl>", to: [t.contact_email], cc: [], bcc_count: 2, subject: "Re: " + t.subject, body_html: "<p>Dank voor je bericht.</p>", body_text: "Dank voor je bericht.", attachments: [], created_at: t.last_message_at },

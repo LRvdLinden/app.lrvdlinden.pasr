@@ -92,7 +92,7 @@ De workflow `backend.yml` zet ze als function-secrets. Ontbreekt iets, dan komt 
 |---|---|
 | `PASR_SMTP_HOST`, `PASR_SMTP_PORT`, `PASR_SMTP_USER`, `PASR_SMTP_PASSWORD`, `PASR_SMTP_FROM` | verzenden (bestaan al) |
 | `PASR_IMAP_HOST`, `PASR_IMAP_PORT` (standaard 993), `PASR_IMAP_USER`, `PASR_IMAP_PASSWORD` | de postbus waar antwoorden binnenkomen |
-| `PASR_MAIL_FROM_PASR`, `PASR_MAIL_FROM_ZAKELIJK` | afzenders (standaard `support@pasr.nl`, `zakelijk@pasr.nl`) |
+| `PASR_MAIL_FROM_PASR`, `PASR_MAIL_FROM_ZAKELIJK` | afzenders (beide standaard `support@pasr.nl`; Pasr Zakelijk gebruikt alleen de naam "Pasr Zakelijk", er is geen apart adres) |
 | `PASR_MAIL_AGENTS` | adressen die per mail op tickets mogen antwoorden (komma's) |
 | `PASR_MAIL_AUTHSERV` (optioneel) | naam van onze ontvangende server in `Authentication-Results` |
 | `PASR_MAIL_AUTOREPLY` (optioneel) | `1` = ontvangstbevestiging bij een nieuw ticket |

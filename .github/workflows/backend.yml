@@ -14,7 +14,7 @@ name: Backend
 # For push to Android (FCM HTTP v1, function admin): FIREBASE_SERVICE_ACCOUNT_JSON (service account JSON of the Firebase project).
 # For Pasr beheer › Mail (function mail: IMAP inbox + SMTP via the PASR_SMTP_* secrets above; see docs/beheer-mail.md):
 #   PASR_IMAP_HOST, PASR_IMAP_PORT (default 993), PASR_IMAP_USER, PASR_IMAP_PASSWORD  (the inbox replies come back in)
-#   PASR_MAIL_FROM_PASR, PASR_MAIL_FROM_ZAKELIJK (sender addresses; default support@pasr.nl / zakelijk@pasr.nl)
+#   PASR_MAIL_FROM_PASR, PASR_MAIL_FROM_ZAKELIJK (sender addresses; beide standaard support@pasr.nl; Zakelijk toont "Pasr Zakelijk" als naam)
 #   PASR_MAIL_AGENTS (comma-separated staff addresses that may answer tickets by mail), optional PASR_MAIL_AUTHSERV, PASR_MAIL_AUTOREPLY
 # For "Opslaan in Google Wallet" (function google-wallet, Pasr for Android):
 #   GOOGLE_WALLET_ISSUER_ID (issuer id from the Google Pay & Wallet Console),
