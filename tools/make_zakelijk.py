@@ -326,6 +326,9 @@ def feature_table():
 
 
 # ---------------------------------------------------------------------------------------------------- vragen
+# Handboek voor ondernemers (docs/handboek-zakelijk/, render.cjs); de PDF staat ook in website/zakelijk/handboek/.
+HANDBOOK = "/zakelijk/handboek/Handboek-Pasr-Zakelijk.pdf"
+
 FAQ = [  # moet kloppen met wat live staat (tickets alleen gratis, gegevens 30 dagen na het event gewist, geen kassakoppeling)
     ("Wat kost Pasr Zakelijk?", "Niets. Geen abonnement en geen kosten per klant, stempel, ticket of scan. Ook geen reclame op je kaart of ticket."),
     ("Kan ik betaalde tickets verkopen?", "Nee. Tickets zijn alleen voor gratis events, zoals een borrel, workshop of open dag. Zo blijft het simpel: geen betalingen en geen ticketvoorwaarden."),
@@ -339,6 +342,7 @@ FAQ = [  # moet kloppen met wat live staat (tickets alleen gratis, gegevens 30 d
     ("Kan ik mijn zaak ook in de browser beheren?", "Ja. Log in op pasr.nl/zakelijk met hetzelfde Pasr-account als in de app. Je maakt er stempelkaarten, klantenkaarten, events en acties, scant, nodigt medewerkers uit en bekijkt je cijfers."),
     ("Hoe lang duurt het aanmelden?", "Een account maken en je zaak aanmelden kost een paar minuten. We keuren elke zaak met de hand goed, meestal binnen een werkdag. In de tussentijd maak je alvast je eerste kaart of event."),
     ("Op welke apparaten werkt Pasr Zakelijk?", "De app Pasr Zakelijk werkt op iPhone en iPad met iOS 17 of nieuwer en op Android 8 of nieuwer (download op pasr.nl/zakelijk/download). Het dashboard en de scanner werken in elke moderne browser."),
+    ("Is er een handleiding?", f'Ja. In het <a href="{HANDBOOK}" type="application/pdf">Handboek Pasr Zakelijk (PDF)</a> staat stap voor stap hoe je je zaak aanmeldt, elke actie maakt, scant en je cijfers leest, met schermafbeeldingen van het dashboard en de apps.'),
 ]
 
 
@@ -375,9 +379,12 @@ FOOTER = '''  <footer>
         <a href="/privacy/#stempelkaarten-van-ondernemers">Privacy</a>
         <a href="/privacy/#cookies" data-consent-open>Cookie-instellingen</a>
         <a href="/support/">Support</a>
+        <a href="{HANDBOOK}" type="application/pdf">Handboek (PDF)</a>
       </nav>
     </div>
   </footer>'''
+
+FOOTER = FOOTER.replace("{HANDBOOK}", HANDBOOK)
 
 ANDROID_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#2ED3A6"><path d="M6.2 9.3a5.8 5.8 0 0 1 11.6 0z"/><path d="M8.3 4.4 7 2.4M15.7 4.4 17 2.4" stroke="#2ED3A6" stroke-width=".9" stroke-linecap="round"/><path d="M6.2 10h11.6v7.6a1.4 1.4 0 0 1-1.4 1.4H7.6a1.4 1.4 0 0 1-1.4-1.4z"/><rect x="3.4" y="10" width="2.1" height="6.6" rx="1.05"/><rect x="18.5" y="10" width="2.1" height="6.6" rx="1.05"/><rect x="8.4" y="17.6" width="2.1" height="4.4" rx="1.05"/><rect x="13.5" y="17.6" width="2.1" height="4.4" rx="1.05"/></g><circle cx="9.4" cy="7.1" r=".65" fill="#000"/><circle cx="14.6" cy="7.1" r=".65" fill="#000"/></svg>'
 

@@ -450,7 +450,13 @@
       '<div class="zd3-pop zd3-me"><button type="button" class="zd3-avatar zd3-toggle" id="zdMe" aria-expanded="false" aria-controls="zdMeMenu"><span class="sr-only">Account en uitloggen</span><span aria-hidden="true">' + esc(initial()) + "</span></button>" +
       '<ul class="zd3-menu zd3-memenu" id="zdMeMenu" hidden><li class="zd3-menuhead"><small>Ingelogd als</small><b>' + esc((session && session.email) || "") + "</b></li>" +
       (has("mijn-account") ? '<li><a href="#mijn-account" data-go="mijn-account">' + ICON.user + "Account</a></li>" : "") +
+      '<li class="zd3-menuhead"><small>Hulp</small></li>' + helpLinks().map(function (h) { return '<li><a href="' + h[0] + '"' + h[3] + ">" + ICON[h[1]] + esc(h[2]) + "</a></li>"; }).join("") +
       '<li><button type="button" id="zkOut">' + ICON.logout + "Uitloggen</button></li></ul></div></header>";
+  }
+  // Hulp: het handboek (docs/handboek-zakelijk/, als PDF op de website) en de supportpagina; in het accountmenu en onder Meer.
+  var HANDBOOK = "/zakelijk/handboek/Handboek-Pasr-Zakelijk.pdf";
+  function helpLinks() {
+    return [[HANDBOOK, "download", "Handboek (PDF)", ' target="_blank" rel="noopener" type="application/pdf"'], ["/support/", "mail", "Hulp en contact", ""]];
   }
   function navLink(t, cls) {
     var on = t.id === dash.tab;
@@ -1141,6 +1147,9 @@
       if (!list.length) return;
       html += '<h3 class="zd3-group" id="mg' + i + '">' + (g === "foot" ? "Overig" : esc(g)) + '</h3><ul class="zd3-morelist" aria-labelledby="mg' + i + '">' + list.map(function (t) { return navLink(t); }).join("") + "</ul>";
     });
+    html += '<h3 class="zd3-group" id="mgHulp">Hulp</h3><ul class="zd3-morelist" aria-labelledby="mgHulp">' + helpLinks().map(function (h) {
+      return '<li><a href="' + h[0] + '"' + h[3] + ">" + ICON[h[1]] + "<span>" + esc(h[2]) + "</span>" + ICON.chevron + "</a></li>";
+    }).join("") + "</ul>";
     panel.innerHTML = html;
     loadExtra(b).then(function (x) { updateShell(b, x); });
   };
