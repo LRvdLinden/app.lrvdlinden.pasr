@@ -53,8 +53,8 @@ struct APIError: Error, LocalizedError, Equatable {
 
 /// `POST {SUPABASE_URL}/functions/v1/admin` met `{action, …}` en na inloggen `Authorization: Bearer <token>`.
 struct AdminAPI {
-    func send<T: Decodable>(_ action: String, token: String?, params: [String: Any] = [:], as type: T.Type) async throws -> T {
-        let data = try await raw(action, token: token, params: params)
+    func send<T: Decodable>(_ action: String, token: String?, params: [String: Any] = [:], as type: T.Type, timeout: TimeInterval = 45) async throws -> T {
+        let data = try await raw(action, token: token, params: params, timeout: timeout)
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
@@ -63,11 +63,11 @@ struct AdminAPI {
     }
 
     @discardableResult
-    func raw(_ action: String, token: String?, params: [String: Any] = [:]) async throws -> Data {
+    func raw(_ action: String, token: String?, params: [String: Any] = [:], timeout: TimeInterval = 45) async throws -> Data {
         guard Config.isConfigured, let url = Config.adminFunction else { throw APIError(code: "not_configured", status: 0) }
         var payload = params
         payload["action"] = action
-        var req = URLRequest(url: url, timeoutInterval: 45)
+        var req = URLRequest(url: url, timeoutInterval: timeout)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.setValue(Config.publishableKey, forHTTPHeaderField: "apikey")

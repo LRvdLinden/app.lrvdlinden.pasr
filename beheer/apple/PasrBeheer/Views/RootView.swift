@@ -25,6 +25,7 @@ struct RootView: View {
         }
         .animation(.easeOut(duration: 0.2), value: shielded)
         .onAppear { push.attach(session) }
+        .task(id: "\(session.isSignedIn)|\(session.refreshTick)") { await session.refreshMailBadge() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
@@ -80,6 +81,7 @@ struct TabLayout: View {
             ForEach(AppSection.allCases) { s in
                 NavigationStack { SectionContent(section: s) }
                     .tabItem { Label(s.title, systemImage: s.icon) }
+                    .badge(s == .mail ? session.mailUnread : 0)
                     .tag(s)
             }
         }
@@ -94,7 +96,7 @@ struct SplitLayout: View {
         NavigationSplitView(columnVisibility: $visibility) {
             List(selection: Binding<AppSection?>(get: { session.section }, set: { if let s = $0 { session.section = s } })) {
                 Section {
-                    ForEach(AppSection.allCases) { s in Label(s.title, systemImage: s.icon).tag(s) }
+                    ForEach(AppSection.allCases) { s in Label(s.title, systemImage: s.icon).badge(s == .mail ? session.mailUnread : 0).tag(s) }
                 } header: {
                     BeheerLogo(size: 18).padding(.vertical, 8).textCase(nil).foregroundStyle(.primary)
                 }
@@ -120,6 +122,7 @@ struct SectionContent: View {
         case .stores: StoresView()
         case .news: NewsView()
         case .businesses: BusinessesView()
+        case .mail: MailView()
         case .settings: SettingsView()
         }
     }
