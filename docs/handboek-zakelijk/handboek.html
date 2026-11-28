@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Handboek Pasr Zakelijk</title>
+<!-- Bron van Handboek-Pasr-Zakelijk.pdf. Bouwen: zie render.cjs. Alles in dit handboek volgt de code in deze repo
+     (website/assets/zakelijk.js, loyalty2.js, tickets-klantenkaart.js, promo-codes-business.js, promo.js, zakelijk-badge.js,
+     zakelijk/apple/, android/zakelijk/, supabase/, docs/*.md). Voorbeeldnamen en -cijfers zijn verzonnen. -->
+<link rel="stylesheet" href="handboek.css">
+</head>
+<body>
+
+<!-- ================================================================ OMSLAG -->
+<div class="cover">
+  <img class="stamp-bg" src="img/pasr-stamp.svg" alt="">
+  <div class="top"><img src="img/app-icoon.png" alt=""><span class="brand">pasr</span><span class="tag">ZAKELIJK</span></div>
+  <div class="titles">
+    <div class="eyebrow">Handboek voor ondernemers</div>
+    <div class="h1">Handboek<br>Pasr Zakelijk</div>
+    <div class="sub">Alles om klanten terug te laten komen</div>
+  </div>
+  <div class="cards"><span class="chip">Stempelkaarten</span><span class="chip">Klantenkaarten</span><span class="chip">Tickets</span><span class="chip">Kortingsbonnen</span><span class="chip">Actiecodes</span><span class="chip">Gezamenlijke acties</span></div>
+  <div class="meta"><span><b>Versie 1.0.4</b> · november 2026<br>iPhone, iPad, Mac, Android en pasr.nl/zakelijk/dashboard</span><span style="text-align:right">pasr.nl/zakelijk<br>support@pasr.nl</span></div>
+</div>
+
+<!-- ================================================================ INHOUD -->
+<nav class="toc" id="inhoud">
+  <h2>Inhoud</h2>
+  <ol>
+    <li class="c"><a href="#h1"><span class="n">1</span><span class="t">Wat is Pasr Zakelijk</span><span class="pg" data-for="h1">00</span></a>
+      <ol><li class="s"><a href="#h1-kosten"><span class="t">Wat het kost</span><span class="pg" data-for="h1-kosten">00</span></a></li>
+        <li class="s"><a href="#h1-waar"><span class="t">Waar het werkt</span><span class="pg" data-for="h1-waar">00</span></a></li>
+        <li class="s"><a href="#h1-klanten"><span class="t">Hoe je klanten het gebruiken</span><span class="pg" data-for="h1-klanten">00</span></a></li>
+        <li class="s"><a href="#h1-beelden"><span class="t">Over de afbeeldingen</span><span class="pg" data-for="h1-beelden">00</span></a></li></ol></li>
+    <li class="c"><a href="#h2"><span class="n">2</span><span class="t">Aan de slag</span><span class="pg" data-for="h2">00</span></a>
+      <ol><li class="s"><a href="#h2-account"><span class="t">Account maken</span><span class="pg" data-for="h2-account">00</span></a></li>
+        <li class="s"><a href="#h2-zaak"><span class="t">Je zaak aanmelden en goedkeuring</span><span class="pg" data-for="h2-zaak">00</span></a></li>
+        <li class="s"><a href="#h2-inloggen"><span class="t">Inloggen en vergrendelen</span><span class="pg" data-for="h2-inloggen">00</span></a></li>
+        <li class="s"><a href="#h2-meer"><span class="t">Meerdere zaken en vestigingen</span><span class="pg" data-for="h2-meer">00</span></a></li>
+        <li class="s"><a href="#h2-team"><span class="t">Medewerkers uitnodigen</span><span class="pg" data-for="h2-team">00</span></a></li></ol></li>
+    <li class="c"><a href="#h3"><span class="n">3</span><span class="t">Vandaag: je startscherm</span><span class="pg" data-for="h3">00</span></a></li>
+    <li class="c"><a href="#h4"><span class="n">4</span><span class="t">Stempelkaart</span><span class="pg" data-for="h4">00</span></a></li>
+    <li class="c"><a href="#h5"><span class="n">5</span><span class="t">Klantenkaart met barcode</span><span class="pg" data-for="h5">00</span></a></li>
+    <li class="c"><a href="#h6"><span class="n">6</span><span class="t">Tickets voor gratis events</span><span class="pg" data-for="h6">00</span></a></li>
+    <li class="c"><a href="#h7"><span class="n">7</span><span class="t">Kortingsbonnen</span><span class="pg" data-for="h7">00</span></a></li>
+    <li class="c"><a href="#h8"><span class="n">8</span><span class="t">Actiecodes</span><span class="pg" data-for="h8">00</span></a></li>
+    <li class="c"><a href="#h9"><span class="n">9</span><span class="t">Gezamenlijke acties</span><span class="pg" data-for="h9">00</span></a></li>
+    <li class="c"><a href="#h10"><span class="n">10</span><span class="t">Beloningen</span><span class="pg" data-for="h10">00</span></a></li>
+    <li class="c"><a href="#h11"><span class="n">11</span><span class="t">Scannen</span><span class="pg" data-for="h11">00</span></a></li>
+    <li class="c"><a href="#h12"><span class="n">12</span><span class="t">Groei</span><span class="pg" data-for="h12">00</span></a>
+      <ol><li class="s"><a href="#h12-inzichten"><span class="t">Inzichten</span><span class="pg" data-for="h12-inzichten">00</span></a></li>
+        <li class="s"><a href="#h12-marketing"><span class="t">Marketingkalender</span><span class="pg" data-for="h12-marketing">00</span></a></li>
+        <li class="s"><a href="#h12-promo"><span class="t">Promotiemateriaal en flyer</span><span class="pg" data-for="h12-promo">00</span></a></li>
+        <li class="s"><a href="#h12-knop"><span class="t">Knop voor je website</span><span class="pg" data-for="h12-knop">00</span></a></li></ol></li>
+    <li class="c"><a href="#h13"><span class="n">13</span><span class="t">Je zaak</span><span class="pg" data-for="h13">00</span></a>
+      <ol><li class="s"><a href="#h13-vestigingen"><span class="t">Vestigingen</span><span class="pg" data-for="h13-vestigingen">00</span></a></li>
+        <li class="s"><a href="#h13-medewerkers"><span class="t">Medewerkers</span><span class="pg" data-for="h13-medewerkers">00</span></a></li>
+        <li class="s"><a href="#h13-instellingen"><span class="t">Instellingen</span><span class="pg" data-for="h13-instellingen">00</span></a></li>
+        <li class="s"><a href="#h13-account"><span class="t">Account en account verwijderen</span><span class="pg" data-for="h13-account">00</span></a></li>
+        <li class="s"><a href="#h13-logboek"><span class="t">Logboek en Prullenbak</span><span class="pg" data-for="h13-logboek">00</span></a></li></ol></li>
+    <li class="c"><a href="#h14"><span class="n">14</span><span class="t">Mac-app en widgets</span><span class="pg" data-for="h14">00</span></a></li>
+    <li class="c"><a href="#h15"><span class="n">15</span><span class="t">Privacy en veiligheid</span><span class="pg" data-for="h15">00</span></a></li>
+    <li class="c"><a href="#h16"><span class="n">16</span><span class="t">Veelgestelde vragen</span><span class="pg" data-for="h16">00</span></a></li>
+    <li class="c"><a href="#h17"><span class="n">17</span><span class="t">Hulp en contact</span><span class="pg" data-for="h17">00</span></a></li>
+  </ol>
+</nav>
+
+<!-- ================================================================ 1 -->
+<section class="chapter" id="h1" data-num="1" data-title="Wat is Pasr Zakelijk">
+  <div class="opener"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 1</div><h1>Wat is Pasr Zakelijk</h1>
+    <p>Stempelkaarten, klantenkaarten met korting, gratis tickets voor je events, kortingsbonnen, actiecodes en acties met andere zaken. In één gratis app, met één scanner.</p></div>
+  <p class="lead">Pasr Zakelijk is de kant van Pasr voor ondernemers. Je maakt er in je eigen logo en kleur alles mee om klanten terug te laten komen. Je klanten bewaren het in de gratis app Pasr, in Apple Wallet of in Google Wallet. Jij en je medewerkers scannen aan de toonbank of aan de deur met je telefoon, tablet of computer.</p>
+  <figure class="w80"><img src="img/web-zakelijk-home.jpg" alt=""><figcaption>De pagina pasr.nl/zakelijk <span class="src">(gerenderd uit website/zakelijk)</span></figcaption></figure>
+  <h2>Zes manieren om klanten te binden</h2>
+  <table>
+    <tr><th>Product</th><th>Wat het doet</th><th>Hoofdstuk</th></tr>
+    <tr><td>Stempelkaart</td><td>Sparen per bezoek, met jouw beloning. 2 tot 30 stempels, tot 5 kaarten, tussentijdse beloningen.</td><td>4</td></tr>
+    <tr><td>Klantenkaart</td><td>Een eigen ledenkaart met barcode (QR, Code 128 of EAN-13) voor herkenning, sparen, vaste korting of korting in een periode.</td><td>5</td></tr>
+    <tr><td>Tickets</td><td>Gratis events met aanmelding, plekken, wachtlijst en scannen aan de deur.</td><td>6</td></tr>
+    <tr><td>Kortingsbon</td><td>Procent of bedrag, minimale besteding, één per klant. Alleen in Pasr te verzilveren.</td><td>7</td></tr>
+    <tr><td>Actiecode</td><td>Een eigen code als HERFST20, met limiet en einddatum.</td><td>8</td></tr>
+    <tr><td>Gezamenlijke actie</td><td>Samen sparen met andere zaken in je straat of winkelcentrum, op uitnodiging.</td><td>9</td></tr>
+  </table>
+
+  <h2 id="h1-kosten">Wat het kost</h2>
+  <p>Niets. Er is geen abonnement en er zijn geen kosten per klant, stempel, ticket of scan. Er staat ook geen reclame op je kaart of ticket. Je hebt geen kassakoppeling of apart apparaat nodig: je telefoon is genoeg.</p>
+
+  <h2 id="h1-waar">Waar het werkt</h2>
+  <p>Je gebruikt overal hetzelfde Pasr-account. Wat je op het ene apparaat maakt, zie je meteen op het andere.</p>
+  <table>
+    <tr><th>Waar</th><th>Wat je nodig hebt</th><th>Waar je het vindt</th></tr>
+    <tr><td>iPhone en iPad</td><td>iOS 17 of nieuwer</td><td>App Store: Pasr Zakelijk</td></tr>
+    <tr><td>Mac</td><td>macOS 14 of nieuwer (eigen Mac-app, zelfde aankoop als op iPhone)</td><td>App Store: Pasr Zakelijk</td></tr>
+    <tr><td>Android</td><td>Android 8 of nieuwer</td><td>pasr.nl/zakelijk/download (niet in de Play Store)</td></tr>
+    <tr><td>Browser</td><td>Elke moderne browser, op computer, tablet of telefoon</td><td>pasr.nl/zakelijk/dashboard</td></tr>
+  </table>
+  <p>Het dashboard in de browser kan alles wat de apps kunnen, met dezelfde gegevens. De apps zijn er in het Nederlands en het Engels. In de app op de iPhone staan de onderdelen onder de tabbladen <span class="ui">Scannen</span>, <span class="ui">Acties</span>, <span class="ui">Promotie</span>, <span class="ui">Overzicht</span>, <span class="ui">Medewerkers</span> en <span class="ui">Instellingen</span>. Op de iPad, de Mac en in het dashboard staan ze in een zijbalk, in de groepen <span class="ui">Klantenbinding</span>, <span class="ui">Groei</span> en <span class="ui">Je zaak</span>.</p>
+  <div class="row">
+    <figure class="h110"><img src="img/app-scannen.jpg" alt=""><figcaption>De app op de iPhone</figcaption></figure>
+    <figure class="h110"><img src="img/ipad-overzicht.jpg" alt=""><figcaption>De app op de iPad</figcaption></figure>
+  </div>
+
+  <h2 id="h1-klanten">Hoe je klanten het gebruiken</h2>
+  <ul>
+    <li><b>In de gratis app Pasr</b> (iPhone en Android): alles bij elkaar, met meldingen als ze die willen, bijvoorbeeld een herinnering voor je event of een melding als je korting begint.</li>
+    <li><b>In Apple Wallet of Google Wallet</b>: de pas werkt vanzelf bij als er een stempel bij komt of je korting verandert. Tickets van hetzelfde event staan naast elkaar.</li>
+    <li><b>Zonder app</b>: sparen op een stempelkaart werkt ook in de browser, en het ticket met QR-code staat op pasr.nl en in de bevestigingsmail.</li>
+  </ul>
+  <p>Lid worden van je klantenkaart en een kortingsbon of actiecode bewaren doet je klant in de app Pasr. Klanten voegen iets toe met een QR-code bij de kassa, een link, of de knop <span class="ui">Voeg toe aan Pasr</span> op je eigen website (zie hoofdstuk 12).</p>
+
+  <h2 id="h1-beelden">Over de afbeeldingen in dit handboek</h2>
+  <div class="box info"><b>Eerlijk over de bron</b><p>De afbeeldingen van het dashboard en van pasr.nl zijn gemaakt met de echte code van de website, met een verzonnen voorbeeldzaak (Bakkerij de Korenschoof in Apeldoorn) en verzonnen cijfers. De schermen van de app op iPhone, iPad en Mac zijn trouwe namaak van de app, op dezelfde manier gemaakt als de beelden in de App Store (voorbeeldzaak Koffiebar De Hoek). Bij elk bijschrift staat waar het beeld vandaan komt. Namen van klanten en medewerkers zijn verzonnen.</p></div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="chapter" id="h2" data-num="2" data-title="Aan de slag">
+  <div class="opener mint"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 2</div><h1>Aan de slag</h1>
+    <p>Een account maken en je zaak aanmelden kost een paar minuten. We keuren elke zaak met de hand goed, meestal binnen een werkdag. In de tussentijd maak je alvast je eerste kaart of event.</p></div>
+
+  <h2 id="h2-account">Account maken</h2>
+  <p>Je logt overal in met een Pasr-account. Dat is hetzelfde account als in de app Pasr voor klanten, als je die al gebruikt.</p>
+  <ol class="steps">
+    <li>Ga naar <b>pasr.nl/zakelijk</b> en kies <span class="ui">Gratis aanmelden</span>. In de app kies je <span class="ui">Account maken</span>.</li>
+    <li>Vul je voornaam, het e-mailadres van je zaak en een wachtwoord van minstens 8 tekens in. Gebruik een vast e-mailadres: tijdelijke adressen werken niet.</li>
+    <li>Kies <span class="ui">Account maken</span>. Je krijgt een mail; tik of klik op de knop in die mail om je e-mailadres te bevestigen.</li>
+    <li>Kom terug en log in met je e-mailadres en wachtwoord.</li>
+  </ol>
+  <figure class="w60"><img src="img/web-aanmelden-account.jpg" alt=""><figcaption>Gratis aanmelden in het dashboard <span class="src">(echte webcode)</span></figcaption></figure>
+
+  <h2 id="h2-zaak">Je zaak aanmelden en goedkeuring</h2>
+  <p>Na het inloggen vraagt Pasr Zakelijk om je zaak aan te melden. Dat is gratis.</p>
+  <ol class="steps">
+    <li>Vul de <b>naam van je zaak</b> in (minstens 2 tekens) en de <b>plaats</b>. Naam en plaats komen op je stempelkaart en zijn dus openbaar; je e-mailadres blijft privé.</li>
+    <li>Vul eventueel je <b>website</b> in. Pasr neemt dan je logo en kleur van je website over voor je stempelkaart.</li>
+    <li>Vertel eventueel <b>wat voor zaak</b> het is, bijvoorbeeld "koffiebar met lunch, 2 vestigingen".</li>
+    <li>Kies <span class="ui">Aanmelden</span>.</li>
+  </ol>
+  <figure class="w80"><img src="img/web-zaak-aanmelden.jpg" alt=""><figcaption>Je zaak aanmelden <span class="src">(echte webcode)</span></figcaption></figure>
+  <p>Je zaak staat daarna op <b>Wacht op goedkeuring</b>. We bekijken je aanmelding, meestal binnen een werkdag, en je krijgt een mail. Ondertussen kun je je stempelkaart, klantenkaart of event al ontwerpen en als concept bewaren. Online zetten, stempels geven en scannen kan pas als je zaak is goedgekeurd.</p>
+  <figure class="w80"><img src="img/web-wacht-op-goedkeuring.jpg" alt=""><figcaption>Een zaak die nog op goedkeuring wacht <span class="src">(echte webcode)</span></figcaption></figure>
+  <div class="box let"><b>Let op</b><p>Is je zaak geblokkeerd, dan staan je kaarten offline en kunnen er geen stempels worden gezet. Denk je dat dat niet klopt, mail dan naar support@pasr.nl.</p></div>
+
+  <h2 id="h2-inloggen">Inloggen en vergrendelen</h2>
+  <p>Log in het dashboard of in de app in met je e-mailadres en wachtwoord. Wachtwoord vergeten? Kies <span class="ui">Wachtwoord vergeten?</span>; je krijgt een mail met een link om een nieuw wachtwoord te kiezen.</p>
+  <div class="side">
+    <figure><img src="img/app-vergrendeld.jpg" alt=""><figcaption>Vergrendeld met Face ID <span class="src">(namaak van de app)</span></figcaption></figure>
+    <div>
+      <h3>Vergrendelen met Face ID of Touch ID</h3>
+      <p>Ligt je iPhone of iPad aan de kassa? Zet dan vergrendelen aan. Bij openen en na terugkeer naar de app vraagt Pasr Zakelijk om Face ID, Touch ID of je toegangscode.</p>
+      <ol class="steps">
+        <li>Open <span class="ui">Instellingen</span> in de app.</li>
+        <li>Zet onder <span class="ui">Privacy en beveiliging</span> de schakelaar <span class="ui">Vergrendelen met Face ID</span> aan (op een toestel met Touch ID heet hij zo).</li>
+        <li>Bevestig met Face ID, Touch ID of je toegangscode. Ook uitzetten vraagt om die bevestiging.</li>
+      </ol>
+      <p>Op de Mac vraagt de app om Touch ID of het wachtwoord van je Mac. Op Android vergrendel je met je vingerafdruk of gezicht.</p>
+    </div>
+  </div>
+
+  <h2 id="h2-meer">Meerdere zaken en vestigingen</h2>
+  <p>Werk je voor meer dan één zaak, bijvoorbeeld als eigenaar van je eigen zaak en als medewerker bij een andere, dan wissel je bovenin met de <b>zaakkiezer</b>. Je ziet per zaak of je eigenaar of medewerker bent. Heb je nog geen eigen zaak, dan staat daar ook <span class="ui">Nieuwe zaak aanmelden</span>.</p>
+  <figure class="w70"><img src="img/web-zaakkiezer.jpg" alt=""><figcaption>Wisselen van zaak in het dashboard <span class="src">(echte webcode)</span></figcaption></figure>
+  <p>Heeft je zaak meer filialen, dan maak je die aan als <b>vestigingen</b> van dezelfde zaak (hoofdstuk 13). Ze delen dezelfde stempelkaart; de cijfers blijven per vestiging gescheiden.</p>
+
+  <h2 id="h2-team">Medewerkers uitnodigen</h2>
+  <p>Medewerkers loggen in met een eigen Pasr-account en kunnen alleen scannen: stempels geven, belonen en ongedaan maken. Ze zien je instellingen, cijfers en acties niet.</p>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Medewerkers</span> (in de app: het tabblad <span class="ui">Medewerkers</span>).</li>
+    <li>Vul de naam van je medewerker in. Een e-mailadres is optioneel en alleen ter herkenning.</li>
+    <li>Kies <span class="ui">Uitnodiging maken</span>. Je krijgt een link en een QR-code. De link werkt 14 dagen en één keer.</li>
+    <li>Stuur de link naar je medewerker (<span class="ui">Kopieer link</span> of <span class="ui">Delen</span>), of laat de QR-code scannen.</li>
+    <li>Je medewerker opent de link, logt in met een eigen Pasr-account (of maakt er gratis een) en accepteert. Daarna verschijnt je zaak in zijn scanner.</li>
+  </ol>
+  <div class="row">
+    <figure><img src="img/web-medewerker-scanner.jpg" alt=""><figcaption>Wat een medewerker ziet: alleen Scannen <span class="src">(echte webcode)</span></figcaption></figure>
+  </div>
+  <div class="box tip"><b>Tip</b><p>Een medewerker kan ook de app Pasr Zakelijk gebruiken. Daar ziet hij alleen <span class="ui">Scannen</span> en <span class="ui">Instellingen</span>. In de app kiest hij bij het inloggen <span class="ui">Ik heb een uitnodiging als medewerker</span> en plakt hij de link of de code.</p></div>
+</section>
+
+<!-- ================================================================ 3 -->
+<section class="chapter" id="h3" data-num="3" data-title="Vandaag: je startscherm">
+  <div class="opener"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 3</div><h1>Vandaag: je startscherm</h1>
+    <p>Zie elke ochtend wat er speelt: wat er te doen is, hoeveel klanten terugkwamen en wie er voor je event is aangemeld.</p></div>
+  <figure><img src="img/web-vandaag.jpg" alt=""><figcaption>Vandaag in het dashboard <span class="src">(echte webcode, voorbeeldgegevens)</span></figcaption></figure>
+  <h2>Wat je ziet</h2>
+  <ul>
+    <li><b>Begroeting en snelknoppen.</b> Met de knoppen maak je meteen een <span class="ui">Stempelkaart</span>, <span class="ui">Klantenkaart</span>, <span class="ui">Event</span>, <span class="ui">Kortingsbon</span>, <span class="ui">Actiecode</span> of <span class="ui">Gezamenlijke actie</span>.</li>
+    <li><b>Cijfers van deze week:</b> stempels, beloningen en nieuwe leden, met een pijltje voor de vergelijking met vorige week. Die vergelijking verschijnt zodra je zaak twee weken bestaat.</li>
+    <li><b>Terugkerend (90 d):</b> het deel van je klanten met minstens twee stempelacties in de laatste 90 dagen.</li>
+    <li><b>Tickets en klantenkaart</b> (als je die gebruikt): aanmeldingen voor je volgende event, het aantal leden van je klantenkaart, de korting die nu loopt en het aantal klantenkaart-scans vandaag.</li>
+    <li><b>Te doen</b>, <b>de grafiek</b>, <b>Je acties</b>, <b>Vandaag aan de toonbank</b> en <b>Komende events</b>, hieronder uitgelegd.</li>
+  </ul>
+  <h2>Te doen</h2>
+  <p>Te doen toont alleen echte openstaande punten, met een knop om het meteen te regelen:</p>
+  <table>
+    <tr><th>Punt</th><th>Knop</th></tr>
+    <tr><td>Uitnodiging voor een gezamenlijke actie</td><td>Bekijken</td></tr>
+    <tr><td>Stempelkaart of klantenkaart in concept</td><td>Online zetten</td></tr>
+    <tr><td>Kortingsbon of actiecode loopt binnen 7 dagen af</td><td>Verlengen</td></tr>
+    <tr><td>Event bijna vol of met een wachtlijst</td><td>Plekken bijzetten</td></tr>
+    <tr><td>Event in concept</td><td>Bekijken</td></tr>
+    <tr><td>Kortingsperiode van je klantenkaart loopt binnen een week af</td><td>Plannen</td></tr>
+    <tr><td>Gezamenlijke actie wacht op deelnemers</td><td>Uitnodigen of Bekijken</td></tr>
+    <tr><td>Je zaak wacht op goedkeuring</td><td>—</td></tr>
+  </table>
+  <p>Dezelfde punten staan achter het belletje rechtsboven. Een rood bolletje bij <span class="ui">Gezamenlijke acties</span> in de zijbalk telt je open uitnodigingen.</p>
+  <figure class="w80"><img src="img/web-vandaag-acties.jpg" alt=""><figcaption>Te doen, de grafiek, je acties en wat er aan de toonbank gebeurde <span class="src">(echte webcode)</span></figcaption></figure>
+  <h2>De grafiek en de toonbank</h2>
+  <p>De grafiek toont je stempels per dag over <span class="ui">7 d</span>, <span class="ui">30 d</span> of een <span class="ui">Jaar</span>. Wijs een dag aan (of gebruik de pijltjestoetsen) om het aantal van die dag te zien. <b>Je acties</b> toont je zes belangrijkste lopende acties, met een link naar alle acties. <b>Vandaag aan de toonbank</b> laat zien wat er vandaag werd gescand, door wie en om hoe laat; is het nog stil, dan zie je het laatste. Via <span class="ui">Hele logboek bekijken</span> open je het logboek (hoofdstuk 13).</p>
+  <h2>Zoeken en meldingen</h2>
+  <p>Met het zoekveld bovenin (<kbd>⌘ K</kbd> op een Mac, <kbd>Ctrl K</kbd> op Windows) spring je naar een onderdeel, stempelkaart, kortingsbon, actiecode, event of gezamenlijke actie, of maak je meteen iets nieuws.</p>
+  <div class="row">
+    <figure class="h110"><img src="img/mob-vandaag.jpg" alt=""><figcaption>Op de telefoon: onderbalk met Vandaag, Acties, Scannen, Inzichten en Meer <span class="src">(echte webcode)</span></figcaption></figure>
+    <figure class="h110"><img src="img/app-overzicht.jpg" alt=""><figcaption>Overzicht in de iPhone-app <span class="src">(namaak van de app)</span></figcaption></figure>
+  </div>
+  <div class="box tip"><b>Tip</b><p>Op de Mac en op je iPhone of iPad zet je Vandaag ook als widget op je bureaublad of beginscherm (hoofdstuk 14).</p></div>
+</section>
+
+<!-- ================================================================ 4 -->
+<section class="chapter" id="h4" data-num="4" data-title="Stempelkaart">
+  <div class="opener coral"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Klantenbinding · Hoofdstuk 4</div><h1>Stempelkaart</h1>
+    <p>Sparen per bezoek, met jouw beloning. In je eigen logo en kleur, in een paar minuten.</p></div>
+  <h3 class="k">Wat is het</h3>
+  <p>Een digitale stempelkaart. Je klant laat aan de kassa de QR-code van zijn kaart zien, jij scant en zet er een of meer stempels op. Is de kaart vol, dan wissel je de beloning in. Elke kaart heeft 2 tot 30 stempels; een zaak kan tot 5 stempelkaarten hebben. Gezette stempels tonen de officiële Pasr-stempel, het laatste vakje een cadeautje.</p>
+  <figure><img src="img/web-stempelkaarten.jpg" alt=""><figcaption>Stempelkaarten met leden, stempels en beloningen <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3 class="k">Instellen stap voor stap</h3>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Stempelkaarten</span> en kies <span class="ui">Nieuw</span> › <span class="ui">Stempelkaart</span> (of op Vandaag de snelknop <span class="ui">Stempelkaart</span>).</li>
+    <li>Geef de kaart een <b>naam</b>, bijvoorbeeld "Koffiekaart" (tot 40 tekens).</li>
+    <li>Vul de <b>beloning</b> in, bijvoorbeeld "1 gratis koffie" (tot 80 tekens).</li>
+    <li>Kies met de schuif het <b>aantal stempels</b>: 2 tot 30.</li>
+    <li>Kies een <b>kleur</b> (een van de 12 kleuren of je eigen kleur) en eventueel een <b>logo</b> (PNG of JPEG; vierkant werkt het best). Staat je website bij je zaak, dan haalt Pasr bij een nieuwe kaart vanzelf je logo en kleur op; met <span class="ui">Huisstijl ophalen van je website</span> doe je dat later opnieuw.</li>
+    <li>Kijk rechts in het voorbeeld hoe je klant de kaart ziet: <span class="ui">Leeg</span>, <span class="ui">Half vol</span> of <span class="ui">Vol</span>.</li>
+    <li>Zet het vinkje <span class="ui">Online: klanten kunnen aansluiten</span> aan (kan na goedkeuring van je zaak) en kies <span class="ui">Opslaan</span>.</li>
+  </ol>
+  <figure><img src="img/web-stempelkaart-bewerken.jpg" alt=""><figcaption>Een stempelkaart bewerken, met live voorbeeld <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>Klanten laten aansluiten</h3>
+  <p>Kies bij een online kaart <span class="ui">QR-code en link</span>. Hang de QR-code bij de kassa of deel de link (pasr.nl/zakelijk/kaart/…). Met Pasr opent de kaart in de app; zonder app werkt hij in de browser. Je downloadt de QR-code als afbeelding, opent de A4-<span class="ui">Flyer</span>, of maakt <span class="ui">Promotiemateriaal</span> en een <span class="ui">Knop voor je website</span> (hoofdstuk 12).</p>
+  <div class="row">
+    <figure><img src="img/web-qr-link.jpg" alt=""><figcaption>QR-code en link van een stempelkaart <span class="src">(echte webcode)</span></figcaption></figure>
+    <figure class="h90"><img src="img/app-acties.jpg" alt=""><figcaption>Acties in de iPhone-app <span class="src">(namaak)</span></figcaption></figure>
+  </div>
+  <h3>Afkoeltijd en stempels per scan</h3>
+  <p>Twee instellingen gelden voor al je stempelkaarten en staan bij <span class="ui">Instellingen</span> › <span class="ui">Scannen</span>:</p>
+  <ul>
+    <li><b>Afkoeltijd</b>: zo lang na een stempel krijgt dezelfde klant geen nieuwe. Standaard 5 minuten; 0 is uit, hoogstens 1440 minuten (een dag).</li>
+    <li><b>Hoogstens zoveel stempels per scan</b>: van 1 tot 30, standaard 10. Bij het scannen kies je zelf hoeveel, tot dit maximum.</li>
+  </ul>
+  <h3>Leden van een kaart</h3>
+  <p>Met <span class="ui">Leden</span> zie je per lid de laatste tekens van de klantcode, of de kaart in de app of in de browser staat, de stand, het aantal beloningen, de laatste stempel en sinds wanneer iemand lid is. Pasr bewaart geen namen of contactgegevens van je klanten.</p>
+  <figure class="w80"><img src="img/web-leden.jpg" alt=""><figcaption>Leden van de Koffiekaart <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>Meer uit je stempelkaart halen</h3>
+  <p>Tussentijdse beloningen, VIP-niveaus, een terugkomactie, vrienden uitnodigen en tijdelijke stempelacties (zoals dubbele stempels op dinsdag) stel je per kaart in bij <span class="ui">Beloningen</span> (hoofdstuk 10).</p>
+  <h3>Verwijderen</h3>
+  <p><span class="ui">Verwijderen</span> verplaatst een kaart naar de <span class="ui">Prullenbak</span>: klanten zien hem niet meer. Definitief verwijderen doe je in de Prullenbak; het logboek blijft altijd staan.</p>
+  <h3 class="k mint">Tips</h3>
+  <ul>
+    <li>Kies een beloning die klanten meteen snappen, en een aantal stempels dat past bij hoe vaak ze komen.</li>
+    <li>Zet <b>Vindbaar in Pasr</b> aan met je adres (Instellingen), dan vinden klanten je kaart ook bij <b>In de buurt</b> in de app Pasr.</li>
+    <li>Hang de QR-code of de flyer op de toonbank: zo sluiten klanten aan terwijl ze wachten.</li>
+  </ul>
+</section>
+
+<!-- ================================================================ 5 -->
+<section class="chapter" id="h5" data-num="5" data-title="Klantenkaart met barcode">
+  <div class="opener coral"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Klantenbinding · Hoofdstuk 5</div><h1>Klantenkaart met barcode</h1>
+    <p>Een eigen ledenkaart. Kies het doel: herkenning, sparen, vaste korting of korting in een periode.</p></div>
+  <h3 class="k">Wat is het</h3>
+  <p>Een klantenkaart met barcode en kaartnummer, in je eigen logo en kleur. Je klant wordt lid in de app Pasr en heeft de kaart daar of in Apple Wallet of Google Wallet. Aan de kassa scan je de kaart en zie je meteen de korting die nu geldt en de spaarstand. Pasr maakt de kaartnummers zelf.</p>
+  <figure><img src="img/web-klantenkaarten.jpg" alt=""><figcaption>Klantenkaarten in het dashboard <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>De vier doelen</h3>
+  <p>Kies er één of meer:</p>
+  <table>
+    <tr><th>Doel</th><th>Wat het doet</th></tr>
+    <tr><td>Lidmaatschap of herkenning</td><td>De klant laat zijn kaart zien; jij ziet wie het is. Geschikt voor vaste klanten, verenigingen en personeel.</td></tr>
+    <tr><td>Sparen voor een beloning</td><td>Elke scan telt als 1 bezoek, of als punten die je bij het scannen invult. Je kiest na hoeveel (1 tot 1000) en welke beloning.</td></tr>
+    <tr><td>Vaste korting</td><td>Altijd hetzelfde percentage voor leden.</td></tr>
+    <tr><td>Korting in een periode</td><td>Van–tot, eventueel alleen op bepaalde dagen of uren. Plan meerdere periodes vooruit.</td></tr>
+  </table>
+  <h3 class="k">Instellen stap voor stap</h3>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Klantenkaarten</span> en kies <span class="ui">Nieuwe klantenkaart</span>.</li>
+    <li>Geef de kaart een <b>naam</b>, kies je <b>logo</b> en <b>kleur</b>.</li>
+    <li>Kies het <b>soort barcode</b>: <span class="ui">QR-code</span>, <span class="ui">Code 128</span> of <span class="ui">EAN-13</span>.</li>
+    <li>Kies een <b>voorvoegsel</b> voor het kaartnummer, bijvoorbeeld "KS-". Pasr nummert dan KS-000124, KS-000125 enzovoort. Bij EAN-13 maakt Pasr een geldig nummer met controlecijfer en is er geen voorvoegsel.</li>
+    <li>Vink de <b>doelen</b> aan en vul ze in.</li>
+    <li>Kies je voor korting in een periode, voeg dan je <b>kortingsperiodes</b> toe (zie hieronder).</li>
+    <li>Kies <span class="ui">Concept bewaren</span>, of <span class="ui">Online zetten</span> zodra je zaak is goedgekeurd.</li>
+  </ol>
+  <figure><img src="img/web-klantenkaart-bewerken.jpg" alt=""><figcaption>Een klantenkaart met sparen en kortingsperiodes <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>Kortingsperiodes plannen</h3>
+  <ol class="steps">
+    <li>Open onder <span class="ui">Kortingsperiodes</span> de knop <span class="ui">Periode toevoegen</span>.</li>
+    <li>Vul een omschrijving in (bijvoorbeeld "happy hour") en het kortingspercentage.</li>
+    <li>Kies <b>Van</b> en <b>Tot en met</b>. Wil je de korting alleen op bepaalde dagen, vink die dagen aan; leeg is elke dag.</li>
+    <li>Vul eventueel een tijd in bij <b>Vanaf</b> en <b>Tot</b>, bijvoorbeeld 16:00 tot 18:00.</li>
+    <li>Kies <span class="ui">Periode toevoegen</span>. De periode verschijnt in de tijdlijn van de maand en als label eronder; met het kruisje haal je hem weg.</li>
+  </ol>
+  <p>Gelden er meer kortingen tegelijk, dan telt de hoogste. De korting die nu geldt en de spaarstand staan op de kaart van je klant en veranderen vanzelf mee, ook in Wallet. Klanten die meldingen voor je kaart aanzetten, krijgen een melding als een korting begint.</p>
+  <div class="row">
+    <figure class="h110"><img src="img/app-klantenkaart.jpg" alt=""><figcaption>Een klantenkaart scannen in de iPhone-app <span class="src">(namaak)</span></figcaption></figure>
+    <figure class="h110"><img src="img/web-scan-klantenkaart.jpg" alt=""><figcaption>Hetzelfde in de scanner van het dashboard <span class="src">(echte webcode)</span></figcaption></figure>
+  </div>
+  <div class="box let"><b>Let op</b><ul><li>Het soort barcode ligt vast zodra de kaart leden heeft.</li><li>Apple Wallet kent geen EAN-13: daar staat het nummer als Code 128.</li><li>Een koppeling met je kassa is er niet: je scant met Pasr Zakelijk of de scanner op pasr.nl.</li><li><span class="ui">Archiveren</span> stopt het scannen en nieuwe klanten kunnen geen lid meer worden.</li></ul></div>
+  <h3 class="k mint">Tips</h3>
+  <ul>
+    <li>Plan je decemberkorting of happy hour vooruit; Te doen waarschuwt een week voordat een periode afloopt.</li>
+    <li>Deel de link van je klantenkaart (<span class="ui">Link</span>, pasr.nl/add/m/…) of zet de knop op je website.</li>
+    <li>De naam van een lid zie je alleen als de klant dat in Pasr aanzet; anders zie je het kaartnummer.</li>
+  </ul>
+</section>
+
+<!-- ================================================================ 6 -->
+<section class="chapter" id="h6" data-num="6" data-title="Tickets voor gratis events">
+  <div class="opener coral"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Klantenbinding · Hoofdstuk 6</div><h1>Tickets voor gratis events</h1>
+    <p>Borrel, workshop of open dag: aanmelden met naam, e-mail en geboortedatum, scannen aan de deur.</p></div>
+  <h3 class="k">Wat is het</h3>
+  <p>Je maakt een gratis event met een vast aantal plekken. Klanten melden zich aan op pasr.nl of in Pasr en krijgen een ticket met QR-code in Pasr, in Apple Wallet of Google Wallet en in de bevestigingsmail. Aan de deur scan je de tickets. Tickets zijn alleen voor gratis events: er zijn geen betalingen en geen ticketvoorwaarden.</p>
+  <figure><img src="img/web-tickets.jpg" alt=""><figcaption>Je events met aanmeldingen en status <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3 class="k">Instellen stap voor stap</h3>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Tickets</span> en kies <span class="ui">Nieuw event</span>.</li>
+    <li>Vul de <b>naam</b> en een <b>omschrijving</b> in.</li>
+    <li>Kies de <b>datum</b>, wanneer het <b>begint</b> en <b>eindigt</b>, en eventueel wanneer de <b>deuren open</b> gaan.</li>
+    <li>Vul het <b>adres</b> in.</li>
+    <li>Kies het <b>aantal plekken</b>, het <b>maximum per persoon</b> (1 tot 20, standaard 4) en eventueel tot wanneer aanmelden kan (leeg is tot de start).</li>
+    <li>Laat <b>Wachtlijst</b> aan als mensen zich bij een vol event op de wachtlijst mogen zetten; ze schuiven automatisch door als er een plek vrijkomt.</li>
+    <li>Laat <b>Herinnering</b> aan: je gasten krijgen de dag ervoor om 10:00 een push en een mail.</li>
+    <li>Voeg eventueel <b>ticketsoorten</b> toe (allemaal gratis), bijvoorbeeld "Toegang" en "Kinderen t/m 12", elk met een eigen aantal plekken.</li>
+    <li>Kies een <b>kleur</b> en eventueel een <b>headerfoto</b> (een https-link). Het logo van je zaak komt er vanzelf op.</li>
+    <li>Kies <span class="ui">Concept bewaren</span> of <span class="ui">Online zetten</span> (na goedkeuring van je zaak).</li>
+  </ol>
+  <figure><img src="img/web-event-maken.jpg" alt=""><figcaption>Een nieuw event, met rechts het ticket zoals de klant het ziet <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>Aanmelden door je klanten</h3>
+  <p>Bij aanmelden vragen we altijd voornaam, achternaam, e-mailadres en geboortedatum. De aanmeldpagina staat op pasr.nl/add/e/… : kies in je event <span class="ui">Aanmeldlink</span> of <span class="ui">Knop voor je website</span>. Wie ingelogd is in Pasr, heeft zijn tickets meteen in de app.</p>
+  <div class="row">
+    <figure class="h130"><img src="img/web-aanmeldpagina.jpg" alt=""><figcaption>De aanmeldpagina van een event <span class="src">(echte webcode)</span></figcaption></figure>
+    <figure class="h130"><img src="img/mob-aanmeldpagina.jpg" alt=""><figcaption>Op de telefoon <span class="src">(echte webcode)</span></figcaption></figure>
+  </div>
+  <h3>Aanmeldingen beheren</h3>
+  <p>Open een event om te zien hoeveel mensen zijn aangemeld, binnen zijn, op de wachtlijst staan of zich afmeldden. In de lijst zoek je op naam of e-mail. Met <span class="ui">Afmelden</span> vervallen de tickets van iemand en gaat de plek naar de wachtlijst. Met <span class="ui">Exporteer CSV</span> download je de aanmeldingen (voornaam, achternaam, e-mail, geboortedatum, ticketsoort, status, aangemeld op en binnen om).</p>
+  <figure><img src="img/web-event-detail.jpg" alt=""><figcaption>Een event met aanmeldingen <span class="src">(echte webcode, verzonnen namen)</span></figcaption></figure>
+  <h3>Scannen aan de deur</h3>
+  <p>Kies in het event <span class="ui">Scannen aan de deur</span>, of kies in de scanner bij <span class="ui">Tickets scannen voor</span> het event. Een geldig ticket is groen en checkt meteen in; een ticket dat al gebruikt is, voor een ander event is, is afgemeld, op de wachtlijst staat of onbekend is, is rood. Je ziet steeds hoeveel mensen er binnen zijn. Een ticket kan maar één keer naar binnen.</p>
+  <div class="row">
+    <figure class="h90"><img src="img/web-scan-ticket-geldig.jpg" alt=""><figcaption>Geldig ticket <span class="src">(echte webcode)</span></figcaption></figure>
+    <figure class="h90"><img src="img/web-scan-ticket-gebruikt.jpg" alt=""><figcaption>Al gebruikt <span class="src">(echte webcode)</span></figcaption></figure>
+    <figure class="h90"><img src="img/app-ticket-geldig.jpg" alt=""><figcaption>In de iPhone-app <span class="src">(namaak)</span></figcaption></figure>
+  </div>
+  <h3>Wijzigen of afgelasten</h3>
+  <p>Met <span class="ui">Bewerken</span> pas je een event aan. Met <span class="ui">Event afgelasten</span> schrijf je een bericht aan de deelnemers; ze krijgen een mail en een pushmelding.</p>
+  <div class="box let"><b>Privacy</b><p>De gegevens van je gasten zie alleen jij, voor je eigen event. Op het ticket staat alleen de naam; de QR-code bevat alleen een willekeurige code en geen persoonsgegevens, en de geboortedatum staat nooit op het ticket. 30 dagen na het event (of na het afgelasten) wist Pasr naam, e-mailadres en geboortedatum. Een geëxporteerd CSV-bestand beheer je zelf: wis het als je het niet meer nodig hebt.</p></div>
+  <h3 class="k mint">Tips</h3>
+  <ul>
+    <li>Op Te doen zie je wanneer een event bijna vol is of een wachtlijst heeft, met <span class="ui">Plekken bijzetten</span>.</li>
+    <li>Op de Mac zie je je events overzichtelijk naast elkaar (hoofdstuk 14).</li>
+  </ul>
+  <figure class="w80"><img src="img/mac-tickets.jpg" alt=""><figcaption>Tickets in de Mac-app <span class="src">(namaak van de app)</span></figcaption></figure>
+</section>
+
+<!-- ================================================================ 7 -->
+<section class="chapter" id="h7" data-num="7" data-title="Kortingsbonnen">
+  <div class="opener coral"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Klantenbinding · Hoofdstuk 7</div><h1>Kortingsbonnen</h1>
+    <p>Procent of bedrag, minimale besteding, één per klant. Pauzeren of aanpassen kan altijd.</p></div>
+  <h3 class="k">Wat is het</h3>
+  <p>Een tijdelijke kortingsbon. Je klant bewaart de bon in Pasr en krijgt een unieke code (begint met PC) met QR-code. Alleen je eigen team kan die code inwisselen, en alleen in Pasr.</p>
+  <figure><img src="img/web-kortingsbonnen.jpg" alt=""><figcaption>Kortingsbonnen met live voorbeeld in je huisstijl <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3 class="k">Instellen stap voor stap</h3>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Kortingsbonnen</span>.</li>
+    <li>Vul een <b>titel</b> en <b>omschrijving</b> in.</li>
+    <li>Kies de <b>korting</b>: <span class="ui">Vast bedrag (€)</span> of <span class="ui">Percentage (%)</span>, en de hoogte.</li>
+    <li>Vul de <b>minimale besteding</b> in, de <b>startdatum</b>, de <b>einddatum</b> en het <b>maximaal aantal uitgiftes</b>.</li>
+    <li>Laat <b>Eenmalig per klant</b> aan om herhaald claimen te voorkomen.</li>
+    <li>Zet <b>Publiceer in Pasr</b> aan. De bon is zichtbaar vanaf de startdatum.</li>
+    <li>Kies <span class="ui">Kortingsbon opslaan</span>. Rechts zie je meteen hoe de bon eruitziet, in de kleur en met het logo van je stempelkaart.</li>
+  </ol>
+  <h3>Verzilveren aan de kassa</h3>
+  <p>Scan de QR-code van de bon met de scanner, of typ de PC-code bij <span class="ui">Bon aan de kassa verzilveren</span>. Je ziet de bon, de korting en de minimale besteding. Geef de korting en kies <span class="ui">Korting gegeven · verzilver bon</span>. Daarna kan de code niet opnieuw worden gebruikt.</p>
+  <figure class="w70"><img src="img/web-scan-kortingsbon.jpg" alt=""><figcaption>Een gescande kortingsbon <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>Status</h3>
+  <p>In je lijst zie je per bon hoeveel er zijn opgehaald en gebruikt, en of de bon <b>Online</b>, <b>Gepland</b>, <b>Gepauzeerd</b> of <b>Verlopen</b> is. Met <span class="ui">Bewerken</span> pas je hem aan; zet Publiceer uit om te pauzeren. <span class="ui">Verwijderen</span> maakt de bon onbruikbaar; eerdere verzilveringen blijven bewaard.</p>
+  <h3 class="k mint">Tips</h3>
+  <ul><li>Loopt een bon binnen 7 dagen af, dan staat hij op Te doen met <span class="ui">Verlengen</span>.</li><li>Maak er promotiemateriaal en een knop voor je website bij (hoofdstuk 12).</li></ul>
+</section>
+
+<!-- ================================================================ 8 -->
+<section class="chapter" id="h8" data-num="8" data-title="Actiecodes">
+  <div class="opener coral"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Klantenbinding · Hoofdstuk 8</div><h1>Actiecodes</h1>
+    <p>Een eigen code als HERFST20, met limiet en einddatum. Zie hoe vaak hij gebruikt is.</p></div>
+  <h3 class="k">Wat is het</h3>
+  <p>Een herbruikbare kortingscode voor een actie, los van de persoonlijke kortingsbonnen. Je kiest zelf de code, bijvoorbeeld HERFST20. Je klanten halen de actie op in de app Pasr en krijgen daar een persoonlijke code die met PA begint. Die persoonlijke code verzilver je; de algemene code zelf is een beheercode voor jou en niet verzilverbaar.</p>
+  <figure><img src="img/web-actiecodes.jpg" alt=""><figcaption>Actiecodes met gebruik <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3 class="k">Instellen stap voor stap</h3>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Actiecodes</span>.</li>
+    <li>Vul de <b>code</b> in (4 tot 24 tekens) en de <b>naam van de actie</b>.</li>
+    <li>Kies de <b>korting</b> (percentage of vast bedrag) en eventueel een <b>minimale besteding</b>.</li>
+    <li>Kies de <b>startdatum</b>, <b>einddatum</b> en het <b>maximaal gebruik</b> (1 tot 100.000).</li>
+    <li>Zet <b>Actiecode activeren</b> aan en kies <span class="ui">Actiecode opslaan</span>.</li>
+  </ol>
+  <h3>Controleren en verzilveren</h3>
+  <ol class="steps">
+    <li>Vraag je klant om de persoonlijke PA-code uit de app Pasr.</li>
+    <li>Vul hem in bij <span class="ui">Persoonlijke PA-code</span> en kies <span class="ui">Controleren</span>.</li>
+    <li>Geef de korting en kies daarna <span class="ui">Gebruik registreren</span>. Iedere registratie telt één keer.</li>
+  </ol>
+  <p>Per code zie je hoe vaak hij gebruikt is (bijvoorbeeld 64/200) en of hij <b>Actief</b>, <b>Gepland</b>, <b>Gepauzeerd</b>, <b>Op</b> of <b>Verlopen</b> is. Verwijder je een actiecode, dan worden de persoonlijke PA-codes onbruikbaar; de historie blijft bewaard.</p>
+  <h3 class="k mint">Tips</h3>
+  <ul><li>Kies een code die klanten makkelijk onthouden en die bij de actie past.</li><li>Zet een limiet, dan weet je precies hoeveel korting je maximaal weggeeft.</li><li>Onder <span class="ui">Inzichten</span> zie je het codegebruik van al je actiecodes samen.</li></ul>
+</section>
+
+<!-- ================================================================ 9 -->
+<section class="chapter" id="h9" data-num="9" data-title="Gezamenlijke acties">
+  <div class="opener coral"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Klantenbinding · Hoofdstuk 9</div><h1>Gezamenlijke acties</h1>
+    <p>Spaar samen met andere zaken in je straat of winkelcentrum. Op uitnodiging: jij kiest wie meedoet.</p></div>
+  <h3 class="k">Wat is het</h3>
+  <p>Een beloning voor bezoeken bij verschillende zaken. Een klant die bijvoorbeeld bij 3 deelnemende zaken is geweest, krijgt een gratis warme chocolademelk. Je nodigt zelf de zaken uit waarmee je samenwerkt; elke zaak beslist zelf of hij meedoet. De actie start pas als genoeg zaken meedoen; tot dan zien klanten niets. Er worden geen klantgegevens tussen zaken gedeeld.</p>
+  <figure><img src="img/web-gezamenlijke-acties.jpg" alt=""><figcaption>Uitnodigingen, een nieuwe actie en je lopende acties <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3 class="k">Instellen stap voor stap</h3>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Gezamenlijke acties</span>.</li>
+    <li>Vul bij <span class="ui">Nieuwe gezamenlijke actie</span> de <b>actienaam</b> en de <b>beloning</b> in.</li>
+    <li>Kies bij hoeveel <b>verschillende zaken</b> een klant moet zijn geweest (2 tot 20), de <b>looptijd</b> in dagen (1 tot 366, standaard 60) en bij hoeveel <b>deelnemende zaken</b> de actie start (2 tot 30; jij telt mee).</li>
+    <li>Kies of de actie <b>open is voor zaken in je plaats</b>. Uit: alleen zaken die jij uitnodigt doen mee. Aan: zaken uit je eigen plaats kunnen ook zelf meedoen.</li>
+    <li>Kies <span class="ui">Gezamenlijke actie starten</span>. Jij bent de organisator en doet meteen mee.</li>
+    <li>Kies bij je actie <span class="ui">Uitnodigen en deelnemers</span> en nodig zaken uit (zie hieronder).</li>
+  </ol>
+  <h3>Zaken uitnodigen</h3>
+  <ul>
+    <li><b>Zoek op naam of plaats</b> en kies <span class="ui">Uitnodigen</span>. Je vindt goedgekeurde zaken die <b>Vindbaar in Pasr</b> aan hebben staan.</li>
+    <li><b>Zaak nog niet in Pasr?</b> Vul een e-mailadres in en kies <span class="ui">Uitnodiging maken</span>, of laat het leeg voor alleen een link en QR-code. Die uitnodiging werkt 14 dagen, voor één zaak.</li>
+    <li>Onder <b>Status per zaak</b> zie je wie is uitgenodigd, meedoet, weigerde of is ingetrokken. Je kunt een open uitnodiging <span class="ui">Intrekken</span> en een deelnemer <span class="ui">Verwijderen</span>.</li>
+    <li>Onder <b>Instellingen</b> wijzig je later of de actie open is voor je plaats en het minimum aantal zaken.</li>
+  </ul>
+  <figure class="w70"><img src="img/web-gezamenlijke-beheer.jpg" alt=""><figcaption>Uitnodigen en deelnemers van een actie <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>Uitgenodigd worden</h3>
+  <p>Word je zelf uitgenodigd, dan krijg je een mail en een melding, en staat de uitnodiging op Te doen en bovenaan Gezamenlijke acties. Kies <span class="ui">Accepteren</span> of <span class="ui">Weigeren</span>. Alleen de eigenaar van een zaak kan accepteren. Kreeg je een link, dan opent die een pagina met de actie; log in (of meld je gratis aan) en accepteer. Staan er onder <span class="ui">Open acties in je plaats</span> acties, dan kies je <span class="ui">Meedoen met mijn zaak</span>.</p>
+  <div class="row">
+    <figure class="h110"><img src="img/web-uitnodiging-actie.jpg" alt=""><figcaption>Een uitnodiging via een link <span class="src">(echte webcode)</span></figcaption></figure>
+    <figure class="h110"><img src="img/app-gezamenlijk.jpg" alt=""><figcaption>In de iPhone-app <span class="src">(namaak)</span></figcaption></figure>
+  </div>
+  <h3>De beloning uitgeven</h3>
+  <p>Scan je de stempelkaart van een klant, dan zie je onder <b>Gezamenlijke acties</b> hoeveel deelnemende zaken hij al bezocht (bijvoorbeeld "2 van 3 winkels bezocht"). Is het genoeg, dan kies je <span class="ui">Uitgeven</span>. Dat kan één keer per klant. Je kunt de lidcode ook invullen bij de actie en <span class="ui">Beloning controleren en uitgeven</span> kiezen. Als organisator kun je een actie stoppen; als deelnemer kun je uitstappen.</p>
+  <h3 class="k mint">Tips</h3>
+  <ul><li>Begin met een paar buren en een haalbaar minimum, bijvoorbeeld 3 zaken.</li><li>Medewerkers zien de acties van je zaak en geven de beloning uit bij het scannen; uitnodigen en accepteren doet de eigenaar.</li></ul>
+</section>
+
+<!-- ================================================================ 10 -->
+<section class="chapter" id="h10" data-num="10" data-title="Beloningen">
+  <div class="opener coral"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Klantenbinding · Hoofdstuk 10</div><h1>Beloningen</h1>
+    <p>Extra voordelen per stempelkaart: tussentijdse beloningen, terugkomacties, vrienden uitnodigen, tijdelijke stempelacties en VIP-niveaus. Niets staat standaard aan.</p></div>
+  <h3 class="k">Wat is het</h3>
+  <p>Onder <span class="ui">Beloningen</span> kies je eerst een stempelkaart en zet je daarna per onderdeel aan wat je wilt. Je kunt het pas instellen als je een stempelkaart hebt.</p>
+  <table>
+    <tr><th>Onderdeel</th><th>Wat het doet</th></tr>
+    <tr><td>Meerdere beloningen</td><td>Tot acht tussentijdse beloningen op weg naar de volle kaart. Eén per regel: aantal stempels, dubbele punt, beloning, bijvoorbeeld <code>3: Gratis koekje</code>.</td></tr>
+    <tr><td>Terugkomacties</td><td>Een herinnering voor klanten die een aantal dagen (7 tot 365, standaard 30) geen stempel kregen. Alleen voor klanten die meldingen toestaan; er gaan geen ongevraagde berichten uit.</td></tr>
+    <tr><td>Vrienden uitnodigen</td><td>Een klant deelt een persoonlijke link. De bonus (1 tot 3 stempels) komt pas na de eerste geldige scan van de nieuwe klant, voor beiden. Eenmalig per nieuwe deelnemer; zelfuitnodigingen tellen niet.</td></tr>
+    <tr><td>Tijdelijke stempelacties</td><td>Extra stempels binnen een periode, zoals dubbele stempels op dinsdag: vermenigvuldiger 1 tot 3, actiedag (-1 = elke dag, 0 = zondag t/m 6 = zaterdag), start- en einddatum.</td></tr>
+    <tr><td>Meerdere vestigingen</td><td>Namen van je vestigingen voor deze kaart (zie ook hoofdstuk 13).</td></tr>
+    <tr><td>VIP-niveaus</td><td>Brons, Zilver en Goud op basis van bezoeken. Jij kiest vanaf hoeveel bezoeken Zilver en Goud gelden, en eventueel een voordeel per niveau.</td></tr>
+    <tr><td>Marketingkalender en winkelstraatacties</td><td>Een voorkeur. Echte campagnes en gezamenlijke acties maak je in hun eigen onderdeel.</td></tr>
+  </table>
+  <h3 class="k">Instellen stap voor stap</h3>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Beloningen</span> en kies bovenin de stempelkaart.</li>
+    <li>Zet de onderdelen aan die je wilt gebruiken en vul ze in.</li>
+    <li>Kies <span class="ui">Instellingen van deze kaart opslaan</span>.</li>
+  </ol>
+  <figure class="h200"><img src="img/web-beloningen.jpg" alt=""><figcaption>Beloningen per stempelkaart <span class="src">(echte webcode)</span></figcaption></figure>
+  <p>Een tussentijdse beloning geef je uit bij het scannen: onder <b>Tussentijdse beloningen</b> staat bij de bereikte mijlpaal de knop <span class="ui">Uitgeven</span>.</p>
+  <h3 class="k mint">Tips</h3>
+  <ul><li>Een kleine tussentijdse beloning halverwege houdt klanten gemotiveerd.</li><li>Gebruik een tijdelijke stempelactie op je rustigste dag.</li></ul>
+</section>
+
+<!-- ================================================================ 11 -->
+<section class="chapter" id="h11" data-num="11" data-title="Scannen">
+  <div class="opener mint"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 11</div><h1>Scannen</h1>
+    <p>Eén scanner voor alles. Pasr Zakelijk herkent zelf wat je scant en laat groot zien wat je moet doen.</p></div>
+  <h2>Wat je kunt scannen</h2>
+  <table>
+    <tr><th>Wat</th><th>Herken je aan</th><th>Wat je daarna doet</th></tr>
+    <tr><td>Stempelkaart</td><td>Code begint met PZ</td><td>Stempel erbij of beloning inwisselen</td></tr>
+    <tr><td>Kortingsbon</td><td>Code begint met PC</td><td>Korting geven en bon verzilveren</td></tr>
+    <tr><td>Ticket</td><td>Code van 24 tekens</td><td>Groen: naar binnen. Rood: niet geldig</td></tr>
+    <tr><td>Klantenkaart</td><td>Barcode of kaartnummer, zoals KS-000124</td><td>Korting die nu geldt, bezoek registreren, beloning inwisselen</td></tr>
+  </table>
+  <p>Je scant in de app (tabblad <span class="ui">Scannen</span>), in het dashboard (knop <span class="ui">Scannen</span> rechtsboven), op pasr.nl/zakelijk/scan of op de Mac in een eigen venster. Actiecodes controleer je met de persoonlijke PA-code bij <span class="ui">Actiecodes</span> (hoofdstuk 8).</p>
+  <div class="row">
+    <figure class="h110"><img src="img/app-scannen.jpg" alt=""><figcaption>Scannen in de iPhone-app <span class="src">(namaak)</span></figcaption></figure>
+    <figure class="h110"><img src="img/app-scanresultaat.jpg" alt=""><figcaption>Aantal stempels kiezen <span class="src">(namaak)</span></figcaption></figure>
+  </div>
+  <h2>Een stempelkaart scannen</h2>
+  <ol class="steps">
+    <li>Kies <span class="ui">Camera aan</span> en geef je browser toegang tot de camera (in de app staat de camera meteen aan).</li>
+    <li>Richt de camera op de QR-code van je klant, of typ de code bij <span class="ui">Of typ de code van je klant</span> en kies <span class="ui">Zoek</span>.</li>
+    <li>Kies met <span class="ui">−</span> en <span class="ui">+</span> het aantal stempels (tot het maximum per scan) en kies <span class="ui">Stempel erbij</span>.</li>
+    <li>Is de kaart vol, dan staat er <b>Beloning klaar</b>. Kies <span class="ui">Beloning inwisselen</span> en bevestig; de stempels voor één kaart gaan eraf. Extra stempels blijven staan voor de volgende kaart.</li>
+  </ol>
+  <div class="row">
+    <figure class="h160"><img src="img/web-scan-stempelkaart.jpg" alt=""><figcaption>Resultaat van een scan met aantal-kiezer en ongedaan maken <span class="src">(echte webcode)</span></figcaption></figure>
+    <figure class="h160"><img src="img/web-scan-beloning.jpg" alt=""><figcaption>Een volle kaart: beloning klaar <span class="src">(echte webcode)</span></figcaption></figure>
+  </div>
+  <h3>Groen en rood, afkoeltijd en ongedaan maken</h3>
+  <ul>
+    <li><b>Afkoeltijd:</b> kreeg deze klant net een stempel, dan zie je in rood vanaf hoe laat de volgende kan en is <span class="ui">Stempel erbij</span> uit.</li>
+    <li><b>Ongedaan maken:</b> binnen 2 minuten maak je de laatste stempel of inwisseling ongedaan; de knop telt af. Het staat daarna doorgestreept in het logboek.</li>
+    <li><b>Tickets:</b> groen is geldig en meteen ingecheckt; rood vertelt waarom niet (al gebruikt om, ander event, afgemeld of afgelast, wachtlijst, onbekend).</li>
+    <li><b>Niet gevonden:</b> de code is geen ticket, klantenkaart of stempelkaart van je zaak.</li>
+  </ul>
+  <h3>Vestiging kiezen</h3>
+  <p>Heb je vestigingen, dan kies je bovenaan de scanner bij <span class="ui">Stempels voor vestiging</span> waar je staat. Die keuze blijft op dit apparaat bewaard.</p>
+  <figure class="w70"><img src="img/web-scannen.jpg" alt=""><figcaption>De scanner in het dashboard <span class="src">(echte webcode)</span></figcaption></figure>
+  <h3>Scannen op de Mac en met een USB-scanner</h3>
+  <p>Op de Mac open je het scanvenster met <kbd>⇧⌘S</kbd>. Je scant met de ingebouwde camera, een USB-camera of je iPhone als Continuity-camera (QR, Aztec, Code 128 en EAN-13). Je kunt een code ook typen of plakken. Een <b>USB-barcodescanner</b> werkt ook: die typt de code in het veld en drukt op Enter.</p>
+  <figure class="w80"><img src="img/mac-scannen.jpg" alt=""><figcaption>Het scanvenster op de Mac <span class="src">(namaak van de app)</span></figcaption></figure>
+  <div class="box tip"><b>Tip</b><p>Alleen jij en je medewerkers scannen, nooit de klant. Een telefoon of tablet bij de kassa met Pasr Zakelijk en vergrendelen met Face ID is genoeg.</p></div>
+</section>
+
+<!-- ================================================================ 12 -->
+<section class="chapter" id="h12" data-num="12" data-title="Groei">
+  <div class="opener"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 12</div><h1>Groei</h1>
+    <p>Zie hoe je klanten sparen, plan je acties en laat klanten je kaart, bon of event toevoegen vanaf je eigen website.</p></div>
+  <h2 id="h12-inzichten">Inzichten</h2>
+  <p>Inzichten toont geaggregeerde cijfers van je stempelkaarten en kortingsbonnen, zonder klantnamen of contactgegevens: klanten, nieuwe klanten en stempels in de laatste 30 dagen, terugkerende klanten (minstens twee stempelacties in 90 dagen), uitgegeven tussentijdse beloningen, en bewaarde en gebruikte kortingsbonnen. Daaronder staat de grafiek: kies <span class="ui">Stempels</span>, <span class="ui">Beloningen</span> of <span class="ui">Nieuwe leden</span>, de periode (<span class="ui">W</span>eek, <span class="ui">M</span>aand, <span class="ui">K</span>wartaal, <span class="ui">J</span>aar) en vergelijk met de vorige periode. Onderaan zie je hoeveel stempelkaarten, kortingsbonnen en actiecodes actief zijn.</p>
+  <figure class="h200"><img src="img/web-inzichten.jpg" alt=""><figcaption>Inzichten <span class="src">(echte webcode)</span></figcaption></figure>
+  <div class="box info"><b>Goed om te weten</b><p>De cijfers komen uit echte scans en inwisselingen. Het is geen omzetmeting.</p></div>
+
+  <h2 id="h12-marketing">Marketingkalender</h2>
+  <p>Plan je acties per kaart en houd bij wat je wanneer doet. Er worden geen berichten automatisch verstuurd.</p>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Marketingkalender</span>.</li>
+    <li>Vul een <b>campagnenaam</b> in, kies een <b>stempelkaart</b> (of <span class="ui">Algemene actie</span>), de <b>start</b> en het <b>einde</b>.</li>
+    <li>Kies het <b>kanaal</b> (Social, Winkel, Website of E-mail) en de <b>status</b> (Concept, Gepland of Afgerond), en schrijf eventueel een omschrijving.</li>
+    <li>Kies <span class="ui">Campagne opslaan</span>. Bij een campagne met een stempelkaart opent <span class="ui">Promotiemateriaal maken</span> meteen de beelden.</li>
+  </ol>
+  <figure><img src="img/web-marketing.jpg" alt=""><figcaption>De marketingkalender <span class="src">(echte webcode)</span></figcaption></figure>
+
+  <h2 id="h12-promo">Promotiemateriaal en flyer</h2>
+  <p>Kies onder <span class="ui">Promotiemateriaal</span> een stempelkaart, kortingsbon of actiecode. Pasr maakt beelden met de echte gegevens, de officiële Pasr-stempel en je persoonlijke QR-link:</p>
+  <table>
+    <tr><th>Formaat</th><th>Pixels</th></tr>
+    <tr><td>Instagram / Facebook vierkant</td><td>1080 × 1080</td></tr>
+    <tr><td>Instagram staand</td><td>1080 × 1350</td></tr>
+    <tr><td>Story / WhatsApp-status</td><td>1080 × 1920</td></tr>
+    <tr><td>Website / LinkedIn banner</td><td>1200 × 630</td></tr>
+    <tr><td>A4-printposter</td><td>2480 × 3508</td></tr>
+  </table>
+  <p>Kies <span class="ui">Licht</span> of <span class="ui">Donker</span> en download één PNG of alle ontwerpen als ZIP. Bij een conceptkaart verschijnt geen werkende QR-code. De printbare A4-flyer van een online stempelkaart open je met <span class="ui">Flyer</span>.</p>
+  <figure class="h160"><img src="img/web-promotiemateriaal.jpg" alt=""><figcaption>Promotiemateriaal voor de Koffiekaart <span class="src">(echte webcode)</span></figcaption></figure>
+
+  <h2 id="h12-knop">Knop voor je website</h2>
+  <p>Zet de knop <b>Voeg toe aan Pasr</b> bij je stempelkaart, klantenkaart, event, kortingsbon of actiecode op je eigen website. Klanten tikken erop, Pasr opent en het staat erin. Zonder Pasr opent pasr.nl met de downloadknoppen.</p>
+  <ol class="steps">
+    <li>Kies bij een online stempelkaart, klantenkaart, event, kortingsbon of actiecode <span class="ui">Knop voor je website</span>.</li>
+    <li>Kies de kleur (<span class="ui">Zwart</span>, <span class="ui">Wit</span> of <span class="ui">Nachtblauw</span>) en het formaat (<span class="ui">Groot</span> of <span class="ui">Compact</span>).</li>
+    <li>Kies <span class="ui">Kopieer HTML-code</span> en plak die op je website. Je kunt ook alleen de link kopiëren, een PNG voor drukwerk of een SVG downloaden.</li>
+    <li>Download onder <span class="ui">QR-code voor toonbank en kassabon</span> de QR-code: scannen opent dezelfde link.</li>
+  </ol>
+  <p>De HTML-code ziet er zo uit:</p>
+  <pre class="code">&lt;a href="https://pasr.nl/add/k/…"&gt;
+  &lt;img src="https://pasr.nl/badge/nl/zwart.svg"
+       alt="Voeg toe aan Pasr" height="52"&gt;
+&lt;/a&gt;</pre>
+  <figure class="h160"><img src="img/web-knop-website.jpg" alt=""><figcaption>Knop voor je website, met HTML-code en QR-code <span class="src">(echte webcode)</span></figcaption></figure>
+  <p>De links hebben een vaste vorm: <code>pasr.nl/add/k/…</code> (stempelkaart), <code>/m/</code> (klantenkaart), <code>/e/</code> (event), <code>/c/</code> (kortingsbon) en <code>/a/</code> (actiecode).</p>
+  <div class="row"><figure class="h110"><img src="img/app-delen.jpg" alt=""><figcaption>QR-code, flyer en knop in de iPhone-app <span class="src">(namaak)</span></figcaption></figure></div>
+</section>
+
+<!-- ================================================================ 13 -->
+<section class="chapter" id="h13" data-num="13" data-title="Je zaak">
+  <div class="opener mint"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 13</div><h1>Je zaak</h1>
+    <p>Vestigingen, medewerkers, instellingen, je account, het logboek en de Prullenbak.</p></div>
+  <h2 id="h13-vestigingen">Vestigingen</h2>
+  <p>Gebruik dezelfde stempelkaart in meerdere filialen. Medewerkers kiezen hun vestiging bij het scannen; de cijfers blijven per vestiging gescheiden.</p>
+  <ol class="steps">
+    <li>Ga naar <span class="ui">Vestigingen</span>.</li>
+    <li>Vul de <b>naam</b> en eventueel het <b>adres</b> in en kies <span class="ui">Vestiging toevoegen</span>.</li>
+    <li>Onder <span class="ui">Mijn vestigingen</span> zie je per vestiging de stempels van de laatste 30 dagen. Met <span class="ui">Deactiveren</span> haal je een vestiging uit de keuze in de scanner; met <span class="ui">Activeren</span> zet je hem terug.</li>
+  </ol>
+  <figure><img src="img/web-vestigingen.jpg" alt=""><figcaption>Vestigingen <span class="src">(echte webcode)</span></figcaption></figure>
+
+  <h2 id="h13-medewerkers">Medewerkers</h2>
+  <p>Hoe je iemand uitnodigt, lees je in hoofdstuk 2. Onder <span class="ui">Wie kan scannen</span> zie je iedereen met zijn rol en status: actief, uitnodiging open, uitnodiging verlopen of ingetrokken. Met <span class="ui">Toegang intrekken</span> (of <span class="ui">Uitnodiging intrekken</span>) kan iemand direct niet meer scannen voor je zaak. Het logboek blijft staan. In de iPhone-app veeg je iemand naar links om in te trekken.</p>
+  <div class="row">
+    <figure><img src="img/web-medewerkers.jpg" alt=""><figcaption>Een uitnodiging maken en wie kan scannen <span class="src">(echte webcode)</span></figcaption></figure>
+  </div>
+  <div class="row"><figure class="h110"><img src="img/app-medewerkers.jpg" alt=""><figcaption>Medewerkers in de iPhone-app <span class="src">(namaak)</span></figcaption></figure>
+    <figure class="h110"><img src="img/app-instellingen.jpg" alt=""><figcaption>Instellingen in de iPhone-app <span class="src">(extra namaak, uit SettingsView)</span></figcaption></figure></div>
+
+  <h2 id="h13-instellingen">Instellingen</h2>
+  <ul>
+    <li><b>Gegevens van je zaak:</b> naam, plaats, website en wat voor zaak het is. Verander je je website, dan vraagt Pasr of je je logo en kleur opnieuw wilt ophalen voor je kaarten.</li>
+    <li><b>Scannen:</b> afkoeltijd (0 tot 1440 minuten) en hoogstens zoveel stempels per scan (1 tot 30). Zie hoofdstuk 4.</li>
+    <li><b>Vindbaar in Pasr:</b> met de schakelaar vinden klanten je stempelkaart in de app Pasr bij Kaart toevoegen › Stempelkaart. Typ je adres en kies het uit de lijst (alleen Nederlandse adressen), dan staat je kaart ook bij <b>In de buurt</b>. Zonder locatie ben je vindbaar op naam en plaats.</li>
+    <li><b>Weergave</b> (in de app): automatisch, licht of donker.</li>
+    <li><b>Privacy en beveiliging</b> (in de app): vergrendelen met Face ID of Touch ID (hoofdstuk 2).</li>
+  </ul>
+  <figure><img src="img/web-instellingen.jpg" alt=""><figcaption>Instellingen in het dashboard <span class="src">(echte webcode)</span></figcaption></figure>
+
+  <h2 id="h13-account">Account en account verwijderen</h2>
+  <p>Onder <span class="ui">Account</span> (in de zijbalk onderaan, of via je initiaal rechtsboven) zie je met welk e-mailadres je bent ingelogd, vraag je een mail aan voor een nieuw wachtwoord en log je uit op dit apparaat.</p>
+  <div class="box let"><b>Account verwijderen</b><p>Je Pasr-account wordt verwijderd, ook in de app Pasr. Ben je eigenaar, dan verdwijnen ook je zaak, kaarten en leden. Dit kan niet ongedaan worden gemaakt. In het dashboard typ je ter bevestiging <b>VERWIJDER</b>.</p></div>
+  <figure class="w80"><img src="img/web-account.jpg" alt=""><figcaption>Account <span class="src">(echte webcode)</span></figcaption></figure>
+
+  <h2 id="h13-logboek">Logboek en Prullenbak</h2>
+  <p>Het <b>logboek</b> bewaart elke stempel, inwisseling en ongedaanmaking: wanneer, wat (met de stand ervoor en erna), welke kaart, de laatste tekens van de klantcode, en door wie (en op welk apparaat, zoals "Webscanner"). Niemand kan het logboek wissen, ook jij niet. Doorgestreept is ongedaan gemaakt. Je opent het via Vandaag › <span class="ui">Hele logboek bekijken</span>.</p>
+  <figure><img src="img/web-logboek.jpg" alt=""><figcaption>Het logboek <span class="src">(echte webcode)</span></figcaption></figure>
+  <p>In de <b>Prullenbak</b> staan verwijderde stempelkaarten, kortingsbonnen en actiecodes. Klanten zien ze niet meer. Selecteer items en kies <span class="ui">Definitief verwijderen</span> om ze echt weg te halen.</p>
+  <figure class="w80"><img src="img/web-prullenbak.jpg" alt=""><figcaption>De Prullenbak <span class="src">(echte webcode)</span></figcaption></figure>
+</section>
+
+<!-- ================================================================ 14 -->
+<section class="chapter" id="h14" data-num="14" data-title="Mac-app en widgets">
+  <div class="opener"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 14</div><h1>Mac-app en widgets</h1>
+    <p>Je hele zaak op de Mac, en je cijfers op je bureaublad of beginscherm.</p></div>
+  <h2>De Mac-app</h2>
+  <p>Pasr Zakelijk voor Mac is een echte Mac-app (macOS 14 of nieuwer), met dezelfde schermen als op de iPhone en iPad. Je koopt hem niet apart: het is dezelfde app in de App Store. Links staat de zijbalk: <span class="ui">Vandaag</span> en <span class="ui">Scannen</span>, dan <span class="ui">Klantenbinding</span>, <span class="ui">Groei</span> en <span class="ui">Je zaak</span>. Medewerkers zien alleen <span class="ui">Scannen</span> en <span class="ui">Instellingen</span>. Je kunt meerdere vensters openen, en scannen gebeurt in een eigen venster.</p>
+  <figure><img src="img/mac-vandaag.jpg" alt=""><figcaption>Vandaag in de Mac-app <span class="src">(namaak van de app)</span></figcaption></figure>
+  <h2>Sneltoetsen</h2>
+  <table>
+    <tr><th>Toets</th><th>Wat het doet</th></tr>
+    <tr><td><kbd>⌘N</kbd></td><td>Nieuwe stempelkaart (via Archief › Nieuw ook de andere soorten)</td></tr>
+    <tr><td><kbd>⌥⌘N</kbd></td><td>Nieuw venster</td></tr>
+    <tr><td><kbd>⌘F</kbd></td><td>Zoek in je zaak</td></tr>
+    <tr><td><kbd>⇧⌘S</kbd></td><td>Scannen (eigen venster)</td></tr>
+    <tr><td><kbd>⌘R</kbd></td><td>Ververs het scherm dat je ziet</td></tr>
+    <tr><td><kbd>⇧⌘R</kbd></td><td>Gegevens verversen (ook de widgets)</td></tr>
+    <tr><td><kbd>⌘1</kbd> … <kbd>⌘7</kbd></td><td>Menu Zaak: 1 Vandaag, 2 Stempelkaarten, 3 Klantenkaarten, 4 Tickets, 5 Gezamenlijke acties, 6 Inzichten, 7 Medewerkers</td></tr>
+    <tr><td><kbd>⌘,</kbd></td><td>Instellingen</td></tr>
+  </table>
+  <p>In het menu <span class="ui">Help</span> staan <span class="ui">Hulp en contact</span> (pasr.nl/support) en <span class="ui">Pasr Zakelijk op pasr.nl</span>. Meldingen werken ook op de Mac.</p>
+  <div class="row">
+    <figure><img src="img/mac-klantenkaart.jpg" alt=""><figcaption>Klantenkaart met kortingsperiodes <span class="src">(namaak)</span></figcaption></figure>
+    <figure><img src="img/mac-gezamenlijk.jpg" alt=""><figcaption>Gezamenlijke acties <span class="src">(namaak)</span></figcaption></figure>
+  </div>
+  <figure class="w80"><img src="img/mac-inzichten.jpg" alt=""><figcaption>Inzichten op de Mac <span class="src">(namaak van de app)</span></figcaption></figure>
+  <h2>Widgets</h2>
+  <p>Voor iPhone, iPad en Mac zijn er drie widgets:</p>
+  <table>
+    <tr><th>Widget</th><th>Formaten</th><th>Wat je ziet</th></tr>
+    <tr><td>Vandaag</td><td>Klein, middel</td><td>Stempels, beloningen en nieuwe leden van vandaag, met de trend van deze week</td></tr>
+    <tr><td>Komend event</td><td>Klein, middel</td><td>Je eerstvolgende event met het aantal aanmeldingen en wie er binnen is</td></tr>
+    <tr><td>Te doen</td><td>Middel, groot</td><td>Uitnodigingen voor gezamenlijke acties, concepten en codes of kortingsperiodes die bijna aflopen</td></tr>
+  </table>
+  <ol class="steps">
+    <li>Voeg de widget toe zoals elke widget (op de Mac: klik met de rechtermuisknop op het bureaublad › Wijzig widgets).</li>
+    <li>Kies bij het bewerken van de widget de zaak.</li>
+    <li>Tik of klik op de widget om dat onderdeel in de app te openen.</li>
+  </ol>
+  <div class="box info"><b>Goed om te weten</b><p>Widgets tonen wat de app als laatste ophaalde; ze loggen zelf niet in. Open de app of kies <kbd>⇧⌘R</kbd> om ze bij te werken.</p></div>
+  <figure><img src="img/mac-widgets.jpg" alt=""><figcaption>Widgets op het bureaublad van de Mac <span class="src">(namaak van de app)</span></figcaption></figure>
+</section>
+
+<!-- ================================================================ 15 -->
+<section class="chapter" id="h15" data-num="15" data-title="Privacy en veiligheid">
+  <div class="opener mint"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 15</div><h1>Privacy en veiligheid</h1>
+    <p>Je ziet cijfers; persoonsgegevens alleen waar het moet (tickets).</p></div>
+  <h2>Welke klantgegevens je ziet</h2>
+  <table>
+    <tr><th>Product</th><th>Wat je ziet</th><th>Wat je niet ziet</th></tr>
+    <tr><td>Stempelkaart</td><td>Laatste tekens van een anonieme klantcode, stempels, beloningen, wanneer</td><td>Naam, e-mailadres, telefoonnummer</td></tr>
+    <tr><td>Kortingsbon, actiecode</td><td>Aantallen en de code die je verzilvert</td><td>Wie de klant is</td></tr>
+    <tr><td>Klantenkaart</td><td>Kaartnummer en de stand; de naam alleen als de klant dat aanzet</td><td>Contactgegevens</td></tr>
+    <tr><td>Tickets</td><td>Voornaam, achternaam, e-mailadres, geboortedatum, alleen voor je eigen event</td><td>Gegevens van andere events</td></tr>
+    <tr><td>Gezamenlijke acties</td><td>Hoeveel deelnemende zaken een klant bezocht</td><td>Gegevens van klanten van andere zaken; er wordt niets gedeeld</td></tr>
+  </table>
+  <h2>Bewaartermijnen</h2>
+  <ul>
+    <li><b>Tickets:</b> naam, e-mailadres en geboortedatum worden 30 dagen na het event (of na het afgelasten) gewist.</li>
+    <li><b>Uitnodigingslinks:</b> voor medewerkers en voor gezamenlijke acties 14 dagen geldig.</li>
+    <li><b>Logboek:</b> blijft staan zolang je zaak bestaat; niemand kan het wissen. Het verdwijnt als de zaak wordt verwijderd.</li>
+    <li><b>Kaarten:</b> logo, kleur en tekst bewaart Pasr tot je de kaart of je account verwijdert.</li>
+    <li><b>Je account:</b> tot je het verwijdert (hoofdstuk 13).</li>
+  </ul>
+  <h2>Medewerkers</h2>
+  <p>Je ziet de naam en het e-mailadres van je medewerkers, en in het logboek welk account (en welk apparaat) wanneer een stempel gaf, een beloning inwisselde of iets ongedaan maakte.</p>
+  <h2>Misbruik voorkomen</h2>
+  <ul>
+    <li>Alleen jij en je medewerkers scannen, nooit de klant.</li>
+    <li>Bij stempelkaarten kies je een afkoeltijd en het maximum per scan.</li>
+    <li>Een ticket kan maar één keer naar binnen; een kortingsbon één keer worden verzilverd.</li>
+    <li>Vergist? Binnen 2 minuten maak je het ongedaan, en alles staat in het logboek.</li>
+    <li>Vergrendel de app met Face ID of Touch ID als het toestel aan de kassa ligt.</li>
+    <li>Formulieren op pasr.nl hebben verborgen velden tegen bots en een limiet op het aantal aanmeldingen.</li>
+  </ul>
+  <div class="box info"><b>Meer lezen</b><p>De volledige privacyverklaring staat op pasr.nl/privacy, met een eigen deel over stempelkaarten van ondernemers. pasr.nl gebruikt geen tracking, statistieken of advertenties. De app Pasr Zakelijk heeft geen reclame en geen tracking.</p></div>
+</section>
+
+<!-- ================================================================ 16 -->
+<section class="chapter faq" id="h16" data-num="16" data-title="Veelgestelde vragen">
+  <div class="opener"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 16</div><h1>Veelgestelde vragen</h1>
+    <p>De vragen van pasr.nl/zakelijk, en een paar meer.</p></div>
+  <h3>Wat kost Pasr Zakelijk?</h3><p>Niets. Geen abonnement en geen kosten per klant, stempel, ticket of scan. Ook geen reclame op je kaart of ticket.</p>
+  <h3>Kan ik betaalde tickets verkopen?</h3><p>Nee. Tickets zijn alleen voor gratis events, zoals een borrel, workshop of open dag. Zo blijft het simpel: geen betalingen en geen ticketvoorwaarden.</p>
+  <h3>Welke gegevens vragen jullie bij een ticket?</h3><p>Voornaam, achternaam, e-mailadres en geboortedatum. Je ziet ze alleen voor je eigen event, en 30 dagen na het event wissen we ze.</p>
+  <h3>Welke gegevens zie ik bij stempelkaarten, bonnen en de klantenkaart?</h3><p>Bij stempelkaarten, kortingsbonnen en actiecodes alleen aantallen en de laatste tekens van een anonieme klantcode; Pasr vraagt je klanten daarvoor geen naam, e-mailadres of telefoonnummer. Bij een klantenkaart zie je het kaartnummer, en de naam alleen als de klant dat aanzet.</p>
+  <h3>Heb ik een kassakoppeling of apparaat nodig?</h3><p>Nee. Je scant met de app Pasr Zakelijk op je telefoon of tablet, of met de scanner in je browser. Ook de klantenkaart scan je zo: korting en spaarstand zie je meteen. Een koppeling met je kassa is er niet.</p>
+  <h3>Moeten mijn klanten de app Pasr hebben?</h3><p>Voor een stempelkaart en tickets niet: sparen werkt ook in de browser, en het ticket met QR-code staat op pasr.nl en in de bevestigingsmail. Met de gratis app Pasr (iPhone en Android) staat alles bij elkaar, ook in Apple Wallet of Google Wallet, met meldingen. Lid worden van je klantenkaart doet je klant in de app Pasr.</p>
+  <h3>Hoe voorkom ik misbruik?</h3><p>Alleen jij en je medewerkers scannen, nooit de klant. Bij stempelkaarten kies je een afkoeltijd en het maximum per scan, en een ticket kan maar één keer naar binnen. Alles staat in een logboek dat niemand kan wissen.</p>
+  <h3>Kan ik een stempel terugdraaien?</h3><p>Ja. Binnen 2 minuten maak je de laatste stempel of inwisseling ongedaan. Het staat daarna doorgestreept in het logboek.</p>
+  <h3>Kan ik met andere zaken samenwerken?</h3><p>Ja, met een gezamenlijke actie. Jij nodigt de zaken uit en elke zaak beslist zelf of hij meedoet; de actie start zodra genoeg zaken meedoen.</p>
+  <h3>Kan ik mijn zaak ook in de browser beheren?</h3><p>Ja. Log in op pasr.nl/zakelijk met hetzelfde Pasr-account als in de app. Je maakt er stempelkaarten, klantenkaarten, events en acties, scant, nodigt medewerkers uit en bekijkt je cijfers.</p>
+  <h3>Hoe lang duurt het aanmelden?</h3><p>Een account maken en je zaak aanmelden kost een paar minuten. We keuren elke zaak met de hand goed, meestal binnen een werkdag. In de tussentijd maak je alvast je eerste kaart of event.</p>
+  <h3>Op welke apparaten werkt Pasr Zakelijk?</h3><p>De app Pasr Zakelijk werkt op iPhone en iPad met iOS 17 of nieuwer, op de Mac met macOS 14 of nieuwer en op Android 8 of nieuwer (download op pasr.nl/zakelijk/download). Het dashboard en de scanner werken in elke moderne browser.</p>
+  <h3>Hoeveel stempelkaarten kan ik maken?</h3><p>Tot 5 per zaak, elk met 2 tot 30 stempels. Klantenkaarten, events, kortingsbonnen en actiecodes komen daar los bij.</p>
+  <h3>Een medewerker gaat weg. Wat nu?</h3><p>Kies bij Medewerkers <span class="ui">Toegang intrekken</span>. Hij kan direct niet meer scannen voor je zaak; wat hij deed blijft in het logboek staan.</p>
+  <h3>Mijn kaart staat niet in Pasr bij In de buurt.</h3><p>Zet in Instellingen <b>Vindbaar in Pasr</b> aan, typ je adres en kies het uit de lijst, en sla op. Je kaart moet online staan.</p>
+  <h3>Pasr Zakelijk voor Android: waar vind ik updates?</h3><p>De app staat niet in de Play Store. Download de nieuwste versie op pasr.nl/zakelijk/download; in de app staat bij Instellingen ook <span class="ui">Nieuwste versie downloaden</span>.</p>
+</section>
+
+<!-- ================================================================ 17 -->
+<section class="chapter" id="h17" data-num="17" data-title="Hulp en contact">
+  <div class="opener mint"><img class="stamp" src="img/pasr-stamp.svg" alt=""><div class="num">Hoofdstuk 17</div><h1>Hulp en contact</h1>
+    <p>Kom je er niet uit? We helpen je graag.</p></div>
+  <table>
+    <tr><th>Wat</th><th>Waar</th></tr>
+    <tr><td>Mail ons</td><td><a href="mailto:support@pasr.nl">support@pasr.nl</a>. Zet erbij welk apparaat je gebruikt en wat er misgaat; een screenshot helpt.</td></tr>
+    <tr><td>Hulp en veelgestelde vragen</td><td><a href="https://pasr.nl/support/">pasr.nl/support</a></td></tr>
+    <tr><td>Pasr Zakelijk</td><td><a href="https://pasr.nl/zakelijk/">pasr.nl/zakelijk</a></td></tr>
+    <tr><td>Dashboard</td><td><a href="https://pasr.nl/zakelijk/dashboard/">pasr.nl/zakelijk/dashboard</a></td></tr>
+    <tr><td>Scanner in de browser</td><td><a href="https://pasr.nl/zakelijk/scan/">pasr.nl/zakelijk/scan</a></td></tr>
+    <tr><td>Privacyverklaring</td><td><a href="https://pasr.nl/privacy/#stempelkaarten-van-ondernemers">pasr.nl/privacy</a></td></tr>
+    <tr><td>App voor iPhone, iPad en Mac</td><td><a href="https://apps.apple.com/nl/app/pasrzakelijk/id6837907454">App Store: Pasr Zakelijk</a></td></tr>
+    <tr><td>App voor Android</td><td><a href="https://pasr.nl/zakelijk/download/">pasr.nl/zakelijk/download</a></td></tr>
+    <tr><td>Pasr voor je klanten</td><td><a href="https://apps.apple.com/nl/app/pasr-klantenkaarten/id6829229123">App Store: Pasr</a> · <a href="https://pasr.nl/android/">pasr.nl/android</a></td></tr>
+    <tr><td>Dit handboek</td><td><a href="https://pasr.nl/zakelijk/handboek/Handboek-Pasr-Zakelijk.pdf">pasr.nl/zakelijk/handboek/Handboek-Pasr-Zakelijk.pdf</a></td></tr>
+  </table>
+  <h2>Hulp in de app</h2>
+  <p>In de app vind je onder <span class="ui">Instellingen</span> › <span class="ui">Hulp</span>: <span class="ui">Hulp en contact</span>, <span class="ui">Privacyverklaring</span>, <span class="ui">Wat is nieuw</span>, <span class="ui">Beoordeel Pasr Zakelijk</span> en <span class="ui">Pasr Zakelijk op pasr.nl</span>. Op de Mac staan ze in het menu <span class="ui">Help</span>.</p>
+  <h2>Hulp in het dashboard</h2>
+  <p>In het dashboard klik je rechtsboven op je initiaal; onder <span class="ui">Hulp</span> staan <span class="ui">Handboek (PDF)</span> en <span class="ui">Hulp en contact</span>. Op een telefoon vind je ze onder <span class="ui">Meer</span> › <span class="ui">Hulp</span>, en onderaan elke pagina van pasr.nl/zakelijk staat de link <span class="ui">Handboek (PDF)</span>.</p>
+  <figure class="h70"><img src="img/web-accountmenu.jpg" alt=""><figcaption>Het accountmenu met Hulp <span class="src">(echte webcode)</span></figcaption></figure>
+  <div class="end"><img src="img/app-icoon.png" alt=""><b style="font:800 15pt var(--display)">Veel succes met je zaak</b><p style="margin:2mm 0 0;color:var(--ink-2)">Handboek Pasr Zakelijk · versie 1.0.4 · november 2026</p></div>
+</section>
+
+</body>
+</html>
