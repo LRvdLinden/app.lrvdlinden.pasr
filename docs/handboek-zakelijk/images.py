@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Zet de schermafbeeldingen uit build/raw/ (PNG, deviceScaleFactor 2) om naar img/<naam>.jpg (JPEG kwaliteit 85,
-hoogstens 2400 px breed), alleen de afbeeldingen die handboek.html gebruikt. Daarna: node render.cjs."""
+hoogstens 1400 px breed), alleen de afbeeldingen die handboek.html gebruikt. Daarna: node render.cjs."""
 import re
 import sys
 from pathlib import Path
@@ -25,9 +25,9 @@ for name in used:
         im = bg
     else:
         im = im.convert("RGB")
-    if im.width > 2400:
-        im = im.resize((2400, round(im.height * 2400 / im.width)), Image.LANCZOS)
-    im.save(HERE / "img" / f"{name}.jpg", "JPEG", quality=85, optimize=True, progressive=True)
+    if im.width > 1400:
+        im = im.resize((1400, round(im.height * 1400 / im.width)), Image.LANCZOS)
+    im.save(HERE / "img" / f"{name}.jpg", "JPEG", quality=74, optimize=True, progressive=True)
 print(f"{len(used) - len(missing)} afbeeldingen omgezet")
 if missing:
     sys.exit("Ontbreekt in build/raw (eerst shots/web.cjs en shots/app.cjs): " + ", ".join(missing))
