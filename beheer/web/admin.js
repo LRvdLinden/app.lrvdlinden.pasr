@@ -28,7 +28,7 @@
     if (!res.ok) {
       const code = body.error || "server_error";
       if (res.status === 401 && action !== "login") { signOut("Je sessie is verlopen. Log opnieuw in."); }
-      throw Object.assign(new Error(errText(code, body)), { code, status: res.status });
+      throw Object.assign(new Error(errText(code, body)), { code, status: res.status, body });
     }
     return body;
   }
