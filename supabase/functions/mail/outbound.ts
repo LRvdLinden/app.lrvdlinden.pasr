@@ -19,6 +19,8 @@ export type Outgoing = {
   /** persoonlijke afmeldcode-urls (campagne/uitnodiging per ontvanger): eenklik-adres + pagina */
   unsub?: { page: string; oneClick?: string };
   vars?: { voornaam?: string };
+  /** handtekening Team Pasr onder de inhoud (standaard true) */
+  signature?: boolean;
 };
 
 export type BuiltMail = {
@@ -35,7 +37,7 @@ export function buildMessage(o: Outgoing): BuiltMail {
   const sender = addressOf(o.from);
   const rendered = renderMail({
     brand: o.brand, kind: o.kind, subject: subjectFor(o.subject, o.number ?? undefined), markdown: o.markdown,
-    unsubUrl: o.unsub?.page, vars: o.vars,
+    unsubUrl: o.unsub?.page, vars: o.vars, signature: o.signature,
   });
   const headers: Record<string, string> = { "X-Pasr-Ticket": o.number ? String(o.number) : o.kind === "news" || o.kind === "invite" ? "campaign" : "mail" };
   if (o.unsub) {

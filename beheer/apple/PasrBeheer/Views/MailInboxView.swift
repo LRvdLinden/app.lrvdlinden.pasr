@@ -292,6 +292,7 @@ struct MailThreadView: View {
     @State private var bcc = ""
     @State private var attachments: [MailDraftAttachment] = []
     @State private var brand: MailBrand = .pasr
+    @State private var signature = true
     @State private var after = "pending"
     @State private var sending = false
     @State private var confirming = false
@@ -456,10 +457,11 @@ struct MailThreadView: View {
                 MailAddressField(title: "CC", prompt: "Extra adressen (komma, spatie of regel)", text: $cc)
                 MailAddressField(title: "BCC", prompt: "Verborgen adressen (komma, spatie of regel)", text: $bcc)
                 MailBodyEditor(text: $text)
+                MailSignatureToggle(isOn: $signature, brand: brand)
                 MailAttachmentsRows(attachments: $attachments)
                 Toggle("Voorbeeld tonen", isOn: $showPreview)
                 if showPreview {
-                    MailPreviewSection(markdown: text, brand: brand, subject: t.subject ?? "")
+                    MailPreviewSection(markdown: text, brand: brand, subject: t.subject ?? "", signature: signature)
                 }
                 Picker("Status na verzenden", selection: $after) {
                     Text("Wacht op reactie").tag("pending")
@@ -488,7 +490,7 @@ struct MailThreadView: View {
         var s = String(localized: "Het antwoord gaat per mail als \(brand.title) naar de klant")
         if !ccList.valid.isEmpty { s += String(localized: " en \(ccList.valid.count) cc") }
         if !bccList.valid.isEmpty { s += String(localized: " en \(bccList.valid.count) bcc") }
-        return s + String(localized: ". Dit kan niet worden teruggedraaid.")
+        return s + String(localized: ". Dit kan niet worden teruggedraaid.") + signatureNote(signature, brand)
     }
 
     private var canSend: Bool {
@@ -534,7 +536,7 @@ struct MailThreadView: View {
         sending = true; sendError = nil
         defer { sending = false }
         var p: [String: Any] = ["number": number, "body_md": text.trimmingCharacters(in: .whitespacesAndNewlines),
-                                "brand": brand.rawValue, "status": after]
+                                "brand": brand.rawValue, "status": after, "signature": signature]
         if !ccList.valid.isEmpty { p["cc"] = ccList.valid }
         if !bccList.valid.isEmpty { p["bcc"] = bccList.valid }
         if !attachments.isEmpty { p["attachments"] = attachments.map { $0.json } }

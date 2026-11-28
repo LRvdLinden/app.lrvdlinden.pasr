@@ -301,6 +301,8 @@ final class ComposeDraft: ObservableObject {
     @Published var brand: MailBrand = .pasr
     @Published var attachments: [MailDraftAttachment] = []
     @Published var testAddress = ""
+    /// Handtekening Team Pasr / Team Pasr Zakelijk onder de mail (standaard aan)
+    @Published var signature = true
 
     var toList: MailAddressList { MailAddressList.parse(to) }
     var ccList: MailAddressList { MailAddressList.parse(cc) }
@@ -319,6 +321,7 @@ final class NewsletterDraft: ObservableObject {
     @Published var subject = ""
     @Published var body = ""
     @Published var testAddress = ""
+    @Published var signature = true
     /// Hetzelfde id bij een nieuwe poging, zodat de server niet dubbel verstuurt (idempotent op request_id).
     @Published var requestID = UUID().uuidString.lowercased()
 

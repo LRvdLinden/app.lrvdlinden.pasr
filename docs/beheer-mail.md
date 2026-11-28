@@ -75,6 +75,15 @@ Na elke `poll_inbox`-ronde geeft de functie `mail` de database één seintje (`p
 - Bij BCC-groepen zonder persoonlijke code: `https://pasr.nl/afmelden/?k=nieuws&s=users|owners`; daar vult iemand zijn e-mailadres in (`pasr_mail_news_unsub_email`, met honeypot en rem).
 - Afgemelden staan in `pasr_mail_optout`, zijn uit elke doelgroep en uit BCC-lijsten gehaald en krijgen geen nieuwsbrief of uitnodiging meer. Losse mails en ticketmail worden nooit geblokkeerd.
 
+## Handtekening Team Pasr
+
+Elke mail die via het beheer wordt verstuurd, krijgt standaard een handtekening: een afbeelding (JPG 1200x300, getoond op 600x150) onder de inhoud en boven de voet (afmeldregel en juridische links). Merk `pasr`: `https://pasr.nl/assets/handtekening-pasr.jpg`, alt "Team Pasr", linkt naar `https://pasr.nl/`. Merk `zakelijk`: `handtekening-pasr-zakelijk.jpg`, alt "Team Pasr Zakelijk", linkt naar `https://pasr.nl/zakelijk/`. De bestanden staan in `website/assets/` en gaan met de Website-workflow mee (sha256-manifest: nieuwe bestanden worden automatisch geüpload). De afbeelding is `width:100%;max-width:600px;height:auto` (past zich aan op mobiel) en heeft een eigen donker vlak, dus werkt in licht en donker. De platte tekst krijgt "Team Pasr" resp. "Team Pasr Zakelijk" plus de site-URL, vóór de afmeldregel.
+
+- `renderMail({ …, signature })` (standaard `true`; `false` laat hem weg) geldt voor alle soorten (`reply`, `mail`, `news`, `invite`), dus ook voor systeemmails die `renderMail` gebruiken.
+- De acties `compose`, `thread_reply`, `test`, `preview` en `campaign_send` nemen een veld `signature` (boolean, standaard `true`; alleen `false` zet hem uit). `preview` toont hem dus ook.
+- Een campagne wordt in rondes verstuurd. Staat de handtekening uit, dan bewaart `campaign_send` dat als slotregel `<!--pasr:geen-handtekening-->` in de opgeslagen tekst van de campagne (geen extra databasekolom, dus geen migratie); `campaign.ts` haalt die regel er per mail weer af en de vlag komt nooit in een mail.
+- Beheer-UI (web, PasrBeheer en LRbeheer): schakelaar "Handtekening Team Pasr / Team Pasr Zakelijk toevoegen" (standaard aan, naam volgt het merk) bij Nieuwe mail, Antwoord en Nieuwsbrief; de bevestiging toont de keuze en het voorbeeld ook de handtekening.
+
 ## Secrets (GitHub repository secrets, door Léon te zetten)
 
 De workflow `backend.yml` zet ze als function-secrets. Ontbreekt iets, dan komt er een waarschuwing en geen fout.

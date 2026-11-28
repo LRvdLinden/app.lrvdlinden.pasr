@@ -1,6 +1,6 @@
 // Tests voor campaign.ts met een nep-database en nep-verzender (geen netwerk):
 //   deno test --no-check supabase/functions/mail/campaign_test.ts
-import { BATCH, continueCampaigns, MAX_TEMP_FAILS, runCampaign } from "./campaign.ts";
+import { BATCH, continueCampaigns, MAX_TEMP_FAILS, runCampaign, splitSignatureFlag, withSignatureFlag } from "./campaign.ts";
 
 function eq(a: unknown, b: unknown, msg = "") {
   const x = JSON.stringify(a), y = JSON.stringify(b);
@@ -11,14 +11,14 @@ function ok(v: unknown, msg = "") { if (!v) throw new Error(`niet waar: ${msg}`)
 const tok = (i: number) => String(i).padStart(26, "0") + "ab";
 const rowsOf = (n: number) => Array.from({ length: n }, (_, i) => ({ email: `u${i}@x.nl`, first_name: `V${i}`, token: tok(i) }));
 
-function fake(n: number, opts: { already?: string[]; status?: string; cancelAfterProgress?: number } = {}) {
+function fake(n: number, opts: { already?: string[]; status?: string; cancelAfterProgress?: number; body?: string } = {}) {
   const log = { progress: [] as Record<string, unknown>[], claimed: 0 };
   let progressCalls = 0;
   const rpc = (name: string, args: Record<string, unknown>) => {
     switch (name) {
       case "pasr_mail_campaign_claim": log.claimed++; return Promise.resolve({ data: true, error: null });
       case "pasr_mail_campaign_get":
-        return Promise.resolve({ data: { id: 1, brand: "zakelijk", audience: "owners", subject: "Nieuws", body_md: "Hoi {{voornaam}}", status: opts.status ?? "sending" }, error: null });
+        return Promise.resolve({ data: { id: 1, brand: "zakelijk", audience: "owners", subject: "Nieuws", body_md: opts.body ?? "Hoi {{voornaam}}", status: opts.status ?? "sending" }, error: null });
       case "pasr_mail_audience": return Promise.resolve({ data: rowsOf(n), error: null });
       case "pasr_mail_campaign_sent_hashes": return Promise.resolve({ data: opts.already ?? [], error: null });
       case "pasr_mail_campaign_attachments": return Promise.resolve({ data: [], error: null });
@@ -103,4 +103,19 @@ Deno.test("cron: gaat verder met campagnes die geen ronde hebben", async () => {
   const n = await continueCampaigns({ rpc: f.rpc, env, send: () => Promise.resolve({ ok: true }) }, 60_000);
   eq(n, 1);
   eq(await continueCampaigns({ rpc: f.rpc, env, send: () => Promise.resolve({ ok: true }) }, 1000), 0, "te weinig tijd over");
+});
+
+Deno.test("handtekening: standaard mee in elke nieuwsbrief; uit als de campagne dat zo bewaard heeft", async () => {
+  const run = async (body?: string) => {
+    const sent: { html: string; text: string }[] = [];
+    await runCampaign({ rpc: fake(1, { body }).rpc, env, send: (m) => { sent.push({ html: m.html, text: m.text }); return Promise.resolve({ ok: true }); } }, 1, 60_000);
+    return sent[0];
+  };
+  const aan = await run();
+  ok(aan.html.includes("handtekening-pasr-zakelijk.jpg") && aan.text.includes("Team Pasr Zakelijk"), "mee");
+  const uit = await run(withSignatureFlag("Hoi {{voornaam}}", false));
+  ok(!uit.html.includes("handtekening-pasr") && !uit.text.includes("Team Pasr Zakelijk"), "weggelaten");
+  ok(!uit.html.includes("geen-handtekening") && !uit.text.includes("geen-handtekening"), "de vlag zelf staat niet in de mail");
+  eq(splitSignatureFlag(withSignatureFlag("Hoi", true)), { body: "Hoi", signature: true });
+  eq(splitSignatureFlag(withSignatureFlag("Hoi", false)), { body: "Hoi", signature: false });
 });

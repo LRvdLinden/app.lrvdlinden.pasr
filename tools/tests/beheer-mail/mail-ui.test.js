@@ -56,7 +56,7 @@ function handle(action, b) {
     case "mail_attachment": return { name: "scherm.png", type: "image/png", data_b64: png };
     case "mail_thread_reply": return { ok: true, status: b.status, email_sent: true, message_id: "<x@pasr.nl>" };
     case "mail_thread_status": case "mail_thread_note": return { ok: true };
-    case "mail_preview": return { html: `<!doctype html><html><head><meta name="color-scheme" content="light dark"><style>body{margin:0;background:#F4F4F8}.card{background:#fff;color:#17162A;padding:24px;border-radius:16px;max-width:520px;margin:16px auto}.btn{display:inline-block;background:#6A5CFF;color:#fff;padding:10px 18px;border-radius:12px;text-decoration:none}@media (prefers-color-scheme: dark){body{background:#0F1016}.card{background:#1B1D27;color:#F2F1FA}}</style></head><body><div class="card"><p style="font-weight:700;color:#6A5CFF">${b.brand === "zakelijk" ? "Pasr voor ondernemers" : "Pasr"}</p><h1 style="font-size:22px">${String(b.subject || "Onderwerp").replace(/[<>&]/g, "")}</h1><p>${String(b.body_md || "").replace(/[<>&]/g, "").slice(0, 200)}</p><p><a class="btn" href="https://pasr.nl">Open Pasr</a></p></div></body></html>`, text: "Voorbeeldtekst\n" + (b.body_md || "") };
+    case "mail_preview": return { html: `<!doctype html><html><head><meta name="color-scheme" content="light dark"><style>body{margin:0;background:#F4F4F8}.card{background:#fff;color:#17162A;padding:24px;border-radius:16px;max-width:520px;margin:16px auto}.btn{display:inline-block;background:#6A5CFF;color:#fff;padding:10px 18px;border-radius:12px;text-decoration:none}@media (prefers-color-scheme: dark){body{background:#0F1016}.card{background:#1B1D27;color:#F2F1FA}}</style></head><body><div class="card"><p style="font-weight:700;color:#6A5CFF">${b.brand === "zakelijk" ? "Pasr voor ondernemers" : "Pasr"}</p><h1 style="font-size:22px">${String(b.subject || "Onderwerp").replace(/[<>&]/g, "")}</h1><p>${String(b.body_md || "").replace(/[<>&]/g, "").slice(0, 200)}</p><p><a class="btn" href="https://pasr.nl">Open Pasr</a></p></div>${b.signature === false ? "" : `<div class="card sig" style="padding:0;background:#15171F;color:#fff;text-align:center;font-weight:800;border-radius:12px"><p style="padding:34px 0;margin:0">${b.brand === "zakelijk" ? "Team Pasr Zakelijk" : "Team Pasr"}</p></div>`}</body></html>`, text: "Voorbeeldtekst\n" + (b.body_md || "") };
     case "mail_test": return { ok: true };
     case "mail_compose": if (b.subject === "TOOLARGE") return { __status: 413, error: "too_large", max_bytes: 20971520 }; return { ok: true, sent: 1, failed: 0, number: 1004 };
     case "mail_campaign_audience": return { count: b.audience === "owners" ? 48 : 1200 };
@@ -144,6 +144,8 @@ function handle(action, b) {
   await page.fill(".mx-reply .mx-editor textarea", "Hoi **Sanne**, dit is opgelost.");
   await page.waitForFunction(() => document.querySelector(".mx-reply .mx-pv-host") && document.querySelector(".mx-reply .mx-pv-host").shadowRoot && document.querySelector(".mx-reply .mx-pv-host").shadowRoot.textContent.includes("opgelost"));
   ok(last("mail_preview").b.body_md.includes("**Sanne**"), "antwoord toont live voorbeeld (mail_preview)");
+  ok((await page.locator(".mx-reply .mx-sig").innerText()).includes("Handtekening Team Pasr toevoegen") && await page.locator(".mx-reply .mx-sig input").isChecked(), "antwoord: schakelaar Handtekening Team Pasr, standaard aan");
+  ok(last("mail_preview").b.signature === true && (await page.locator(".mx-reply .mx-pv-host").evaluate((h) => h.shadowRoot.textContent)).includes("Team Pasr"), "voorbeeld toont de handtekening");
   const rcc = page.locator(".mx-reply .mx-addr").nth(0).locator("input");
   await rcc.fill("een@example.test, twee@example.test"); await rcc.press("Enter");
   await page.click('.mx-reply .seg button:has-text("Pasr Zakelijk")');
@@ -151,13 +153,15 @@ function handle(action, b) {
   await page.waitForSelector("#mailModal:not(.hidden)");
   const dtxt = await page.locator("#mailModal").innerText();
   ok(dtxt.includes("Pasr Zakelijk") && dtxt.includes("3 adressen"), "bevestiging toont merk en aantal ontvangers");
+  ok(dtxt.includes("Team Pasr Zakelijk"), "bevestiging toont de handtekening");
+  ok((await page.locator(".mx-reply .mx-sig").innerText()).includes("Team Pasr Zakelijk"), "naam van de handtekening volgt het merk");
   await shot("3-bevestiging-antwoord");
   await page.click("#mmCancel");
   ok(!calls.some((c) => c.action === "mail_thread_reply"), "annuleren verstuurt niets");
   await page.click('.mx-reply button[type=submit]'); await page.click("#mmOk");
   await page.waitForFunction(() => document.querySelector("#toast") && /verstuurd/i.test(document.querySelector("#toast").textContent));
   const rep = last("mail_thread_reply").b;
-  ok(rep.number === 1003 && rep.brand === "zakelijk" && rep.cc.length === 2 && rep.status === "pending", "thread_reply met merk, CC en status");
+  ok(rep.number === 1003 && rep.brand === "zakelijk" && rep.cc.length === 2 && rep.status === "pending" && rep.signature === true, "thread_reply met merk, CC, status en handtekening");
   await page.waitForSelector('#mail-inbox .mx-notice', { timeout: 5000 }).catch(() => {});
   ok(await page.locator('#mail-inbox .mx-notice button:text-is("Bekijk in Verzonden")').isVisible(), "na antwoord: melding Bekijk in Verzonden");
   // notitie en status
@@ -221,17 +225,23 @@ function handle(action, b) {
   await page.setInputFiles("#mail-compose input[type=file]", [{ name: "groot.bin", mimeType: "application/octet-stream", buffer: Buffer.alloc(20 * 1024 * 1024, 1) }]);
   await page.waitForTimeout(500);
   ok((await page.locator("#mail-compose .mx-att .err").innerText()).includes("20 MB") && (await page.locator("#mail-compose .mx-file:not(.total)").count()) === 1, "bijlagen boven 20 MB totaal geweigerd");
+  ok((await page.locator("#mail-compose .mx-sig").innerText()).includes("Handtekening Team Pasr toevoegen"), "nieuwe mail: schakelaar Handtekening Team Pasr");
+  await page.click("#mail-compose .mx-sig input");
+  await page.waitForTimeout(700);
   await shot("4-nieuwe-mail", true);
   // testmail
   await page.fill("#mail-compose .mx-testrow input", "ik@example.test");
   await page.click('#mail-compose button:text-is("Testmail sturen")');
   await page.waitForTimeout(300);
-  ok(last("mail_test").b.to === "ik@example.test" && last("mail_test").b.brand === "pasr", "testmail naar één adres");
+  ok(last("mail_test").b.to === "ik@example.test" && last("mail_test").b.brand === "pasr" && last("mail_test").b.signature === false, "testmail naar één adres; handtekening uit wordt meegestuurd");
+  ok(last("mail_preview").b.signature === false, "voorbeeld zonder handtekening als de schakelaar uit staat");
   // ongeldige adressen blokkeren versturen
   await page.click('#mail-compose button[type=submit]');
   ok((await page.locator("#mail-compose .mx-form > .err").innerText()).includes("rood"), "versturen geblokkeerd met ongeldig adres");
   await page.locator("#mail-compose .mx-addr").nth(2).locator(".mx-chip.bad button").click();
   await page.click('#mail-compose .seg button:text-is("Pasr Zakelijk")');
+  await page.click("#mail-compose .mx-sig input");
+  ok((await page.locator("#mail-compose .mx-sig").innerText()).includes("Team Pasr Zakelijk") && await page.locator("#mail-compose .mx-sig input").isChecked(), "nieuwe mail: naam volgt merk, weer aan");
   await page.click('#mail-compose button[type=submit]');
   await page.waitForSelector("#mailModal:not(.hidden)");
   const ct = await page.locator("#mailModal").innerText();
@@ -240,7 +250,7 @@ function handle(action, b) {
   await page.click("#mmOk");
   await page.waitForTimeout(400);
   const cb = last("mail_compose").b;
-  ok(cb.bcc.length === 4 && cb.to.length === 1 && cb.brand === "zakelijk" && cb.attachments.length === 1 && !!cb.attachments[0].data_b64 && cb.thread === true, "mail_compose met aan, BCC, merk en bijlage");
+  ok(cb.bcc.length === 4 && cb.to.length === 1 && cb.brand === "zakelijk" && cb.attachments.length === 1 && !!cb.attachments[0].data_b64 && cb.thread === true && cb.signature === true, "mail_compose met aan, BCC, merk, bijlage en handtekening");
   ok(!(await page.evaluate(() => JSON.stringify(Object.assign({}, localStorage)))).includes("@"), "geen adressen in localStorage");
 
   // te groot: getal uit de server
@@ -284,6 +294,7 @@ function handle(action, b) {
   ok(await page.locator("#mail-news progress").count() === 1, "voortgang van lopende verzending");
   await page.locator("#mail-news input[type=text]").nth(0).fill("Kennismaken met Pasr Zakelijk");
   await page.fill("#mail-news .mx-editor textarea", "Hoi {{voornaam}},\n\nPasr Zakelijk voor jouw zaak.");
+  ok((await page.locator("#mail-news .mx-sig").innerText()).includes("Handtekening Team Pasr Zakelijk toevoegen") && await page.locator("#mail-news .mx-sig input").isChecked(), "nieuwsbrief: schakelaar met Team Pasr Zakelijk, standaard aan");
   await page.waitForTimeout(700);
   await shot("6-nieuwsbrief", true);
   await page.click('#mail-news button[type=submit]');
@@ -292,6 +303,7 @@ function handle(action, b) {
   await page.click("#mmOk"); await page.waitForTimeout(400);
   const cs = last("mail_campaign_send").b;
   ok(cs.audience === "owners" && cs.brand === "zakelijk" && /^[0-9a-f-]{36}$/.test(cs.request_id), "campaign_send met doelgroep, merk en request_id");
+  ok(cs.signature === true, "campaign_send stuurt signature mee");
   page.once("dialog", () => {});
   await page.click('#mail-news button:text-is("Annuleren")');
   await page.waitForSelector("#mailModal:not(.hidden)"); await page.click("#mmOk"); await page.waitForTimeout(300);

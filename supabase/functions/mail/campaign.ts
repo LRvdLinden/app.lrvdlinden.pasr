@@ -17,6 +17,14 @@ export type RoundResult = { claimed: boolean; sent: number; failed: number; stat
 type Row = { email: string; first_name: string; token: string };
 type Camp = { id: number; brand: Brand; audience: "users" | "owners" | "list"; subject: string; body_md: string; status: string };
 
+/** Of de handtekening mee moet, staat in de opgeslagen tekst van de campagne (geen extra kolom): een regel aan het eind als hij uit staat. */
+export const NO_SIGNATURE = "<!--pasr:geen-handtekening-->";
+export const withSignatureFlag = (md: string, signature: boolean) => (signature ? md : `${md}\n\n${NO_SIGNATURE}`);
+export function splitSignatureFlag(md: string): { body: string; signature: boolean } {
+  const i = md.lastIndexOf(NO_SIGNATURE);
+  return i >= 0 && md.slice(i + NO_SIGNATURE.length).trim() === "" ? { body: md.slice(0, i).trimEnd(), signature: false } : { body: md, signature: true };
+}
+
 async function call<T>(rpc: Rpc, name: string, args: Record<string, unknown>): Promise<T> {
   const { data, error } = await rpc(name, args);
   if (error) throw new Error(`${name}: ${error.message}`);
@@ -56,13 +64,14 @@ export async function runCampaign(d: CampaignDeps, id: number, budgetMs: number)
     const atts = (await call<{ name: string; type: string; data_b64: string }[] | null>(d.rpc, "pasr_mail_campaign_attachments", { p_campaign: id })) ?? [];
     const attachments = atts.map((a) => ({ name: a.name, type: a.type, data: Uint8Array.from(atob(a.data_b64), (c) => c.charCodeAt(0)) }));
     const supabaseUrl = d.env("SUPABASE_URL");
+    const { body: campBody, signature } = splitSignatureFlag(camp.body_md);
     let i = 0;
     for (; i < todo.length; i++) {
       if (now() - started > budgetMs) { stoppedEarly = true; break; }
       const r = todo[i];
       const m = buildMessage({
         brand: camp.brand, kind: "news", from: fromFor(camp.brand, d.env), replyTo: replyToFor(d.env, camp.brand), to: [r.email], cc: [], bcc: [],
-        subject: camp.subject, markdown: camp.body_md, messageId: newMessageId(null, randomId()), attachments,
+        subject: camp.subject, markdown: campBody, signature, messageId: newMessageId(null, randomId()), attachments,
         unsub: { page: unsubPage(r.token), oneClick: oneClickUrl(supabaseUrl, r.token) }, vars: { voornaam: r.first_name },
       });
       const res = await d.send(m, camp.brand);
