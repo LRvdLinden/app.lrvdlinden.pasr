@@ -147,7 +147,7 @@ Deno.test("onderwerp, Message-ID, afzender, status", () => {
   eq(withName("Eigen Naam <a@b.nl>", "Pasr"), "Eigen Naam <a@b.nl>");
   const none = () => "";
   eq(fromFor("pasr", none), "Pasr <support@pasr.nl>");
-  eq(fromFor("zakelijk", none), "Pasr Zakelijk <zakelijk@pasr.nl>");
+  eq(fromFor("zakelijk", none), "Pasr Zakelijk <support@pasr.nl>");
   eq(fromFor("zakelijk", (k) => (k === "PASR_MAIL_FROM_ZAKELIJK" ? "ondernemers@pasr.nl" : "")), "Pasr Zakelijk <ondernemers@pasr.nl>");
   eq(fromFor("pasr", (k) => (k === "PASR_MAIL_FROM_PASR" ? "Pasr Hulp <hulp@pasr.nl>" : "")), "Pasr Hulp <hulp@pasr.nl>");
   eq([statusAfter("new", "support"), statusAfter("closed", "support"), statusAfter("pending", "contact"), statusAfter("closed", "contact")], ["pending", "closed", "open", "open"]);
@@ -204,7 +204,7 @@ Deno.test("alleen BCC: de To-kop toont de afzender zelf; geen To/CC van derden",
 
 Deno.test("ticketmail: onderwerp [#n], In-Reply-To, References, X-Pasr-Ticket, marker, bijlagen", async () => {
   const m = buildMessage({
-    ...base, brand: "zakelijk", kind: "reply", from: "Pasr Zakelijk <zakelijk@pasr.nl>", to: ["klant@x.nl"], cc: [], bcc: [], number: 1001,
+    ...base, brand: "zakelijk", kind: "reply", from: "Pasr Zakelijk <support@pasr.nl>", to: ["klant@x.nl"], cc: [], bcc: [], number: 1001,
     messageId: "<pasr-ticket-1001.abc123@pasr.nl>", inReplyTo: "<k1@x.nl>", references: ["<a@x.nl>", "<k1@x.nl>"],
     attachments: [{ name: "offerte.pdf", type: "application/pdf", data: new TextEncoder().encode("%PDF-1.4 test") }],
   });

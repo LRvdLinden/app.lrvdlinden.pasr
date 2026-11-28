@@ -73,7 +73,7 @@ Deno.test("merk Pasr Zakelijk: afzender, kop, kleur en geen afmeldlink", () => {
   if (!r.ok) throw new Error("parse");
   const n = buildNotice(r.value[0]);
   const msg = buildMessage({
-    brand: "zakelijk", kind: "mail", from: "Pasr Zakelijk <zakelijk@pasr.nl>", replyTo: "zakelijk@pasr.nl", to: [r.value[0].to], cc: [], bcc: [],
+    brand: "zakelijk", kind: "mail", from: "Pasr Zakelijk <support@pasr.nl>", replyTo: "support@pasr.nl", to: [r.value[0].to], cc: [], bcc: [],
     subject: n.subject, markdown: n.markdown, messageId: "<x@pasr.nl>",
   });
   ok(msg.from.startsWith("Pasr Zakelijk"), "afzender");
