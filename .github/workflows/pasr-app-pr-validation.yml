@@ -242,7 +242,7 @@ jobs:
           PL="$APP/Contents/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PL")" = "app.lrvdlinden.pasrzakelijk"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PL")" = "1.0.4"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PL")" = "21"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PL")" = "22"
           /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" "$PL" > /dev/null
           test -d "$APP/Contents/PlugIns/PasrZakelijkMacWidgets.appex"
           ls "$APP/Contents/Resources" | grep -E "PrivacyInfo|lproj" || true
