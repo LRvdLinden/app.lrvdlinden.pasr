@@ -34,6 +34,9 @@
     .stop .actions { justify-content: center; }
     .stop .note { font-size: 15px; margin-top: 28px; }
     .stop [hidden] { display: none !important; }
+    .stop form { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 0 auto 26px; max-width: 460px; }
+    .stop input[type=email] { flex: 1 1 240px; font: inherit; font-size: 17px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line, #d9d8e6); background: #fff; color: var(--ink); min-width: 0; }
+    .stop .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   </style>
 </head>
 <body>
@@ -45,17 +48,26 @@
 </header>
   <main class="wrap stop">
     <div id="ask">
-      <h1>Herinneringen per e-mail uitzetten?</h1>
-      <p>Je krijgt dan geen mails meer van Pasr als een kaart bijna verloopt of als er nog tegoed op staat. Meldingen in de app blijven zoals ze zijn.</p>
+      <h1 id="ask-title">Herinneringen per e-mail uitzetten?</h1>
+      <p id="ask-text">Je krijgt dan geen mails meer van Pasr als een kaart bijna verloopt of als er nog tegoed op staat. Meldingen in de app blijven zoals ze zijn.</p>
       <div class="actions"><button class="btn btn-primary" id="go" type="button">Zet uit</button></div>
     </div>
+    <div id="mailform" hidden>
+      <h1>Geen e-mails meer van Pasr?</h1>
+      <p id="mailform-text">Vul je e-mailadres in, dan sturen we je geen nieuwsbrieven en uitnodigingen meer.</p>
+      <form id="mf" novalidate>
+        <input type="email" id="mf-email" name="email" autocomplete="email" placeholder="je@e-mailadres.nl" required aria-label="E-mailadres">
+        <div class="hp-field" aria-hidden="true"><label>Laat dit veld leeg<input type="text" name="hp_extra" id="mf-hp" tabindex="-1" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore></label></div>
+        <button class="btn btn-primary" id="mf-go" type="submit">Meld me af</button>
+      </form>
+    </div>
     <div id="done" hidden>
-      <h1>Uitgezet</h1>
-      <p>Je krijgt geen herinneringen per e-mail meer. Weer aanzetten kan in Pasr › Instellingen › Meldingen.</p>
+      <h1 id="done-title">Uitgezet</h1>
+      <p id="done-text">Je krijgt geen herinneringen per e-mail meer. Weer aanzetten kan in Pasr › Instellingen › Meldingen.</p>
     </div>
     <div id="fail" hidden>
       <h1>Dat lukte niet</h1>
-      <p>Deze link werkt niet (meer). Zet de herinneringen per e-mail uit in Pasr › Instellingen › Meldingen › Herinneren via.</p>
+      <p id="fail-text">Deze link werkt niet (meer). Zet de herinneringen per e-mail uit in Pasr › Instellingen › Meldingen › Herinneren via.</p>
     </div>
     <p class="note">Vragen? Mail naar <a href="mailto:support@pasr.nl">support@pasr.nl</a>.</p>
     <noscript><p>Zet de herinneringen per e-mail uit in Pasr › Instellingen › Meldingen.</p></noscript>
@@ -63,17 +75,46 @@
   <script>
     (function () {
       var cfg = { url: "https://xcfuiszcfgkpbixqzrjb.supabase.co", key: "sb_publishable_wFRG_22hV_8FJUX1JcS8SQ_2JHxQlzw" };
-      var t = new URLSearchParams(location.search).get("t") || "";
-      var show = function (id) { ["ask", "done", "fail"].forEach(function (x) { document.getElementById(x).hidden = x !== id; }); };
+      var q = new URLSearchParams(location.search);
+      var t = q.get("t") || "", kind = q.get("k") || "", scope = q.get("s") || "";
+      var news = kind === "nieuws";
+      var show = function (id) { ["ask", "mailform", "done", "fail"].forEach(function (x) { document.getElementById(x).hidden = x !== id; }); };
+      var rpc = function (name, args) {
+        return fetch(cfg.url + "/rest/v1/rpc/" + name, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: cfg.key, Authorization: "Bearer " + cfg.key },
+          body: JSON.stringify(args)
+        }).then(function (r) { return r.ok ? r.json() : null; });
+      };
+      var set = function (id, text) { var el = document.getElementById(id); if (el) el.textContent = text; };
+      if (news) {
+        // nieuwsbrieven en uitnodigingen van Pasr en Pasr Zakelijk (pasr_mail_news_unsubscribe via pasr_mail_unsubscribe)
+        document.title = "Afmelden voor e-mail van Pasr | Pasr";
+        set("ask-title", "Geen nieuwsbrieven of uitnodigingen meer?");
+        set("ask-text", "Je krijgt dan geen nieuwsbrieven en uitnodigingen meer van Pasr. Mails over je account en afspraken blijven zoals ze zijn.");
+        set("done-title", "Afgemeld");
+        set("done-text", "Je krijgt geen nieuwsbrieven en uitnodigingen van Pasr meer.");
+        set("fail-text", "Deze link werkt niet (meer). Mail naar support@pasr.nl, dan melden we je handmatig af.");
+      }
+      // zonder persoonlijke code (mail aan meerdere ontvangers): het e-mailadres invullen
+      if (!/^[0-9a-f]{32}$/.test(t) && news && (scope === "users" || scope === "owners")) {
+        show("mailform");
+        document.getElementById("mf").addEventListener("submit", function (e) {
+          e.preventDefault();
+          var email = document.getElementById("mf-email").value.trim();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById("mf-email").focus(); return; }
+          document.getElementById("mf-go").disabled = true;
+          rpc("pasr_mail_news_unsub_email", { p_email: email, p_scope: scope === "owners" ? "news-owners" : "news-users", p_hp: document.getElementById("mf-hp").value })
+            .then(function (j) { show(j && j.ok ? "done" : "fail"); })
+            .catch(function () { show("fail"); });
+        });
+        return;
+      }
       if (!/^[0-9a-f]{32}$/.test(t)) { show("fail"); return; }
       // pas na een tik: virusscanners in mailprogramma's openen links vooraf
       document.getElementById("go").addEventListener("click", function () {
         this.disabled = true;
-        fetch(cfg.url + "/rest/v1/rpc/pasr_mail_unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", apikey: cfg.key, Authorization: "Bearer " + cfg.key },
-          body: JSON.stringify({ p_token: t })
-        }).then(function (r) { return r.ok ? r.json() : null; })
+        rpc("pasr_mail_unsubscribe", { p_token: t })
           .then(function (j) { show(j && j.ok ? "done" : "fail"); })
           .catch(function () { show("fail"); });
       });
