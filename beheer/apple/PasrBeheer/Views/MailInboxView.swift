@@ -37,12 +37,14 @@ struct MailStatusBadge: View {
 struct MailInboxView: View {
     /// "inbox" of "sent" (Verzonden).
     let box: String
+    /// Het postvak (merk) waar deze lijst bij hoort.
+    let mailbox: MailBrand
     let status: MailStatus?
     let reloadStatus: () async -> Void
 
     @EnvironmentObject private var session: Session
     @State private var filter = "active"
-    @State private var brandFilter = ""
+    private var brandFilter: String { mailbox.rawValue }
     @State private var query = ""
     @State private var items: [MailThread] = []
     @State private var total = 0
@@ -63,12 +65,7 @@ struct MailInboxView: View {
                     statusCard
                     filterBar
                 }
-                Picker("Merk", selection: $brandFilter) {
-                    Text("Alle merken").tag("")
-                    Text(verbatim: "Pasr").tag("pasr")
-                    Text(verbatim: "Pasr Zakelijk").tag("zakelijk")
-                }
-                .pickerStyle(.menu)
+                Text(verbatim: mailbox.address).font(.footnote).foregroundStyle(Theme.muted)
             }
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
@@ -188,7 +185,7 @@ struct MailInboxView: View {
             total = r.total ?? r.items.count
             page = p
             if replace { items = r.items } else { items += r.items.filter { n in !items.contains { $0.number == n.number } } }
-            if let c = r.counts { counts = c }
+            if box == "inbox", let c = await session.mailCounts(for: mailbox) { counts = c }
             error = nil
             loaded = true
         } catch is CancellationError {
@@ -450,10 +447,7 @@ struct MailThreadView: View {
             .pickerStyle(.segmented)
 
             if kind == .reply {
-                Picker("Merk", selection: $brand) {
-                    ForEach(MailBrand.allCases) { Text(verbatim: $0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                LabeledContent("Van") { Text(verbatim: brand.address) }
                 MailAddressField(title: "CC", prompt: "Extra adressen (komma, spatie of regel)", text: $cc)
                 MailAddressField(title: "BCC", prompt: "Verborgen adressen (komma, spatie of regel)", text: $bcc)
                 MailBodyEditor(text: $text)

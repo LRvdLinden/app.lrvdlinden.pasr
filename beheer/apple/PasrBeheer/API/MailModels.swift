@@ -6,6 +6,9 @@ enum MailBrand: String, CaseIterable, Identifiable, Codable {
     case pasr, zakelijk
     var id: String { rawValue }
     var title: String { self == .pasr ? "Pasr" : "Pasr Zakelijk" }
+    /// Het postvak en afzenderadres van dit merk.
+    var address: String { self == .pasr ? "support@pasr.nl" : "zakelijk@pasr.nl" }
+    var boxTitle: String { self == .pasr ? "Postvak Support" : "Postvak Ondernemers" }
 }
 
 /// Tijdelijke tekst bij fouten van de mail-acties (plain String, zoals APIError).
@@ -333,12 +336,28 @@ final class NewsletterDraft: ObservableObject {
 @MainActor
 final class MailDrafts {
     static let shared = MailDrafts()
-    let compose = ComposeDraft()
-    let newsletter = NewsletterDraft()
+    private var composes: [MailBrand: ComposeDraft] = [:]
+    private var newsletters: [MailBrand: NewsletterDraft] = [:]
+
+    /// Elk postvak heeft zijn eigen concepten, vast aan het eigen merk en de eigen doelgroep.
+    func compose(for brand: MailBrand) -> ComposeDraft {
+        if let d = composes[brand] { return d }
+        let d = ComposeDraft(); d.brand = brand
+        composes[brand] = d
+        return d
+    }
+
+    func newsletter(for brand: MailBrand) -> NewsletterDraft {
+        if let d = newsletters[brand] { return d }
+        let d = NewsletterDraft(); d.brand = brand
+        d.audience = brand == .zakelijk ? "owners" : "users"
+        newsletters[brand] = d
+        return d
+    }
 
     func reset() {
-        compose.clear(); compose.testAddress = ""
-        newsletter.clear(); newsletter.testAddress = ""
+        for d in composes.values { d.clear(); d.testAddress = "" }
+        for d in newsletters.values { d.clear(); d.testAddress = "" }
     }
 }
 
