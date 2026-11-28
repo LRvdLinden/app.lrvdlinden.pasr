@@ -11,11 +11,74 @@ export function cleanBusinessStatus(b: Record<string, unknown>): { ok: true; id:
   return { ok: true, id: b.id as string, status: b.status as BusinessStatus };
 }
 
-/** Zaak permanent verwijderen: {id, confirm}; confirm moet exact de zaaknaam zijn (de server vergelijkt met de naam in de database). */
-export function cleanBusinessDelete(b: Record<string, unknown>): { ok: true; id: string; confirm: string } | { ok: false; error: string } {
+/** Zaak permanent verwijderen: {id, confirm, notify_owner?}; confirm moet exact de zaaknaam zijn (de server vergelijkt met de naam in de
+ *  database); notify_owner (standaard true) = de eigenaar een mail sturen. De mail aan deelnemers van geannuleerde acties gaat altijd. */
+export function cleanBusinessDelete(b: Record<string, unknown>):
+  { ok: true; id: string; confirm: string; notifyOwner: boolean } | { ok: false; error: string } {
   if (!isUuid(b.id)) return { ok: false, error: "bad_id" };
   if (typeof b.confirm !== "string" || !b.confirm || b.confirm.length > 200) return { ok: false, error: "bad_confirm" };
-  return { ok: true, id: b.id as string, confirm: b.confirm };
+  if (b.notify_owner !== undefined && b.notify_owner !== null && typeof b.notify_owner !== "boolean") return { ok: false, error: "bad_notify" };
+  return { ok: true, id: b.id as string, confirm: b.confirm, notifyOwner: b.notify_owner !== false };
+}
+
+// ---- mails bij het verwijderen (de tekst en de verzending zitten in de functie mail, actie "notice") ----
+export type DeleteNotify = {
+  owner?: string | null;
+  campaigns?: { title?: string; reward?: string; ends_at?: string | null; recipients?: string[] }[];
+  organizers?: { title?: string; email?: string }[];
+};
+export type NoticeMail = {
+  kind: "owner_deleted" | "campaign_cancelled" | "participant_left"; to: string; business: string;
+  campaign?: { title: string; reward: string; ends_at: string | null }; counts?: Record<string, number>;
+};
+const COUNTS = ["cards", "members", "staff", "events", "tickets", "member_cards", "campaigns", "offers"];
+
+/** De mails die na een gelukte verwijdering gaan: eigenaar (alleen met notifyOwner en een adres), deelnemers en uitgenodigden van
+ *  geannuleerde acties, en de organisator van acties waaraan de zaak meedeed. Adressen alleen in kleine letters en één keer per (soort, titel). */
+export function buildNotices(name: string, notify: DeleteNotify | null | undefined, counts: Record<string, unknown> | null | undefined, notifyOwner: boolean): NoticeMail[] {
+  const out: NoticeMail[] = [], seen = new Set<string>();
+  const add = (m: NoticeMail) => {
+    const k = `${m.kind}|${m.to}|${m.campaign?.title ?? ""}`;
+    if (seen.has(k)) return;
+    seen.add(k); out.push(m);
+  };
+  const addr = (v: unknown) => (typeof v === "string" && v.includes("@") ? v.trim().toLowerCase() : "");
+  const n = notify ?? {};
+  if (notifyOwner && addr(n.owner)) {
+    const c: Record<string, number> = {};
+    for (const k of COUNTS) if (typeof counts?.[k] === "number") c[k] = counts[k] as number;
+    add({ kind: "owner_deleted", to: addr(n.owner), business: name, counts: c });
+  }
+  for (const camp of n.campaigns ?? []) {
+    for (const r of camp.recipients ?? []) {
+      if (addr(r)) add({ kind: "campaign_cancelled", to: addr(r), business: name, campaign: { title: String(camp.title ?? ""), reward: String(camp.reward ?? ""), ends_at: camp.ends_at ?? null } });
+    }
+  }
+  for (const o of n.organizers ?? []) {
+    if (addr(o.email)) add({ kind: "participant_left", to: addr(o.email), business: name, campaign: { title: String(o.title ?? ""), reward: "", ends_at: null } });
+  }
+  return out;
+}
+
+export type MailsReport = { sent: number; failed: number; owner: "sent" | "failed" | "none" | "off"; participants: { sent: number; failed: number }; error?: string };
+/** Het antwoord van de functie mail (status en tekst) omzetten in aantallen voor het beheer; nooit adressen. Zonder antwoord telt alles als mislukt. */
+export function mailsReport(planned: NoticeMail[], notifyOwner: boolean, hadOwnerAddress: boolean, status: number, text: string): MailsReport {
+  let results: { kind?: string; ok?: boolean }[] | null = null, error: string | undefined;
+  try {
+    const j = JSON.parse(text);
+    if (status === 200 && Array.isArray(j?.results)) results = j.results;
+    else error = typeof j?.error === "string" ? j.error.slice(0, 40) : "mail_failed";
+  } catch { error = "mail_failed"; }
+  const ok = (m: NoticeMail, i: number) => !!results && (results[i]?.ok === true);
+  const ownerIdx = planned.findIndex((m) => m.kind === "owner_deleted");
+  let sent = 0, failed = 0, pSent = 0, pFailed = 0;
+  planned.forEach((m, i) => {
+    const good = ok(m, i);
+    if (good) sent++; else failed++;
+    if (m.kind !== "owner_deleted") { if (good) pSent++; else pFailed++; }
+  });
+  const owner = !notifyOwner ? "off" : ownerIdx < 0 ? (hadOwnerAddress ? "failed" : "none") : ok(planned[ownerIdx], ownerIdx) ? "sent" : "failed";
+  return { sent, failed, owner, participants: { sent: pSent, failed: pFailed }, ...(error && failed ? { error } : {}) };
 }
 
 /** Exacte naam (Unicode-gelijk, hoofdlettergevoelig, zonder opschonen van spaties). */
@@ -24,11 +87,11 @@ export function confirmMatches(name: unknown, confirm: unknown): boolean {
 }
 
 /** Korte auditregel zonder persoonsgegevens: zaak-id, naam en aantallen. */
-export function deleteAuditLine(id: string, name: string, counts: Record<string, unknown> | null | undefined): string {
+export function deleteAuditLine(id: string, name: string, counts: Record<string, unknown> | null | undefined, mails?: { sent: number; failed: number } | null): string {
   const c = counts ?? {};
   const n = (k: string) => (typeof c[k] === "number" ? c[k] as number : 0);
   return `${id} "${name.replace(/\s+/g, " ").slice(0, 60)}" cards=${n("cards")} members=${n("members")} staff=${n("staff")} events=${n("events")} tickets=${n("tickets")} ` +
-    `mcards=${n("member_cards")} campaigns=${n("campaigns")} offers=${n("offers")}`;
+    `mcards=${n("member_cards")} campaigns=${n("campaigns")} offers=${n("offers")}` + (mails ? ` mails=${mails.sent}/${mails.sent + mails.failed}` : "");
 }
 
 const int = (v: unknown): number | null => {
@@ -207,7 +270,7 @@ export function cleanCardInput(body: Record<string, unknown>):
 const DB_ERRORS: Record<string, number> = {
   not_found: 404, owner_taken: 409, has_owner: 409, not_approved: 409, card_limit: 409, test_limit: 409,
   bad_name: 400, bad_email: 400, bad_url: 400, bad_reward: 400, bad_color: 400, bad_total: 400, bad_logo: 400, bad_card: 400,
-  bad_business: 400, bad_settings: 400, bad_status: 400, bad_confirm: 400, confirm_mismatch: 400,
+  bad_business: 400, bad_settings: 400, bad_status: 400, bad_confirm: 400, bad_notify: 400, confirm_mismatch: 400,
 };
 export function dbError(e: { message?: string; hint?: string | null } | null): { error: string; status: number } | null {
   if (!e) return null;

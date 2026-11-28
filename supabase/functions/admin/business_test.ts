@@ -1,4 +1,4 @@
-import { cleanBusinessDelete, cleanBusinessDetail, cleanBusinessSettings, confirmMatches, deleteAuditLine } from "./business.ts";
+import { buildNotices, cleanBusinessDelete, cleanBusinessDetail, cleanBusinessSettings, confirmMatches, deleteAuditLine, mailsReport } from "./business.ts";
 const ok = (c: unknown, m: string) => { if (!c) throw new Error(m); };
 const ID = "8f1d3c3e-5a7b-4c2d-9e1f-0a1b2c3d4e5f";
 
@@ -119,4 +119,53 @@ Deno.test("zaak verwijderen: auditregel zonder persoonsgegevens", () => {
 Deno.test("zaak verwijderen: foutcodes uit de database", () => {
   ok(dbError({ message: "not_found" })?.status === 404, "niet gevonden");
   ok(dbError({ message: "x", hint: "confirm_mismatch" })?.status === 400, "naam klopt niet");
+});
+
+Deno.test("zaak verwijderen: notify_owner is standaard aan en moet een boolean zijn", () => {
+  const a = cleanBusinessDelete({ id: ID, confirm: "X" });
+  ok(a.ok && a.notifyOwner === true, "standaard aan");
+  const b = cleanBusinessDelete({ id: ID, confirm: "X", notify_owner: false });
+  ok(b.ok && b.notifyOwner === false, "uit");
+  const c = cleanBusinessDelete({ id: ID, confirm: "X", notify_owner: "nee" });
+  ok(!c.ok && c.error === "bad_notify", "geen tekst");
+  ok(dbError({ message: "x", hint: "bad_notify" })?.status === 400, "foutcode");
+});
+
+const NOTIFY = {
+  owner: "Eigenaar@Zaak.example",
+  campaigns: [{ title: "Actie 1", reward: "Taart", ends_at: "2026-12-31T00:00:00Z", recipients: ["a@x.example", "B@x.example", "a@x.example"] }, { title: "Actie 2", reward: "", ends_at: null, recipients: ["a@x.example"] }],
+  organizers: [{ title: "Actie van Y", email: "y@x.example" }, { title: "Zonder adres", email: "" }],
+};
+Deno.test("zaak verwijderen: welke mails gaan er uit", () => {
+  const counts = { cards: 2, members: 14, staff: 1, log: 99, mail_participants: 5 };
+  const all = buildNotices("Zaak", NOTIFY, counts, true);
+  ok(all.length === 5, "eigenaar + 2 + 1 deelnemers (dubbele eruit) + organisator: " + all.length);
+  ok(all[0].kind === "owner_deleted" && all[0].to === "eigenaar@zaak.example" && all[0].counts?.cards === 2 && !("log" in (all[0].counts ?? {})), "eigenaarsmail met aantallen");
+  ok(all.filter((m) => m.kind === "campaign_cancelled").length === 3, "per actie en adres één");
+  ok(all.filter((m) => m.kind === "participant_left").length === 1 && all.at(-1)!.to === "y@x.example", "organisator met adres");
+  const off = buildNotices("Zaak", NOTIFY, counts, false);
+  ok(!off.some((m) => m.kind === "owner_deleted") && off.length === 4, "schakelaar uit: geen eigenaarsmail, deelnemers wel");
+  ok(buildNotices("Zaak", { owner: null }, counts, true).length === 0, "zonder adres geen mail");
+  ok(buildNotices("Zaak", null, null, true).length === 0, "zonder gegevens niets");
+});
+
+Deno.test("zaak verwijderen: verslag van de mails (aantallen, nooit adressen)", () => {
+  const planned = buildNotices("Zaak", NOTIFY, {}, true);
+  const good = JSON.stringify({ ok: true, results: planned.map((m) => ({ kind: m.kind, ok: true })) });
+  const r1 = mailsReport(planned, true, true, 200, good);
+  ok(r1.sent === 5 && r1.failed === 0 && r1.owner === "sent" && r1.participants.sent === 4 && !r1.error, "alles verstuurd");
+  const part = JSON.stringify({ results: planned.map((m, i) => ({ kind: m.kind, ok: i !== 0 && i !== 2 })) });
+  const r2 = mailsReport(planned, true, true, 200, part);
+  ok(r2.sent === 3 && r2.failed === 2 && r2.owner === "failed" && r2.participants.failed === 1, "deels mislukt: " + JSON.stringify(r2));
+  const down = mailsReport(planned, true, true, 502, JSON.stringify({ error: "mail_unreachable" }));
+  ok(down.sent === 0 && down.failed === 5 && down.owner === "failed" && down.error === "mail_unreachable", "mailfunctie onbereikbaar");
+  const nosmtp = mailsReport(planned, true, true, 503, JSON.stringify({ error: "smtp_not_configured" }));
+  ok(nosmtp.failed === 5 && nosmtp.error === "smtp_not_configured", "geen SMTP");
+  ok(mailsReport(planned, true, true, 200, "geen json").failed === 5, "onleesbaar antwoord telt als mislukt");
+  const off = mailsReport(buildNotices("Zaak", NOTIFY, {}, false), false, true, 200, JSON.stringify({ results: buildNotices("Zaak", NOTIFY, {}, false).map((m) => ({ kind: m.kind, ok: true })) }));
+  ok(off.owner === "off" && off.failed === 0, "eigenaar uit");
+  ok(mailsReport([], true, false, 200, JSON.stringify({ results: [] })).owner === "none", "geen adres");
+  ok(!JSON.stringify([r1, r2, down]).includes("@"), "geen adressen in het verslag");
+  const line = deleteAuditLine(ID, "Zaak", { cards: 1 }, { sent: 4, failed: 2 });
+  ok(line.endsWith(" mails=4/6") && !line.includes("@"), "auditregel: aantallen mails: " + line);
 });

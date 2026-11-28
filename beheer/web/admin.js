@@ -1419,14 +1419,18 @@
     if (c.events) out.push(`${plural(c.events, "event", "events")} met ${plural(c.tickets, "ticket", "tickets")}, inclusief de gegevens van de aanmeldingen`);
     if (c.member_cards) out.push(`${plural(c.member_cards, "klantenkaart", "klantenkaarten")} met ${plural(c.member_card_members, "lid", "leden")}`);
     if (c.offers) out.push(plural(c.offers, "kortingsbon of actiecode", "kortingsbonnen en actiecodes"));
-    if (c.campaigns) out.push(`${plural(c.campaigns, "gezamenlijke actie", "gezamenlijke acties")} van deze zaak (wordt geannuleerd, deelnemers krijgen geen bericht)`);
+    if (c.campaigns) out.push(`${plural(c.campaigns, "gezamenlijke actie", "gezamenlijke acties")} van deze zaak (wordt geannuleerd, de deelnemers krijgen een mail)`);
     if (c.participations) out.push(`deelname aan ${plural(c.participations, "actie van een andere zaak", "acties van andere zaken")}`);
     if (c.log) out.push(plural(c.log, "logregel", "logregels"));
     return out;
   }
   async function openBizDelete(b) {
     const q = (id) => $(id);
-    const form = q("bizDelForm"), input = q("bdInput"), ack = q("bdAck"), ok = q("bdOk"), err = q("bdErr");
+    const form = q("bizDelForm"), input = q("bdInput"), ack = q("bdAck"), ok = q("bdOk"), err = q("bdErr"), mail = q("bdMail");
+    for (const id of ["bdList", "bdWarn", "bdMailRow", "bdMailNote", "bdCancel"]) q(id).classList.remove("gone");
+    for (const el2 of form.querySelectorAll(".bd-name, .bd-check")) el2.classList.remove("gone");
+    ok.textContent = "Definitief verwijderen"; ok.classList.add("danger", "solid");
+    mail.checked = true; mail.disabled = false; q("bdMailNote").classList.add("hidden");
     let name = b.name, loaded = false, busy = false;
     q("bdTitle").textContent = `${b.name} verwijderen?`;
     q("bdIntro").textContent = "Laden…";
@@ -1449,8 +1453,16 @@
       q("bdList").replaceChildren(...(lines.length ? lines : ["De zaak zelf (er hangt verder niets aan)"]).map((t) => el("li", null, t)));
       const w = [];
       if ((d.counts || {}).upcoming_events) w.push(`Er ${d.counts.upcoming_events === 1 ? "staat" : "staan"} nog ${plural(d.counts.upcoming_events, "aankomend event", "aankomende events")} open. Aanmelders krijgen geen bericht; annuleer die eerst als je ze wilt laten weten dat het niet doorgaat.`);
-      w.push("De eigenaar krijgt geen e-mail. Het Pasr-account van de eigenaar en de medewerkers blijft bestaan.");
+      w.push("Het Pasr-account van de eigenaar en de medewerkers blijft bestaan.");
       q("bdWarn").textContent = w.join(" "); q("bdWarn").classList.remove("hidden");
+      // mails: de eigenaar alleen als het beheer dat wil (en er een adres is); deelnemers van geannuleerde acties altijd
+      const c = d.counts || {};
+      mail.disabled = !c.owner_mail; mail.checked = !!c.owner_mail;
+      q("bdMailRow").classList.toggle("muted", !c.owner_mail);
+      const notes = [];
+      if (!c.owner_mail) notes.push("Er is geen e-mailadres van de eigenaar bekend: er gaat geen mail naar de eigenaar.");
+      if (c.mail_participants) notes.push(`${plural(c.mail_participants, "deelnemer of organisator", "deelnemers en organisatoren")} van gezamenlijke acties ${c.mail_participants === 1 ? "krijgt" : "krijgen"} een mail (de actie is geannuleerd).`);
+      q("bdMailNote").textContent = notes.join(" "); q("bdMailNote").classList.toggle("hidden", !notes.length);
       loaded = true; sync();
     } catch (e) {
       if (e.status === 404) { err.textContent = "Deze zaak bestaat niet meer."; toast("Zaak niet gevonden"); close(); loadBusinesses(); return; }
@@ -1461,10 +1473,24 @@
       if (ok.disabled) return;
       busy = true; sync(); err.textContent = "";
       try {
-        const r = await api("business_delete", { id: b.id, confirm: input.value });
-        close();
-        toast(`${r.name || name} is verwijderd${r.campaigns_cancelled ? `, ${plural(r.campaigns_cancelled, "gezamenlijke actie", "gezamenlijke acties")} geannuleerd` : ""}`);
+        const r = await api("business_delete", { id: b.id, confirm: input.value, notify_owner: mail.checked });
+        const m = r.mails || { sent: 0, failed: 0, owner: "none" };
+        const cancelled = r.campaigns_cancelled ? `, ${plural(r.campaigns_cancelled, "gezamenlijke actie", "gezamenlijke acties")} geannuleerd` : "";
         loadBusinesses();
+        if (m.failed > 0) {
+          // de zaak is weg, maar niet elke mail is aangekomen: laat dat zien in plaats van het venster te sluiten
+          q("bdTitle").textContent = `${r.name || name} is verwijderd`;
+          q("bdIntro").textContent = `De zaak is verwijderd${cancelled}. ${m.sent} van ${m.sent + m.failed} mails zijn verstuurd; ${m.failed} ${m.failed === 1 ? "is" : "zijn"} mislukt` +
+            `${m.owner === "failed" ? " (ook de mail aan de eigenaar)" : ""}. Verwijderen kan niet worden teruggedraaid; stuur de mislukte berichten zo nodig zelf (Mail › Nieuwe mail).`;
+          for (const id of ["bdList", "bdWarn", "bdMailRow", "bdMailNote", "bdCancel"]) q(id).classList.add("gone");
+          for (const el2 of form.querySelectorAll(".bd-name, .bd-check")) el2.classList.add("gone");
+          ok.textContent = "Sluiten"; ok.classList.remove("danger", "solid"); busy = false; ok.disabled = false; err.textContent = "";
+          form.onsubmit = (ev) => { ev.preventDefault(); close(); };
+          return;
+        }
+        close();
+        const mailPart = m.sent ? `, ${plural(m.sent, "mail verstuurd", "mails verstuurd")}` : "";
+        toast(`${r.name || name} is verwijderd${cancelled}${mailPart}`);
       } catch (e2) {
         busy = false; sync();
         err.textContent = e2.message;

@@ -4,6 +4,8 @@
 // (pg_cron/pg_net, alleen poll_inbox). POST JSON {action, …}:
 //   status {} · poll_inbox {} / admin_poll {} · thread_list · thread_get · thread_reply · thread_status · thread_note
 //   compose · attachment_get · preview · test · campaign_audience · campaign_send · campaign_list · campaign_cancel
+//   notice {mails:[{kind, to, business, campaign?, counts?}]}  (alleen de functie admin: mededelingen bij het verwijderen van een zaak, merk
+//   Pasr Zakelijk, zonder ticket, afmeldlink of opslag van adressen -> {ok, sent, failed, results:[{kind, ok}]}; tekst in notice.ts)
 // Daarnaast, zonder kopregel: POST ?stop=<code> (afmelden met één klik uit het mailprogramma, RFC 8058).
 // Nooit loggen: adressen, onderwerpen, inhoud, wachtwoorden.
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -14,6 +16,7 @@ import {
   type Attachment, type Brand, BRAND_FROM, chunk, fromFor, LIMITS, newMessageId, randomId, statusAfter, toBase64, tooLarge,
 } from "./logic.ts";
 import { renderMarkdown, textToHtml } from "./markdown.ts";
+import { buildNotice, parseNotices } from "./notice.ts";
 import { buildMessage, type BuiltMail, genericUnsubPage } from "./outbound.ts";
 import { boxes, imapConfigured, pollInbox, replyToFor } from "./poll.ts";
 import {
@@ -212,6 +215,28 @@ async function handle(action: string, b: Record<string, unknown>, viaCron: boole
       }
       if (sent === 0) return json({ error: "send_failed", code: lastCode || "error", sent, failed }, 502);
       return json({ ok: true, sent, failed, skipped, ...(number ? { number } : {}) });
+    }
+    case "notice": {
+      // Mededelingen van het beheer (zaak verwijderd, gezamenlijke actie geannuleerd): merk Pasr Zakelijk, één mail per ontvanger,
+      // niets opgeslagen, geen afmeldlink. Een mislukte mail stopt de rest niet; de aanroeper krijgt per mail ok of niet.
+      const v = parseNotices(b);
+      if (!v.ok) return fail(v.error);
+      if (!smtpConfigured(env)) return fail("smtp_not_configured");
+      const brand: Brand = "zakelijk";
+      const results: { kind: string; ok: boolean }[] = [];
+      await withTransport(async (send) => {
+        for (const n of v.value) {
+          const t = buildNotice(n);
+          const built = buildMessage({
+            brand, kind: "mail", from: fromFor(brand, env), replyTo: replyToFor(env, brand), to: [n.to], cc: [], bcc: [],
+            subject: t.subject, markdown: t.markdown, messageId: newMessageId(null, randomId()),
+          });
+          const r = await send(built, brand);
+          results.push({ kind: n.kind, ok: r.ok });
+        }
+      });
+      const sent = results.filter((x) => x.ok).length;
+      return json({ ok: true, sent, failed: results.length - sent, results });
     }
     case "attachment_get": {
       const id = parseAttachmentId(b);

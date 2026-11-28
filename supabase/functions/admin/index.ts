@@ -33,8 +33,11 @@
 //   businesses       {}                             -> {businesses:[…zaak, cards, staff_count, last_event_at]}
 //   business_status  {id, status}                   -> {business}            (blocked = kaarten offline)
 //   business_delete_preview {id}                   -> {id, name, status, counts}  (wat er verdwijnt, alleen lezen)
-//   business_delete  {id, confirm}                  -> {deleted, id, name, counts, campaigns_cancelled}
-//                    PERMANENT: de zaak en alles eraan; confirm = exact de zaaknaam (400 confirm_mismatch), geen mail naar de eigenaar
+//   business_delete  {id, confirm, notify_owner?}   -> {deleted, id, name, counts, campaigns_cancelled, mails:{sent, failed, owner, participants:{sent, failed}}}
+//                    PERMANENT: de zaak en alles eraan; confirm = exact de zaaknaam (400 confirm_mismatch). Daarna mails (functie mail, merk
+//                    Pasr Zakelijk): aan de eigenaar (notify_owner, standaard true), altijd aan de deelnemers en uitgenodigden van geannuleerde
+//                    gezamenlijke acties en aan de organisator van acties waaraan de zaak meedeed. owner: sent|failed|none (geen adres)|off. Een
+//                    mislukte mail laat de verwijdering staan; adressen komen nergens terug, alleen aantallen
 //   business_detail  {id, limit?, days?}            -> {business, staff, log, stats}
 //   business_settings {id, cooldown_minutes?, max_per_scan?} -> {business}
 //   business_staff_revoke {id}                      -> {ok}                   (medewerker intrekken)
@@ -75,7 +78,7 @@ import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
 import { chunks, cleanAudience, cleanNews, DUPLICATE_WINDOW_MS, newsFingerprint, newsPayload, type Target, uniqueTokens, wantsAndroid, wantsIos } from "./news.ts";
-import { cleanBusinessDelete, cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, confirmMatches, dbError, deleteAuditLine } from "./business.ts";
+import { buildNotices, cleanBusinessDelete, cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBusinessStatus, cleanCardInput, confirmMatches, dbError, deleteAuditLine, mailsReport, type MailsReport } from "./business.ts";
 import { okLink, ownerMail } from "./owner_mail.ts";
 import { cleanDevices, communityPayload, type PushItem } from "./community.ts";
 import { ticketPayload, type TkItem, tkDevices } from "./tickets.ts";
@@ -1003,8 +1006,22 @@ Deno.serve(async (req) => {
         if (!confirmMatches(pre.data?.name, v.confirm)) return json({ error: "confirm_mismatch" }, 400);
         const { data, error } = await db.rpc("pasr_admin_business_delete", { p_business: v.id });
         if (error) { const m = dbError(error); if (m) return json({ error: m.error }, m.status); throw new Error(error.message); }
-        await audit("business_delete", ipHash, deleteAuditLine(v.id, String(data?.name ?? pre.data.name), data?.counts));
-        return json(data);
+        // De zaak is weg. Nu de mails (functie mail, merk Pasr Zakelijk): eigenaar (als het beheer dat wil) en de deelnemers van geannuleerde
+        // acties. Een mislukte mail laat de verwijdering staan en komt als aantallen terug; adressen gaan nooit naar het beheer of de log.
+        const { notify, ...result } = data as Record<string, unknown> & { notify?: unknown; name?: string; counts?: Record<string, unknown> };
+        const name = String(result.name ?? pre.data.name);
+        const planned = buildNotices(name, notify as never, result.counts, v.notifyOwner);
+        const hadOwner = !!(notify as { owner?: string | null } | undefined)?.owner;
+        let mails: MailsReport = mailsReport(planned, v.notifyOwner, hadOwner, 200, JSON.stringify({ results: [] }));
+        if (planned.length) {
+          const key = await mailKey(tokenSecret());
+          const url = `${env("SUPABASE_URL")}/functions/v1/mail`;
+          let f = key ? await forwardToMail(url, key, { action: "notice", mails: planned }) : { status: 503, text: JSON.stringify({ error: "not_configured" }) };
+          if (f.status === 502) f = await forwardToMail(url, key, { action: "notice", mails: planned });   // één nieuwe poging bij een netwerkfout
+          mails = mailsReport(planned, v.notifyOwner, hadOwner, f.status, f.text);
+        }
+        await audit("business_delete", ipHash, deleteAuditLine(v.id, name, result.counts, mails));
+        return json({ ...result, mails });
       }
       case "business_detail": {
         const v = cleanBusinessDetail(body);

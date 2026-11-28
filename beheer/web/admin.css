@@ -562,3 +562,5 @@ a.btn { text-decoration: none; }
 .bd-check input { width: auto; flex: none; margin-top: 2px; }
 .bd-name { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .bd-name b { color: var(--text, inherit); word-break: break-word; user-select: all; }
+.bd-name.gone, .bd-check.gone, .bd-list.gone, .bd-warn.gone, .gone { display: none !important; }
+#bizDelForm { max-height: calc(100vh - 32px); overflow-y: auto; }
