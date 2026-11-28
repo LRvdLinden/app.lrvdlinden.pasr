@@ -1306,13 +1306,33 @@
     const newCard = el("button", "btn sm ghost", "Nieuwe stempelkaart"); newCard.type = "button";
     newCard.disabled = (b.cards || []).length >= 5; if (newCard.disabled) newCard.title = "Hoogstens 5 stempelkaarten per zaak";
     newCard.addEventListener("click", () => openCardEditor(b, null));
-    acts.append(det, edit, newCard);
+    const imp = el("button", "btn sm", "Open als ondernemer"); imp.type = "button";
+    imp.title = "Opent het dashboard van deze zaak in Pasr Zakelijk, namens de ondernemer";
+    imp.addEventListener("click", () => openAsOwner(b, imp));
+    if (b.has_owner === false) { imp.disabled = true; imp.title = "Deze zaak heeft nog geen eigenaar"; }
+    acts.append(imp, det, edit, newCard);
     if (b.status !== "approved") acts.append(btn("Goedkeuren", "", "approved"));
     if (b.status !== "blocked") acts.append(btn("Blokkeren", "danger", "blocked", "Zaak blokkeren?", `${b.name} kan niet meer scannen en de kaarten gaan offline. Leden zien dat de kaart niet meer actief is.`));
     if (b.status === "blocked") acts.append(btn("Terug naar wachten", "ghost", "pending"));
     acts.classList.add("wrap-acts");
     row.append(el("div", "avatar", b.name.charAt(0).toUpperCase()), who, acts);
     return row;
+  }
+
+  // ---- Ondernemers: namens de ondernemer werken (eenmalige sleutel, opent het Zakelijk-dashboard in een nieuw tabblad) ----
+  async function openAsOwner(b, btn) {
+    const w = window.open("", "_blank");          // meteen openen (popup-blokkade), daarna pas de sleutel ophalen
+    if (w) { try { w.opener = null; w.document.write("<p style=\"font-family:system-ui;padding:24px\">Dashboard van de ondernemer openen…</p>"); } catch {} }
+    btn.disabled = true;
+    try {
+      const r = await api("business_impersonate", { id: b.id });
+      const url = "https://pasr.nl/zakelijk/dashboard/#beheer=" + encodeURIComponent(r.token_hash);
+      if (w) w.location.href = url; else window.open(url, "_blank", "noopener");
+      toast(`Dashboard van ${b.name} geopend. Dit staat in het logboek van de zaak.`);
+    } catch (err) {
+      if (w) w.close();
+      toast(err.code === "no_owner" ? "Deze zaak heeft nog geen eigenaar." : err.code === "not_confirmed" ? "Het e-mailadres van de eigenaar is nog niet bevestigd (Accounts › E-mail bevestigen)." : err.message);
+    } finally { btn.disabled = b.has_owner === false; }
   }
 
   // ---- Ondernemers: details per zaak (medewerkers, instellingen, stats, log) ----

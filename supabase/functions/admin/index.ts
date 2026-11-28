@@ -48,6 +48,7 @@
 //   business_owner_invite {id, email?, send?}       -> {business, owner, invite, mailed} (nieuwe link; 409 has_owner)
 //   business_owner_confirm {id}                     -> {business, owner, invite} (onbevestigd account met het adres van
 //                    de zaak bevestigen en eigenaar maken; 404 not_found, 409 already_confirmed/has_owner/owner_taken)
+//   business_impersonate {id}                       -> {token_hash, business:{id,name}}  (eenmalige inlogsleutel voor de eigenaar; 409 no_owner / not_confirmed)
 //   business_card_save {business_id, card:{id?, name, reward, stamps_total, color, text_color?, logo?, published?}} -> {card}
 //   business_card_publish {id, published}           -> {card}                 (409 not_approved)
 //   business_card_delete {id}                       -> {ok, members}
@@ -1146,6 +1147,24 @@ Deno.serve(async (req) => {
         await db.rpc("pasr_admin_event", { p_business: body.id, p_card: null, p_note: "E-mailadres van de eigenaar bevestigd door het beheer" });
         await audit("business_owner_confirm", ipHash, String(body.id));
         return json({ ...(data as Record<string, unknown>), mailed: false });
+      }
+      case "business_impersonate": {
+        // Namens de ondernemer werken: een eenmalige magic-link-sleutel (token_hash) voor de eigenaar; de pagina verifieert hem zelf.
+        // Er wordt niets gemaild. Het beheer ziet nooit een wachtwoord. Alles wordt vastgelegd in audit en in het logboek van de zaak.
+        if (!isUuid(body.id)) return json({ error: "bad_id" }, 400);
+        const { data: biz, error: be } = await db.from("pasr_businesses").select("id, name, owner").eq("id", body.id).maybeSingle();
+        if (be) throw new Error(be.message);
+        if (!biz) return json({ error: "not_found" }, 404);
+        if (!biz.owner) return json({ error: "no_owner" }, 409);
+        const { data: u, error: ge } = await db.auth.admin.getUserById(String(biz.owner));
+        if (ge || !u?.user?.email) return json({ error: "not_found" }, 404);
+        if (!u.user.email_confirmed_at) return json({ error: "not_confirmed" }, 409);
+        const { data: link, error: le } = await db.auth.admin.generateLink({ type: "magiclink", email: u.user.email });
+        const hash = link?.properties?.hashed_token;
+        if (le || typeof hash !== "string" || !/^[A-Za-z0-9_-]{20,200}$/.test(hash)) return json({ error: "link_failed" }, 502);
+        await db.rpc("pasr_admin_event", { p_business: biz.id, p_card: null, p_note: "Beheer heeft het dashboard geopend namens de ondernemer" });
+        await audit("business_impersonate", ipHash, String(biz.id));
+        return json({ token_hash: hash, business: { id: biz.id, name: biz.name } });
       }
       case "business_card_save": {
         const v = cleanCardInput(body);
