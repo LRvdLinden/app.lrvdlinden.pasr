@@ -64,7 +64,7 @@ const q = (s: string) => `**${lit(s)}**`;
 /** Onderwerp (platte tekst) en tekst (Markdown) van één mail. */
 export function buildNotice(n: Notice): { subject: string; markdown: string } {
   const bz = lit(n.business);
-  const help = "Vragen, of denk je dat dit niet klopt? Mail ons op [support@pasr.nl](mailto:support@pasr.nl).";
+  const help = "Vragen, of denk je dat dit niet klopt? Mail ons op [zakelijk@pasr.nl](mailto:zakelijk@pasr.nl).";
   if (n.kind === "owner_deleted") {
     const c = n.counts, lines: string[] = [];
     if (c.cards) lines.push(`- ${nl(c.cards)} ${c.cards === 1 ? "stempelkaart" : "stempelkaarten"}${c.members ? ` met ${nl(c.members)} ${c.members === 1 ? "lid" : "leden"}` : ""}`);

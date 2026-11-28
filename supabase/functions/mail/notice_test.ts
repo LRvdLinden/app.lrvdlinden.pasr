@@ -34,7 +34,7 @@ Deno.test("mail aan de eigenaar: tekst en aantallen", () => {
   const t = renderMail({ brand: "zakelijk", kind: "mail", subject: m.subject, markdown: m.markdown }).text;
   ok(t.includes("Bakkerij Jansen") && t.includes("definitief") && t.includes("niet ongedaan"), "definitief");
   ok(t.includes("2 stempelkaarten met 14 leden") && t.includes("1 event met 20 tickets"), "aantallen: " + t);
-  ok(t.includes("pasr.nl/zakelijk") && t.includes("support@pasr.nl") && t.includes("gratis"), "opnieuw beginnen en contact");
+  ok(t.includes("pasr.nl/zakelijk") && t.includes("zakelijk@pasr.nl") && t.includes("gratis"), "opnieuw beginnen en contact");
   ok(!t.includes("0 medewerkers"), "geen nullen");
 });
 
@@ -73,7 +73,7 @@ Deno.test("merk Pasr Zakelijk: afzender, kop, kleur en geen afmeldlink", () => {
   if (!r.ok) throw new Error("parse");
   const n = buildNotice(r.value[0]);
   const msg = buildMessage({
-    brand: "zakelijk", kind: "mail", from: "Pasr Zakelijk <support@pasr.nl>", replyTo: "support@pasr.nl", to: [r.value[0].to], cc: [], bcc: [],
+    brand: "zakelijk", kind: "mail", from: "Pasr Zakelijk <zakelijk@pasr.nl>", replyTo: "zakelijk@pasr.nl", to: [r.value[0].to], cc: [], bcc: [],
     subject: n.subject, markdown: n.markdown, messageId: "<x@pasr.nl>",
   });
   ok(msg.from.startsWith("Pasr Zakelijk"), "afzender");

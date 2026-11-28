@@ -559,7 +559,7 @@ def page():
     # SoftwareApplication (iOS/iPadOS, Mac-app en Android-APK) + Organization; FAQPage staat er los onder (de vragen staan zichtbaar op de pagina)
     app_ld = json.dumps({"@context": "https://schema.org", "@graph": [
         {"@type": "Organization", "@id": "https://pasr.nl/#org", "name": "Pasr", "url": "https://pasr.nl/",
-         "logo": "https://pasr.nl/assets/icon-512.png", "email": "support@pasr.nl",
+         "logo": "https://pasr.nl/assets/icon-512.png", "email": "zakelijk@pasr.nl",
          "sameAs": [f"https://apps.apple.com/nl/app/pasr-klantenkaarten/id{PASR_APP_ID}", APP_URL]},
         {"@type": "SoftwareApplication", "@id": "https://pasr.nl/zakelijk/#app", "name": "Pasr Zakelijk",
          "operatingSystem": "iOS 17, iPadOS 17, macOS 14, Android 8", "applicationCategory": "BusinessApplication",
@@ -652,6 +652,7 @@ def patch_download():
     if 'zakelijk.css' not in new:
         new = re.sub(r'(<link rel="stylesheet" href="/assets/style\.css[^"]*">)', r'\1\n  <link rel="stylesheet" href="/assets/zakelijk.css">\n  <link rel="stylesheet" href="/assets/catalog-hub.css">', new, count=1)
     # Pasr Zakelijk, niet Pasr voor klanten: app-icoon in de kaart, favicon, apple-touch-icon, manifest en deelafbeelding
+    new = new.replace("support@pasr.nl", "zakelijk@pasr.nl")  # Zakelijk heeft een eigen adres
     new = re.sub(r'<img class="apk-icon" src="[^"]*"', '<img class="apk-icon" src="/assets/pasr-zakelijk-touch-icon.png"', new)
     new = re.sub(r'<link rel="icon" type="image/png" href="/assets/[^"]*">', '<link rel="icon" type="image/png" href="/assets/pasr-zakelijk-favicon.png">', new)
     new = re.sub(r'<link rel="apple-touch-icon" href="/assets/[^"]*">', '<link rel="apple-touch-icon" href="/assets/pasr-zakelijk-touch-icon.png">', new)

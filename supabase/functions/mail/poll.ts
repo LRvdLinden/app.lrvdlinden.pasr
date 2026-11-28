@@ -195,7 +195,8 @@ async function autoReply(ctx: Ctx, number: number, to: string, brand: Brand) {
 }
 /** Reply-To = het adres van de postbus van het merk, zodat antwoorden in het beheer terugkomen. */
 export function replyToFor(env: (k: string) => string, brand: Brand): string {
-  return (brand === "zakelijk" ? env("PASR_IMAP_ZAKELIJK_USER") : "") || env("PASR_IMAP_USER") || addressOf(fromFor(brand, env));
+  if (brand === "zakelijk") return env("PASR_IMAP_ZAKELIJK_USER") || addressOf(fromFor(brand, env));
+  return env("PASR_IMAP_USER") || addressOf(fromFor(brand, env));
 }
 
 export async function pollInbox(d: PollDeps): Promise<PollResult> {

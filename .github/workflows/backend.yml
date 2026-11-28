@@ -14,7 +14,8 @@ name: Backend
 # For push to Android (FCM HTTP v1, function admin): FIREBASE_SERVICE_ACCOUNT_JSON (service account JSON of the Firebase project).
 # For Pasr beheer › Mail (function mail: IMAP inbox + SMTP via the PASR_SMTP_* secrets above; see docs/beheer-mail.md):
 #   PASR_IMAP_HOST, PASR_IMAP_PORT (default 993), PASR_IMAP_USER, PASR_IMAP_PASSWORD  (the inbox replies come back in)
-#   PASR_MAIL_FROM_PASR, PASR_MAIL_FROM_ZAKELIJK (sender addresses; beide standaard support@pasr.nl; Zakelijk toont "Pasr Zakelijk" als naam)
+#   PASR_MAIL_FROM_PASR, PASR_MAIL_FROM_ZAKELIJK (sender addresses; standaard support@pasr.nl en zakelijk@pasr.nl)
+#   PASR_IMAP_ZAKELIJK_USER, PASR_IMAP_ZAKELIJK_PASSWORD (inbox zakelijk@pasr.nl; same host as above), PASR_SMTP_ZAKELIJK_USER/_PASSWORD (optional own SMTP login for sending as zakelijk@pasr.nl)
 #   PASR_MAIL_AGENTS (comma-separated staff addresses that may answer tickets by mail), optional PASR_MAIL_AUTHSERV, PASR_MAIL_AUTOREPLY
 # For "Opslaan in Google Wallet" (function google-wallet, Pasr for Android):
 #   GOOGLE_WALLET_ISSUER_ID (issuer id from the Google Pay & Wallet Console),
@@ -383,6 +384,10 @@ jobs:
           S_FROM: ${{ secrets.PASR_SMTP_FROM }}
           FROM_PASR: ${{ secrets.PASR_MAIL_FROM_PASR }}
           FROM_ZAK: ${{ secrets.PASR_MAIL_FROM_ZAKELIJK }}
+          IMAP_ZUSER: ${{ secrets.PASR_IMAP_ZAKELIJK_USER }}
+          IMAP_ZPASS: ${{ secrets.PASR_IMAP_ZAKELIJK_PASSWORD }}
+          S_ZUSER: ${{ secrets.PASR_SMTP_ZAKELIJK_USER }}
+          S_ZPASS: ${{ secrets.PASR_SMTP_ZAKELIJK_PASSWORD }}
           AGENTS: ${{ secrets.PASR_MAIL_AGENTS }}
           AUTHSERV: ${{ secrets.PASR_MAIL_AUTHSERV }}
           AUTOREPLY: ${{ secrets.PASR_MAIL_AUTOREPLY }}
@@ -408,6 +413,8 @@ jobs:
           else
             echo "::warning::PASR_SMTP_* missing: Beheer Mail cannot send mail yet."
           fi
+          if [ -n "$IMAP_ZUSER" ] && [ -n "$IMAP_ZPASS" ]; then args+=("PASR_IMAP_ZAKELIJK_USER=$IMAP_ZUSER" "PASR_IMAP_ZAKELIJK_PASSWORD=$IMAP_ZPASS"); else echo "::warning::PASR_IMAP_ZAKELIJK_USER / _PASSWORD missing: mail to zakelijk@pasr.nl is not fetched into Beheer Mail."; fi
+          if [ -n "$S_ZUSER" ] && [ -n "$S_ZPASS" ]; then args+=("PASR_SMTP_ZAKELIJK_USER=$S_ZUSER" "PASR_SMTP_ZAKELIJK_PASSWORD=$S_ZPASS"); fi
           [ -z "$FROM_PASR" ] || args+=("PASR_MAIL_FROM_PASR=$FROM_PASR")
           [ -z "$FROM_ZAK" ] || args+=("PASR_MAIL_FROM_ZAKELIJK=$FROM_ZAK")
           if [ -n "$AGENTS" ]; then args+=("PASR_MAIL_AGENTS=$AGENTS"); else echo "::warning::PASR_MAIL_AGENTS missing: answering a ticket from your own mail app is switched off (the admin screen still works)."; fi

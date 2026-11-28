@@ -158,7 +158,7 @@ export const addressOf = (from: string) => (/<([^<>]+)>/.exec(from)?.[1] ?? from
 
 export const BRAND_FROM: Record<Brand, { env: string; fallback: string; name: string }> = {
   pasr: { env: "PASR_MAIL_FROM_PASR", fallback: "Pasr <support@pasr.nl>", name: "Pasr" },
-  zakelijk: { env: "PASR_MAIL_FROM_ZAKELIJK", fallback: "Pasr Zakelijk <support@pasr.nl>", name: "Pasr Zakelijk" },
+  zakelijk: { env: "PASR_MAIL_FROM_ZAKELIJK", fallback: "Pasr Zakelijk <zakelijk@pasr.nl>", name: "Pasr Zakelijk" },
 };
 export function fromFor(brand: Brand, get: (k: string) => string): string {
   const b = BRAND_FROM[brand];

@@ -165,7 +165,7 @@
     if (e && e.hint === "not_signed_in") return "Je bent uitgelogd. Log opnieuw in.";
     if (/card_limit/.test(m)) return "Je kunt hoogstens 5 kaarten maken.";
     if (/bad_logo/.test(m)) return "Dit logo werkt niet. Kies een PNG of JPEG.";
-    if (/blocked/.test(m)) return "Je zaak is geblokkeerd. Mail support@pasr.nl als dat niet klopt.";
+    if (/blocked/.test(m)) return "Je zaak is geblokkeerd. Mail zakelijk@pasr.nl als dat niet klopt.";
     if (e.status === 401) return "Je bent uitgelogd. Log opnieuw in.";
     return "Er ging iets mis. Probeer het opnieuw.";
   }
@@ -403,7 +403,7 @@
   function banner(b) {
     if (b.status === "blocked") {
       return '<div class="zd-state blocked" role="alert"><span class="zd-state-ic">' + ICON.lock + "</span><div><h2>" + (b.role === "owner" ? "Je zaak is geblokkeerd" : "Deze zaak is geblokkeerd") + "</h2>" +
-        "<p>Je stempelkaarten zijn offline en er kunnen geen stempels worden gezet. Denk je dat dit niet klopt? Mail <a href=\"mailto:support@pasr.nl?subject=" + encodeURIComponent("Zaak geblokkeerd: " + b.name) + "\">support@pasr.nl</a>.</p></div></div>";
+        "<p>Je stempelkaarten zijn offline en er kunnen geen stempels worden gezet. Denk je dat dit niet klopt? Mail <a href=\"mailto:zakelijk@pasr.nl?subject=" + encodeURIComponent("Zaak geblokkeerd: " + b.name) + "\">zakelijk@pasr.nl</a>.</p></div></div>";
     }
     if (b.status !== "approved") {
       return '<div class="zd-state pending" role="status"><span class="zd-state-ic">' + ICON.clock + "</span><div><h2>Wacht op goedkeuring</h2>" +
