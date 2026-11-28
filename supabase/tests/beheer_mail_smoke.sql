@@ -58,7 +58,7 @@ declare
 begin
  -- ---- rechten: intern dicht, afmelden open ----
  if has_function_privilege('anon', 'public.pasr_mail_audience(text)', 'execute')
-    or has_function_privilege('anon', 'public.pasr_mail_thread_list(text,text,text,integer,integer)', 'execute')
+    or has_function_privilege('anon', 'public.pasr_mail_thread_list(text,text,text,integer,integer,text)', 'execute')
     or has_function_privilege('anon', 'public.pasr_mail_news_token(text,text)', 'execute')
     or has_function_privilege('authenticated', 'public.pasr_mail_attachment_get(uuid)', 'execute')
     or has_function_privilege('anon', 'public.pasr_mail_poll_kick()', 'execute') then
@@ -173,6 +173,16 @@ begin
  r := public.pasr_mail_thread_get(n);
  if (r->'thread'->>'status') <> 'pending' or (r->'messages'->1->>'bcc_count')::int <> 3 then raise exception 'out message state %', r; end if;
  if r::text like '%"bcc":%' or exists (select 1 from public.pasr_mail_messages where bcc <> '[]'::jsonb) then raise exception 'bcc addresses must never be stored or returned'; end if;
+ -- Verzonden: alleen tickets met een uitgaand bericht, met ontvangersgegevens (BCC alleen als aantal)
+ r := public.pasr_mail_thread_list('all', null, null, 1, 30, 'sent');
+ if (r->>'total')::int <> 1 or jsonb_array_length(r->'items') <> 1 or (r->'items'->0->>'number')::bigint <> n then raise exception 'sent box %', r; end if;
+ if r->'items'->0->>'last_direction' <> 'out' or r->'items'->0->>'to_preview' <> 'klant@winkel.example' or (r->'items'->0->>'to_count')::int <> 1
+    or (r->'items'->0->>'cc_count')::int <> 1 or (r->'items'->0->>'bcc_count')::int <> 3 or (r->'items'->0->>'attachments')::int <> 0
+    or r->'items'->0->>'sent_at' is null then raise exception 'sent fields %', r; end if;
+ if r::text like '%cc@x.example%' then raise exception 'sent list shows no cc addresses'; end if;
+ if (public.pasr_mail_thread_list('all', null, null, 1, 30, 'all')->>'total')::int < 2 then raise exception 'box all'; end if;
+ if (select i->>'last_direction' from jsonb_array_elements(public.pasr_mail_thread_list('active', null, null, 1, 30, 'inbox')->'items') i where (i->>'number')::bigint = n) <> 'out' then raise exception 'last_direction in inbox'; end if;
+ if (public.pasr_mail_thread_list('active', null, null, 1, 30, 'raar')->>'box') <> 'inbox' then raise exception 'unknown box = inbox'; end if;
  r := public.pasr_mail_thread_set(n, 'closed', 'high');
  if r->>'status' <> 'closed' or (select closed_at from public.pasr_mail_threads where number = n) is null then raise exception 'close %', r; end if;
  r := public.pasr_mail_thread_set(n, 'open', null);
@@ -203,17 +213,27 @@ begin
  if public.pasr_mail_contact_recent('KLANT@winkel.example', 1) <> 1 then raise exception 'contact_recent'; end if;
  if public.pasr_mail_contact_recent('niemand@x.example', 1) <> 0 then raise exception 'contact_recent none'; end if;
 
- -- ---- bijlagen: max. 10 MB per bericht ----
+ -- ---- bijlagen: max. 20 MB per bericht ----
  b64 := repeat('QUJD', 2000000);   -- 6 MB
  att := public.pasr_mail_attach(mid, null, 'groot.bin', 'application/octet-stream', b64);
  if (att->>'size')::int <> 6000000 then raise exception 'attachment size %', att; end if;
- perform pg_temp.expect(format($q$select public.pasr_mail_attach(%L::uuid, null, 'nog-groter.bin', 'x/y', repeat('QUJD', 2000000))$q$, mid), 'too_large');
+ perform public.pasr_mail_attach(mid, null, 'groot2.bin', 'x/y', b64);
+ perform public.pasr_mail_attach(mid, null, 'groot3.bin', 'x/y', b64);   -- 18 MB
+ perform pg_temp.expect(format($q$select public.pasr_mail_attach(%L::uuid, null, 'nog-groter.bin', 'x/y', repeat('QUJD', 1000000))$q$, mid), 'too_large');   -- +3 MB = 21 MB
  att := public.pasr_mail_attach(mid, null, 'klein.txt', 'text/plain', 'SGFsbG8=');
  r := public.pasr_mail_attachment_get((att->>'id')::uuid);
  if r->>'data_b64' <> 'SGFsbG8=' or r->>'name' <> 'klein.txt' then raise exception 'attachment get %', r; end if;
- if jsonb_array_length((select attachments from public.pasr_mail_messages where id = mid)) <> 2 then raise exception 'attachments meta on message'; end if;
+ if jsonb_array_length((select attachments from public.pasr_mail_messages where id = mid)) <> 4 then raise exception 'attachments meta on message'; end if;
  if public.pasr_mail_thread_get(n)::text like '%data_b64%' then raise exception 'thread_get must not return bytes'; end if;
  perform pg_temp.expect($q$select public.pasr_mail_attach(null, null, 'a', 'b', 'QUJD')$q$, 'bad_target');
+
+ -- pushmelding voor nieuwe mail: leeg of rommel doet niets; geldig mag nooit een fout geven (pasr_admin_notify vangt zijn eigen fouten)
+ perform public.pasr_mail_notify('[]'::jsonb);
+ perform public.pasr_mail_notify(null);
+ perform public.pasr_mail_notify('{"a":1}'::jsonb);
+ if to_regprocedure('public.pasr_admin_notify(text,jsonb)') is not null then
+   perform public.pasr_mail_notify('[{"number":1001,"brand":"zakelijk","subject":"Vraag"},{"number":"x"}]'::jsonb);
+ end if;
 
  -- ---- IMAP-ronde: lease en logboek ----
  if not public.pasr_mail_sync_lock(60) then raise exception 'first lock'; end if;

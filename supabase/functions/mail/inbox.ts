@@ -29,7 +29,7 @@ import { cleanText, LIMITS, type Lang, type Status } from "./logic.ts";
 import { type ParsedMail, stripReply } from "./mime.ts";
 
 export const DONE_FOLDER = "Pasr-verwerkt";
-export const MAX_FETCH_BYTES = 14 * 1024 * 1024; // mail met bijlagen tot 10 MB (base64 is een derde groter)
+export const MAX_FETCH_BYTES = 28 * 1024 * 1024; // mail met bijlagen tot 20 MB (base64 is een derde groter)
 
 /** strong = gevonden via een opgeslagen Message-ID van ons met een willekeurig deel (<pasr-ticket-1007.xyz@…>, niet te raden). */
 export type TicketLite = { number: number; email: string; status: Status; lang: Lang; strong?: boolean };

@@ -11,7 +11,7 @@ import { adminOk, sameText } from "./auth.ts";
 import { runCampaign, continueCampaigns } from "./campaign.ts";
 import { BRAND_STYLE, type Kind, renderMail } from "./layout.ts";
 import {
-  type Attachment, type Brand, BRAND_FROM, chunk, fromFor, LIMITS, newMessageId, randomId, statusAfter, toBase64,
+  type Attachment, type Brand, BRAND_FROM, chunk, fromFor, LIMITS, newMessageId, randomId, statusAfter, toBase64, tooLarge,
 } from "./logic.ts";
 import { renderMarkdown, textToHtml } from "./markdown.ts";
 import { buildMessage, type BuiltMail, genericUnsubPage } from "./outbound.ts";
@@ -23,12 +23,12 @@ import {
 import { makeTransport, sendBuilt, smtpConfigured, type Transport } from "./send.ts";
 
 const env = (k: string) => (Deno.env.get(k) ?? "").trim();
-/** Maximale grootte van een verzoek: bijlagen als base64 in JSON (10 MB bijlagen = ruim 13 MB) */
-export const MAX_BODY = 20 * 1024 * 1024;
+/** Maximale grootte van een verzoek: bijlagen als base64 in JSON (20 MB bijlagen = ruim 26,7 MB) */
+export const MAX_BODY = 32 * 1024 * 1024;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
-const fail = (error: string, extra: Record<string, unknown> = {}) => json({ error, ...extra }, statusFor(error));
+const fail = (error: string, extra: Record<string, unknown> = {}) => json({ error, ...(error === "too_large" ? tooLarge() : {}), ...extra }, statusFor(error));
 
 /** Foutcodes die de database zelf geeft (RAISE EXCEPTION 'not_found' enz.) */
 const DB_CODES = new Set(["not_found", "bad_status", "bad_priority", "too_large", "not_cancellable", "bad_request", "bad_audience", "bad_scope"]);
@@ -107,7 +107,7 @@ async function handle(action: string, b: Record<string, unknown>, viaCron: boole
     case "thread_list": {
       const v = parseThreadList(b);
       if (!v.ok) return fail(v.error);
-      return json(await call("pasr_mail_thread_list", { p_status: v.value.status, p_q: v.value.q, p_brand: v.value.brand, p_page: v.value.page, p_size: v.value.size }));
+      return json(await call("pasr_mail_thread_list", { p_status: v.value.status, p_q: v.value.q, p_brand: v.value.brand, p_page: v.value.page, p_size: v.value.size, p_box: v.value.box }));
     }
     case "thread_get": {
       const n = parseId(b.number);

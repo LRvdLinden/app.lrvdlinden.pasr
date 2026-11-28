@@ -4,7 +4,7 @@ import nodemailer from "npm:nodemailer@6.9.16";
 import { adminKey, adminOk } from "./auth.ts";
 import { BRAND_STYLE, renderMail } from "./layout.ts";
 import {
-  checkAddresses, chunk, cleanFileName, fromFor, LIMITS, newMessageId, parseAddressList, parseAttachments, statusAfter, subjectFor, toBase64, withName,
+  fromBase64, tooLarge, checkAddresses, chunk, cleanFileName, fromFor, LIMITS, newMessageId, parseAddressList, parseAttachments, statusAfter, subjectFor, toBase64, withName,
 } from "./logic.ts";
 import { parseMessage } from "./mime.ts";
 import { buildMessage, genericUnsubPage, oneClickUrl, unsubPage } from "./outbound.ts";
@@ -51,7 +51,7 @@ Deno.test("Aan, CC en BCC: drie velden, grenzen, ontdubbeld", () => {
 });
 
 // ---- bijlagen ----
-Deno.test("bijlagen: tot 10 MB in totaal, naam opgeschoond, type gecontroleerd", () => {
+Deno.test("bijlagen: tot 20 MB in totaal, naam opgeschoond, type gecontroleerd", () => {
   const r = parseAttachments([{ name: "../../etc/passwd", type: "text/plain", data_b64: b64("hallo") }]);
   ok(r.ok);
   if (r.ok) { eq(r.list[0].name, "_.._etc_passwd"); eq(new TextDecoder().decode(r.list[0].data), "hallo"); eq(r.list[0].type, "text/plain"); }
@@ -62,11 +62,12 @@ Deno.test("bijlagen: tot 10 MB in totaal, naam opgeschoond, type gecontroleerd",
   eq(parseAttachments([null]), { ok: false, error: "bad_attachment" });
   const t = parseAttachments([{ name: "a", type: "tekst; rommel", data_b64: b64("x") }]);
   ok(t.ok && t.list[0].type === "application/octet-stream", "onbekend type");
-  // 6 MB + 5 MB = te groot; 6 MB + 4 MB mag
+  // 12 MB + 9 MB = te groot; 12 MB + 8 MB mag; het handboek van 15,6 MB past
   const mb = (n: number) => toBase64(new Uint8Array(n * 1024 * 1024));
-  eq(parseAttachments([{ name: "a", data_b64: mb(6) }, { name: "b", data_b64: mb(5) }]), { ok: false, error: "too_large" });
-  ok(parseAttachments([{ name: "a", data_b64: mb(6) }, { name: "b", data_b64: mb(4) }]).ok, "10 MB mag");
-  eq(parseAttachments([{ name: "a", data_b64: mb(11) }]), { ok: false, error: "too_large" });
+  eq(parseAttachments([{ name: "a", data_b64: mb(12) }, { name: "b", data_b64: mb(9) }]), { ok: false, error: "too_large" });
+  ok(parseAttachments([{ name: "handboek.pdf", data_b64: mb(15.6) }]).ok, "15,6 MB handboek");
+  ok(parseAttachments([{ name: "a", data_b64: mb(12) }, { name: "b", data_b64: mb(8) }]).ok, "20 MB mag");
+  eq(parseAttachments([{ name: "a", data_b64: mb(21) }]), { ok: false, error: "too_large" });
   eq(parseAttachments(Array.from({ length: 11 }, () => ({ name: "a", data_b64: b64("x") }))), { ok: false, error: "too_large" }, "aantal");
   eq(cleanFileName("a\r\nb:c*.pdf"), "a b_c_.pdf".replace(" ", " "));
   eq(cleanFileName("   "), "bijlage");
@@ -116,8 +117,11 @@ Deno.test("reply, status, notitie, test, preview, lijst, campagne", () => {
   eq(parseTest({ ...good, to: "a@x.nl, b@x.nl" }), { ok: false, error: "bad_address" }, "één adres");
   eq(parsePreview({ body_md: "", brand: "pasr" }).ok, true, "lege preview mag");
   eq(parsePreview({ body_md: "{{email}}" }), { ok: false, error: "bad_body" });
-  eq(parseThreadList({}), { ok: true, value: { status: "active", q: null, brand: null, page: 1, size: 30 } });
-  eq(parseThreadList({ status: "closed", q: " zoek ", brand: "zakelijk", page: 3, page_size: 500 }), { ok: true, value: { status: "closed", q: "zoek", brand: "zakelijk", page: 3, size: 100 } });
+  eq(parseThreadList({}), { ok: true, value: { status: "active", q: null, brand: null, page: 1, size: 30, box: "inbox" } });
+  eq(parseThreadList({ box: "sent" }), { ok: true, value: { status: "all", q: null, brand: null, page: 1, size: 30, box: "sent" } });
+  eq(parseThreadList({ box: "all", status: "open" }), { ok: true, value: { status: "open", q: null, brand: null, page: 1, size: 30, box: "all" } });
+  eq(parseThreadList({ box: "raar" }), { ok: false, error: "bad_box" });
+  eq(parseThreadList({ status: "closed", q: " zoek ", brand: "zakelijk", page: 3, page_size: 500 }), { ok: true, value: { status: "closed", q: "zoek", brand: "zakelijk", page: 3, size: 100, box: "inbox" } });
   eq(parseThreadList({ status: "raar" }), { ok: false, error: "bad_status" });
   eq(parseThreadList({ brand: "raar" }), { ok: false, error: "bad_brand" });
   const id = "123e4567-e89b-42d3-a456-426614174000";
@@ -275,4 +279,28 @@ Deno.test("mime: bijlagen met inhoud bewaren tot de limiet", () => {
   const kept = parseMessage(raw, { keepBytes: 1024 });
   eq(new TextDecoder().decode(kept.attachments[0].data), "PDF-inhoud");
   ok(!parseMessage(raw, { keepBytes: 5 }).attachments[0].data, "groter dan de limiet: niet bewaard");
+});
+
+Deno.test("too_large noemt het echte maximum", () => {
+  const t = tooLarge();
+  eq([t.max_bytes, t.max_mb], [20 * 1024 * 1024, 20]);
+  ok(t.message.includes("20 MB") && /downloadlink/.test(t.message));
+  eq(LIMITS.attachmentsTotal, 20 * 1024 * 1024);
+});
+
+Deno.test("base64: blokken geven dezelfde uitkomst als btoa, ook voor 20 MB (snel en zonder kopie)", () => {
+  for (const n of [0, 1, 2, 3, 4, 49151, 49152, 49153, 100000]) {
+    const b = Uint8Array.from({ length: n }, (_, i) => (i * 31 + 7) & 255);
+    const s = toBase64(b);
+    eq(s, btoa(String.fromCharCode(...b.subarray(0, Math.min(n, 100000)))));
+    eq(Array.from(fromBase64(s)), Array.from(b), `rond ${n}`);
+  }
+  const big = new Uint8Array(LIMITS.attachmentsTotal);
+  big[0] = 1; big[big.length - 1] = 2;
+  const t0 = performance.now();
+  const r = parseAttachments([{ name: "x.bin", data_b64: toBase64(big) }]);
+  ok(r.ok && r.list[0].data.length === big.length && r.list[0].data[big.length - 1] === 2, "20 MB rond");
+  ok(performance.now() - t0 < 3000, "20 MB in ruim onder de CPU-limiet");
+  eq(parseAttachments([{ name: "x", data_b64: "AA\nAA" }]).ok, true, "regeleinden mogen");
+  eq(parseAttachments([{ name: "x", data_b64: "A$AA" }]), { ok: false, error: "bad_attachment" });
 });

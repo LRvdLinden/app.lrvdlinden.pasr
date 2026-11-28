@@ -14,9 +14,9 @@ const E = env({ PASR_IMAP_HOST: "imap.x.nl", PASR_IMAP_USER: "inbox@pasr.nl", PA
 
 function mail(o: { from?: string; to?: string; subject: string; id: string; body?: string; irt?: string; extra?: string[]; att?: boolean }) {
   const h = [`From: ${o.from ?? "klant@x.nl"}`, `To: ${o.to ?? "inbox@pasr.nl"}`, `Subject: ${o.subject}`, `Message-ID: ${o.id}`, "MIME-Version: 1.0", ...(o.irt ? [`In-Reply-To: ${o.irt}`, `References: ${o.irt}`] : []), ...(o.extra ?? [])];
-  if (!o.att) return parseMessage([...h, "Content-Type: text/plain; charset=utf-8", "", o.body ?? "Hallo, ik heb een vraag over mijn kaart.", ""].join("\r\n"), { keepBytes: 10_000_000 });
+  if (!o.att) return parseMessage([...h, "Content-Type: text/plain; charset=utf-8", "", o.body ?? "Hallo, ik heb een vraag over mijn kaart.", ""].join("\r\n"), { keepBytes: 30_000_000 });
   return parseMessage([...h, 'Content-Type: multipart/mixed; boundary="B"', "", "--B", "Content-Type: text/plain; charset=utf-8", "", o.body ?? "Zie bijlage", "--B",
-    'Content-Type: application/pdf; name="a.pdf"', 'Content-Disposition: attachment; filename="a.pdf"', "Content-Transfer-Encoding: base64", "", btoa("PDF-DATA"), "--B--", ""].join("\r\n"), { keepBytes: 10_000_000 });
+    'Content-Type: application/pdf; name="a.pdf"', 'Content-Disposition: attachment; filename="a.pdf"', "Content-Transfer-Encoding: base64", "", btoa("PDF-DATA"), "--B--", ""].join("\r\n"), { keepBytes: 30_000_000 });
 }
 
 function fake(opts: { tickets?: Record<string, unknown>[]; exists?: boolean; recent?: number } = {}) {
@@ -88,9 +88,9 @@ Deno.test("bijlagen van een klant worden opgeslagen", async () => {
   eq([at.p_message, at.p_name, at.p_type, at.p_b64], ["m1", "a.pdf", "application/pdf", btoa("PDF-DATA")]);
 });
 
-Deno.test("bijlagen boven 10 MB in totaal verliezen hun bytes", () => {
+Deno.test("bijlagen boven 20 MB in totaal verliezen hun bytes", () => {
   const m = mail({ subject: "x", id: "<z@x.nl>", att: true });
-  m.attachments.push({ filename: "groot.bin", contentType: "application/octet-stream", size: 11_000_000, data: new Uint8Array(11_000_000) } as never);
+  m.attachments.push({ filename: "groot.bin", contentType: "application/octet-stream", size: 21_000_000, data: new Uint8Array(21_000_000) } as never);
   const kept = pickAttachments(m);
   eq(kept.map((a) => a.filename), ["a.pdf"]);
 });
@@ -123,4 +123,56 @@ Deno.test("ontvangstbevestiging alleen met PASR_MAIL_AUTOREPLY=1", async () => {
   const none: unknown[] = [];
   await handleMail(mail({ subject: "Vraag", id: "<k10@x.nl>" }), ctxOf(fake(), E, none) as never);
   eq(none.length, 0);
+});
+
+Deno.test("push: nieuw ticket en klantantwoord geven één seintje met nummer, merk en onderwerp (geen adres)", async () => {
+  const f = fake({ tickets: [{ number: 1001, email: "klant@x.nl", status: "pending", brand: "zakelijk", mids: [] }] });
+  const a = await handleMail(mail({ subject: "Vraag over kaart", id: "<n1@x.nl>" }), ctxOf(f));
+  eq(a.notify, { number: 1001, brand: "pasr", subject: "Vraag over kaart" });
+  const b = await handleMail(mail({ subject: "Re: [#1001] " + "x".repeat(100), id: "<n2@x.nl>", body: "Dank." }), ctxOf(f));
+  eq([b.notify?.number, b.notify?.brand, b.notify?.subject.length], [1001, "zakelijk", 60]);
+  ok(!JSON.stringify([a.notify, b.notify]).includes("@"), "geen adres");
+  // dubbel, genegeerd en afgewezen: geen melding
+  eq((await handleMail(mail({ subject: "x", id: "<d@x.nl>" }), ctxOf(fake({ exists: true })))).notify, undefined);
+  eq((await handleMail(mail({ subject: "Afwezig", id: "<a2@x.nl>", extra: ["Auto-Submitted: auto-replied"] }), ctxOf(fake()))).notify, undefined);
+});
+
+// ---- pollInbox met een nep-IMAP: één samengevatte pushmelding per ronde ----
+import { pollInbox } from "./poll.ts";
+function fakeImap(raws: Record<number, string>) {
+  return {
+    maxLiteral: 0,
+    login: () => Promise.resolve(),
+    list: () => Promise.resolve([]),
+    select: () => Promise.resolve({ exists: Object.keys(raws).length, uidvalidity: 7, permanentFlags: ["\\*"] }),
+    uidSearch: () => Promise.resolve(Object.keys(raws).map(Number)),
+    uidFetch: (uids: number[]) => Promise.resolve([{ uid: uids[0], size: raws[uids[0]].length, body: new TextEncoder().encode(raws[uids[0]]) }]),
+    uidStore: () => Promise.resolve(),
+    uidMove: () => Promise.resolve(),
+    logout: () => Promise.resolve(),
+    close: () => {},
+  };
+}
+const rawOf = (id: string, subject: string) => ["From: klant@x.nl", "To: inbox@pasr.nl", `Subject: ${subject}`, `Message-ID: ${id}`, "MIME-Version: 1.0", "Content-Type: text/plain; charset=utf-8", "", "Hallo, een vraag over mijn kaart.", ""].join("\r\n");
+
+Deno.test("poll_inbox: drie nieuwe mails geven één melding met drie items; zonder nieuwe mail geen melding", async () => {
+  const f = fake();
+  const rpc = (name: string, args: Record<string, unknown> = {}) => {
+    if (name === "pasr_mail_sync_lock") return Promise.resolve({ data: true, error: null });
+    if (name === "pasr_mail_log_done") return Promise.resolve({ data: [], error: null });
+    if (name === "pasr_mail_sync_state") return Promise.resolve({ data: null, error: null });
+    return f.rpc(name, args);
+  };
+  const imap = fakeImap({ 1: rawOf("<p1@x.nl>", "Een"), 2: rawOf("<p2@x.nl>", "Twee"), 3: rawOf("<p3@x.nl>", "Drie") });
+  const r = await pollInbox({ rpc, env: E, connect: () => Promise.resolve(imap as never), send: () => Promise.resolve({ ok: true }) });
+  eq([r.new_threads, r.notified], [3, 3]);
+  const n = f.calls.filter((c) => c.name === "pasr_mail_notify");
+  eq(n.length, 1, "één seintje per ronde");
+  eq((n[0].args.p_items as { subject: string }[]).map((i) => i.subject), ["Een", "Twee", "Drie"]);
+  // niets nieuws: geen seintje
+  const g = fake({ exists: true });
+  const rpc2 = (name: string, args: Record<string, unknown> = {}) => name === "pasr_mail_sync_lock" ? Promise.resolve({ data: true, error: null }) : name === "pasr_mail_log_done" ? Promise.resolve({ data: [], error: null }) : g.rpc(name, args);
+  const r2 = await pollInbox({ rpc: rpc2, env: E, connect: () => Promise.resolve(fakeImap({ 1: rawOf("<p1@x.nl>", "Een") }) as never), send: () => Promise.resolve({ ok: true }) });
+  eq(r2.notified, 0);
+  eq(g.calls.some((c) => c.name === "pasr_mail_notify"), false);
 });

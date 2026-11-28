@@ -24,7 +24,7 @@ export type PollDeps = {
 export type PollResult = {
   ok: boolean; skipped?: string; busy?: boolean; error?: string;
   fetched: number; imported: number; new_threads: number; replies: number; agent: number; ignored: number; rejected: number; duplicates: number; errors: number;
-  reasons?: Record<string, number>; pending?: number; more?: boolean; ms?: number;
+  reasons?: Record<string, number>; pending?: number; more?: boolean; ms?: number; notified?: number;
 };
 
 export const IMAP_BUDGET_MS = 45000;
@@ -78,7 +78,9 @@ export async function ticketsFor(rpc: Rpc, mail: ParsedMail): Promise<Found[]> {
   return ordered;
 }
 
-export type InboxResult = { result: string; ticket?: number | null; seen: boolean; move: boolean };
+/** Wat een pushmelding nodig heeft: nummer, merk en onderwerp (nooit adressen of inhoud). */
+export type NewMail = { number: number; brand: Brand; subject: string };
+export type InboxResult = { result: string; ticket?: number | null; seen: boolean; move: boolean; notify?: NewMail };
 
 type Ctx = PollDeps & { box: Brand; agents: string[]; authserv: string[] };
 
@@ -126,7 +128,7 @@ export async function handleMail(mail: ParsedMail, ctx: Ctx): Promise<InboxResul
       });
       if (r.duplicate || !r.id) return { result: "duplicate", ticket: t.number, seen: true, move: true };
       await storeAttachments(rpc, r.id, kept);
-      return { result: "imported", ticket: t.number, seen: true, move: true };
+      return { result: "imported", ticket: t.number, seen: true, move: true, notify: { number: t.number, brand: t.brand, subject: cleanSubject(mail.subject, t.lang).slice(0, 60) } };
     }
     case "agent_reply": {
       const t = d.ticket as Found;
@@ -165,7 +167,7 @@ export async function handleMail(mail: ParsedMail, ctx: Ctx): Promise<InboxResul
       }
       await storeAttachments(rpc, r.id, kept);
       if (ctx.env("PASR_MAIL_AUTOREPLY") === "1") await autoReply(ctx, number, from, ctx.box).catch((e) => console.error("mail poll autoreply", errText(e).slice(0, 60)));
-      return { result: "new_ticket", ticket: number, seen: true, move: true };
+      return { result: "new_ticket", ticket: number, seen: true, move: true, notify: { number, brand: ctx.box, subject: cleanSubject(mail.subject, lang).slice(0, 60) } };
     }
   }
 }
@@ -208,6 +210,7 @@ export async function pollInbox(d: PollDeps): Promise<PollResult> {
   const reasons: Record<string, number> = {};
   let pending = 0, stopped = false, lastUid: number | null = null, uidvalidity: number | null = null, err: string | null = null;
   let errorUid: number | null = null, errorCount = 0;
+  const fresh: NewMail[] = [];
   const agents = agentsOf(d.env);
   const authserv = authservNames(d.env("PASR_IMAP_HOST"), d.env("PASR_MAIL_AUTHSERV"));
   const state = await call<{ error_uid?: number; error_count?: number } | null>(d.rpc, "pasr_mail_sync_state", {}).catch(() => null);
@@ -260,6 +263,7 @@ export async function pollInbox(d: PollDeps): Promise<PollResult> {
             r = { result: "error:skipped", seen: false, move: false };
           }
           await d.rpc("pasr_mail_log_add", { p_box: box.brand, p_uid: uid, p_uidvalidity: sel.uidvalidity, p_result: r.result, p_ticket: r.ticket ?? null }).catch(() => {});
+          if (r.notify) fresh.push(r.notify);
           const key = r.result.split(":")[0];
           if (key === "imported") { c.replies++; c.imported++; }
           else if (key === "agent") { c.agent++; c.imported++; }
@@ -298,5 +302,11 @@ export async function pollInbox(d: PollDeps): Promise<PollResult> {
       p_uid: lastUid, p_uidvalidity: uidvalidity, p_error_uid: errorUid, p_error_count: errorCount,
     }).catch((e) => console.error("mail poll sync_done", errText(e)));
   }
-  return { ok: !err, ...(err ? { error: err } : {}), ...c, reasons, pending: Math.max(0, pending), more: stopped || pending > 0, ms: now() - started };
+  // één pushmelding per ronde voor alle nieuwe tickets en klantantwoorden (de database geeft de functie admin een seintje); een fout hier houdt de ronde niet op
+  let notified = 0;
+  if (fresh.length) {
+    const { error } = await d.rpc("pasr_mail_notify", { p_items: fresh.slice(0, 20) }).catch((e) => ({ error: { message: errText(e) } }));
+    if (error) console.error("mail poll notify", String(error.message).slice(0, 60)); else notified = fresh.length;
+  }
+  return { ok: !err, ...(err ? { error: err } : {}), ...c, notified, reasons, pending: Math.max(0, pending), more: stopped || pending > 0, ms: now() - started };
 }
