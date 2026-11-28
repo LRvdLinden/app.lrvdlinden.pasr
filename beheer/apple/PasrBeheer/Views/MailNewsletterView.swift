@@ -27,17 +27,10 @@ struct MailNewsletterView: View {
     var body: some View {
         Form {
             Section {
-                Picker("Doelgroep", selection: $draft.audience) {
-                    Text("Gebruikers").tag("users")
-                    Text("Ondernemers").tag("owners")
-                }
-                .pickerStyle(.segmented)
+                LabeledContent("Doelgroep") { Text(verbatim: MailLabels.audience(draft.audience)) }
                 LabeledContent("Ontvangers", value: count.map(Fmt.n) ?? "–")
                 if let countError { Text(countError).font(.caption).foregroundStyle(Theme.coral) }
-                Picker("Merk", selection: $draft.brand) {
-                    ForEach(MailBrand.allCases) { Text(verbatim: $0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                LabeledContent("Van") { Text(verbatim: draft.brand.address) }
             } header: {
                 Text("Doelgroep")
             } footer: {
@@ -114,7 +107,6 @@ struct MailNewsletterView: View {
                 await loadCampaigns()
             }
         }
-        .onChange(of: draft.audience) { _, a in draft.brand = a == "owners" ? .zakelijk : .pasr }
         .confirmationDialog("Nieuwsbrief versturen?", isPresented: $confirming, titleVisibility: .visible) {
             Button("Versturen naar \(Fmt.n(count ?? 0)) ontvangers") { Task { await send() } }
         } message: {

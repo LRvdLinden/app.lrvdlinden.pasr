@@ -43,10 +43,7 @@ struct MailComposeView: View {
             }
 
             Section {
-                Picker("Merk", selection: $draft.brand) {
-                    ForEach(MailBrand.allCases) { Text(verbatim: $0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                LabeledContent("Van") { Text(verbatim: draft.brand.address) }
                 TextField("Onderwerp", text: $draft.subject)
             } header: {
                 Text("Afzender en onderwerp")

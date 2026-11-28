@@ -56,6 +56,7 @@ struct InsightsView: View {
                             }
                         }
                         .opacity(loading ? 0.5 : 1)
+                        DistributionSection(stats: stats, days: rangeRaw)
                     } else if error == nil {
                         ForEach(sources) { _ in
                             RoundedRectangle(cornerRadius: 16).fill(Theme.card).frame(height: 240)

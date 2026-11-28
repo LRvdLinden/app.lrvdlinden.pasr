@@ -2,34 +2,102 @@ import Foundation
 import LocalAuthentication
 import SwiftUI
 
-/// Onderdelen (tabs op de iPhone, zijbalk op iPad en Mac).
+/// Onderdelen (zijbalk op iPad en Mac; op de iPhone vijf tabs: Vandaag, Mensen, Berichten, Cijfers en Meer).
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case overview, insights, accounts, stores, news, businesses, mail, settings
+    case overview, accounts, businesses, stores, supportMail, news, ownersMail, insights, settings
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .overview: "Overzicht"
-        case .insights: "Insights"
-        case .accounts: "Accounts"
-        case .stores: "Winkels"
-        case .news: "Berichten"
+        case .overview: "Vandaag"
+        case .accounts: "Gebruikers"
         case .businesses: "Ondernemers"
-        case .mail: "Mail"
+        case .stores: "Winkelcatalogus"
+        case .supportMail: "Postvak Support"
+        case .news: "Pushberichten"
+        case .ownersMail: "Postvak Ondernemers"
+        case .insights: "Inzichten"
         case .settings: "Instellingen"
         }
     }
 
     var icon: String {
         switch self {
-        case .overview: "square.grid.2x2"
-        case .insights: "chart.xyaxis.line"
+        case .overview: "house"
         case .accounts: "person.2"
-        case .stores: "storefront"
-        case .news: "megaphone"
-        case .businesses: "rectangle.stack.badge.person.crop"
-        case .mail: "envelope"
+        case .businesses: "storefront"
+        case .stores: "rectangle.stack"
+        case .supportMail: "tray"
+        case .news: "bell"
+        case .ownersMail: "tray.full"
+        case .insights: "chart.xyaxis.line"
         case .settings: "gearshape"
+        }
+    }
+
+    /// Kop in de zijbalk (nil: geen kop).
+    static let groups: [(title: String?, items: [AppSection])] = [
+        (nil, [.overview]),
+        ("Mensen", [.accounts, .businesses]),
+        ("Inhoud", [.stores]),
+        ("Support (support@pasr.nl)", [.supportMail, .news]),
+        ("Ondernemers (zakelijk@pasr.nl)", [.ownersMail]),
+        ("Cijfers", [.insights]),
+        (nil, [.settings]),
+    ]
+
+    /// Het postvak dat bij dit onderdeel hoort.
+    var mailbox: MailBrand? {
+        switch self {
+        case .supportMail: MailBrand.pasr
+        case .ownersMail: MailBrand.zakelijk
+        default: nil
+        }
+    }
+}
+
+/// De vijf tabs op de iPhone.
+enum PhoneTab: String, CaseIterable, Identifiable {
+    case today, people, messages, figures, more
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .today: "Vandaag"
+        case .people: "Mensen"
+        case .messages: "Berichten"
+        case .figures: "Cijfers"
+        case .more: "Meer"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .today: "house"
+        case .people: "person.2"
+        case .messages: "envelope"
+        case .figures: "chart.xyaxis.line"
+        case .more: "ellipsis.circle"
+        }
+    }
+
+    init(_ s: AppSection) {
+        switch s {
+        case .overview: self = .today
+        case .accounts, .businesses: self = .people
+        case .supportMail, .ownersMail: self = .messages
+        case .insights: self = .figures
+        case .stores, .news, .settings: self = .more
+        }
+    }
+
+    var firstSection: AppSection {
+        switch self {
+        case .today: .overview
+        case .people: .accounts
+        case .messages: .supportMail
+        case .figures: .insights
+        case .more: .stores
         }
     }
 }
@@ -42,8 +110,9 @@ final class Session: ObservableObject {
     @Published var loginMessage: String?
     @Published var section: AppSection = .overview
     @Published private(set) var refreshTick = 0
-    /// Ongelezen mails in de inbox van Mail (badge).
+    /// Ongelezen mails in het postvak Support (badge) en in het postvak Ondernemers.
     @Published var mailUnread = 0
+    @Published var mailUnreadOwners = 0
 
     /// Vergrendelen met Face ID / Touch ID (standaard aan).
     @Published var lockEnabled: Bool { didSet { UserDefaults.standard.set(lockEnabled, forKey: Self.lockKey) } }
@@ -106,6 +175,7 @@ final class Session: ObservableObject {
         isLocked = false
         loginMessage = message
         mailUnread = 0
+        mailUnreadOwners = 0
         MailDrafts.shared.reset()
     }
 
@@ -133,10 +203,29 @@ final class Session: ObservableObject {
         _ = try await call(action, params, as: OKResponse.self)
     }
 
-    /// Aantal ongelezen mails voor de badge van het tabblad Mail (stil negeren als de server het nog niet kent).
+    /// Aantallen per status in de inbox van één postvak (de server telt over alle postvakken, dus tellen we hier de eigen tickets).
+    func mailCounts(for brand: MailBrand) async -> MailCounts? {
+        guard isSignedIn, !isLocked else { return nil }
+        let params: [String: Any] = ["box": "inbox", "status": "all", "q": "", "page": 0, "page_size": 100, "brand": brand.rawValue]
+        guard let r = try? await call("mail_thread_list", params, as: MailThreadList.self) else { return nil }
+        var n = 0, o = 0, p = 0, c = 0, u = 0
+        for t in r.items {
+            switch t.status {
+            case "new": n += 1
+            case "open": o += 1
+            case "pending": p += 1
+            default: c += 1
+            }
+            if t.unread == true && t.status != "closed" { u += 1 }
+        }
+        return MailCounts(new: n, open: o, pending: p, closed: c, unread: u)
+    }
+
+    /// Ongelezen mails voor de badges van de twee postvakken (stil negeren als de server het nog niet kent).
     func refreshMailBadge() async {
         guard isSignedIn, !isLocked else { return }
-        if let s = try? await call("mail_status", as: MailStatus.self) { mailUnread = s.counts?.unread ?? 0 }
+        if let c = await mailCounts(for: .pasr) { mailUnread = c.unread ?? 0 }
+        if let c = await mailCounts(for: .zakelijk) { mailUnreadOwners = c.unread ?? 0 }
     }
 
     func requestRefresh() {
@@ -144,10 +233,11 @@ final class Session: ObservableObject {
         refreshTick &+= 1
     }
 
-    /// pasrbeheer://overview, ://accounts, ://stores, ://settings (uit een pushmelding).
+    /// pasrbeheer://overview, ://accounts, ://stores, ://settings, ://mail (Postvak Support) of ://ownersMail (uit een pushmelding).
     func open(_ url: URL) {
         guard url.scheme?.lowercased() == "pasrbeheer" else { return }
-        if let s = AppSection(rawValue: url.host ?? "") { section = s }
+        let host = url.host ?? ""
+        if host == "mail" { section = .supportMail } else if let s = AppSection(rawValue: host) { section = s }
         requestRefresh()
     }
 

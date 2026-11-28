@@ -77,13 +77,26 @@ struct TabLayout: View {
     @EnvironmentObject private var session: Session
 
     var body: some View {
-        TabView(selection: $session.section) {
-            ForEach(AppSection.allCases) { s in
-                NavigationStack { SectionContent(section: s) }
-                    .tabItem { Label(s.title, systemImage: s.icon) }
-                    .badge(s == .mail ? session.mailUnread : 0)
-                    .tag(s)
-            }
+        TabView(selection: Binding<PhoneTab>(
+            get: { PhoneTab(session.section) },
+            set: { if $0 != PhoneTab(session.section) { session.section = $0.firstSection } }
+        )) {
+            NavigationStack { OverviewView() }
+                .tabItem { Label(LocalizedStringKey(PhoneTab.today.title), systemImage: PhoneTab.today.icon) }
+                .tag(PhoneTab.today)
+            NavigationStack { PeopleView() }
+                .tabItem { Label(LocalizedStringKey(PhoneTab.people.title), systemImage: PhoneTab.people.icon) }
+                .tag(PhoneTab.people)
+            NavigationStack { MessagesView() }
+                .tabItem { Label(LocalizedStringKey(PhoneTab.messages.title), systemImage: PhoneTab.messages.icon) }
+                .badge(session.mailUnread + session.mailUnreadOwners)
+                .tag(PhoneTab.messages)
+            NavigationStack { InsightsView() }
+                .tabItem { Label(LocalizedStringKey(PhoneTab.figures.title), systemImage: PhoneTab.figures.icon) }
+                .tag(PhoneTab.figures)
+            MoreView()
+                .tabItem { Label(LocalizedStringKey(PhoneTab.more.title), systemImage: PhoneTab.more.icon) }
+                .tag(PhoneTab.more)
         }
     }
 }
@@ -95,19 +108,35 @@ struct SplitLayout: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $visibility) {
             List(selection: Binding<AppSection?>(get: { session.section }, set: { if let s = $0 { session.section = s } })) {
-                Section {
-                    ForEach(AppSection.allCases) { s in Label(s.title, systemImage: s.icon).badge(s == .mail ? session.mailUnread : 0).tag(s) }
-                } header: {
-                    BeheerLogo(size: 18).padding(.vertical, 8).textCase(nil).foregroundStyle(.primary)
+                ForEach(Array(AppSection.groups.enumerated()), id: \.offset) { i, g in
+                    Section {
+                        ForEach(g.items) { s in
+                            Label(LocalizedStringKey(s.title), systemImage: s.icon).badge(unread(s)).tag(s)
+                        }
+                    } header: {
+                        if i == 0 {
+                            BeheerLogo(size: 18).padding(.vertical, 8).textCase(nil).foregroundStyle(.primary)
+                        } else if let t = g.title {
+                            Text(LocalizedStringKey(t))
+                        }
+                    }
                 }
             }
             .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 300)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
             NavigationStack { SectionContent(section: session.section) }
                 .id(session.section)
         }
         .navigationSplitViewStyle(.balanced)
+    }
+
+    private func unread(_ s: AppSection) -> Int {
+        switch s {
+        case .supportMail: session.mailUnread
+        case .ownersMail: session.mailUnreadOwners
+        default: 0
+        }
     }
 }
 
@@ -122,7 +151,8 @@ struct SectionContent: View {
         case .stores: StoresView()
         case .news: NewsView()
         case .businesses: BusinessesView()
-        case .mail: MailView()
+        case .supportMail: MailView(box: .pasr)
+        case .ownersMail: MailView(box: .zakelijk)
         case .settings: SettingsView()
         }
     }

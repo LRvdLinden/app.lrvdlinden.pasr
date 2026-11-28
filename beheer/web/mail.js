@@ -15,6 +15,17 @@
   const MAX_CALL = 200;                   // adressen per aanroep
   const MAX_BCC_MAIL = 50;                // BCC per mail (de server splitst of weigert daarboven)
   const BRANDS = { pasr: "Pasr", zakelijk: "Pasr Zakelijk" };
+  // Elk postvak hoort bij één merk: Support = support@pasr.nl (pasr), Ondernemers = zakelijk@pasr.nl (zakelijk).
+  const BOXES = { pasr: { title: "Postvak Support", addr: "support@pasr.nl", sub: "Mail van gebruikers van de Pasr-app. Antwoorden en nieuwsbrieven gaan vanaf support@pasr.nl, met de handtekening Team Pasr." },
+                  zakelijk: { title: "Postvak Ondernemers", addr: "zakelijk@pasr.nl", sub: "Mail van ondernemers van Pasr Zakelijk. Antwoorden en nieuwsbrieven gaan vanaf zakelijk@pasr.nl, met de handtekening Team Pasr Zakelijk." } };
+  let MB = "pasr";
+  const fromLabel = () => { const s = el("span", "mx-from", BOXES[MB].addr + " · " + (MB === "zakelijk" ? "Team Pasr Zakelijk" : "Team Pasr")); return s; };
+  async function brandCounts(brand) {
+    const r = await call("thread_list", { status: "all", q: "", page: 1, page_size: 100, box: "inbox", brand });
+    const c = { new: 0, open: 0, pending: 0, closed: 0, unread: 0 };
+    for (const t of r.items || []) { if (c[t.status] != null) c[t.status]++; if (t.unread && t.status !== "closed") c.unread++; }
+    return c;
+  }
   const STATUS = { new: "Nieuw", open: "Open", pending: "Wacht op klant", closed: "Gesloten" };
   const STATUS_CLS = { new: "bad", open: "ok", pending: "wait", closed: "" };
   const PRIO = { low: "Laag", normal: "Normaal", high: "Hoog", urgent: "Urgent" };
@@ -440,8 +451,8 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
     const cc = addrField("CC");
     const bcc = addrField("BCC", { help: "Ontvangers zien elkaar niet. BCC-lijsten worden niet bewaard." });
     const subject = el("input"); subject.type = "text"; subject.maxLength = 200; subject.autocomplete = "off";
-    let brand = "pasr";
-    const brandSeg = brandChoice("Merk", "pasr", (v) => { brand = v; ed.now(); });
+    let brand = MB;
+    const brandSeg = brandChoice("Merk", MB, (v) => { brand = v; ed.now(); });
     const ed = editor({ getBrand: () => brand, getSubject: () => subject.value.trim() });
     subject.addEventListener("input", () => ed.refresh());
     const att = attachments();
@@ -451,14 +462,14 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
     const sendBtn = btn("Versturen…", "", null, "submit");
     // concept (zonder adressen) in localStorage
     const DK = "pasr.beheer.mail.draft";
-    try { const d = JSON.parse(localStorage.getItem(DK) || "{}"); if (d.subject) subject.value = d.subject; if (d.body) ed.set(d.body); if (d.brand in BRANDS) { brand = d.brand; brandSeg.set(d.brand); } } catch { /* geen concept */ }
+    try { const d = JSON.parse(localStorage.getItem(DK) || "{}"); if (d.subject) subject.value = d.subject; if (d.body) ed.set(d.body);  } catch { /* geen concept */ }
     const save = () => { try { localStorage.setItem(DK, JSON.stringify({ subject: subject.value, body: ed.get(), brand })); } catch { /* */ } };
     subject.addEventListener("input", save); ed.ta.addEventListener("input", save); brandSeg.root.addEventListener("click", save);
 
     const grid = el("div", "mx-cols");
     const left = el("div", "mx-stack");
     left.append(to.root, cc.root, bcc.root, field("Onderwerp", subject), el("div", "mx-field"), att.root);
-    left.children[4].append(el("span", "mx-lab", "Merk"), brandSeg.root);
+    left.children[4].append(el("span", "mx-lab", "Van"), fromLabel());
     grid.append(left, ed.root);
     const testRow = el("div", "mx-testrow"); testRow.append(testTo, testBtn);
     const actions = el("div", "row-btns"); actions.append(sendBtn, testRow);
@@ -509,13 +520,13 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
   function buildNews(host) {
     const AUD = { users: ["Gebruikers", "pasr"], owners: ["Ondernemers", "zakelijk"] };
     const form = el("form", "mx-form card"); form.noValidate = true; form.autocomplete = "off";
-    let audience = "users", brand = "pasr", brandTouched = false, requestId = crypto.randomUUID();
+    let audience = MB === "zakelijk" ? "owners" : "users", brand = MB, brandTouched = true, requestId = crypto.randomUUID();
     const count = el("b", null, "–"); count.setAttribute("aria-live", "polite");
-    const audSeg = seg("Doelgroep", [["users", "Gebruikers"], ["owners", "Ondernemers"]], "users", (v) => {
+    const audSeg = seg("Doelgroep", [["users", "Gebruikers"], ["owners", "Ondernemers"]], audience, (v) => {
       audience = v; if (!brandTouched) { brand = AUD[v][1]; brandSeg.set(brand); }
       loadCount(); ed.now();
     });
-    const brandSeg = brandChoice("Merk", "pasr", (v) => { brand = v; brandTouched = true; ed.now(); });
+    const brandSeg = brandChoice("Merk", MB, (v) => { brand = v; brandTouched = true; ed.now(); });
     const subject = el("input"); subject.type = "text"; subject.maxLength = 200; subject.autocomplete = "off";
     const ed = editor({ getBrand: () => brand, getSubject: () => subject.value.trim(), placeholder: "Schrijf de nieuwsbrief. Begin met “Hoi {{voornaam}},”. Elke mail krijgt automatisch een afmeldlink." });
     subject.addEventListener("input", () => { ed.refresh(); requestId = crypto.randomUUID(); });
@@ -527,8 +538,8 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
     const sendBtn = btn("Versturen…", "", null, "submit");
     const cnt = el("div", "mx-audcount"); cnt.append(el("span", "muted", "Ontvangers"), count, el("span", "muted sm", "(alleen een aantal; het beheer ziet nooit adressenlijsten)"));
     const left = el("div", "mx-stack");
-    const f1 = el("div", "mx-field"); f1.append(el("span", "mx-lab", "Doelgroep"), audSeg.root, cnt);
-    const f2 = el("div", "mx-field"); f2.append(el("span", "mx-lab", "Merk"), brandSeg.root, el("span", "muted sm", "Volgt de doelgroep; je kunt het aanpassen."));
+    const f1 = el("div", "mx-field"); f1.append(el("span", "mx-lab", "Doelgroep"), el("b", null, AUD[audience][0]), cnt);
+    const f2 = el("div", "mx-field"); f2.append(el("span", "mx-lab", "Van"), fromLabel());
     left.append(f1, f2, field("Onderwerp", subject), att.root);
     const grid = el("div", "mx-cols"); grid.append(left, ed.root);
     const testRow = el("div", "mx-testrow"); testRow.append(testTo, testBtn);
@@ -620,7 +631,7 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
   // ======================= subtab: Inbox =======================
   function buildInbox(host, box) {
     const sent = box === "sent";
-    let filter = "active", brandF = "", q = "", unreadOnly = false, page = 0, total = 0, openNo = null, items = [];
+    let filter = "active", brandF = MB, q = "", unreadOnly = false, page = 0, total = 0, openNo = null, items = [];
     const PAGE = 25;
     // statusregel
     const bar = el("div", "mx-status" + (sent ? " hidden" : "")); bar.setAttribute("aria-live", "polite");
@@ -635,7 +646,7 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
     for (const [v, l] of [["", "Alle merken"], ["pasr", "Pasr"], ["zakelijk", "Pasr Zakelijk"]]) { const o = el("option", null, l); o.value = v; brandSel.append(o); }
     const unrLab = el("label", "se-check mx-unread"); const unr = el("input"); unr.type = "checkbox"; unrLab.append(unr, document.createTextNode(" Alleen ongelezen"));
     if (sent) { fseg.classList.add("hidden"); unrLab.classList.add("hidden"); search.placeholder = "Zoek op onderwerp, tekst of ontvanger"; }
-    tools.append(fseg, search, brandSel, unrLab);
+    brandSel.classList.add("hidden"); tools.append(fseg, search, brandSel, unrLab);
     const err = el("div", "banner hidden"); err.setAttribute("role", "alert");
     // lijst en detail
     const layout = el("div", "mx-layout");
@@ -687,7 +698,7 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
         dot.className = "dot " + cls;
         barTxt.replaceChildren(...parts);
         pollBtn.disabled = !s.imap;
-        if (s.counts) { renderFilters(s.counts); setBadge(s.counts.unread); }
+        brandCounts(MB).then((c) => { renderFilters(c); setBadge(); }).catch(() => {});
       } catch (e) { if (e.status !== 401) { dot.className = "dot warn"; barTxt.textContent = "Status niet beschikbaar: " + errMsg(e); } }
     }
     async function doPoll() {
@@ -712,7 +723,8 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
         if (brandF) p.brand = brandF;
         const r = await call("thread_list", p);
         items = r.items || []; total = r.total || 0;
-        if (r.counts && !sent) { renderFilters(r.counts); fseg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === filter))); setBadge(r.counts.unread); }
+        if (!sent) { brandCounts(MB).then((c) => { renderFilters(c); setBadge(); }).catch(() => {}); }
+        if (false) { renderFilters(r.counts); fseg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === filter))); setBadge(r.counts.unread); }
         renderList();
       } catch (e) { if (e.status !== 401) { err.textContent = errMsg(e); err.classList.remove("hidden"); } }
       finally { list.removeAttribute("aria-busy"); }
@@ -848,7 +860,7 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       const after = el("select"); after.setAttribute("aria-label", "Status na verzenden");
       for (const [v, l] of [["pending", "Wacht op klant"], ["open", "In behandeling"], ["closed", "Gesloten"]]) { const o = el("option", null, l); o.value = v; after.append(o); }
       const to = el("p", "muted sm", `Aan: ${t.contact_name ? t.contact_name + " " : ""}${t.contact_email ? "<" + t.contact_email + ">" : ""}`);
-      const bf = el("div", "mx-field"); bf.append(el("span", "mx-lab", "Merk"), brandSeg.root);
+      const bf = el("div", "mx-field"); bf.append(el("span", "mx-lab", "Van"), fromLabel());
       replyBox.append(to, bf, ed.root, cc.root, bcc.root, att.root, field("Status na verzenden", after));
       // notitie
       const noteBox = el("div", "mx-stack hidden");
@@ -913,11 +925,18 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
   }
 
   // ======================= tab Mail =======================
-  function setBadge(n) {
-    const b = $("mailBadge"); if (!b) return;
-    b.textContent = n > 99 ? "99+" : String(n || 0);
-    b.classList.toggle("hidden", !n);
-    const tab = $("tab-mail"); if (tab) tab.setAttribute("aria-label", n ? `Mail, ${n} ongelezen` : "Mail");
+  const badgeN = { pasr: 0, zakelijk: 0 };
+  function setBadge() { refreshBadge(); }
+  function paintBadges() {
+    for (const [k, id] of [["pasr", "mailBadge"], ["zakelijk", "mailBadgeZ"]]) {
+      const b = $(id); if (!b) continue; const n = badgeN[k];
+      b.textContent = n > 99 ? "99+" : String(n || 0); b.classList.toggle("hidden", !n);
+    }
+  }
+  async function counts() {
+    const [a, z] = await Promise.all([brandCounts("pasr"), brandCounts("zakelijk")]);
+    badgeN.pasr = a.unread; badgeN.zakelijk = z.unread; paintBadges();
+    return badgeN;
   }
   let built = false, parts = {}, sub = "inbox";
   const SUBS = ["inbox", "sent", "compose", "news"];
@@ -950,15 +969,23 @@ const errMsg = (e) => e && e.code === "too_large" ? `De bijlagen zijn samen te g
       });
     });
   }
-  function show() {
+  function show(box, subWanted) {
+    if (box && BOXES[box] && box !== MB) {
+      MB = box;
+      if (parts.news) parts.news.hide();
+      for (const k of SUBS) $("mail-" + k).replaceChildren();
+      built = false; parts = {};
+    } else if (box && !built) MB = BOXES[box] ? box : MB;
+    $("mailTitle").textContent = BOXES[MB].title;
+    $("mailSub").textContent = BOXES[MB].sub;
     if (!built) build();
     let s = "inbox"; try { s = sessionStorage.getItem("pasr.beheer.mailsub") || "inbox"; } catch { /* */ }
+    if (subWanted) s = subWanted;
+    else if (sub === "news" && !subWanted && box) s = "inbox";
     showSub(SUBS.includes(s) ? s : sub);
   }
-  // ongelezen-teller in het menu (ook buiten de tab Mail)
-  async function refreshBadge() {
-    try { const s = await api("mail_status", {}); if (s && s.counts) setBadge(s.counts.unread); } catch { /* geen badge */ }
-  }
-  window.PasrMail = { show, refreshBadge, _test: { parseAddresses, validEmail } };
+  // ongelezen-tellers in het menu (ook buiten het postvak)
+  async function refreshBadge() { try { await counts(); } catch { /* geen badge */ } }
+  window.PasrMail = { show, refreshBadge, counts, _test: { parseAddresses, validEmail } };
   setInterval(() => { if (!document.hidden && document.getElementById("app") && !document.getElementById("app").classList.contains("hidden")) refreshBadge(); }, 120000);
 })();
