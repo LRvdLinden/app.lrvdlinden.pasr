@@ -102,15 +102,18 @@ export function parsePreview(b: Record<string, unknown>): Res<{ subject: string;
   return { ok: true, value: { subject: cleanText(b.subject, LIMITS.subject), body_md: body, brand } };
 }
 
-export function parseThreadList(b: Record<string, unknown>): Res<{ status: string; q: string | null; brand: Brand | null; page: number; size: number }> {
-  const raw = b.status === undefined || b.status === null || b.status === "" ? "active" : b.status;
+export function parseThreadList(b: Record<string, unknown>): Res<{ status: string; q: string | null; brand: Brand | null; page: number; size: number; box: "inbox" | "sent" | "all" }> {
+  const box = b.box === undefined || b.box === null || b.box === "" ? "inbox" : b.box;
+  if (box !== "inbox" && box !== "sent" && box !== "all") return fail("bad_box");
+  // zonder statusfilter: Inbox = actief; Verzonden en Alles = ook gesloten tickets
+  const raw = b.status === undefined || b.status === null || b.status === "" ? (box === "inbox" ? "active" : "all") : b.status;
   if (raw !== "active" && raw !== "all" && !isStatus(raw)) return fail("bad_status");
   const brand = b.brand === undefined || b.brand === null || b.brand === "" ? null : isBrand(b.brand) ? b.brand : undefined;
   if (brand === undefined) return fail("bad_brand");
   const page = Math.max(1, Math.min(10000, Math.trunc(Number(b.page ?? 1)) || 1));
   const size = Math.max(1, Math.min(100, Math.trunc(Number(b.page_size ?? 30)) || 30));
   const q = cleanText(b.q, 100);
-  return { ok: true, value: { status: raw as string, q: q || null, brand, page, size } };
+  return { ok: true, value: { status: raw as string, q: q || null, brand, page, size, box } };
 }
 
 export type CampaignReq = { audience: Audience; brand: Brand; subject: string; body_md: string; request_id: string; attachments: Attachment[] };

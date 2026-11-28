@@ -22,13 +22,43 @@ Samenstellen (`mail_compose`) en antwoorden hebben drie volwaardige adresvelden:
 - Aan en CC staan echt in de kopregels `To:` en `Cc:`. BCC staat alleen in de envelop (nooit in een kopregel of in de opgeslagen mail; er wordt alleen het aantal bewaard).
 - Is Aan leeg en is er wel BCC, dan toont `To:` het afzenderadres.
 - Grenzen: Aan 20, CC 20, in totaal 200 per aanroep; BCC gaat in groepen van hoogstens 50 per mail. Een adres dat al in Aan of CC staat, valt weg uit BCC.
-- Bijlagen: `{name, type, data_b64}`, hoogstens 10 stuks en 10 MB per mail. Het verzoek mag tot 20 MB (alleen met geldig token).
+- Bijlagen: `{name, type, data_b64}`, hoogstens 10 bestanden en samen **20 MB** (ruwe bytes) per mail. Het verzoek (base64 in JSON) mag tot **32 MB** (alleen met geldig token). Bij te veel krijgt de aanroep HTTP 413 met `{error: "too_large", max_bytes: 20971520, max_mb: 20, message}`; het maximum staat dus altijd in de foutmelding.
+  Veel mailservers weigeren zelf mail boven ~20-25 MB (inclusief base64-overhead, een derde extra); daarom is 20 MB de bovengrens. Groter: gebruik een downloadlink.
+  Geheugen en tijd: een edge function heeft 256 MB geheugen en 2 s CPU-tijd. De bijlagen worden in blokken (de)codeerd; lokaal gemeten kost 20 MB ongeveer 0,1 s decoderen, 0,3 s MIME opbouwen en 0,2 s opslaan, met een piek van ruim 250 MB RSS (waarvan een deel nog niet vrijgegeven afval). Dat past, maar zit dicht tegen de geheugengrens; BCC-groepen bouwen de mail per groep opnieuw op. Is de platformlimiet lager, dan komt dat als 5xx terug; de 413 hierboven komt alleen van onze eigen controle.
 - `body_md` is Markdown (geen HTML): koppen, vet, cursief, lijsten, citaten, code, `[[Knop|https://…]]`, links alleen `https:` of `mailto:`. `{{voornaam}}` wordt ingevuld; `{{email}}` is niet toegestaan.
 - Merken: `pasr` (iris `#6A5CFF`) en `zakelijk` (mint `#2ED3A6`, eigen kop en icoon, "Pasr voor ondernemers"). Donker met lichte variant via `prefers-color-scheme`.
 
 Campagnes: doelgroep `users` (alle accounts in `auth.users` zonder afmelding) of `owners` (eigenaren van een zaak). `request_id` (uuid) maakt een verzoek herhaalbaar. Elke ontvanger krijgt een eigen mail met voornaam, persoonlijke afmeldlink en `List-Unsubscribe` plus `List-Unsubscribe-Post` (één klik). Een ronde stopt na ongeveer 90 seconden; pg_cron gaat verder (`pasr_mail_campaign_due`) en wie al een mail kreeg staat als korte hash in `pasr_mail_campaign_sent`.
 
 Foutcodes: `bad_address`, `no_recipient`, `too_many`, `too_large` (413), `bad_attachment`, `bad_subject`, `bad_body`, `bad_brand`, `bad_status`, `bad_priority`, `bad_number`, `bad_audience`, `bad_request_id`, `rate_limited` (429), `not_found` (404), `smtp_not_configured` (503), `mail_unreachable` (502 vanuit admin).
+
+## Inbox, Verzonden en alles
+
+`mail_thread_list` (`thread_list`) heeft het filter `box`:
+
+| `box` | Wat |
+|---|---|
+| `inbox` (standaard) | zoals tot nu toe; zonder `status` = actief (niet gesloten) |
+| `sent` | tickets met minstens één uitgaand bericht, nieuwste uitgaande eerst; zonder `status` = alle statussen |
+| `all` | alles, nieuwste activiteit eerst; zonder `status` = alle statussen |
+
+Elk item: `number, subject, status, priority, brand, contact_name, contact_email, last_message_at, unread, preview`, en nieuw:
+
+- `last_direction`: `"in"` of `"out"` (richting van het laatste echte bericht; notities tellen niet), `null` bij een leeg ticket
+- `sent_at`: tijdstip van het laatste uitgaande bericht (`null` als er geen is)
+- `to_preview`: het eerste adres van Aan van dat bericht; alleen BCC: `"n ontvangers"` (`"1 ontvanger"`); alleen CC: het eerste CC-adres; `null` zonder uitgaand bericht
+- `to_count`, `cc_count`, `bcc_count`, `attachments`: aantallen van het laatste uitgaande bericht (BCC nooit als adressen)
+
+Het antwoord heeft ook `box`, `total`, `page` en `counts`. Foutcode bij een onbekend filter: `bad_box`. `mail_thread_get` toont bij uitgaande berichten `to` en `cc` volledig en `bcc_count` als aantal. Compose (met `thread`, standaard `true`), `thread_reply` en uitnodigingen met een ticket staan altijd in Verzonden. Nieuwsbrief-campagnes blijven apart in `mail_campaign_list`.
+
+## Pushmelding bij nieuwe mail
+
+Na elke `poll_inbox`-ronde geeft de functie `mail` de database één seintje (`pasr_mail_notify`) met de nieuwe tickets en klantantwoorden van die ronde: `[{number, brand, subject}]` (onderwerp op 60 tekens, nooit adres of inhoud). `pasr_admin_notify('mail_ticket', …)` laat de functie `admin` de push versturen naar alle beheerapparaten (PasrBeheer en LRbeheer, dezelfde topics en deeplink-schema `pasrbeheer://`).
+
+- Soort (`kind`): `mail_ticket`; schakelaar in `prefs`: `mail` (standaard aan, net als de andere schakelaars via `push_register` en `push_prefs`).
+- Eén nieuwe mail: titel `Nieuwe mail · Pasr` of `Nieuwe mail · Pasr Zakelijk`, tekst `Ticket #1001: <onderwerp>`.
+- Meer in één ronde: één melding met tekst `3 nieuwe mails` (de titel noemt het merk als alle mails van hetzelfde merk zijn, anders alleen `Nieuwe mail`).
+- Deeplink (`url` in de payload): `pasrbeheer://mail`.
 
 ## Antwoorden komen terug
 
@@ -37,7 +67,7 @@ Foutcodes: `bad_address`, `no_recipient`, `too_many`, `too_large` (413), `bad_at
 3. De mailbox wordt via IMAP gelezen; een mail wordt aan een ticket gekoppeld via het nummer in het onderwerp en via `In-Reply-To`/`References` (ook oudere berichten). Verwerkte mail krijgt het trefwoord `$PasrDone` (en gaat naar de map `Pasr-verwerkt` als die bestaat). Geen koppeling: een nieuw ticket (hoogstens 3 per afzender per uur).
 4. Automatische mail (`Auto-Submitted`, `Precedence: bulk`, mailer-daemon) wordt genegeerd. Een ontvangstbevestiging gaat alleen uit met `PASR_MAIL_AUTOREPLY=1`.
 5. Een medewerker kan ook rechtstreeks per mail antwoorden: afzenders in `PASR_MAIL_AGENTS` (en de eigen adressen) tellen alleen mee als de bovenste `Authentication-Results` van onze eigen server `dkim=pass` voor het domein van de afzender meldt. Het antwoord gaat dan gebrand naar de klant.
-6. Bijlagen van klanten worden bewaard tot 10 MB per mail; de rest krijgt een regel "niet overgenomen".
+6. Bijlagen van klanten worden bewaard tot 20 MB per mail; de rest krijgt een regel "niet overgenomen".
 
 ## Afmelden
 

@@ -15,7 +15,7 @@ export const LIMITS = {
   /** BCC-adressen per mail en adressen (aan + cc + bcc) per aanroep */
   bccPerMail: 50, perCall: 200, cc: 20, to: 20,
   /** bijlagen: per mail in totaal (uitgaand en inkomend), per bijlage, en het aantal */
-  attachmentsTotal: 10 * 1024 * 1024, attachmentName: 120, attachmentCount: 10,
+  attachmentsTotal: 20 * 1024 * 1024, attachmentName: 120, attachmentCount: 10,
   /** aanvragen per uur: losse mails (compose/reply/test) per beheer-instantie */
   composePerHour: 60,
 };
@@ -81,7 +81,7 @@ export function cleanFileName(v: unknown): string {
   const n = cleanText(v, 300).replace(/[\\/:*?"<>|]+/g, "_").replace(/^\.+/, "").slice(-LIMITS.attachmentName);
   return n || "bijlage";
 }
-/** Bijlagen uit het verzoek ({name, type, data_b64}): max. 10 in totaal 10 MB per mail; geeft bytes of een foutcode. */
+/** Bijlagen uit het verzoek ({name, type, data_b64}): max. 10 bestanden, samen 20 MB (ruwe bytes) per mail; geeft bytes of een foutcode. */
 export function parseAttachments(v: unknown): { ok: true; list: Attachment[] } | { ok: false; error: "bad_attachment" | "too_large" } {
   if (v === undefined || v === null) return { ok: true, list: [] };
   if (!Array.isArray(v)) return { ok: false, error: "bad_attachment" };
@@ -91,13 +91,13 @@ export function parseAttachments(v: unknown): { ok: true; list: Attachment[] } |
   for (const a of v) {
     if (!a || typeof a !== "object") return { ok: false, error: "bad_attachment" };
     const o = a as Record<string, unknown>;
-    const b64 = typeof o.data_b64 === "string" ? o.data_b64.replace(/\s+/g, "") : "";
-    if (!b64 || b64.length > Math.ceil(LIMITS.attachmentsTotal * 4 / 3) + 8 || !/^[A-Za-z0-9+/]*={0,2}$/.test(b64) || b64.length % 4 === 1) {
-      return { ok: false, error: b64.length > LIMITS.attachmentsTotal ? "too_large" : "bad_attachment" };
+    let b64 = typeof o.data_b64 === "string" ? o.data_b64 : "";
+    if (/[\s]/.test(b64.slice(0, 200)) || b64.includes("\n") || b64.includes(" ")) b64 = b64.replace(/\s+/g, "");
+    if (!b64 || b64.length > Math.ceil(LIMITS.attachmentsTotal * 4 / 3) + 8 || b64.length % 4 === 1) {
+      return { ok: false, error: b64.length > Math.ceil(LIMITS.attachmentsTotal * 4 / 3) + 8 ? "too_large" : "bad_attachment" };
     }
     let data: Uint8Array;
-    try { const bin = atob(b64.length % 4 ? b64 + "=".repeat(4 - (b64.length % 4)) : b64); data = Uint8Array.from(bin, (c) => c.charCodeAt(0)); }
-    catch { return { ok: false, error: "bad_attachment" }; }
+    try { data = fromBase64(b64, true); } catch { return { ok: false, error: "bad_attachment" }; }
     total += data.length;
     if (total > LIMITS.attachmentsTotal) return { ok: false, error: "too_large" };
     const type = typeof o.type === "string" && MIME_RE.test(o.type.trim()) ? o.type.trim().toLowerCase() : "application/octet-stream";
@@ -105,13 +105,31 @@ export function parseAttachments(v: unknown): { ok: true; list: Attachment[] } |
   }
   return { ok: true, list };
 }
-export function toBase64(b: Uint8Array): string {
-  let s = "";
-  for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode(...b.subarray(i, i + 8192));
-  return btoa(s);
+/** Velden bij de foutcode too_large: het echte maximum (ruwe bytes aan bijlagen per mail) en een leesbare melding. */
+export function tooLarge(): { max_bytes: number; max_mb: number; message: string } {
+  const mb = LIMITS.attachmentsTotal / 1024 / 1024;
+  return { max_bytes: LIMITS.attachmentsTotal, max_mb: mb, message: `De bijlagen zijn samen groter dan ${mb} MB (maximaal ${mb} MB per mail). Gebruik een downloadlink voor grotere bestanden.` };
 }
-export function fromBase64(s: string): Uint8Array {
-  return Uint8Array.from(atob(s.replace(/[^A-Za-z0-9+/=]/g, "")), (c) => c.charCodeAt(0));
+/** Base64 in blokken (zonder een enorme tussenstring; nodig voor bijlagen tot 20 MB binnen het geheugen van een edge function). */
+export function toBase64(b: Uint8Array): string {
+  const parts: string[] = [];
+  const step = 3 * 16384;   // veelvoud van 3: elk blok is zelf geldige base64 zonder opvulling
+  for (let i = 0; i < b.length; i += step) parts.push(btoa(String.fromCharCode.apply(null, b.subarray(i, i + step) as unknown as number[])));
+  return parts.join("");
+}
+/** Base64 naar bytes in blokken van 64 kB; gooit bij een ongeldig teken (atob controleert het alfabet). */
+export function fromBase64(s: string, strict = false): Uint8Array {
+  const clean = !strict && /[^A-Za-z0-9+/=]/.test(s.length > 4096 ? s.slice(0, 4096) : s) ? s.replace(/[^A-Za-z0-9+/=]/g, "") : s;
+  const padded = clean.length % 4 ? clean + "=".repeat(4 - (clean.length % 4)) : clean;
+  const end = padded.endsWith("==") ? 2 : padded.endsWith("=") ? 1 : 0;
+  const out = new Uint8Array(padded.length / 4 * 3 - end);
+  const step = 4 * 16384;
+  let o = 0;
+  for (let i = 0; i < padded.length; i += step) {
+    const bin = atob(padded.slice(i, i + step));
+    for (let k = 0; k < bin.length; k++) out[o++] = bin.charCodeAt(k);
+  }
+  return out;
 }
 
 /** Onderwerp voor een uitgaande mail: één regel, max. 150; bij een antwoord met [#1001]. */

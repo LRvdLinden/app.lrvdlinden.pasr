@@ -50,7 +50,7 @@ export function buildMessage(o: Outgoing): BuiltMail {
     subject: rendered.subject, html: rendered.html, text: rendered.text,
     messageId: o.messageId, ...(o.inReplyTo ? { inReplyTo: o.inReplyTo } : {}), ...(o.references?.length ? { references: o.references } : {}),
     headers, envelope: { from: addressOf(o.envelopeFrom ?? o.from), to: recipients },
-    attachments: (o.attachments ?? []).map((a) => ({ filename: a.name, contentType: a.type, content: Buffer.from(a.data) })),
+    attachments: (o.attachments ?? []).map((a) => ({ filename: a.name, contentType: a.type, content: Buffer.from(a.data.buffer, a.data.byteOffset, a.data.byteLength) })),
   };
 }
 

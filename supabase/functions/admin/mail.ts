@@ -1,16 +1,22 @@
 // Pasr beheer › Mail: de acties mail_* van de functie admin sturen door naar de functie mail (supabase/functions/mail). admin heeft al de
 // sessiecontrole (token) en het logboek (admin_audit); mail kent alleen de kopregel x-pasr-admin met een sleutel die uit PASR_TOKEN_SECRET
 // volgt (HMAC-SHA256 van "pasr-mail-admin", zie mail/auth.ts; hier dezelfde berekening). Het logboek bevat alleen aantallen en
-// onderwerpen, nooit adressen of inhoud. Groot verzoek (bijlagen als base64) tot 20 MB, alleen met een geldig token.
+// onderwerpen, nooit adressen of inhoud. Groot verzoek (bijlagen als base64) tot 32 MB, alleen met een geldig token.
 
-export const MAIL_MAX_BODY = 20 * 1024 * 1024;
+export const MAIL_MAX_BODY = 32 * 1024 * 1024;
+/** Bijlagen: samen hoogstens 20 MB ruwe bytes per mail (base64 in JSON is een derde groter, vandaar 32 MB aan verzoek). Dezelfde waarde als mail/logic.ts LIMITS.attachmentsTotal. */
+export const MAIL_ATTACHMENT_MAX = 20 * 1024 * 1024;
+export const tooLargeBody = () => ({
+  error: "too_large", max_bytes: MAIL_ATTACHMENT_MAX, max_mb: MAIL_ATTACHMENT_MAX / 1024 / 1024,
+  message: `Het verzoek is te groot. Bijlagen mogen samen hoogstens ${MAIL_ATTACHMENT_MAX / 1024 / 1024} MB zijn per mail; gebruik een downloadlink voor grotere bestanden.`,
+});
 export const NORMAL_MAX_BODY = 700_000;
 
 /** admin-actie -> actie van de functie mail, met de velden die doorgestuurd worden (verder niets). */
 export const MAIL_ACTIONS: Record<string, { action: string; fields: string[]; audit: boolean }> = {
   mail_status: { action: "status", fields: [], audit: false },
   mail_poll: { action: "poll_inbox", fields: [], audit: true },
-  mail_thread_list: { action: "thread_list", fields: ["status", "q", "brand", "page", "page_size"], audit: false },
+  mail_thread_list: { action: "thread_list", fields: ["status", "q", "brand", "page", "page_size", "box"], audit: false },
   mail_thread_get: { action: "thread_get", fields: ["number"], audit: false },
   mail_thread_reply: { action: "thread_reply", fields: ["number", "body_md", "brand", "cc", "bcc", "attachments", "status"], audit: true },
   mail_thread_status: { action: "thread_status", fields: ["number", "status", "priority"], audit: true },
@@ -63,7 +69,7 @@ export function auditDetail(action: string, body: Record<string, unknown>, resul
   }
 }
 
-/** Het verzoek lezen met een bovengrens: gewoon tot 700 kB; groter (bijlagen) tot 20 MB, maar alleen als `mayGrow()` (geldig token) ja zegt. */
+/** Het verzoek lezen met een bovengrens: gewoon tot 700 kB; groter (bijlagen) tot 32 MB, maar alleen als `mayGrow()` (geldig token) ja zegt. */
 export async function readBody(req: Request, mayGrow: () => Promise<boolean>): Promise<{ text: string } | { error: "too_large" }> {
   if (!req.body) return { text: "" };
   const reader = req.body.getReader();

@@ -52,13 +52,14 @@
 //   community_detail {id}                           -> {campaign:{…, state, min_participants, accepted_count}, participants, invites}
 //   community_revoke {invite_id}                    -> {ok}                   (openstaande uitnodiging intrekken; mail + push)
 //   community_remove {campaign_id, business_id}     -> {ok}                   (deelnemer eruit, niet de organisator; mail + push)
+//   notify {kind: "mail_ticket", items: [{number, brand, subject}]} + x-pasr-hook -> {sent}  (nieuwe mail in Beheer › Mail; schakelaar prefs.mail; url pasrbeheer://mail)
 //   notify {kind: "community"} + x-pasr-hook        -> {sent}                 (push naar Pasr Zakelijk uit de outbox)
 //   (tickets en klantenkaart met barcode, 27-11-2026; zie docs/tickets-klantenkaart.md)
 //   tk_business      {id}                           -> {events:[…aantallen], member_cards:[…leden]}  (per zaak)
 //   event_cancel     {id, message?}                 -> {ok}                   (event afgelasten; mail + push naar elke aanmelding)
 //   member_card_archive {id}                        -> {ok}                   (klantenkaart archiveren; scannen werkt niet meer)
 //   notify {kind: "tickets"} + x-pasr-hook          -> {sent}                 (push naar de Pasr-app van de klant uit de outbox)
-//   (Mail, 28-11-2026; zie docs/beheer-mail.md; alles wordt doorgestuurd naar de functie mail, verzoek tot 20 MB met bijlagen)
+//   (Mail, 28-11-2026; zie docs/beheer-mail.md; alles wordt doorgestuurd naar de functie mail, verzoek tot 32 MB met bijlagen)
 //   mail_status · mail_poll · mail_thread_list · mail_thread_get · mail_thread_reply · mail_thread_status · mail_thread_note
 //   mail_compose {to, cc, bcc, subject, body_md, brand, attachments?} · mail_attachment · mail_preview · mail_test
 //   mail_campaign_audience · mail_campaign_send · mail_campaign_list · mail_campaign_cancel
@@ -66,7 +67,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearer, FailureLog, GLOBAL_MAX, hashIp, LOCK_MAX, LOCK_WINDOW_S, lockRetryAfter, readToken, sameBytes, sameSecret, signToken } from "./auth.ts";
 import { cleanFcmToken, fcmMessage, fcmResult, fcmUrl, importRsaKey, memberPayload, oauthAssertion, parseServiceAccount, type ServiceAccount } from "./fcm.ts";
-import { apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, topicOrder, wants } from "./push.ts";
+import { cleanMailItems, mailMessage, apnsHost, apnsJwt, apnsResult, BOT_QUIET_MS, cleanDeviceId, cleanPrefs, cleanRegister, type Counts, DEFAULT_TOPIC, importApnsKey, type Kind, KINDS, message, testPayload, topicOrder, wants } from "./push.ts";
 import { isUuid, parseRange, parseUsers } from "./stats.ts";
 import { cleanBalancePage, requestMatches, cleanStore, domainOf, lookupSite, newStorePayload, USER_TOPIC } from "./stores.ts";
 import { alreadyExists, cleanReview } from "./review.ts";
@@ -75,7 +76,7 @@ import { cleanBusinessDetail, cleanBusinessInput, cleanBusinessSettings, cleanBu
 import { okLink, ownerMail } from "./owner_mail.ts";
 import { cleanDevices, communityPayload, type PushItem } from "./community.ts";
 import { ticketPayload, type TkItem, tkDevices } from "./tickets.ts";
-import { auditDetail, forwardBody, forwardToMail, isMailAction, MAIL_ACTIONS, mailKey, readBody } from "./mail.ts";
+import { auditDetail, forwardBody, forwardToMail, isMailAction, MAIL_ACTIONS, mailKey, readBody, tooLargeBody } from "./mail.ts";
 // huisstijl: dezelfde code als de functie business-brand (SSRF-beveiligd ophalen, logo en kleur)
 import { cleanUrl } from "../business-brand/brand.ts";
 import { brand } from "../business-brand/fetch.ts";
@@ -572,9 +573,9 @@ Deno.serve(async (req) => {
 
   let body: Record<string, unknown>;
   try {
-    // gewoon hoogstens 700 kB; een verzoek met bijlagen (mail_*) tot 20 MB, alleen met een geldig beheer-token
+    // gewoon hoogstens 700 kB; een verzoek met bijlagen (mail_*) tot 32 MB, alleen met een geldig beheer-token
     const read = await readBody(req, async () => { try { return await validToken(bearer(req.headers)); } catch { return false; } });
-    if ("error" in read) return json({ error: "too_large" }, 413);
+    if ("error" in read) return json(tooLargeBody(), 413);
     const text = read.text;
     const b = JSON.parse(text || "{}");
     if (!b || typeof b !== "object" || Array.isArray(b)) return json({ error: "bad_json" }, 400);
@@ -600,6 +601,10 @@ Deno.serve(async (req) => {
         const code = typeof body.code === "string" && /^PZ[A-Z0-9]{10,40}$/i.test(body.code) ? body.code.toUpperCase() : null;
         if (!code) return json({ error: "bad_code" }, 400);
         return json({ sent: await pushMember(code, Number(body.before) || 0, Number(body.after) || 0) });
+      }
+      if (body.kind === "mail_ticket") {
+        const items = cleanMailItems(body.items);
+        return json({ sent: items.length ? await pushAll("mail_ticket", mailMessage(items)) : 0 });
       }
       if (!(KINDS as readonly unknown[]).includes(body.kind)) return json({ error: "bad_kind" }, 400);
       return json({ sent: await notify(body.kind as Kind, body.kind === "store_request" || body.kind === "business" ? body.name : body.reason) });

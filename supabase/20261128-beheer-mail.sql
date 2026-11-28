@@ -71,14 +71,14 @@ create table if not exists public.pasr_mail_campaigns (
   lock_until timestamptz
 );
 
--- bijlagen: bij een bericht in een ticket, of bij een campagne (bytes; max. 10 MB per mail, zie pasr_mail_attach)
+-- bijlagen: bij een bericht in een ticket, of bij een campagne (bytes; max. 20 MB per mail, zie pasr_mail_attach)
 create table if not exists public.pasr_mail_attachments (
   id uuid primary key default gen_random_uuid(),
   message_id uuid references public.pasr_mail_messages (id) on delete cascade,
   campaign_id bigint references public.pasr_mail_campaigns (id) on delete cascade,
   name text not null check (char_length(name) between 1 and 200),
   type text not null default 'application/octet-stream' check (char_length(type) <= 120),
-  size integer not null check (size between 0 and 10485760),
+  size integer not null check (size between 0 and 20971520),
   data bytea not null,
   created_at timestamptz not null default now(),
   check (message_id is not null or campaign_id is not null)
@@ -311,30 +311,47 @@ language sql stable security definer set search_path = '' as $$
   from public.pasr_mail_threads;
 $$;
 
+drop function if exists public.pasr_mail_thread_list(text, text, text, integer, integer);
+-- p_box: 'inbox' (standaard: de statusfilter, standaard actief), 'sent' (tickets met minstens één uitgaand bericht, nieuwste uitgaande eerst) of 'all'.
+-- Per rij: last_direction ('in'|'out'), sent_at, to_preview, to_count, cc_count, bcc_count en attachments van het laatste uitgaande bericht (nooit BCC-adressen).
 create or replace function public.pasr_mail_thread_list(p_status text default 'active', p_q text default null, p_brand text default null,
-                                                        p_page integer default 1, p_size integer default 30) returns jsonb
+                                                        p_page integer default 1, p_size integer default 30, p_box text default 'inbox') returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare size integer := greatest(1, least(coalesce(p_size, 30), 100)); page integer := greatest(1, coalesce(p_page, 1));
         q text := nullif(btrim(coalesce(p_q, '')), ''); pat text; total integer; items jsonb;
+        box text := case when p_box in ('sent', 'all') then p_box else 'inbox' end;
 begin
   if q is not null then pat := '%' || replace(replace(replace(left(q, 100), '\', '\\'), '%', '\%'), '_', '\_') || '%'; end if;
   select count(*) into total from public.pasr_mail_threads t
    where (p_status = 'all' or (p_status = 'active' and t.status <> 'closed') or t.status = p_status)
      and (p_brand is null or t.brand = p_brand)
+     and (box <> 'sent' or exists (select 1 from public.pasr_mail_messages o where o.thread_id = t.id and o.direction = 'out'))
      and (pat is null or t.subject ilike pat or t.contact_name ilike pat or t.contact_email ilike pat
           or ('#' || t.number::text) = q or t.number::text = q);
-  select coalesce(jsonb_agg(row_to_json(r)::jsonb order by r.last_message_at desc), '[]'::jsonb) into items from (
+  select coalesce(jsonb_agg(row_to_json(r)::jsonb order by case when box = 'sent' then r.sent_at else r.last_message_at end desc nulls last, r.number desc), '[]'::jsonb) into items from (
     select t.number, t.subject, t.status, t.priority, t.brand, t.contact_name, t.contact_email, t.last_message_at, t.unread,
-           coalesce((select left(regexp_replace(m.body_text, '\s+', ' ', 'g'), 140) from public.pasr_mail_messages m
-                      where m.thread_id = t.id and m.direction <> 'note' order by m.created_at desc limit 1), '') as preview
+           coalesce(ln.preview, '') as preview, ln.direction as last_direction,
+           lo.created_at as sent_at, lo.to_count, lo.cc_count, lo.bcc_count, lo.attachments,
+           case when lo.id is null then null
+                when lo.to_count > 0 then lo.to_first
+                when lo.bcc_count > 0 then lo.bcc_count::text || case when lo.bcc_count = 1 then ' ontvanger' else ' ontvangers' end
+                else lo.cc_first end as to_preview
       from public.pasr_mail_threads t
+      left join lateral (select m.direction, left(regexp_replace(m.body_text, '\s+', ' ', 'g'), 140) as preview
+                           from public.pasr_mail_messages m where m.thread_id = t.id and m.direction <> 'note'
+                          order by m.created_at desc, m.id desc limit 1) ln on true
+      left join lateral (select m.id, m.created_at, jsonb_array_length(m.to_addrs) as to_count, jsonb_array_length(m.cc) as cc_count, m.bcc_count,
+                                jsonb_array_length(m.attachments) as attachments, left(m.to_addrs->>0, 254) as to_first, left(m.cc->>0, 254) as cc_first
+                           from public.pasr_mail_messages m where m.thread_id = t.id and m.direction = 'out'
+                          order by m.created_at desc, m.id desc limit 1) lo on true
      where (p_status = 'all' or (p_status = 'active' and t.status <> 'closed') or t.status = p_status)
        and (p_brand is null or t.brand = p_brand)
+       and (box <> 'sent' or lo.id is not null)
        and (pat is null or t.subject ilike pat or t.contact_name ilike pat or t.contact_email ilike pat
             or ('#' || t.number::text) = q or t.number::text = q)
-     order by t.last_message_at desc offset (page - 1) * size limit size
+     order by case when box = 'sent' then lo.created_at else t.last_message_at end desc nulls last, t.number desc offset (page - 1) * size limit size
   ) r;
-  return jsonb_build_object('total', total, 'page', page, 'items', items, 'counts', public.pasr_mail_counts());
+  return jsonb_build_object('total', total, 'page', page, 'box', box, 'items', items, 'counts', public.pasr_mail_counts());
 end $$;
 
 -- Eén ticket met berichten (zonder bijlage-bytes en zonder BCC-adressen); markeert het als gelezen.
@@ -468,7 +485,7 @@ language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.pasr_mail_messages where message_id = p_message_id);
 $$;
 
--- Bijlage bij een bericht of campagne, als base64 (geen hex-verdubbeling). Max. 10 MB per bericht (of campagne) in totaal.
+-- Bijlage bij een bericht of campagne, als base64 (geen hex-verdubbeling). Max. 20 MB per bericht (of campagne) in totaal.
 create or replace function public.pasr_mail_attach(p_message uuid, p_campaign bigint, p_name text, p_type text, p_b64 text) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare d bytea; used bigint; aid uuid; meta jsonb;
@@ -477,7 +494,7 @@ begin
   d := decode(coalesce(p_b64, ''), 'base64');
   select coalesce(sum(a.size), 0) into used from public.pasr_mail_attachments a
    where (p_message is not null and a.message_id = p_message) or (p_campaign is not null and a.campaign_id = p_campaign);
-  if used + octet_length(d) > 10485760 then raise exception 'too_large' using errcode = '22023'; end if;
+  if used + octet_length(d) > 20971520 then raise exception 'too_large' using errcode = '22023'; end if;
   insert into public.pasr_mail_attachments (message_id, campaign_id, name, type, size, data)
   values (p_message, p_campaign, left(coalesce(nullif(btrim(p_name), ''), 'bijlage'), 200), left(coalesce(p_type, 'application/octet-stream'), 120), octet_length(d), d)
   returning id into aid;
@@ -663,11 +680,24 @@ exception when others then
   raise notice 'pg_cron niet beschikbaar: %', sqlerrm;
 end $$;
 
+
+-- Pushmelding voor nieuwe mail (nieuw ticket of antwoord van een klant): p_items = [{number, brand, subject}], nooit adressen of inhoud.
+-- De functie admin maakt er één melding van (soort mail_ticket, schakelaar "mail").
+create or replace function public.pasr_mail_notify(p_items jsonb) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then return; end if;
+  perform public.pasr_admin_notify('mail_ticket', jsonb_build_object('items', (
+    select coalesce(jsonb_agg(jsonb_build_object('number', (i->>'number')::bigint, 'brand', case when i->>'brand' = 'zakelijk' then 'zakelijk' else 'pasr' end,
+                                                 'subject', left(regexp_replace(coalesce(i->>'subject', ''), '[[:cntrl:]]+', ' ', 'g'), 60))), '[]'::jsonb)
+      from (select value as i from jsonb_array_elements(p_items) limit 20) x where (i->>'number') ~ '^[0-9]{1,15}$')));
+end $$;
+
 -- ------------------------------------------------------------------------------------------- rechten
 revoke all on function
   public.pasr_mail_salt(), public.pasr_mail_hash(text), public.pasr_mail_scope_code(text), public.pasr_mail_token_of(text, text),
   public.pasr_mail_news_token(text, text), public.pasr_mail_audience(text), public.pasr_mail_audience_count(text),
-  public.pasr_mail_list_tokens(text[], text), public.pasr_mail_counts(), public.pasr_mail_thread_list(text, text, text, integer, integer),
+  public.pasr_mail_list_tokens(text[], text), public.pasr_mail_counts(), public.pasr_mail_thread_list(text, text, text, integer, integer, text),
   public.pasr_mail_thread_get(bigint, boolean), public.pasr_mail_thread_create(text, text, text, text),
   public.pasr_mail_message_add(bigint, text, text, jsonb, jsonb, integer, text, text, text, text, text, text, jsonb, text, text, text, boolean),
   public.pasr_mail_thread_set(bigint, text, text), public.pasr_mail_threads_for(bigint[], text[]), public.pasr_mail_message_exists(text),
@@ -678,7 +708,7 @@ revoke all on function
   public.pasr_mail_campaign_claim(bigint, integer), public.pasr_mail_campaign_sent_hashes(bigint),
   public.pasr_mail_campaign_progress(bigint, text[], integer, boolean, integer, text[]), public.pasr_mail_campaign_list(),
   public.pasr_mail_thread_meta(bigint), public.pasr_mail_thread_delete_empty(bigint), public.pasr_mail_out_recent(integer), public.pasr_mail_contact_recent(text, integer),
-  public.pasr_mail_campaign_cancel(bigint), public.pasr_mail_campaign_due()
+  public.pasr_mail_campaign_cancel(bigint), public.pasr_mail_campaign_due(), public.pasr_mail_notify(jsonb)
   from public, anon, authenticated;
 revoke all on function public.pasr_mail_news_unsubscribe(text), public.pasr_mail_news_unsub_email(text, text, text) from public;
 grant execute on function public.pasr_mail_news_unsubscribe(text), public.pasr_mail_news_unsub_email(text, text, text) to anon, authenticated;
@@ -689,7 +719,7 @@ begin
     grant execute on function
       public.pasr_mail_salt(), public.pasr_mail_hash(text), public.pasr_mail_scope_code(text), public.pasr_mail_token_of(text, text),
       public.pasr_mail_news_token(text, text), public.pasr_mail_audience(text), public.pasr_mail_audience_count(text),
-      public.pasr_mail_list_tokens(text[], text), public.pasr_mail_counts(), public.pasr_mail_thread_list(text, text, text, integer, integer),
+      public.pasr_mail_list_tokens(text[], text), public.pasr_mail_counts(), public.pasr_mail_thread_list(text, text, text, integer, integer, text),
       public.pasr_mail_thread_get(bigint, boolean), public.pasr_mail_thread_create(text, text, text, text),
       public.pasr_mail_message_add(bigint, text, text, jsonb, jsonb, integer, text, text, text, text, text, text, jsonb, text, text, text, boolean),
       public.pasr_mail_thread_set(bigint, text, text), public.pasr_mail_threads_for(bigint[], text[]), public.pasr_mail_message_exists(text),
@@ -700,7 +730,7 @@ begin
       public.pasr_mail_campaign_claim(bigint, integer), public.pasr_mail_campaign_sent_hashes(bigint),
       public.pasr_mail_campaign_progress(bigint, text[], integer, boolean, integer, text[]), public.pasr_mail_campaign_list(),
       public.pasr_mail_thread_meta(bigint), public.pasr_mail_thread_delete_empty(bigint), public.pasr_mail_out_recent(integer), public.pasr_mail_contact_recent(text, integer),
-      public.pasr_mail_campaign_cancel(bigint), public.pasr_mail_campaign_due()
+      public.pasr_mail_campaign_cancel(bigint), public.pasr_mail_campaign_due(), public.pasr_mail_notify(jsonb)
       to service_role;
   end if;
 end $$;

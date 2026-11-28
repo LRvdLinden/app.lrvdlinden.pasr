@@ -5,10 +5,10 @@
 export const PLATFORMS = ["ios", "ipados", "macos"] as const;
 export type Platform = typeof PLATFORMS[number];
 /** Soorten meldingen die je per apparaat aan of uit zet. */
-export const PREF_KEYS = ["signups", "confirmed", "deleted", "bots", "requests"] as const;
+export const PREF_KEYS = ["signups", "confirmed", "deleted", "bots", "requests", "mail"] as const;
 export type PrefKey = typeof PREF_KEYS[number];
 export type Prefs = Record<PrefKey, boolean>;
-export const DEFAULT_PREFS: Prefs = { signups: true, confirmed: false, deleted: true, bots: true, requests: true };
+export const DEFAULT_PREFS: Prefs = { signups: true, confirmed: false, deleted: true, bots: true, requests: true, mail: true };
 /** Bundle-id van PasrBeheer = APNs-topic (function-secret PASR_APNS_TOPIC mag hem vervangen). */
 export const DEFAULT_TOPIC = "nl.lrvdlinden.pasr.beheer";
 /** Beheer-apps die Pasr-meldingen krijgen: de oude PasrBeheer en LRbeheer (de centrale beheer-app). */
@@ -70,9 +70,9 @@ export function cleanRegister(body: unknown): { ok: true; value: RegisterInput }
 // ---- meldingen ----
 
 /** Seintjes van de database (pasr_admin_notify). */
-export const KINDS = ["signup", "confirmed", "deleted", "bot", "store_request", "business"] as const;
+export const KINDS = ["signup", "confirmed", "deleted", "bot", "store_request", "business", "mail_ticket"] as const;
 export type Kind = typeof KINDS[number];
-export const prefFor: Record<Kind, PrefKey> = { signup: "signups", confirmed: "confirmed", deleted: "deleted", bot: "bots", store_request: "requests", business: "requests" };
+export const prefFor: Record<Kind, PrefKey> = { signup: "signups", confirmed: "confirmed", deleted: "deleted", bot: "bots", store_request: "requests", business: "requests", mail_ticket: "mail" };
 /** Bots: hoogstens één melding per uur (de rest staat in het overzicht). */
 export const BOT_QUIET_MS = 3600_000;
 
@@ -116,6 +116,11 @@ export function message(kind: Kind, c: Counts, reason?: unknown) {
       url = "pasrbeheer://stores";
       break;
     }
+    case "mail_ticket":
+      title = "Nieuwe mail";
+      body = "Er is een nieuwe mail in Beheer.";
+      url = "pasrbeheer://mail";
+      break;
     case "business": {
       // reason = naam van de zaak (bedrijfsnaam, geen persoonsgegevens; nooit het e-mailadres)
       const name = typeof reason === "string" ? reason.replace(/\s+/g, " ").trim().slice(0, 60) : "";
@@ -126,6 +131,39 @@ export function message(kind: Kind, c: Counts, reason?: unknown) {
     }
   }
   return { aps: { alert: { title, body }, sound: "default", "thread-id": kind }, kind, url };
+}
+
+/** Nieuwe mail in Beheer › Mail: items = [{number, brand, subject}] (uit pasr_mail_notify). Eén melding; nooit adressen of inhoud. */
+export type MailItem = { number: number; brand: "pasr" | "zakelijk"; subject: string };
+export function cleanMailItems(v: unknown): MailItem[] {
+  if (!Array.isArray(v)) return [];
+  const out: MailItem[] = [];
+  for (const x of v.slice(0, 20)) {
+    if (!x || typeof x !== "object") continue;
+    const o = x as Record<string, unknown>;
+    const number = Math.trunc(Number(o.number));
+    if (!Number.isFinite(number) || number < 1) continue;
+    out.push({
+      number, brand: o.brand === "zakelijk" ? "zakelijk" : "pasr",
+      subject: typeof o.subject === "string" ? o.subject.replace(/[\u0000-\u001f\u007f\s]+/g, " ").trim().slice(0, 60) : "",
+    });
+  }
+  return out;
+}
+export function mailMessage(items: MailItem[]) {
+  const k = "mail_ticket";
+  const one = items[0];
+  const allSame = items.every((i) => i.brand === one?.brand);
+  const brandName = (b: string) => (b === "zakelijk" ? "Pasr Zakelijk" : "Pasr");
+  let title: string, body: string;
+  if (items.length <= 1) {
+    title = `Nieuwe mail · ${brandName(one?.brand ?? "pasr")}`;
+    body = one ? `Ticket #${one.number}: ${one.subject || "(geen onderwerp)"}` : "Er is een nieuwe mail.";
+  } else {
+    title = allSame ? `Nieuwe mail · ${brandName(one.brand)}` : "Nieuwe mail";
+    body = `${items.length} nieuwe mails`;
+  }
+  return { aps: { alert: { title, body }, sound: "default", "thread-id": k }, kind: k, url: "pasrbeheer://mail" };
 }
 
 export function testPayload() {
