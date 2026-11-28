@@ -73,6 +73,12 @@ QR-link blijven behouden. In de iOS-app opent dit in een Safari-sheet;
 op Android in Custom Tabs. Conceptkaarten zijn via het web-dashboard zonder QR
 te bekijken. De bestaande A4-flyer blijft printbaar.
 
+**Nieuw ontwerp (iOS build 22, Android 135):** bedrijfskleur als hoofdkleur, kaart of ticket groot,
+QR in een eigen blok en alleen het Pasr-logo onderaan (de uitingen zijn voor klanten, dus zonder
+"Zakelijk"). Naast stempelkaart, kortingscoupon en actiecode is er nu ook promotiemateriaal voor
+gratis events (tickets): datum, tijd, adres en een QR naar pasr.nl/add/e/<event>. Coupons en codes
+gebruiken de kleur en het logo van de zaak. Test: `node tools/tests/promo-banners/render.test.cjs`.
+
 ## Mac-app en widgets (1.0.4, build 21)
 
 Native SwiftUI-app voor macOS 14+ (geen Catalyst), target en scheme `PasrZakelijkMac`, **zelfde bundle-id**

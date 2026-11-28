@@ -68,139 +68,211 @@
     lc.globalCompositeOperation="source-in";lc.fillStyle=ink;lc.fillRect(0,0,layer.width,layer.height);
     ctx.drawImage(layer,x,y,side,side);
   }
-  // Logo, tekst, kleur en stempels komen rechtstreeks uit de echte BusinessCard.
-  function drawCard(ctx, card, x,y,w,h,imgs) {
-    var base=color(card.color),ink=color(card.text_color,luminance(base)>.45?"#17162A":"#FFFFFF");
-    if(!card.text_color)ink=luminance(base)>.45?"#17162A":"#FFFFFF";
-    ctx.save();ctx.shadowColor="rgba(18,12,63,.24)";ctx.shadowBlur=29;ctx.shadowOffsetY=15;
-    var bg=ctx.createLinearGradient(x,y,x+w,y+h);bg.addColorStop(0,mix(base,255,.16));
-    bg.addColorStop(.56,base);bg.addColorStop(1,mix(base,0,.22));
-    rr(ctx,x,y,w,h,Math.max(20,w*.048),bg);ctx.restore();
-    var pad=w*.058;var logoS=Math.min(h*.18,w*.13);
-    rr(ctx,x+pad,y+pad,logoS,logoS,logoS*.21,imgs.logo?"#FFFFFF":"rgba(255,255,255,.22)");
-    if(imgs.logo){ctx.save();ctx.beginPath();ctx.roundRect(x+pad,y+pad,logoS,logoS,logoS*.2);ctx.clip();drawImg(ctx,imgs.logo,x+pad+4,y+pad+4,logoS-8,logoS-8);ctx.restore();}
-    else text(ctx,(card.name||"P").slice(0,1).toUpperCase(),x+pad+logoS/2,y+pad+logoS*.69,"800 "+Math.round(logoS*.49)+"px Figtree, sans-serif",ink,"center");
-    var titleX=x+pad+logoS+20,titleW=w-pad*2-logoS-25;
-    var nameFont="800 "+Math.round(Math.min(w*.052,39))+"px 'Bricolage Grotesque',Figtree,sans-serif";
-    text(ctx,card.name,titleX,y+pad+logoS*.42,nameFont,ink,"left",titleW);
-    text(ctx,[card.business,card.city].filter(Boolean).join(" · "),titleX,y+pad+logoS*.79,
-      "600 "+Math.round(Math.min(21,w*.026))+"px Figtree,sans-serif",ink,"left",titleW);
-    var total=Math.min(30,Math.max(2,Number(card.stamps_total)||10));
-    var cols=total<=5?total:total<=10?5:total<=12?6:total<=21?7:8;
-    var rows=Math.ceil(total/cols),filled=Math.min(total-1,Math.max(1,Math.round(total*.4)));
-    var availableH=h-logoS-pad*2-h*.23;
-    var gridTop=y+pad+logoS+Math.max(12,h*.055);
-    var gridBottom=gridTop+availableH;
-    var cell=Math.min(w*.11,(w-pad*2-(cols-1)*12)/cols,(availableH-(rows-1)*10)/rows);
-    var gapX=Math.min(14,(w-pad*2-cols*cell)/(cols-1||1));
-    var gapY=rows>1?Math.min(11,(availableH-rows*cell)/(rows-1)):0;
-    var gridW=cols*cell+(cols-1)*gapX,gridH=rows*cell+(rows-1)*gapY;
-    var gx=x+(w-gridW)/2,gy=gridTop+(availableH-gridH)/2;
+  /* ---- Ontwerp 2026-11: bedrijfskleur als hoofdkleur, kaart/ticket groot, QR in eigen blok, klein Pasr-logo onderaan.
+   * Alle maten hieronder zijn in een logisch canvas van 1080 breed (breed formaat: 1080 × 567). ---- */
+  var FM = {
+    square:{w:1080,h:1080,hs:80,kt:22,qs:150}, portrait:{w:1080,h:1350,hs:92,kt:34,qs:190},
+    story:{w:1080,h:1920,hs:118,kt:60,qs:260,col:1}, flyer:{w:1080,h:1527.6,hs:100,kt:60,qs:250,col:1},
+    wide:{w:1080,h:567,wide:1}
+  };
+  var FD = "800 {s}px 'Bricolage Grotesque',Figtree,sans-serif", FB = "{w} {s}px Figtree,sans-serif";
+  function fd(s){return FD.replace("{s}",s);} function fb(w,s){return FB.replace("{w}",w).replace("{s}",s);}
+  function hexOf(r){return "#"+r.map(function(x){return Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,"0");}).join("");}
+  function mixHex(hex,to,part){return hexOf(rgb(hex).map(function(x){return x*(1-part)+to*part;}));}
+  function rgba(hex,a){return "rgba("+rgb(hex).join(",")+","+a+")";}
+  function spaced(ctx,s,x,y,font,fill,sp,align){
+    ctx.font=font;ctx.fillStyle=fill;ctx.textBaseline="middle";ctx.textAlign="left";
+    var chars=String(s).split(""),w=0;chars.forEach(function(c){w+=ctx.measureText(c).width+sp;});w-=sp;
+    var cx=align==="center"?x-w/2:align==="right"?x-w:x;
+    chars.forEach(function(c){ctx.fillText(c,cx,y);cx+=ctx.measureText(c).width+sp;});
+  }
+  function line(ctx,s,x,y,font,fill,align){ctx.font=font;ctx.fillStyle=fill;ctx.textAlign=align||"left";ctx.textBaseline="middle";ctx.fillText(s,x,y);}
+  function fit(ctx,s,maxW,font){ctx.font=font;s=String(s||"");if(ctx.measureText(s).width<=maxW)return s;
+    while(s.length&&ctx.measureText(s+"…").width>maxW)s=s.slice(0,-1);return s+"…";}
+  function wrapRuns(ctx,runs,maxW,font,maxLines){
+    ctx.font=font;var words=[];runs.forEach(function(r){String(r.t||"").split(/\s+/).filter(Boolean).forEach(function(w){words.push({w:w,c:r.c});});});
+    var lines=[],cur=[],curW=0,sp=ctx.measureText(" ").width;
+    words.forEach(function(wd){var ww=ctx.measureText(wd.w).width;
+      if(cur.length&&curW+sp+ww>maxW){lines.push(cur);cur=[wd];curW=ww;}else{curW+=(cur.length?sp:0)+ww;cur.push(wd);}});
+    if(cur.length)lines.push(cur);
+    if(lines.length>maxLines){lines=lines.slice(0,maxLines);var l=lines[maxLines-1];l[l.length-1]={w:l[l.length-1].w.replace(/.$/,"")+"…",c:l[l.length-1].c};}
+    return lines;
+  }
+  function drawRuns(ctx,ln,x,y,font){
+    ctx.font=font;ctx.textBaseline="middle";ctx.textAlign="left";var cx=x,sp=ctx.measureText(" ").width;
+    if("letterSpacing" in ctx)ctx.letterSpacing="-0.025em";
+    ln.forEach(function(wd){ctx.fillStyle=wd.c;ctx.fillText(wd.w,cx,y);cx+=ctx.measureText(wd.w).width+sp;});
+    if("letterSpacing" in ctx)ctx.letterSpacing="0px";
+  }
+  function nlDate(d){var t=new Date(d);return isNaN(t)?"":t.toLocaleDateString("nl-NL",{day:"numeric",month:"long",year:"numeric",timeZone:"Europe/Amsterdam"});}
+  function evParts(iso){var t=new Date(iso);if(isNaN(t))return null;
+    function f(o){return new Intl.DateTimeFormat("nl-NL",Object.assign({timeZone:"Europe/Amsterdam"},o)).format(t);}
+    return {day:f({day:"numeric"}),month:f({month:"long"}).toUpperCase(),weekday:f({weekday:"long"}),time:f({hour:"2-digit",minute:"2-digit",hourCycle:"h23"})};}
+  function theme(card,dark){
+    var brand=color(card.color),acc=brand,t=0,on=luminance(brand)>.45?"#17162A":"#FFFFFF";
+    if(card.kind==="card"&&/^#[0-9a-f]{6}$/i.test(card.text_color||""))on=card.text_color;
+    if(!dark){while(luminance(acc)>.18&&t<10){acc=mixHex(brand,0,.08*(++t));}}
+    else{while(luminance(acc)<.30&&t<10){acc=mixHex(acc,255,.12);t++;}}
+    return {brand:brand,on:on,acc:acc,b1:mixHex(brand,255,.16),b2:mixHex(brand,0,.24),dark:dark,
+      fg:dark?"#FFFFFF":"#17162A",muted:dark?"#C9C6E9":"#55536B",panel:dark?"#2B2458":"#FFFFFF",
+      shadow:dark?"rgba(0,0,0,.5)":rgba(mixHex(brand,0,.2),.38)};
+  }
+  function css160(ctx,w,h){var a=160*Math.PI/180,dx=Math.sin(a),dy=-Math.cos(a),len=Math.abs(w*dx)+Math.abs(h*dy),cx=w/2,cy=h/2;
+    return ctx.createLinearGradient(cx-dx*len/2,cy-dy*len/2,cx+dx*len/2,cy+dy*len/2);}
+  function background(ctx,w,h,T,wide){
+    var g=css160(ctx,w,h);
+    if(T.dark){g.addColorStop(0,"#17162A");g.addColorStop(1/1.4,mixHex(T.brand,0,.78));g.addColorStop(1,mixHex(T.brand,0,.78));}
+    else{g.addColorStop(0,"#FFFFFF");g.addColorStop(1/1.3,mixHex(T.brand,255,.9));g.addColorStop(1,mixHex(T.brand,255,.9));}
+    ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+    var gc=T.dark?rgba(mixHex(T.brand,0,.55),.35):rgba(mixHex(T.brand,255,.78),.55);
+    ctx.fillStyle=gc;ctx.beginPath();ctx.arc(w-70,70,450,0,Math.PI*2);ctx.fill();
+    if(!wide){ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(-10,h-50,350,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+  }
+  function drawLogoTile(ctx,img,letter,x,y,s,T,fill,ink){
+    ctx.save();ctx.beginPath();ctx.roundRect(x,y,s,s,s*.24);ctx.clip();
+    ctx.fillStyle=img?"#FFFFFF":fill;ctx.fillRect(x,y,s,s);
+    if(img)drawImg(ctx,img,x,y,s,s);else line(ctx,letter,x+s/2,y+s/2+s*.02,fd(Math.round(s*.52)),ink,"center");
+    ctx.restore();
+  }
+  function lockWidth(ctx,k){ctx.font=fd(54);return (60+14+ctx.measureText("pasr").width)*k;}
+  function drawLock(ctx,icon,x,y,k,dark){
+    ctx.save();ctx.translate(x,y);ctx.scale(k,k);
+    ctx.beginPath();ctx.roundRect(0,0,60,60,14);ctx.fillStyle="#17162A";ctx.fill();
+    if(icon){ctx.save();ctx.clip();drawImg(ctx,icon,0,0,60,60);ctx.restore();}
+    line(ctx,"pasr",74,31,fd(54),dark?"#FFFFFF":"#17162A");ctx.restore();
+  }
+  function drawTop(ctx,x,y,s,T,imgs,card,biz){
+    drawLogoTile(ctx,imgs.logo,(biz||"P").slice(0,1).toUpperCase(),x,y,s,T,T.brand,T.on);
+    var k=s/92;line(ctx,fit(ctx,biz,s>80?680:340,fd(Math.round(38*k))),x+s+22*k,y+s/2-17*k,fd(Math.round(38*k)),T.fg);
+    if(card.city)line(ctx,card.city,x+s+22*k,y+s/2+19*k,fb(600,Math.round(26*k)),T.muted);
+  }
+  function drawQrPanel(ctx,x,y,w,qs,qb,T,url,b,sub,pad){
+    pad=pad||22;var h=qs+pad*2;
+    ctx.save();ctx.shadowColor="rgba(30,20,90,.14)";ctx.shadowBlur=40;ctx.shadowOffsetY=14;
+    ctx.beginPath();ctx.roundRect(x,y,w,h,Math.max(24,pad*1.55));ctx.fillStyle=T.panel;ctx.fill();ctx.restore();
+    ctx.save();ctx.beginPath();ctx.roundRect(x+pad,y+pad,qs,qs,14);ctx.clip();qrGrid(ctx,url,x+pad,y+pad,qs);ctx.restore();
+    var tx=x+pad+qs+pad*1.35,tw=w-(tx-x)-pad;
+    var lines=wrapRuns(ctx,[{t:b,c:T.fg}],tw,fd(qb),3),sh=qb*.6*1.2,bh=lines.length*qb*1.05+8+sh,ty=y+(h-bh)/2;
+    lines.forEach(function(l,i){drawRuns(ctx,l,tx,ty+qb*1.05*(i+.5),fd(qb));});
+    line(ctx,sub,tx,ty+lines.length*qb*1.05+8+sh/2,fb(600,Math.round(qb*.6)),T.muted);
+    return h;
+  }
+  function drawNote(ctx,x,y,t,s,T,k){
+    line(ctx,t,x,y+17*k,fb(800,Math.round(34*k)),T.fg);line(ctx,s,x,y+17*k+42*k,fb(600,Math.round(30*k)),T.muted);
+  }
+  function stampCard(ctx,card,T,imgs){
+    var w=900,h=560,pad=52,total=Math.min(30,Math.max(2,Number(card.stamps_total)||10)),filled=Math.min(total-1,Math.max(1,Math.round(total*.4)));
+    var cols=total<=5?total:total<=10?5:total<=12?6:total<=21?7:8,rows=Math.ceil(total/cols);
+    var area=h-pad*2-172,cell=Math.min(104,(w-pad*2-(cols-1)*18)/cols,(area-(rows-1)*14)/rows),rgap=rows>1?Math.min(26,(area-rows*cell)/(rows-1)):0;
+    ctx.save();ctx.shadowColor=T.shadow;ctx.shadowBlur=70;ctx.shadowOffsetY=36;
+    var g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,T.b1);g.addColorStop(.55,T.brand);g.addColorStop(1,T.b2);
+    ctx.beginPath();ctx.roundRect(0,0,w,h,46);ctx.fillStyle=g;ctx.fill();ctx.restore();
+    drawLogoTile(ctx,imgs.logo,(card.name||"P").slice(0,1).toUpperCase(),pad,pad,100,T,"rgba(255,255,255,.22)",T.on);
+    line(ctx,fit(ctx,card.name,w-pad*2-124,fd(48)),pad+124,pad+34,fd(48),T.on);
+    line(ctx,fit(ctx,[card.business,card.city].filter(Boolean).join(" · "),w-pad*2-124,fb(600,26)),pad+124,pad+74,fb(600,26),T.on);
+    var top=pad+100+18,bottom=h-pad-36-18,gh=rows*cell+(rows-1)*rgap,gy=top+(bottom-top-gh)/2,pitch=(w-pad*2)/cols;
     for(var i=0;i<total;i++){
-      var xx=gx+(i%cols)*(cell+gapX), yy=gy+Math.floor(i/cols)*(cell+gapY);
-      if(i<filled){
-        stampMark(ctx,imgs.stamp,xx,yy,cell,ink);
-      } else {
-        ctx.save();ctx.setLineDash([4,5]);ctx.strokeStyle=ink;ctx.globalAlpha=.65;
-        ctx.lineWidth=2;ctx.beginPath();ctx.arc(xx+cell/2,yy+cell/2,cell*.43,0,2*Math.PI);ctx.stroke();ctx.restore();
-      }
+      var cx=pad+(i%cols+.5)*pitch-cell/2,cy=gy+Math.floor(i/cols)*(cell+rgap);
+      if(i<filled)stampMark(ctx,imgs.stamp,cx,cy,cell,T.on);
+      else{ctx.save();ctx.setLineDash([9,7]);ctx.strokeStyle=T.on;ctx.globalAlpha=.55;ctx.lineWidth=3;
+        ctx.beginPath();ctx.arc(cx+cell/2,cy+cell/2,cell/2-2,0,Math.PI*2);ctx.stroke();ctx.restore();}
     }
-    text(ctx,card.reward,x+pad,y+h-pad*.65,
-      "700 "+Math.round(Math.min(24,w*.032))+"px Figtree,sans-serif",ink,"left",w*.65);
-    text(ctx,total+" stempels",x+w-pad,y+h-pad*.65,
-      "700 "+Math.round(Math.min(22,w*.029))+"px Figtree,sans-serif",ink,"right");
+    line(ctx,fit(ctx,card.reward,w*.62,fb(800,30)),pad,h-pad-18,fb(800,30),T.on);
+    line(ctx,total+" stempels",w-pad,h-pad-18,fb(800,30),T.on,"right");
+    return {w:w,h:h};
   }
-  function background(ctx,w,h,dark) {
-    var grad=ctx.createLinearGradient(0,0,w,h);
-    if(dark){grad.addColorStop(0,"#17162A");grad.addColorStop(.6,"#252052");grad.addColorStop(1,"#37287D");}
-    else{grad.addColorStop(0,"#FFFFFF");grad.addColorStop(.56,"#F4F3FF");grad.addColorStop(1,"#E7E2FF");}
-    ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
-    // Alleen bestaande Pasr-vormen: geen willekeurige AI-streepjes.
-    ctx.fillStyle=dark?"rgba(106,92,255,.13)":"rgba(106,92,255,.08)";
-    ctx.beginPath();ctx.arc(w*1.1,h*.05,w*.48,0,Math.PI*2);ctx.fill();
+  function ticket(ctx,card,T,imgs,kind){
+    var w=900,h=500,sw=250,dx=w-sw;
+    ctx.save();ctx.shadowColor=T.shadow;ctx.shadowBlur=40;ctx.shadowOffsetY=30;
+    var g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,T.b1);g.addColorStop(.6,T.brand);g.addColorStop(1,T.b2);
+    ctx.beginPath();ctx.roundRect(0,0,w,h,44);ctx.moveTo(dx+30,0);ctx.arc(dx,0,30,0,Math.PI*2,true);ctx.moveTo(dx+30,h);ctx.arc(dx,h,30,0,Math.PI*2,true);
+    ctx.fillStyle=g;ctx.fill("evenodd");ctx.restore();
+    ctx.save();ctx.setLineDash([12,10]);ctx.strokeStyle="rgba(255,255,255,.55)";ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(dx,62);ctx.lineTo(dx,h-62);ctx.stroke();ctx.restore();
+    var lw=dx-100,on=T.on;
+    if(kind==="event"){
+      var p=evParts(card.starts_at)||{day:"",month:"",weekday:"",time:""};
+      line(ctx,p.day,50,50+95,fd(190),on);
+      spaced(ctx,p.month,50,50+215,fb(800,36),on,5);
+      line(ctx,fit(ctx,p.weekday+(p.time?" · "+p.time+" uur":""),lw,fb(700,34)),50,h-44-60,fb(700,34),on);
+      line(ctx,fit(ctx,card.address||"Locatie volgt",lw,fb(600,26)),50,h-44-20,fb(600,26),on);
+      stampMark(ctx,imgs.stamp,dx+(sw-120)/2,(h-211)/2,120,on);
+      spaced(ctx,"GRATIS",dx+sw/2,(h-211)/2+120+14+13,fb(800,22),on,2.2,"center");
+      line(ctx,"Ticket",dx+sw/2,(h-211)/2+120+14+26+14+19,fd(34),on,"center");
+    }else{
+      var big=card.discount_type==="percent"?String(card.discount_value):new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR",minimumFractionDigits:0}).format(card.discount_value||0);
+      ctx.font=fd(200);line(ctx,big,50,50+90,fd(200),on);
+      if(card.discount_type==="percent"){var bw=ctx.measureText(big).width;line(ctx,"%",50+bw+6,50+58,fd(100),on);}
+      spaced(ctx,"KORTING",50,50+215,fb(800,40),on,5.6);
+      line(ctx,fit(ctx,card.business||"",lw,fb(700,34)),50,h-44-45,fb(700,34),on);
+      line(ctx,fit(ctx,card.ends_at?"Geldig t/m "+nlDate(card.ends_at):"Vraag naar de actievoorwaarden",lw,fb(600,26)),50,h-44-12,fb(600,26),on);
+      stampMark(ctx,imgs.stamp,dx+(sw-120)/2,(h-211)/2,120,on);
+      spaced(ctx,"EXCLUSIEF IN",dx+sw/2,(h-211)/2+120+14+13,fb(800,22),on,2.2,"center");
+      line(ctx,"Pasr",dx+sw/2,(h-211)/2+120+14+26+14+19,fd(34),on,"center");
+    }
+    return {w:w,h:h};
   }
-  function drawLockup(ctx,icon,x,y,dark) {
-    rr(ctx,x,y,74,74,17,"#17162A");drawImg(ctx,icon,x+2,y+2,70,70);
-    text(ctx,"pasr",x+92,y+58,"800 71px 'Bricolage Grotesque',Figtree,sans-serif",dark?"#FFFFFF":"#17162A");
-    rr(ctx,x+286,y+15,194,50,22,"#07966F");
-    text(ctx,"ZAKELIJK",x+383,y+49,"800 27px Figtree,sans-serif","#FFFFFF","center");
-  }
-  // Coupons en losse actiecodes krijgen eigen materiaal, nooit een fictieve stempelkaart.
-  async function renderDiscount(product,formatId,theme) {
-    var format=formats.find(function(f){return f.id===formatId;})||formats[0];
-    var canvas=document.createElement("canvas");canvas.width=format.w;canvas.height=format.h;
-    var ctx=canvas.getContext("2d",{alpha:false}),h=format.h/(format.w/1080);ctx.scale(format.w/1080,format.w/1080);
-    var dark=theme==="dark",fg=dark?"#FFFFFF":"#17162A",accent=color(product.color,"#6A5CFF");
-    background(ctx,1080,h,dark);
-    var mark=await load(iconURL);drawLockup(ctx,mark,65,70,dark);
-    var section=product.kind==="coupon"?"DIGITALE KORTINGSCOUPON":"ACTIECODE";
-    text(ctx,section,76,h*0.27,"800 36px Figtree,sans-serif",dark?"#B9AAFF":"#4A3CE0");
-    var headings=wrap(ctx,product.title||product.name||"Korting",930,"800 78px 'Bricolage Grotesque',Figtree,sans-serif",3);
-    headings.forEach(function(line,i){text(ctx,line,76,h*0.34+i*88,"800 78px 'Bricolage Grotesque',Figtree,sans-serif",fg);});
-    var y=Math.min(h*0.60,h*0.34+headings.length*88+75);
-    rr(ctx,68,y,945,Math.min(310,h*.23),30,dark?"#302657":"#ECE9FF");
-    var discount=product.discount_type==="percent"?String(product.discount_value)+"%":new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR"}).format(product.discount_value||0);
-    text(ctx,discount,105,y+125,"900 112px 'Bricolage Grotesque',Figtree,sans-serif",accent);
-    text(ctx,"KORTING",107,y+191,"800 39px Figtree,sans-serif",dark?"#FFFFFF":"#17162A");
-    text(ctx,"Exclusief in de Pasr: Klantenkaarten-app",105,y+250,"600 29px Figtree,sans-serif",fg);
-    var raw=String(product.logo||"");
-    var logo=raw&&/^[A-Za-z0-9+/=]+$/.test(raw)?
-      await load("data:image/"+(raw.indexOf("/9j/")===0?"jpeg":"png")+";base64,"+raw):null;
-    if(logo){rr(ctx,76,h-169,72,72,12,"#FFFFFF");drawImg(ctx,logo,82,h-163,60,60);}
-    text(ctx,product.business||"",logo?164:76,h-120,"700 32px Figtree,sans-serif",fg);
-    var validity=product.ends_at?"Geldig t/m "+String(product.ends_at).slice(0,10):"Vraag naar de actievoorwaarden";
-    text(ctx,validity,76,h-66,"600 24px Figtree,sans-serif",dark?"#C9C6E9":"#4B4966");
-    return canvas;
+  function visual(ctx,card,T,imgs,kind){return kind==="card"?stampCard(ctx,card,T,imgs):ticket(ctx,card,T,imgs,kind);}
+  function visSize(kind){return kind==="card"?{w:900,h:560}:{w:900,h:500};}
+  function copyFor(card,kind){
+    var biz=card.business||card.name||"";
+    if(kind==="card")return {kick:"Digitale spaarkaart",runs:[{t:"Spaar digitaal bij",c:"fg"},{t:biz,c:"acc"}]};
+    if(kind==="event")return {kick:"Gratis event",runs:[{t:card.name||card.title||"Event",c:"fg"}]};
+    return {kick:kind==="coupon"?"Kortingscoupon":"Actiecode",runs:[{t:card.title||card.name||"Korting",c:"fg"}]};
   }
   async function render(card,formatId,theme) {
-    if (card.kind==="coupon"||card.kind==="code") return renderDiscount(card,formatId,theme);
-    var format=formats.find(function(f){return f.id===formatId;})||formats[0];
-    var canvas=document.createElement("canvas");canvas.width=format.w;canvas.height=format.h;
-    var ctx=canvas.getContext("2d",{alpha:false});var scale=format.w/1080,h=format.h/scale;
-    ctx.scale(scale,scale);
-    var imgs=await Promise.all([load(iconURL),load(stampURL),load(card.logo?
-      "data:image/"+(card.logo.indexOf("/9j/")===0?"jpeg":"png")+";base64,"+card.logo:null)]);
+    var format=formats.find(function(f){return f.id===formatId;})||formats[0],f=FM[format.id]||FM.square;
+    var kind=card.kind==="coupon"?"coupon":card.kind==="code"?"code":card.kind==="event"?"event":"card";
+    var scale=format.w/f.w,canvas=document.createElement("canvas");canvas.width=format.w;canvas.height=format.h;
+    var ctx=canvas.getContext("2d",{alpha:false});ctx.scale(scale,scale);
+    var logoRaw=String(card.logo||"");
+    var imgs=await Promise.all([load(iconURL),load(stampURL),load(logoRaw&&/^[A-Za-z0-9+/=]+$/.test(logoRaw)?
+      "data:image/"+(logoRaw.indexOf("/9j/")===0?"jpeg":"png")+";base64,"+logoRaw:null)]);
+    imgs={icon:imgs[0],stamp:imgs[1],logo:imgs[2]};
     try{if(document.fonts&&document.fonts.ready)await document.fonts.ready;}catch(e){}
-    var dark=theme==="dark",fg=dark?"#FFFFFF":"#17162A",muted=dark?"#C9C6E9":"#4B4966";
-    background(ctx,1080,h,dark);
-    var wide=format.id==="wide", isFlyer=format.id==="flyer";
-    if(wide){
-      ctx.save();ctx.scale(.55,.55);drawLockup(ctx,imgs[0],105,88,dark);ctx.restore();
-      text(ctx,"Spaar digitaal bij",65,145,"800 65px 'Bricolage Grotesque',Figtree,sans-serif",fg);
-      var n=wrap(ctx,card.business||card.name,440,"800 65px 'Bricolage Grotesque',Figtree,sans-serif",2);
-      n.forEach(function(t,i){text(ctx,t,65,225+i*75,"800 65px 'Bricolage Grotesque',Figtree,sans-serif",dark?"#B9AAFF":"#4A3CE0");});
-      text(ctx,"Scan en spaar mee met Pasr",65,480,"600 25px Figtree,sans-serif",muted);
-      drawCard(ctx,card,565,110,465,293,{icon:imgs[0],stamp:imgs[1],logo:imgs[2]});
-      if(card.published!==false)qrGrid(ctx,card.join_url||("https://pasr.nl/zakelijk/kaart/"+card.id+"/"),805,408,138);
-    }else{
-      drawLockup(ctx,imgs[0],76,75,dark);
-      var headingY= h>1700?300:h>1250?260:225;
-      text(ctx,"Spaar digitaal bij",76,headingY,"800 68px 'Bricolage Grotesque',Figtree,sans-serif",fg);
-      var nameLines=wrap(ctx,card.business||card.name,940,"800 68px 'Bricolage Grotesque',Figtree,sans-serif",2);
-      nameLines.forEach(function(t,i){text(ctx,t,76,headingY+86+i*80,"800 68px 'Bricolage Grotesque',Figtree,sans-serif",dark?"#B9AAFF":"#4A3CE0");});
-      var cardW=900,cardH=567,cardY;
-      if(isFlyer)cardY=Math.max(headingY+260,h*.29);
-      else if(h>1700)cardY=650;
-      else if(h>1250)cardY=515;
-      else cardY=400;
-      drawCard(ctx,card,90,cardY,cardW,cardH,{icon:imgs[0],stamp:imgs[1],logo:imgs[2]});
-      var qrY=Math.min(h-290,cardY+cardH+58),qrS=Math.min(190,h-qrY-90);
-      if(card.published!==false&&qrS>100){
-        rr(ctx,90,qrY,900,qrS+35,28,dark?"#332A64":"#FFFFFF");
-        qrGrid(ctx,card.join_url||("https://pasr.nl/zakelijk/kaart/"+card.id+"/"),114,qrY+17,qrS);
-        text(ctx,"Scan en spaar mee",114+qrS+30,qrY+qrS*.55,
-          "800 38px 'Bricolage Grotesque',Figtree,sans-serif",fg);
-        text(ctx,"met Pasr",114+qrS+30,qrY+qrS*.84,"600 28px Figtree,sans-serif",muted);
-      }else if(qrS>100){
-        text(ctx,"Conceptkaart · publiceer voor een aanmeld-QR",96,qrY+44,"600 28px Figtree,sans-serif",muted);
-      }
-      if(isFlyer){
-        text(ctx,"Scan de QR-code, bewaar de kaart en spaar bij elke aankoop.",
-          90,h-105,"600 27px Figtree,sans-serif",fg,"left",900);
-      }
+    var dark=theme==="dark",T=theme_(card,dark,kind),W=f.w,H=f.h,cp=copyFor(card,kind);
+    var biz=card.business||card.name||"";
+    background(ctx,W,H,T,!!f.wide);
+    var runs=cp.runs.map(function(r){return {t:r.t,c:r.c==="acc"?T.acc:T.fg};});
+    var published=card.published!==false&&(kind!=="event"||(card.status!=="draft"&&card.status!=="cancelled"));
+    var hasQr=(kind==="card"||kind==="event")&&published;
+    var url=card.join_url||(kind==="event"?"https://pasr.nl/add/e/"+card.id:"https://pasr.nl/zakelijk/kaart/"+card.id+"/");
+    var qrTitle=kind==="event"?"Scan en meld je aan":"Scan en spaar mee",qrSub=kind==="event"?"gratis via de Pasr-app":"met de Pasr-app";
+    var noteT=kind==="card"?"Scan-QR volgt na publicatie":kind==="event"?"Aanmeld-QR volgt na publicatie":"Exclusief in de Pasr-app";
+    var noteS=kind==="card"?"Conceptkaart":kind==="event"?"Conceptevent":"Download Pasr: Klantenkaarten";
+    var vs=visSize(kind);
+    if(f.wide){
+      var PX=56,PY=46,tw=1080-PX*2-500-30;
+      if(kind!=="card"||true)drawTop(ctx,PX,PY,70,T,imgs,card,biz);
+      var hs=58,lines=wrapRuns(ctx,runs,tw,fd(hs),3),lh=hs*1.02,midH=21*1.2+10+lines.length*lh;
+      var botH=hasQr?148:50,free=(H-PY*2)-70-midH-botH,my=PY+70+free/2;
+      spaced(ctx,cp.kick.toUpperCase(),PX,my+12,fb(800,21),T.acc,1.9);
+      lines.forEach(function(l,i){drawRuns(ctx,l,PX,my+21*1.2+10+lh*(i+.5),fd(hs));});
+      if(hasQr)drawQrPanel(ctx,PX,H-PY-148,390,120,32,T,url,qrTitle,qrSub,14);
+      else line(ctx,kind==="card"||kind==="event"?noteS:(card.ends_at?"Geldig t/m "+nlDate(card.ends_at):noteS),PX,H-PY-20,fb(600,22),T.muted);
+      var k=.5,rh=vs.h*k+26+54,ry=PY+((H-PY*2)-rh)/2,rcx=1080-PX-250;
+      ctx.save();ctx.translate(rcx,ry+vs.h*k/2);ctx.rotate(-3*Math.PI/180);ctx.scale(k,k);ctx.translate(-vs.w/2,-vs.h/2);
+      visual(ctx,card,T,imgs,kind);ctx.restore();
+      drawLock(ctx,imgs.icon,rcx-lockWidth(ctx,.9)/2,ry+vs.h*k+26,.9,dark);
+      return canvas;
     }
+    var L=76,IW=W-152,y=72;
+    if(kind!=="card"){drawTop(ctx,L,y,92,T,imgs,card,biz);y+=92+10;}
+    y+=f.kt;spaced(ctx,cp.kick.toUpperCase(),L,y+16,fb(800,27),T.acc,2.4);y+=32+16;
+    var hl=wrapRuns(ctx,runs,IW,fd(f.hs),4),hh=f.hs*1.02;
+    hl.forEach(function(l,i){drawRuns(ctx,l,L,y+hh*(i+.5),fd(f.hs));});y+=hl.length*hh;
+    var qs=f.qs,qb=f.col?60:44,noteH=34*1.3+4+30*1.35,blockH=hasQr?qs+44:noteH,footH=f.col?blockH+40+60:Math.max(blockH,60);
+    var footTop=H-64-footH,lockW=lockWidth(ctx,1);
+    var top=y+20,bot=footTop-20,k2=Math.min(1,(bot-top)/vs.h);
+    ctx.save();ctx.translate(W/2,top+(bot-top)/2);ctx.scale(k2,k2);ctx.translate(-vs.w/2,-vs.h/2);visual(ctx,card,T,imgs,kind);ctx.restore();
+    var qw=f.col?IW:IW-34-lockW;
+    if(hasQr)drawQrPanel(ctx,L,footTop,qw,qs,qb,T,url,qrTitle,qrSub);
+    else drawNote(ctx,L,footTop+(f.col?0:(footH-noteH)/2),noteT,noteS,T,1);
+    if(f.col)drawLock(ctx,imgs.icon,(W-lockW)/2,H-64-60,1,dark);
+    else drawLock(ctx,imgs.icon,W-76-lockW,footTop+(footH-60)/2,1,dark);
     return canvas;
   }
+  function theme_(card,dark,kind){return theme(Object.assign({},card,{kind:kind}),dark);}
   function save(canvas,name){
     return new Promise(function(resolve){
       canvas.toBlob(async function(blob){
@@ -272,7 +344,7 @@
     options=options||{};
     var chosen=formats[0],theme="light",latest=null,revision=0;
     root.innerHTML='<section class="pz-promo"><div class="pz-promo-heading"><h2>Promotiemateriaal · '+escapeHTML(card.title||card.name)+
-      '</h2><p>Gebruik de echte gegevens van deze '+(card.kind==='coupon'?'coupon':card.kind==='code'?'actiecode':'stempelkaart')+'. Ontwerpen in Licht en Donker.</p></div>'+
+      '</h2><p>Gebruik de echte gegevens van deze '+(card.kind==='coupon'?'coupon':card.kind==='code'?'actiecode':card.kind==='event'?'event':'stempelkaart')+'. Ontwerpen in Licht en Donker.</p></div>'+
       '<div class="pz-promo-controls"><label>Formaat <select data-pz-format></select></label>'+
       '<fieldset><legend>Uitvoering</legend><label><input name="pz-theme" type="radio" value="light" checked> Licht</label>'+
       '<label><input name="pz-theme" type="radio" value="dark"> Donker</label></fieldset></div>'+
@@ -280,7 +352,7 @@
       '<div class="pz-promo-actions"><button type="button" class="zk-btn" data-pz-download>Download PNG</button>'+
       '<button type="button" class="zk-btn ghost" data-pz-all>Download alle ontwerpen (ZIP)</button>'+
       (options.print?'<button type="button" class="zk-btn ghost" data-pz-print>Print A4/PDF</button>':"")+
-      '</div><p class="pz-promo-note">De kaart is een promotiemodel, geen klantensaldo. Bij een conceptkaart verschijnt geen werkende QR-code.</p></section>';
+      '</div><p class="pz-promo-note">'+(card.kind==='event'?'De QR-code opent de gratis aanmelding voor dit event. Bij een concept verschijnt geen werkende QR-code.':'De kaart is een promotiemodel, geen klantensaldo. Bij een conceptkaart verschijnt geen werkende QR-code.')+'</p></section>';
     var sel=root.querySelector("[data-pz-format]"),preview=root.querySelector("[data-pz-canvas]");
     formats.forEach(function(f){var o=document.createElement("option");o.value=f.id;o.textContent=f.name+" · "+f.w+" × "+f.h;sel.appendChild(o);});
     async function update() {

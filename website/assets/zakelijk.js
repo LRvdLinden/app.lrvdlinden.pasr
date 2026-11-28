@@ -913,21 +913,29 @@
     else panel.textContent = "Actiecodes kunnen niet worden geladen.";
   };
   VIEWS.promotiemateriaal = async function(panel,b) {
-    panel.innerHTML=panelTitle("Promotiemateriaal","Kies een bestaande stempelkaart, kortingscoupon of actiecode. Download PNG's of een complete ZIP.")+
+    panel.innerHTML=panelTitle("Promotiemateriaal","Kies een bestaande stempelkaart, kortingscoupon, actiecode of gratis event (ticket). Download PNG's of een complete ZIP.")+
       '<section class="pz2-panel"><label class="pz2-field">Actie<select id="zkPromoProduct"><option value="">Producten laden…</option></select></label>'+
       '<p id="zkPromoStatus" role="status"></p><div id="zkPromoHub"></div></section>';
     var picker=$("#zkPromoProduct"),status=$("#zkPromoStatus"),target=$("#zkPromoHub"),products=[];
     (b.cards||[]).forEach(function(c){products.push({kind:"Stempelkaart",title:c.name,raw:Object.assign({},c,{business:b.name})});});
+    var base=(b.cards||[]).filter(function(c){return c.color;})[0]||{};
     var responses=await Promise.allSettled([
       rpc("pasr_business_coupon_list",{p_business:b.id},true),
-      rpc("pasr_business_promo_list",{p_business:b.id},true)
+      rpc("pasr_business_promo_list",{p_business:b.id},true),
+      rpc("pasr_business_events",{p_business:b.id},true)
     ]);
     if(responses[0].status==="fulfilled")responses[0].value.forEach(function(c){
-      products.push({kind:"Kortingscoupon",title:c.title,raw:Object.assign({},c,{kind:"coupon",business:b.name,color:"#6A5CFF"})});
+      products.push({kind:"Kortingscoupon",title:c.title,raw:Object.assign({},c,{kind:"coupon",business:b.name,color:base.color||"#6A5CFF",logo:base.logo||""})});
     });else status.textContent="Kortingscoupons konden niet worden geladen. ";
     if(responses[1].status==="fulfilled")responses[1].value.forEach(function(c){
-      products.push({kind:"Actiecode",title:c.title+" · "+c.code,raw:Object.assign({},c,{kind:"code",business:b.name,color:"#6A5CFF"})});
-    });else status.textContent+="Actiecodes konden niet worden geladen.";
+      products.push({kind:"Actiecode",title:c.title+" · "+c.code,raw:Object.assign({},c,{kind:"code",business:b.name,color:base.color||"#6A5CFF",logo:base.logo||""})});
+    });else status.textContent+="Actiecodes konden niet worden geladen. ";
+    if(responses[2].status==="fulfilled")(responses[2].value||[]).filter(function(e){
+      return e.status!=="cancelled"&&Date.parse(e.ends_at)>Date.now();
+    }).sort(function(x,y){return Date.parse(x.starts_at)-Date.parse(y.starts_at);}).forEach(function(e){
+      products.push({kind:"Ticket (event)",title:e.name,raw:{kind:"event",id:e.id,name:e.name,title:e.name,address:e.address||"",
+        starts_at:e.starts_at,ends_at:e.ends_at,status:e.status,business:b.name,color:e.color||base.color||"#6A5CFF",logo:base.logo||""}});
+    });else status.textContent+="Events konden niet worden geladen.";
     picker.innerHTML='<option value="">Kies een actie</option>'+products.map(function(p,i){
       return '<option value="'+i+'">'+esc(p.kind)+' · '+esc(p.title)+'</option>';
     }).join("");
