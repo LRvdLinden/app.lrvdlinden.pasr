@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="xcode-zakelijk-1.0.4-21"
+          TAG="xcode-zakelijk-1.0.4-22"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --target "$GITHUB_SHA" --latest=false --title "Pasr Zakelijk 1.0.4 (build 22) – Xcode-project" --notes "Volledig Xcode-bronproject met gratis tickets (events maken, aanmeldingen, scannen aan de deur) en klantenkaarten met barcode (QR, Code 128, EAN-13; korting, sparen en kortingsperiodes bij het scannen), widgets voor iOS en macOS en de native Mac-app (scheme PasrZakelijkMac). Open de .xcodeproj in Xcode, Archive en upload zelf naar App Store Connect."
           fi
