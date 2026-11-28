@@ -433,7 +433,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -453,7 +453,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk;
 				PRODUCT_NAME = PasrZakelijk;
 				SDKROOT = iphoneos;
@@ -473,7 +473,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -493,7 +493,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk;
 				PRODUCT_NAME = PasrZakelijk;
 				SDKROOT = iphoneos;
@@ -513,7 +513,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/PasrZakelijkWidgets-Info.plist";
@@ -524,7 +524,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
 				PRODUCT_NAME = PasrZakelijkWidgets;
 				SDKROOT = iphoneos;
@@ -542,7 +542,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/PasrZakelijkWidgets-Info.plist";
@@ -553,7 +553,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
 				PRODUCT_NAME = PasrZakelijkWidgets;
 				SDKROOT = iphoneos;
@@ -572,7 +572,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -589,7 +589,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "14.0";
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk;
 				PRODUCT_MODULE_NAME = PasrZakelijk;
 				PRODUCT_NAME = "Pasr Zakelijk";
@@ -607,7 +607,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -624,7 +624,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "14.0";
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk;
 				PRODUCT_MODULE_NAME = PasrZakelijk;
 				PRODUCT_NAME = "Pasr Zakelijk";
@@ -641,7 +641,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMacWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -654,7 +654,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "14.0";
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
 				PRODUCT_NAME = PasrZakelijkMacWidgets;
 				SDKROOT = macosx;
@@ -671,7 +671,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PasrZakelijkMacWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "22";
+				CURRENT_PROJECT_VERSION = "24";
 				DEVELOPMENT_TEAM = EU3UY476T6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -684,7 +684,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = "14.0";
-				MARKETING_VERSION = "1.0.4";
+				MARKETING_VERSION = "1.0.5";
 				PRODUCT_BUNDLE_IDENTIFIER = app.lrvdlinden.pasrzakelijk.widgets;
 				PRODUCT_NAME = PasrZakelijkMacWidgets;
 				SDKROOT = macosx;
